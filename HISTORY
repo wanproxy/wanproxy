@@ -1,0 +1,40 @@
+	Added 'tack' program which encodes and decodes data from stdin to
+	stdout using XCodec.
+
+	Added 'tcache' module which is a generic segmented hashing interface.
+
+Release 0.1.1
+
+	Added a poll(2) backend for EventPoll as part of making WANProxy build
+	and work on (Unbuntu) Linux.
+
+Release 0.1.0
+
+	Minor enhancements to the Buffer class.
+
+	Added a File wrapper class and refactored the FileDescriptor class and
+	its subclasses slightly.
+
+	Made it possible to have multiple ProxyListeners by making ProxyListener
+	not a singleton.
+
+	Added the ProxyConfig class for parsing a configuration file rather than
+	command-line arguments.
+
+	Made references count for backreferencing just as declarations do to
+	aid in repetetive data that has been declared in a different proxy or
+	much earlier in the same proxy.
+
+Release 0.0.3
+
+	Added support for specifying local interface to listen on.
+
+Release 0.0.2
+
+	Fixed some logic in closing half-proxies in common cases.
+
+	Some refactoring of XCodec.
+
+Release 0.0.1
+
+	Initial version.

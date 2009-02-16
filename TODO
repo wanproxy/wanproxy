@@ -1,0 +1,9 @@
+o) New (ideally modular) proxy/halfproxy configuration and code.  The current
+   proxying code is a mess.
+o) HTTP termination and reinitiation good enough to support an HTTP proxy mode.
+o) Fix bugs.
+o) Secondary storage using tcache.
+o) In-path forwarding using BPF and a tiny network stack.
+o) Experiment with new codecs.  Current ideas involve using collision-prone
+   hashes and variable-length tree encodings.  Others will present themselves,
+   no doubt.

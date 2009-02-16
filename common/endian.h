@@ -1,0 +1,77 @@
+#ifndef	ENDIAN_H
+#define	ENDIAN_H
+
+#ifndef	BYTE_ORDER
+#error "BYTE_ORDER must be defined."
+#else
+#if BYTE_ORDER == LITTLE_ENDIAN
+#elif BYTE_ORDER == BIG_ENDIAN
+#else
+#error "Unexpected BYTE_ORDER value."
+#endif
+#endif
+
+struct Endian {
+	static uint16_t swap(const uint16_t& in)
+	{
+		return (((in & 0xff00u) >> 0x08) | ((in & 0x00ffu) << 0x08));
+	}
+
+	static uint32_t swap(const uint32_t& in)
+	{
+		return (((in & 0xff000000u) >> 0x18) |
+			((in & 0x00ff0000u) >> 0x08) |
+			((in & 0x0000ff00u) << 0x08) |
+			((in & 0x000000ffu) << 0x18));
+	}
+
+	static uint64_t swap(const uint64_t& in)
+	{
+		return (((in & 0xff00000000000000ull) >> 0x38) |
+			((in & 0x00ff000000000000ull) >> 0x28) |
+			((in & 0x0000ff0000000000ull) >> 0x18) |
+			((in & 0x000000ff00000000ull) >> 0x08) |
+			((in & 0x00000000ff000000ull) << 0x08) |
+			((in & 0x0000000000ff0000ull) << 0x18) |
+			((in & 0x000000000000ff00ull) << 0x28) |
+			((in & 0x00000000000000ffull) << 0x38));
+	}
+};
+
+struct SwapEndian {
+	template<typename T>
+	static T encode(const T& in)
+	{
+		return (Endian::swap(in));
+	}
+
+	template<typename T>
+	static T decode(const T& in)
+	{
+		return (Endian::swap(in));
+	}
+};
+
+struct HostEndian {
+	template<typename T>
+	static T encode(const T& in)
+	{
+		return (in);
+	}
+
+	template<typename T>
+	static T decode(const T& in)
+	{
+		return (in);
+	}
+};
+
+#if BYTE_ORDER == LITTLE_ENDIAN
+struct LittleEndian : HostEndian { };
+struct BigEndian : SwapEndian { };
+#elif BYTE_ORDER == BIG_ENDIAN
+struct LittleEndian : SwapEndian { };
+struct BigEndian : HostEndian { };
+#endif
+
+#endif /* !ENDIAN_H */
