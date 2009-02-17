@@ -9,12 +9,26 @@ struct iovec;
 
 typedef	uint8_t	buffer_segment_size_t;
 
+/*
+ * A BufferSegment is a contiguous chunk of data which may be at most a fixed
+ * size of BUFFER_SEGMENT_SIZE.  The data in a BufferSegment may begin at a
+ * non-zero offset within the BufferSegment and may end prematurely.  This
+ * allows for skip()/trim() semantics.
+ *
+ * BufferSegments are reference counted and mutable operations copy before doing
+ * a write.  You must provide your own locking or use only a single thread.  One
+ * normally does not use BufferSegments directly unless one is importing or
+ * exporting data in a performance-critical path.  Normal usage uses a Buffer.
+ */
 class BufferSegment {
 	uint8_t data_[BUFFER_SEGMENT_SIZE];
 	buffer_segment_size_t offset_;
 	buffer_segment_size_t length_;
 	unsigned ref_;
 public:
+	/*
+	 * Creates a new, empty BufferSegment with a single reference.
+	 */
 	BufferSegment(void)
 	: data_(),
 	  offset_(0),
@@ -23,35 +37,55 @@ public:
 	{
 	}
 
+	/*
+	 * Should almost always only be called from unref().
+	 */
 	~BufferSegment()
 	{
 		ASSERT(ref_ == 0);
 	}
 
+	/*
+	 * Bump the reference count.
+	 */
 	void ref(void)
 	{
 		ASSERT(ref_ != 0);
 		ref_++;
 	}
 
+	/*
+	 * Drop the reference count and delete if there are no other live
+	 * references.
+	 */
 	void unref(void)
 	{
 		if (--ref_ == 0)
 			delete this;
 	}
 
+	/*
+	 * Return a mutable pointer to the start of the data.  Discouraaged.
+	 */
 	uint8_t *head(void)
 	{
 		ASSERT(ref_ == 1);
 		return (&data_[offset_]);
 	}
 
+	/*
+	 * Return a mutable pointer to the point at which data may be
+	 * appended.  Discouraged.
+	 */
 	uint8_t *tail(void)
 	{
 		ASSERT(ref_ == 1);
 		return (&data_[offset_ + length_]);
 	}
 
+	/*
+	 * Append data.
+	 */
 	BufferSegment *append(const uint8_t *buf, size_t len)
 	{
 		ASSERT(len <= avail());
@@ -70,21 +104,38 @@ public:
 		return (this);
 	}
 
+	/*
+	 * Append a character.
+	 */
 	BufferSegment *append(uint8_t ch)
 	{
 		return (append(&ch, 1));
 	}
 
+	/*
+	 * Append a C++ string.
+	 */
 	BufferSegment *append(const std::string& str)
 	{
 		return (append((const uint8_t *)str.c_str(), str.length()));
 	}
 
+	/*
+	 * Return the amount of data that is unused within the BufferSegment.
+	 * This includes data before offset_.
+	 */
 	size_t avail(void) const
 	{
 		return (BUFFER_SEGMENT_SIZE - length());
 	}
 
+	/*
+	 * Clone a BufferSegment.  Does a fixed-size copy to allow for more
+	 * efficient code generation, but it is not strictly necessary.  Some
+	 * reasons to believe that it would be better to start copied data
+	 * with offset_ = 0, and to copy only length_ characters instead, but
+	 * diverse microbenchmarking is essential.
+	 */
 	BufferSegment *copy(void) const
 	{
 		BufferSegment *seg = new BufferSegment();
@@ -94,6 +145,10 @@ public:
 		return (seg);
 	}
 
+	/*
+	 * Copy out the requested number of bytes or the entire available
+	 * length, whichever is smaller.  Returns the amount of data read.
+	 */
 	size_t copyout(uint8_t *dst, unsigned offset, size_t dstsize) const
 	{
 		size_t copied;
@@ -106,21 +161,38 @@ public:
 		return (copied);
 	}
 
+	/*
+	 * Return a read-only pointer to the start of data in the segment.
+	 */
 	const uint8_t *data(void) const
 	{
 		return (&data_[offset_]);
 	}
 
+	/*
+	 * Return a read-only pointer to the character after the end of the
+	 * data.  If writable, this would be the point at which new data
+	 * would be appended.
+	 */
 	const uint8_t *end(void) const
 	{
 		return (&data_[offset_ + length_]);
 	}
 
+	/*
+	 * The length of this segment.
+	 */
 	size_t length(void) const
 	{
 		return (length_);
 	}
 
+	/*
+	 * Moves data at an offset to the start of the BufferSegment.  Does not
+	 * need to copy on write since data before offset_ is not reliable.
+	 * Invalidates any direct pointers retrieved by head(), tail(), data()
+	 * or end().
+	 */
 	void pullup(void)
 	{
 		if (offset_ == 0)
@@ -129,6 +201,10 @@ public:
 		offset_ = 0;
 	}
 
+	/*
+	 * Manually sets the length of a BufferSegment that has had its data
+	 * directly filled by e.g. writes through head() and tail().
+	 */
 	void set_length(size_t len)
 	{
 		ASSERT(ref_ == 1);
@@ -137,6 +213,10 @@ public:
 		length_ = len;
 	}
 
+	/*
+	 * Skip a number of bytes at the start of a BufferSemgent.  Creates a
+	 * copy if there are other live references.
+	 */
 	BufferSegment *skip(unsigned bytes)
 	{
 		ASSERT(bytes < length());
@@ -155,6 +235,11 @@ public:
 		return (this);
 	}
 
+	/*
+	 * Adjusts the length to ignore bytes at the end of a BufferSegment.
+	 * Like skip() but at the end rather than the start.  Creates a copy if
+	 * there are live references.
+	 */
 	BufferSegment *trim(unsigned bytes)
 	{
 		ASSERT(bytes < length());
@@ -172,6 +257,10 @@ public:
 		return (this);
 	}
 
+	/*
+	 * Checks if the BufferSegment's contents are identical to the byte
+	 * buffer passed in.
+	 */
 	bool match(const uint8_t *buf, size_t len) const
 	{
 		if (len != length())
@@ -179,21 +268,39 @@ public:
 		return (prefix(buf, len));
 	}
 
+	/*
+	 * Checks if the contents of two BufferSegments are identical.
+	 */
 	bool match(const BufferSegment *seg) const
 	{
 		return (match(seg->data(), seg->length()));
 	}
 
+	/*
+	 * Checks if the BufferSegment's contents are identical to the C++
+	 * string passed in.
+	 */
 	bool match(const std::string& str) const
 	{
 		return (match((const uint8_t *)str.c_str(), str.length()));
 	}
 
+	/*
+	 * Checks if the byte buffer occurs at the beginning of the
+	 * BufferSegment in question.
+	 */
 	bool prefix(const uint8_t *buf, size_t len) const
 	{
+		/* Can't be a prefix if it's longer than the BufferSegment.  */
+		if (len > length())
+			return (false);
 		return (memcmp(data(), buf, len) == 0);
 	}
 
+	/*
+	 * Checks if the C++ string occurs at the beginning of the BufferSegment
+	 * in question.
+	 */
 	bool prefix(const std::string& str) const
 	{
 		return (prefix((const uint8_t *)str.c_str(), str.length()));
