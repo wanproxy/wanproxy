@@ -30,8 +30,10 @@ private:
 		input->moveout((uint8_t *)&sum, 1, sizeof sum);
 		sum = LittleEndian::decode(sum);
 		seg = database_->lookup(sum);
-		if (seg == NULL)
-			HALT(log_ + "/decode") << "hash (" << sum << ") not in database.";
+		if (seg == NULL) {
+			ERROR(log_ + "/decode") << "hash (" << sum << ") not in database.";
+			throw sum;
+		}
 		backref_.declare(sum, seg);
 		output->append(seg);
 		seg->unref();
@@ -125,25 +127,29 @@ private:
 	}
 
 public:
-	void decode(Buffer *output, Buffer *input)
+	bool decode(Buffer *output, Buffer *input)
 	{
 		while (!input->empty()) {
 			switch (input->peek()) {
 			case XCODEC_HASHREF_CHAR:
-				if (!reference(output, input))
-					return;
+				try {
+					if (!reference(output, input))
+						return (true);
+				} catch (uint64_t sum) {
+					return (false);
+				}
 				break;
 			case XCODEC_ESCAPE_CHAR:
 				if (!unescape(output, input))
-					return;
+					return (true);
 				break;
 			case XCODEC_DECLARE_CHAR:
 				if (!declare(input))
-					return;
+					return (true);
 				break;
 			case XCODEC_BACKREF_CHAR:
 				if (!backreference(output, input))
-					return;
+					return (true);
 				break;
 			default:
 				output->append(input->peek());
@@ -151,6 +157,7 @@ public:
 				break;
 			}
 		}
+		return (false);
 	}
 
 };

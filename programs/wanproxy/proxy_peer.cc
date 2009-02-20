@@ -261,7 +261,17 @@ ProxyPeer::schedule_write(ProxyPeer *peer)
 	if (!read_buffer_.empty()) {
 		if (decoder_ != NULL) {
 			Buffer output;
-			decoder_->decode(&output, &read_buffer_);
+			/*
+			 * For now this is how we find out about undefined
+			 * hashes.  Since we don't have an easy way to recover
+			 * in this case, treat it like an error and reset the
+			 * connection and hope for the best.
+			 */
+			if (!decoder_->decode(&output, &read_buffer_)) {
+				error_ = true;
+				schedule_close();
+				return;
+			}
 			peer->schedule_write(&output);
 		} else {
 			peer->schedule_write(&read_buffer_);
