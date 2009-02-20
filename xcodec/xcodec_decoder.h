@@ -88,7 +88,9 @@ private:
 				return (true);
 			}
 			old->unref();
-			HALT(log_ + "/decode") << "hash (" << sum << ") shadows database definition.";
+
+			ERROR(log_ + "/decode") << "hash (" << sum << ") shadows database definition.";
+			throw sum;
 			/*
 			 * XXX
 			 * Override the database entry.
@@ -144,8 +146,12 @@ public:
 					return (true);
 				break;
 			case XCODEC_DECLARE_CHAR:
-				if (!declare(input))
-					return (true);
+				try {
+					if (!declare(input))
+						return (true);
+				} catch (uint64_t sum) {
+					return (false);
+				}
 				break;
 			case XCODEC_BACKREF_CHAR:
 				if (!backreference(output, input))
