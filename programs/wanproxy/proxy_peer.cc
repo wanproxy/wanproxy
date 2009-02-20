@@ -89,7 +89,7 @@ ProxyPeer::close_complete(Event e, void *)
 	delete channel_;
 	channel_ = NULL;
 
-	INFO(log_) << "closed.";
+	DEBUG(log_) << "Closed.";
 
 	if (error_) {
 		ProxyPeer *peer = client_->get_peer(this);
@@ -109,7 +109,7 @@ ProxyPeer::read_complete(Event e, void *)
 	case Event::Done:
 		break;
 	case Event::EOS:
-		INFO(log_) << "End of stream.";
+		DEBUG(log_) << "End of stream.";
 		break;
 	default:
 		ERROR(log_) << "Unexpected event: " << e;

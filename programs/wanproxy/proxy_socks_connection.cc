@@ -150,7 +150,7 @@ ProxySocksConnection::schedule_write(void)
 		0x00, 0x00, 0x00, 0x00
 	};
 
-	INFO(log_) << "Accepted SOCKS connection request.";
+	DEBUG(log_) << "Accepted SOCKS connection request.";
 
 	Buffer buf(response, sizeof response);
 
