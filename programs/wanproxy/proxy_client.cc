@@ -34,8 +34,6 @@ ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
 {
 	local_peer_ = new ProxyPeer(log_ + "/local", this, local_channel,
 				    local_codec);
-	/* XXX Move the local_peer_->start() to connect_complete?  */
-	local_peer_->start();
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
 	action_ = TCPClient::connect(&remote_client_, remote_name, remote_port,
 				     cb);
@@ -53,8 +51,6 @@ ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
 {
 	local_peer_ = new ProxyPeer(log_ + "/local", this, local_channel,
 				    local_codec);
-	/* XXX Move the local_peer_->start() to connect_complete?  */
-	local_peer_->start();
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
 	action_ = TCPClient::connect(&remote_client_, remote_ip, remote_port,
 				     cb);
@@ -119,6 +115,6 @@ ProxyClient::connect_complete(Event e, void *)
 	remote_peer_ = new ProxyPeer(log_ + "/remote", this, remote_channel,
 				     remote_codec_);
 
-	/* XXX Maybe start the local_peer_ here?  */
+	local_peer_->start();
 	remote_peer_->start();
 }
