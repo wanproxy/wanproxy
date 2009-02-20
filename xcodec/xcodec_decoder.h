@@ -163,7 +163,7 @@ public:
 				break;
 			}
 		}
-		return (false);
+		return (true);
 	}
 
 };
