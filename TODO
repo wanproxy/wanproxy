@@ -7,3 +7,5 @@ o) In-path forwarding using BPF and a tiny network stack.
 o) Experiment with new codecs.  Current ideas involve using collision-prone
    hashes and variable-length tree encodings.  Others will present themselves,
    no doubt.
+o) SOCKS5 proxy.
+o) Better API for handling network addresses.
