@@ -6,6 +6,7 @@
 #include <netdb.h>
 
 #include <common/buffer.h>
+#include <common/endian.h>
 
 #include <event/action.h>
 #include <event/callback.h>
@@ -14,8 +15,7 @@
 #include <io/file_descriptor.h>
 #include <io/socket.h>
 
-static bool socket_address(struct sockaddr_in *, int, const std::string&,
-			   unsigned);
+static bool socket_address(struct sockaddr_in *, int, const std::string&, uint16_t);
 
 Socket::Socket(int fd, int domain)
 : FileDescriptor(fd),
@@ -89,8 +89,35 @@ Socket::connect(const std::string& name, unsigned port, EventCallback *cb)
 		return (a);
 	}
 
-	int rv = ::connect(fd_, (struct sockaddr *)&connect_address,
-			   sizeof connect_address);
+	return (this->connect(&connect_address, cb));
+}
+
+Action *
+Socket::connect(uint32_t ip, uint16_t port, EventCallback *cb)
+{
+	ASSERT(connect_callback_ == NULL);
+	ASSERT(connect_action_ == NULL);
+
+	struct sockaddr_in connect_address;
+
+	memset(&connect_address, 0, sizeof connect_address);
+#if !defined(__linux__)
+	connect_address.sin_len = sizeof connect_address;
+#endif
+	connect_address.sin_family = domain_;
+	connect_address.sin_addr.s_addr = BigEndian::encode(ip);
+	connect_address.sin_port = BigEndian::encode(port);
+
+	return (this->connect(&connect_address, cb));
+}
+
+Action *
+Socket::connect(struct sockaddr_in *sinp, EventCallback *cb)
+{
+	ASSERT(connect_callback_ == NULL);
+	ASSERT(connect_action_ == NULL);
+
+	int rv = ::connect(fd_, (struct sockaddr *)sinp, sizeof *sinp);
 	switch (rv) {
 	case 0:
 		cb->event(Event(Event::Done, 0));
@@ -243,7 +270,7 @@ Socket::create(int domain, int type, const std::string& protocol)
 
 static bool
 socket_address(struct sockaddr_in *sinp, int domain, const std::string& name,
-	       unsigned port)
+	       uint16_t port)
 {
 	struct hostent *host = gethostbyname(name.c_str());
 	if (host == NULL) {

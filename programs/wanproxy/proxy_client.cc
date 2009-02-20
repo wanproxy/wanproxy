@@ -16,6 +16,12 @@
 #include "proxy_client.h"
 #include "proxy_peer.h"
 
+/*
+ * XXX
+ * Need to set up a Socket::Address class and all that, to avoid this
+ * stupid redundancy.
+ */
+
 ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
 			 Channel *local_channel, const std::string& remote_name,
 			 unsigned remote_port)
@@ -34,6 +40,26 @@ ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
 	action_ = TCPClient::connect(&remote_client_, remote_name, remote_port,
 				     cb);
 }
+
+ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
+			 Channel *local_channel, uint32_t remote_ip,
+			 uint16_t remote_port)
+: log_("/wanproxy/proxy_client"),
+  action_(NULL),
+  remote_codec_(remote_codec),
+  local_peer_(NULL),
+  remote_client_(NULL),
+  remote_peer_(NULL)
+{
+	local_peer_ = new ProxyPeer(log_ + "/local", this, local_channel,
+				    local_codec);
+	/* XXX Move the local_peer_->start() to connect_complete?  */
+	local_peer_->start();
+	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
+	action_ = TCPClient::connect(&remote_client_, remote_ip, remote_port,
+				     cb);
+}
+
 
 ProxyClient::~ProxyClient()
 {

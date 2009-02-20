@@ -24,9 +24,9 @@ public:
 		return (socket_->close(cb));
 	}
 
-	Action *read(EventCallback *cb)
+	Action *read(EventCallback *cb, size_t amount = 0)
 	{
-		return (socket_->read(cb));
+		return (socket_->read(cb, amount));
 	}
 
 	Action *write(Buffer *buf, EventCallback *cb)
@@ -35,6 +35,8 @@ public:
 	}
 
 	static Action *connect(TCPClient **, const std::string&, int,
+			       EventCallback *);
+	static Action *connect(TCPClient **, uint32_t, uint16_t,
 			       EventCallback *);
 };
 

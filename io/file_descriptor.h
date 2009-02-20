@@ -10,6 +10,8 @@ protected:
 private:
 	EventCallback *close_callback_;
 	Action *close_action_;
+	size_t read_amount_;
+	Buffer read_buffer_;
 	EventCallback *read_callback_;
 	Action *read_action_;
 	Buffer write_buffer_;
@@ -20,7 +22,7 @@ public:
 	~FileDescriptor();
 
 	Action *close(EventCallback *);
-	Action *read(EventCallback *);
+	Action *read(EventCallback *, size_t = 0);
 	Action *write(Buffer *, EventCallback *);
 
 private:

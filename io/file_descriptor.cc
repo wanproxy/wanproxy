@@ -19,6 +19,8 @@ FileDescriptor::FileDescriptor(int fd)
   fd_(fd),
   close_callback_(NULL),
   close_action_(NULL),
+  read_amount_(0),
+  read_buffer_(),
   read_callback_(NULL),
   read_action_(NULL),
   write_buffer_(),
@@ -68,11 +70,12 @@ FileDescriptor::close(EventCallback *cb)
 }
 
 Action *
-FileDescriptor::read(EventCallback *cb)
+FileDescriptor::read(EventCallback *cb, size_t amount)
 {
 	ASSERT(read_callback_ == NULL);
 	ASSERT(read_action_ == NULL);
 
+	read_amount_ = amount;
 	read_callback_ = cb;
 	read_action_ = read_schedule();
 	return (cancellation(this, &FileDescriptor::read_cancel));
@@ -158,7 +161,15 @@ FileDescriptor::read_callback(Event e, void *)
 		HALT(log_) << "Unexpected event: " << e;
 	}
 
-	uint8_t data[65536];
+	size_t rlen;
+
+	if (read_amount_ == 0)
+		rlen = 65536;
+	else
+		rlen = read_amount_ - read_buffer_.length();
+	ASSERT(rlen != 0);
+
+	uint8_t data[rlen];
 	ssize_t len = ::read(fd_, data, sizeof data);
 	if (len == -1) {
 		switch (errno) {
@@ -166,10 +177,12 @@ FileDescriptor::read_callback(Event e, void *)
 			read_action_ = read_schedule();
 			break;
 		default:
-			read_callback_->event(Event(Event::Error, errno));
+			read_callback_->event(Event(Event::Error, errno, read_buffer_));
 			Action *a = EventSystem::instance()->schedule(read_callback_);
 			read_action_ = a;
 			read_callback_ = NULL;
+			read_buffer_.clear();
+			read_amount_ = 0;
 			break;
 		}
 		return;
@@ -184,17 +197,17 @@ FileDescriptor::read_callback(Event e, void *)
 	 * continue to fire off read events?
 	 */
 	if (len == 0) {
-		read_callback_->event(Event(Event::EOS, 0));
+		read_callback_->event(Event(Event::EOS, 0, read_buffer_));
 		Action *a = EventSystem::instance()->schedule(read_callback_);
 		read_action_ = a;
 		read_callback_ = NULL;
+		read_buffer_.clear();
+		read_amount_ = 0;
 		return;
 	}
 
-	read_callback_->event(Event(Event::Done, 0, Buffer(data, len)));
-	Action *a = EventSystem::instance()->schedule(read_callback_);
-	read_action_ = a;
-	read_callback_ = NULL;
+	read_buffer_.append(data, len);
+	read_action_ = read_schedule();
 }
 
 void
@@ -214,6 +227,18 @@ Action *
 FileDescriptor::read_schedule(void)
 {
 	ASSERT(read_action_ == NULL);
+
+	if (!read_buffer_.empty() && read_buffer_.length() >= read_amount_) {
+		if (read_amount_ == 0)
+			read_amount_ = read_buffer_.length();
+		read_callback_->event(Event(Event::Done, 0, Buffer(read_buffer_, read_amount_)));
+		Action *a = EventSystem::instance()->schedule(read_callback_);
+		read_callback_ = NULL;
+		read_buffer_.skip(read_amount_);
+		read_amount_ = 0;
+		return (a);
+	}
+
 	EventCallback *cb = callback(this, &FileDescriptor::read_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Readable, fd_, cb);
 	return (a);

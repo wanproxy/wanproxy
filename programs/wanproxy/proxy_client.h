@@ -14,8 +14,8 @@ class ProxyClient {
 	ProxyPeer *remote_peer_;
 
 public:
-	ProxyClient(XCodec *, XCodec *, Channel *, const std::string&,
-		    unsigned);
+	ProxyClient(XCodec *, XCodec *, Channel *, const std::string&, unsigned);
+	ProxyClient(XCodec *, XCodec *, Channel *, uint32_t, uint16_t);
 private:
 	~ProxyClient();
 

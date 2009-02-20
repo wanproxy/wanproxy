@@ -1,6 +1,8 @@
 #ifndef	SOCKET_H
 #define	SOCKET_H
 
+struct sockaddr_in;
+
 class Socket : public FileDescriptor {
 	LogHandle log_;
 	int domain_;
@@ -16,6 +18,8 @@ public:
 	Action *accept(EventCallback *);
 	bool bind(const std::string&, unsigned *);
 	Action *connect(const std::string&, unsigned, EventCallback *);
+	Action *connect(uint32_t, uint16_t, EventCallback *);
+	Action *connect(struct sockaddr_in *, EventCallback *);
 	bool listen(int=10);
 
 private:

@@ -22,3 +22,15 @@ TCPClient::connect(TCPClient **clientp, const std::string& name, int port,
 	*clientp = client;
 	return (socket->connect(name, port, cb));
 }
+
+Action *
+TCPClient::connect(TCPClient **clientp, uint32_t ip, uint16_t port,
+		   EventCallback *cb)
+{
+	Socket *socket = Socket::create(PF_INET, SOCK_STREAM, "tcp");
+	if (socket == NULL)
+		return (NULL);
+	TCPClient *client = new TCPClient(socket);
+	*clientp = client;
+	return (socket->connect(ip, port, cb));
+}

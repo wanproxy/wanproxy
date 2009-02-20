@@ -6,12 +6,14 @@
 class Action;
 class FileDescriptor;
 class ProxyListener;
+class ProxySocksListener;
 class XCodec;
 
 class WANProxyConfig {
 	LogHandle log_;
 	XCodec *codec_;
 	std::set<ProxyListener *> listeners_;
+	std::set<ProxySocksListener *> socks_listeners_;
 	FileDescriptor *config_file_;
 	Action *close_action_;
 	Action *read_action_;
@@ -32,6 +34,7 @@ private:
 	void parse(std::vector<std::string>);
 
 	void parse_proxy(std::vector<std::string>);
+	void parse_proxy_socks(std::vector<std::string>);
 
 public:
 	bool configure(XCodec *, const std::string&);

@@ -9,12 +9,14 @@
 #include <io/file.h>
 
 #include "proxy_listener.h"
+#include "proxy_socks_listener.h"
 #include "wanproxy_config.h"
 
 WANProxyConfig::WANProxyConfig(void)
 : log_("/proxy/config"),
   codec_(NULL),
   listeners_(),
+  socks_listeners_(),
   config_file_(NULL),
   close_action_(NULL),
   read_action_(NULL),
@@ -151,6 +153,8 @@ WANProxyConfig::parse(std::vector<std::string> tokens)
 {
 	if (tokens[0] == "proxy") {
 		parse_proxy(tokens);
+	} else if (tokens[0] == "proxy-socks") {
+		parse_proxy_socks(tokens);
 	} else {
 		ERROR(log_) << "Unrecognized configuration directive: " << tokens[0];
 	}
@@ -212,6 +216,23 @@ WANProxyConfig::parse_proxy(std::vector<std::string> tokens)
 						    remote_host,
 						    remote_port);
 	listeners_.insert(listener);
+}
+
+void
+WANProxyConfig::parse_proxy_socks(std::vector<std::string> tokens)
+{
+	if (tokens.size() != 3) {
+		ERROR(log_) << "Wrong number of words in proxy-socks (" << tokens.size() << ")";
+		return;
+	}
+
+	std::string local_host = tokens[1];
+	unsigned local_port = atoi(tokens[2].c_str());
+
+	INFO(log_) << "Starting socks-proxy on " << local_host << ':' << local_port;
+
+	ProxySocksListener *listener = new ProxySocksListener(local_host, local_port);
+	socks_listeners_.insert(listener);
 }
 
 bool
