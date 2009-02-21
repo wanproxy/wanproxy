@@ -3,11 +3,22 @@
 
 class ProxySocksConnection {
 	enum State {
-		GetVersion,
-		GetCommand,
-		GetPort,
-		GetAddress,
-		GetUser,
+		GetSOCKSVersion,
+
+		GetSOCKS4Command,
+		GetSOCKS4Port,
+		GetSOCKS4Address,
+		GetSOCKS4User,
+
+		GetSOCKS5AuthLength,
+		GetSOCKS5Auth,
+		GetSOCKS5Command,
+		GetSOCKS5Reserved,
+		GetSOCKS5AddressType,
+		GetSOCKS5Address,
+		GetSOCKS5NameLength,
+		GetSOCKS5Name,
+		GetSOCKS5Port,
 	};
 
 	LogHandle log_;
@@ -16,6 +27,8 @@ class ProxySocksConnection {
 	State state_;
 	uint16_t network_port_;
 	uint32_t network_address_;
+	bool socks5_authenticated_;
+	std::string socks5_remote_name_;
 
 public:
 	ProxySocksConnection(Channel *);
