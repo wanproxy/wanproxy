@@ -185,6 +185,13 @@ ProxyClient::flow_complete(Event e, void *pipe)
 		schedule_close();
 		return;
 	}
+
+	if (incoming_pipe_ != NULL) {
+		incoming_pipe_->drain();
+	}
+	if (outgoing_pipe_ != NULL) {
+		outgoing_pipe_->drain();
+	}
 }
 
 void

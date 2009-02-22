@@ -53,6 +53,27 @@ ProxyPipe::~ProxyPipe()
 	ASSERT(flow_action_ == NULL);
 }
 
+/*
+ * XXX
+ * This function needs more assertions to ensure it's doing the right thing.
+ */
+void
+ProxyPipe::drain(void)
+{
+	if (read_channel_ != NULL) {
+		if (read_action_ != NULL) {
+			read_action_->cancel();
+			read_action_ = NULL;
+		}
+
+		read_channel_ = NULL;
+	}
+
+	if (write_action_ == NULL) {
+		flow_close();
+	}
+}
+
 Action *
 ProxyPipe::flow(EventCallback *cb)
 {

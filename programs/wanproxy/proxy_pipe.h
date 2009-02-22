@@ -23,6 +23,7 @@ public:
 	ProxyPipe(XCodec *, Channel *, Channel *, XCodec *);
 	~ProxyPipe();
 
+	void drain(void);
 	Action *flow(EventCallback *);
 
 private:
