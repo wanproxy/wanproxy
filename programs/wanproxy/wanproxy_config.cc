@@ -21,9 +21,7 @@ WANProxyConfig::WANProxyConfig(void)
   close_action_(NULL),
   read_action_(NULL),
   read_buffer_()
-{
-	DEBUG(log_) << "Creating WANProxyConfig instance.";
-}
+{ }
 
 WANProxyConfig::~WANProxyConfig()
 {
@@ -106,7 +104,6 @@ WANProxyConfig::schedule_close(void)
 void
 WANProxyConfig::schedule_read(void)
 {
-	DEBUG(log_) << "Reading configuration...";
 	ASSERT(read_action_ == NULL);
 	ASSERT(config_file_ != NULL);
 	EventCallback *cb = callback(this, &WANProxyConfig::read_complete);
