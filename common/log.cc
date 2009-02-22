@@ -101,6 +101,7 @@ operator<< (std::ostream& os, const struct timeval& tv)
 {
 	char buf[20];
 
-	snprintf(buf, sizeof buf, "%lu.%06lu", tv.tv_sec, tv.tv_usec);
+	snprintf(buf, sizeof buf, "%u.%06u", (unsigned)tv.tv_sec,
+		 (unsigned)tv.tv_usec);
 	return (os << buf);
 }
