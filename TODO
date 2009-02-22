@@ -1,5 +1,7 @@
-o) New (ideally modular) proxy/halfproxy configuration and code.  The current
-   proxying code is a mess.  And is terribly broken.
+o) The ProxyPipe code uses an asynchronous callback to notify the ProxyClient
+   of an error, but this could result delayed cancellation of a write to a
+   channel which has given us an error.  As a result, we may get a SIGPIPE.
+   There has to be a good way to solve this.
 o) HTTP termination and reinitiation good enough to support an HTTP proxy mode.
 o) Fix bugs.
 o) Secondary storage using tcache.

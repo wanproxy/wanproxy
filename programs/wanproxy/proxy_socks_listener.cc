@@ -50,14 +50,20 @@ ProxySocksListener::accept_complete(Event e, void *)
 	switch (e.type_) {
 	case Event::Done:
 		break;
+	case Event::Error:
+		INFO(log_) << "Accept failed: " << e;
+		break;
 	default:
 		ERROR(log_) << "Unexpected event: " << e;
 		return;
 	}
 
-	Socket *client = (Socket *)e.data_;
-	new ProxySocksConnection(client);
+	if (e.type_ == Event::Done) {
+		Socket *client = (Socket *)e.data_;
+		new ProxySocksConnection(client);
+	}
 
-	EventCallback *cb = callback(this, &ProxySocksListener::accept_complete);
+	EventCallback *cb = callback(this,
+				     &ProxySocksListener::accept_complete);
 	action_ = server_->accept(cb);
 }

@@ -54,10 +54,11 @@ ProxyPipe::~ProxyPipe()
 }
 
 Action *
-ProxyPipe::flow(void)
+ProxyPipe::flow(EventCallback *cb)
 {
 	ASSERT(flow_callback_ == NULL);
 
+	flow_callback_ = cb;
 	schedule_read();
 	return (cancellation(this, &ProxyPipe::flow_cancel));
 }
@@ -101,10 +102,15 @@ ProxyPipe::read_complete(Event e, void *)
 		schedule_write();
 	}
 
-	if (e.type_ == Event::EOS)
+	if (e.type_ == Event::EOS) {
 		read_channel_ = NULL;
-	else
+
+		if (write_action_ == NULL) {
+			flow_close();
+		}
+	} else {
 		schedule_read();
+	}
 }
 
 void
@@ -146,7 +152,7 @@ ProxyPipe::schedule_read(void)
 void
 ProxyPipe::schedule_write(void)
 {
-	if (write_action_ == NULL)
+	if (write_action_ != NULL)
 		return;
 
 	if (write_buffer_.empty())

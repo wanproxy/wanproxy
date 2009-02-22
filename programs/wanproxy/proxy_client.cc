@@ -14,7 +14,7 @@
 #include <xcodec/xcodec.h>
 
 #include "proxy_client.h"
-#include "proxy_peer.h"
+#include "proxy_pipe.h"
 
 /*
  * XXX
@@ -25,96 +25,198 @@
 ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
 			 Channel *local_channel, const std::string& remote_name,
 			 unsigned remote_port)
-: log_("/wanproxy/proxy_client"),
-  action_(NULL),
+: log_("/wanproxy/proxy/client"),
+  local_action_(NULL),
+  local_codec_(local_codec),
+  local_channel_(local_channel),
+  remote_action_(NULL),
   remote_codec_(remote_codec),
-  local_peer_(NULL),
   remote_client_(NULL),
-  remote_peer_(NULL)
+  incoming_action_(NULL),
+  incoming_pipe_(NULL),
+  outgoing_action_(NULL),
+  outgoing_pipe_(NULL)
 {
-	local_peer_ = new ProxyPeer(log_ + "/local", this, local_channel,
-				    local_codec);
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
-	action_ = TCPClient::connect(&remote_client_, remote_name, remote_port,
-				     cb);
+	remote_action_ = TCPClient::connect(&remote_client_, remote_name,
+					    remote_port, cb);
 }
 
 ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
 			 Channel *local_channel, uint32_t remote_ip,
 			 uint16_t remote_port)
-: log_("/wanproxy/proxy_client"),
-  action_(NULL),
+: log_("/wanproxy/proxy/client"),
+  local_action_(NULL),
+  local_codec_(local_codec),
+  local_channel_(local_channel),
+  remote_action_(NULL),
   remote_codec_(remote_codec),
-  local_peer_(NULL),
   remote_client_(NULL),
-  remote_peer_(NULL)
+  incoming_action_(NULL),
+  incoming_pipe_(NULL),
+  outgoing_action_(NULL),
+  outgoing_pipe_(NULL)
 {
-	local_peer_ = new ProxyPeer(log_ + "/local", this, local_channel,
-				    local_codec);
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
-	action_ = TCPClient::connect(&remote_client_, remote_ip, remote_port,
-				     cb);
+	remote_action_ = TCPClient::connect(&remote_client_, remote_ip,
+					    remote_port, cb);
 }
 
 
 ProxyClient::~ProxyClient()
 {
-	DEBUG(log_) << "Destroying client.";
-
-	ASSERT(action_ == NULL);
-	if (local_peer_ != NULL) {
-		delete local_peer_;
-		local_peer_ = NULL;
-	}
+	ASSERT(local_action_ == NULL);
+	ASSERT(local_channel_ == NULL);
+	ASSERT(remote_action_ == NULL);
 	ASSERT(remote_client_ == NULL);
-	if (remote_peer_ != NULL) {
-		delete remote_peer_;
-		remote_peer_ = NULL;
+	ASSERT(incoming_action_ == NULL);
+	ASSERT(incoming_pipe_ == NULL);
+	ASSERT(outgoing_action_ == NULL);
+	ASSERT(outgoing_pipe_ == NULL);
+}
+
+void
+ProxyClient::close_complete(Event e, void *channel)
+{
+	if (channel == (void *)local_channel_) {
+		local_action_->cancel();
+		local_action_ = NULL;
 	}
-}
 
-void
-ProxyClient::close_peer(ProxyPeer *self)
-{
-	if (self == local_peer_)
-		local_peer_ = NULL;
-	else
-		remote_peer_ = NULL;
-
-	if (local_peer_ == NULL && remote_peer_ == NULL)
-		delete this;
-}
-
-ProxyPeer *
-ProxyClient::get_peer(ProxyPeer *self)
-{
-	if (self == local_peer_)
-		return (remote_peer_);
-	if (self == remote_peer_)
-		return (local_peer_);
-	NOTREACHED();
-}
-
-void
-ProxyClient::connect_complete(Event e, void *)
-{
-	action_->cancel();
-	action_ = NULL;
+	if (channel == (void *)remote_client_) {
+		remote_action_->cancel();
+		remote_action_ = NULL;
+	}
 
 	switch (e.type_) {
 	case Event::Done:
 		break;
 	default:
+		/* XXX Never sure what to do here.  */
 		ERROR(log_) << "Unexpected event: " << e;
-		local_peer_->schedule_close();
 		return;
 	}
 
-	Channel *remote_channel = remote_client_;
-	remote_client_ = NULL;
-	remote_peer_ = new ProxyPeer(log_ + "/remote", this, remote_channel,
-				     remote_codec_);
+	if (channel == (void *)local_channel_) {
+		ASSERT(local_channel_ != NULL);
+		delete local_channel_;
+		local_channel_ = NULL;
+	}
 
-	local_peer_->start();
-	remote_peer_->start();
+	if (channel == (void *)remote_client_) {
+		ASSERT(remote_client_ != NULL);
+		delete remote_client_;
+		remote_client_ = NULL;
+	}
+
+	if (local_channel_ == NULL && remote_client_ == NULL) {
+		delete this;
+	}
+}
+
+void
+ProxyClient::connect_complete(Event e, void *)
+{
+	remote_action_->cancel();
+	remote_action_ = NULL;
+
+	switch (e.type_) {
+	case Event::Done:
+		break;
+	case Event::Error:
+		INFO(log_) << "Connect failed: " << e;
+		schedule_close();
+		return;
+	default:
+		ERROR(log_) << "Unexpected event: " << e;
+		schedule_close();
+		return;
+	}
+
+	outgoing_pipe_ = new ProxyPipe(local_codec_, local_channel_,
+				       remote_client_, remote_codec_);
+
+	incoming_pipe_ = new ProxyPipe(remote_codec_, remote_client_,
+				       local_channel_, local_codec_);
+
+	EventCallback *ocb = callback(this, &ProxyClient::flow_complete,
+				      (void *)outgoing_pipe_);
+	outgoing_action_ = outgoing_pipe_->flow(ocb);
+
+	EventCallback *icb = callback(this, &ProxyClient::flow_complete,
+				      (void *)incoming_pipe_);
+	incoming_action_ = incoming_pipe_->flow(icb);
+}
+
+void
+ProxyClient::flow_complete(Event e, void *pipe)
+{
+	if (pipe == (void *)outgoing_pipe_) {
+		outgoing_action_->cancel();
+		outgoing_action_ = NULL;
+
+		ASSERT(outgoing_pipe_ != NULL);
+		delete outgoing_pipe_;
+		outgoing_pipe_ = NULL;
+	}
+
+	if (pipe == (void *)incoming_pipe_) {
+		incoming_action_->cancel();
+		incoming_action_ = NULL;
+
+		ASSERT(incoming_pipe_ != NULL);
+		delete incoming_pipe_;
+		incoming_pipe_ = NULL;
+	}
+
+	switch (e.type_) {
+	case Event::Done:
+		break;
+	case Event::Error:
+		schedule_close();
+		return;
+	default:
+		ERROR(log_) << "Unexpected event: " << e;
+		schedule_close();
+		return;
+	}
+
+	if (outgoing_pipe_ == NULL && incoming_pipe_ == NULL) {
+		schedule_close();
+		return;
+	}
+}
+
+void
+ProxyClient::schedule_close(void)
+{
+	if (outgoing_pipe_ != NULL) {
+		ASSERT(outgoing_action_ != NULL);
+		outgoing_action_->cancel();
+		outgoing_action_ = NULL;
+
+		delete outgoing_pipe_;
+		outgoing_pipe_ = NULL;
+	}
+
+	if (incoming_pipe_ != NULL) {
+		ASSERT(incoming_action_ != NULL);
+		incoming_action_->cancel();
+		incoming_action_ = NULL;
+
+		delete incoming_pipe_;
+		incoming_pipe_ = NULL;
+	}
+
+	ASSERT(local_action_ == NULL);
+	ASSERT(local_channel_ != NULL);
+	EventCallback *lcb = callback(this, &ProxyClient::close_complete,
+				      (void *)local_channel_);
+	local_action_ = local_channel_->close(lcb);
+
+	ASSERT(remote_action_ == NULL);
+	ASSERT(remote_client_ != NULL);
+	EventCallback *rcb = callback(this, &ProxyClient::close_complete,
+				      (void *)remote_client_);
+	remote_action_ = remote_client_->close(rcb);
 }
