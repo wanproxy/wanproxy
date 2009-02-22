@@ -1,3 +1,4 @@
+#include <sys/time.h>
 #ifdef	USE_SYSLOG
 #include <syslog.h>
 #endif
@@ -10,6 +11,7 @@
 static int syslog_priority(const Log::Priority&);
 #endif
 static std::ostream& operator<< (std::ostream&, const Log::Priority&);
+static std::ostream& operator<< (std::ostream&, const struct timeval&);
 
 void
 Log::log(const Priority& priority, const LogHandle handle,
@@ -27,7 +29,14 @@ Log::log(const Priority& priority, const LogHandle handle,
 	syslog(syslog_priority(priority), "%s", syslog_message.c_str());
 #endif
 
-	std::cerr << "Log(" << (std::string)handle << ") " <<
+	struct timeval now;
+	int rv;
+
+	rv = gettimeofday(&now, NULL);
+	if (rv == -1)
+		memset(&now, 0, sizeof now);
+
+	std::cerr << now << " Log(" << (std::string)handle << ") " <<
 		priority << ": " <<
 		message <<
 		std::endl;
@@ -85,4 +94,13 @@ operator<< (std::ostream& os, const Log::Priority& priority)
 		HALT("/log") << "Unhandled log priority!";
 		return (os);
 	}
+}
+
+static std::ostream&
+operator<< (std::ostream& os, const struct timeval& tv)
+{
+	char buf[20];
+
+	snprintf(buf, sizeof buf, "%lu.%06lu", tv.tv_sec, tv.tv_usec);
+	return (os << buf);
 }
