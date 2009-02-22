@@ -1,12 +1,22 @@
 #include <sys/time.h>
+#include <regex.h>
 #ifdef	USE_SYSLOG
 #include <syslog.h>
 #endif
 
 #include <iostream>
+#include <list>
 #include <sstream>
 #include <string>
 
+struct LogMask {
+	regex_t regex_;
+	enum Log::Priority priority_;
+};
+
+static std::list<LogMask> log_masks;
+
+static bool priority_parse(const std::string&, Log::Priority *);
 #ifdef	USE_SYSLOG
 static int syslog_priority(const Log::Priority&);
 #endif
@@ -17,6 +27,30 @@ void
 Log::log(const Priority& priority, const LogHandle handle,
 	 const std::string message)
 {
+	std::list<LogMask>::const_iterator it;
+	std::string handle_string = (std::string)handle;
+
+	for (it = log_masks.begin(); it != log_masks.end(); ++it) {
+		const LogMask& mask = *it;
+
+		if (priority < mask.priority_)
+			continue;
+
+		int rv;
+
+		rv = regexec(&mask.regex_, handle_string.c_str(), 0, NULL, 0);
+		switch (rv) {
+		case 0:
+			return;
+		case REG_NOMATCH:
+			continue;
+		default:
+			HALT("/log") << "Could not match regex: " << rv;
+			return;
+		}
+		NOTREACHED();
+	}
+
 #ifdef	USE_SYSLOG
 	std::string syslog_message;
 
@@ -36,10 +70,68 @@ Log::log(const Priority& priority, const LogHandle handle,
 	if (rv == -1)
 		memset(&now, 0, sizeof now);
 
-	std::cerr << now << " Log(" << (std::string)handle << ") " <<
+	std::cerr << now << " Log(" << handle_string << ") " <<
 		priority << ": " <<
 		message <<
 		std::endl;
+}
+
+bool
+Log::mask(const std::string& handle_regex, const std::string& priority_mask)
+{
+	LogMask mask;
+
+	if (::regcomp(&mask.regex_, handle_regex.c_str(),
+		      REG_NOSUB | REG_EXTENDED) != 0) {
+		return (false);
+	}
+
+	if (!priority_parse(priority_mask, &mask.priority_)) {
+		::regfree(&mask.regex_);
+		return (false);
+	}
+
+	log_masks.push_back(mask);
+
+	return (true);
+}
+
+static bool
+priority_parse(const std::string& priority, Log::Priority *priorityp)
+{
+	if (priority == "EMERG") {
+		*priorityp = Log::Emergency;
+		return (true);
+	}
+	if (priority == "ALERT") {
+		*priorityp = Log::Alert;
+		return (true);
+	}
+	if (priority == "CRIT") {
+		*priorityp = Log::Critical;
+		return (true);
+	}
+	if (priority == "ERR") {
+		*priorityp = Log::Error;
+		return (true);
+	}
+	if (priority == "WARNING") {
+		*priorityp = Log::Warning;
+		return (true);
+	}
+	if (priority == "NOTICE") {
+		*priorityp = Log::Notice;
+		return (true);
+	}
+	if (priority == "INFO") {
+		*priorityp = Log::Info;
+		return (true);
+	}
+	if (priority == "DEBUG") {
+		*priorityp = Log::Debug;
+		return (true);
+	}
+	return (false);
 }
 
 #ifdef	USE_SYSLOG

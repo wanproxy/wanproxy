@@ -33,6 +33,7 @@ private:
 	void parse(void);
 	void parse(std::vector<std::string>);
 
+	void parse_log_mask(std::vector<std::string>);
 	void parse_proxy(std::vector<std::string>);
 	void parse_proxy_socks(std::vector<std::string>);
 

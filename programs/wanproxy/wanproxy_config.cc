@@ -151,12 +151,30 @@ WANProxyConfig::parse(void)
 void
 WANProxyConfig::parse(std::vector<std::string> tokens)
 {
-	if (tokens[0] == "proxy") {
+	if (tokens[0] == "log-mask") {
+		parse_log_mask(tokens);
+	} else if (tokens[0] == "proxy") {
 		parse_proxy(tokens);
 	} else if (tokens[0] == "proxy-socks") {
 		parse_proxy_socks(tokens);
 	} else {
 		ERROR(log_) << "Unrecognized configuration directive: " << tokens[0];
+	}
+}
+
+void
+WANProxyConfig::parse_log_mask(std::vector<std::string> tokens)
+{
+	if (tokens.size() != 3) {
+		ERROR(log_) << "Wrong number of words in log-mask (" << tokens.size() << ")";
+		return;
+	}
+
+	std::string handle_regex = tokens[1];
+	std::string priority_mask = tokens[2];
+
+	if (!Log::mask(handle_regex, priority_mask)) {
+		ERROR(log_) << "Unable to set log handle \"" << handle_regex << "\" mask to priority \"" << priority_mask << "\"";
 	}
 }
 
@@ -238,10 +256,10 @@ WANProxyConfig::parse_proxy_socks(std::vector<std::string> tokens)
 bool
 WANProxyConfig::configure(XCodec *codec, const std::string& name)
 {
-	INFO(log_) << "Configuring proxies.";
+	INFO(log_) << "Configuring WANProxy.";
 
 	if (config_file_ != NULL || codec_ != NULL) {
-		ERROR(log_) << "Proxies already configured.";
+		ERROR(log_) << "WANProxy already configured.";
 		return (false);
 	}
 
