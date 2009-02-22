@@ -60,6 +60,13 @@ ProxyPipe::~ProxyPipe()
 void
 ProxyPipe::drain(void)
 {
+	/*
+	 * If we're already tearing ourselves down, we don't need to drain.
+	 * We'll tell ProxyClient of our state any minute now.
+	 */
+	if (flow_action_ != NULL)
+		return;
+
 	if (read_channel_ != NULL) {
 		if (read_action_ != NULL) {
 			read_action_->cancel();
