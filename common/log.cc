@@ -56,8 +56,7 @@ Log::log(const Priority& priority, const LogHandle handle,
 
 	syslog_message += "[";
 	syslog_message += (std::string)handle;
-	syslog_message += "]";
-	syslog_message += " ";
+	syslog_message += "] ";
 	syslog_message += message;
 
 	syslog(syslog_priority(priority), "%s", syslog_message.c_str());
@@ -70,7 +69,7 @@ Log::log(const Priority& priority, const LogHandle handle,
 	if (rv == -1)
 		memset(&now, 0, sizeof now);
 
-	std::cerr << now << " Log(" << handle_string << ") " <<
+	std::cerr << now << " [" << handle_string << "] " <<
 		priority << ": " <<
 		message <<
 		std::endl;
