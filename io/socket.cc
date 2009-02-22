@@ -176,7 +176,7 @@ Socket::accept_callback(Event e, void *)
 			accept_action_ = accept_schedule();
 			return;
 		default:
-			accept_callback_->event(Event(Event::Error, e.error_));
+			accept_callback_->event(Event(Event::Error, errno));
 			accept_action_ = EventSystem::instance()->schedule(accept_callback_);
 			accept_callback_ = NULL;
 			return;
