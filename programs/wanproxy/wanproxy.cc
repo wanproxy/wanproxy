@@ -31,7 +31,7 @@ main(int argc, char *argv[])
 	int ch;
 
 	INFO("/wanproxy") << "WANProxy";
-	INFO("/wanproxy") << "Copyright (c) 2008 WANProxy.org.";
+	INFO("/wanproxy") << "Copyright (c) 2008-2009 WANProxy.org.";
 	INFO("/wanproxy") << "All rights reserved.";
 
 	while ((ch = getopt(argc, argv, "c:")) != -1) {
