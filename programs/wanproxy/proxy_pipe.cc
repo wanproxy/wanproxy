@@ -191,6 +191,9 @@ ProxyPipe::write_error(void)
 void
 ProxyPipe::flow_close(void)
 {
+	ASSERT(read_action_ == NULL);
+	ASSERT(write_action_ == NULL);
+
 	ASSERT(flow_action_ == NULL);
 	ASSERT(flow_callback_ != NULL);
 
@@ -203,6 +206,9 @@ ProxyPipe::flow_close(void)
 void
 ProxyPipe::flow_error(void)
 {
+	ASSERT(read_action_ == NULL);
+	ASSERT(write_action_ == NULL);
+
 	ASSERT(flow_action_ == NULL);
 	ASSERT(flow_callback_ != NULL);
 
@@ -219,10 +225,24 @@ ProxyPipe::flow_cancel(void)
 	if (flow_action_ != NULL) {
 		flow_action_->cancel();
 		flow_action_ = NULL;
-	}
 
-	if (flow_callback_ != NULL) {
-		delete flow_callback_;
-		flow_callback_ = NULL;
+		ASSERT(read_action_ == NULL);
+		ASSERT(write_action_ == NULL);
+		ASSERT(flow_callback_ == NULL);
+	} else {
+		if (read_action_ != NULL) {
+			read_action_->cancel();
+			read_action_ = NULL;
+		}
+
+		if (write_action_ != NULL) {
+			write_action_->cancel();
+			write_action_ = NULL;
+		}
+
+		if (flow_callback_ != NULL) {
+			delete flow_callback_;
+			flow_callback_ = NULL;
+		}
 	}
 }
