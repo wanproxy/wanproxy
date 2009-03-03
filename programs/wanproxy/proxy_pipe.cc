@@ -174,7 +174,7 @@ ProxyPipe::schedule_read(void)
 	ASSERT(read_channel_ != NULL);
 
 	EventCallback *cb = callback(this, &ProxyPipe::read_complete);
-	read_action_ = read_channel_->read(cb);
+	read_action_ = read_channel_->read(0, cb);
 }
 
 void

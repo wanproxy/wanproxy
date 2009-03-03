@@ -14,7 +14,7 @@ public:
 	{ }
 
 	virtual Action *close(EventCallback *) = 0;
-	virtual Action *read(EventCallback *, size_t = 0) = 0;
+	virtual Action *read(size_t, EventCallback *) = 0;
 	virtual Action *write(Buffer *, EventCallback *) = 0;
 };
 

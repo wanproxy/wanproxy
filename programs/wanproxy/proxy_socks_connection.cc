@@ -247,7 +247,7 @@ ProxySocksConnection::schedule_read(size_t amount)
 
 	ASSERT(client_ != NULL);
 	EventCallback *cb = callback(this, &ProxySocksConnection::read_complete);
-	action_ = client_->read(cb, amount);
+	action_ = client_->read(amount, cb);
 }
 
 void

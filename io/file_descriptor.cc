@@ -70,7 +70,7 @@ FileDescriptor::close(EventCallback *cb)
 }
 
 Action *
-FileDescriptor::read(EventCallback *cb, size_t amount)
+FileDescriptor::read(size_t amount, EventCallback *cb)
 {
 	ASSERT(read_callback_ == NULL);
 	ASSERT(read_action_ == NULL);

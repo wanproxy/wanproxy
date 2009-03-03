@@ -24,9 +24,9 @@ public:
 		return (socket_->close(cb));
 	}
 
-	Action *read(EventCallback *cb, size_t amount = 0)
+	Action *read(size_t amount, EventCallback *cb)
 	{
-		return (socket_->read(cb, amount));
+		return (socket_->read(amount, cb));
 	}
 
 	Action *write(Buffer *buf, EventCallback *cb)

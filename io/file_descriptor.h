@@ -22,7 +22,7 @@ public:
 	~FileDescriptor();
 
 	Action *close(EventCallback *);
-	Action *read(EventCallback *, size_t = 0);
+	Action *read(size_t, EventCallback *);
 	Action *write(Buffer *, EventCallback *);
 
 private:

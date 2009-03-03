@@ -107,7 +107,7 @@ WANProxyConfig::schedule_read(void)
 	ASSERT(read_action_ == NULL);
 	ASSERT(config_file_ != NULL);
 	EventCallback *cb = callback(this, &WANProxyConfig::read_complete);
-	read_action_ = config_file_->read(cb);
+	read_action_ = config_file_->read(0, cb);
 }
 
 void

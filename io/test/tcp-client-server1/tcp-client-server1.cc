@@ -220,7 +220,7 @@ public:
 		server_ = NULL;
 
 		EventCallback *cb = callback(this, &Listener::client_read);
-		action_ = client_->read(cb);
+		action_ = client_->read(0, cb);
 	}
 
 	void client_read(Event e, void *)
@@ -236,7 +236,7 @@ public:
 				_.pass();
 				EventCallback *cb =
 					callback(this, &Listener::client_read);
-				action_ = client_->read(cb);
+				action_ = client_->read(0, cb);
 				return;
 			}
 			case Event::EOS:
