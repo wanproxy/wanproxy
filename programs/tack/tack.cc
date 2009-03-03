@@ -31,6 +31,7 @@ static void decompress(int, int, XCodec *);
 static bool fill(int, Buffer *);
 static void flush(int, Buffer *);
 static void process_files(int, char *[], FileAction, XCodec *);
+static void time_samples(void);
 static void time_stats(void);
 static void usage(void);
 
@@ -39,20 +40,24 @@ main(int argc, char *argv[])
 {
 	XCDatabase database("/database");
 	XCodec codec("/main", &database);
+	bool timers, samples;
 	FileAction action;
-	bool timers;
 	int ch;
 
 	action = None;
+	samples = false;
 	timers = false;
 
-	while ((ch = getopt(argc, argv, "?cdT")) != -1) {
+	while ((ch = getopt(argc, argv, "?cdST")) != -1) {
 		switch (ch) {
 		case 'c':
 			action = Compress;
 			break;
 		case 'd':
 			action = Decompress;
+			break;
+		case 'S':
+			samples = true;
 			break;
 		case 'T':
 			timers = true;
@@ -71,6 +76,8 @@ main(int argc, char *argv[])
 	case Compress:
 	case Decompress:
 		process_files(argc, argv, action, &codec);
+		if (samples)
+			time_samples();
 		if (timers)
 			time_stats();
 		break;
@@ -209,6 +216,16 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec)
 }
 
 static void
+time_samples(void)
+{
+	std::vector<uintmax_t> samples = codec_timer.samples();
+	std::vector<uintmax_t>::iterator it;
+
+	for (it = samples.begin(); it != samples.end(); ++it)
+		fprintf(stderr, "%ju\n", *it);
+}
+
+static void
 time_stats(void)
 {
 	std::vector<uintmax_t> samples = codec_timer.samples();
@@ -228,7 +245,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: tack [-T] -c [file ...]\n"
-"       tack [-T] -d [file ...]\n");
+"usage: tack [-ST] -c [file ...]\n"
+"       tack [-ST] -d [file ...]\n");
 	exit(1);
 }
