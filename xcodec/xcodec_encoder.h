@@ -3,88 +3,10 @@
 
 #include <xcodec/xcbackref.h>
 #include <xcodec/xcdb.h>
+#include <xcodec/xcodec_encoder_match.h>
 
 class XCodecEncoder {
-	class HashMatch {
-		XCodecEncoder *encoder_;
-		Buffer *src_;
-		unsigned offset_;
-		uint64_t hash_;
-		BufferSegment *old_;
-	public:
-		HashMatch(XCodecEncoder *encoder, Buffer *src, unsigned offset,
-			  const XCHash<XCODEC_CHUNK_LENGTH>& hash)
-		: encoder_(encoder),
-		  src_(src),
-		  offset_(offset),
-		  hash_(hash.mix())
-		{
-			old_ = encoder_->database_->lookup(hash_);
-		}
-
-		HashMatch(const HashMatch& hash)
-		: encoder_(hash.encoder_),
-		  src_(hash.src_),
-		  offset_(hash.offset_),
-		  hash_(hash.hash_),
-		  old_(NULL)
-		{
-			old_ = hash.old_;
-			if (old_ != NULL)
-				old_->ref();
-		}
-		
-		~HashMatch()
-		{
-			if (old_ != NULL) {
-				old_->unref();
-				old_ = NULL;
-			}
-		}
-
-		bool exists(void) const
-		{
-			return (old_ != NULL);
-		}
-
-		bool match(void) const
-		{
-			ASSERT(exists());
-
-			uint8_t tmp[XCODEC_CHUNK_LENGTH];
-			src_->copyout(tmp, offset_, sizeof tmp);
-
-			return (old_->match(tmp, XCODEC_CHUNK_LENGTH));
-		}
-
-		uint64_t define(Buffer *skipped, BufferSegment **segp)
-		{
-			ASSERT(!exists());
-
-			skipped->append(src_, offset_);
-			src_->skip(offset_);
-
-			BufferSegment *seg;
-			src_->copyout(&seg, XCODEC_CHUNK_LENGTH);
-			src_->skip(XCODEC_CHUNK_LENGTH);
-
-			encoder_->database_->enter(hash_, seg);
-			*segp = seg;
-
-			return (hash_);
-		}
-
-		uint64_t use(Buffer *skipped)
-		{
-			ASSERT(match());
-
-			skipped->append(src_, offset_);
-			src_->skip(offset_);
-
-			src_->skip(XCODEC_CHUNK_LENGTH);
-			return (hash_);
-		}
-	};
+	friend class XCodecEncoderMatch;
 
 	class Encoder {
 		class Data {
@@ -305,7 +227,7 @@ public:
 	{ }
 
 private:
-	bool findmatches(Buffer *buf, std::vector<HashMatch>& matches)
+	bool findmatches(Buffer *buf, std::vector<XCodecEncoderMatch>& matches)
 	{
 		XCHash<XCODEC_CHUNK_LENGTH> hash;
 		bool have_secondary;
@@ -330,7 +252,7 @@ private:
 					break;
 
 				unsigned o = n - XCODEC_CHUNK_LENGTH;
-				HashMatch match(this, buf, o, hash);
+				XCodecEncoderMatch match(this, buf, o, hash);
 				if (match.exists()) {
 					if (match.match()) {
 						matches.clear();
@@ -358,7 +280,7 @@ public:
 private:
 	void encode(Buffer *input)
 	{
-		std::vector<HashMatch> matches;
+		std::vector<XCodecEncoderMatch> matches;
 
 		matches.reserve(1);
 
@@ -375,7 +297,7 @@ private:
 			if (findmatches(input, matches)) {
 				Buffer skipped;
 
-				HashMatch& match = matches.front();
+				XCodecEncoderMatch& match = matches.front();
 				uint64_t sum = match.use(&skipped);
 
 				encoder_.reference(&skipped, sum);
@@ -403,7 +325,7 @@ private:
 			/*
 			 * Take the first usable hash we found and define it.
 			 */
-			HashMatch& match = matches.front();
+			XCodecEncoderMatch& match = matches.front();
 			ASSERT(!match.exists());
 
 			BufferSegment *seg;

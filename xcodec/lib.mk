@@ -6,3 +6,4 @@
 
 SRCS+=	xcodec.cc
 SRCS+=	xcodec_decoder.cc
+SRCS+=	xcodec_encoder_match.cc
