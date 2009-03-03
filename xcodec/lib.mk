@@ -5,3 +5,4 @@
 .PATH: ${TOPDIR}/xcodec
 
 SRCS+=	xcodec.cc
+SRCS+=	xcodec_decoder.cc
