@@ -12,6 +12,7 @@
 
 #include <common/buffer.h>
 #include <common/endian.h>
+#include <event/timer.h>
 #include <xcodec/xchash.h>
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_decoder.h>
@@ -23,11 +24,14 @@ enum FileAction {
 	None, Compress, Decompress
 };
 
+static Timer codec_timer;
+
 static void compress(int, int, XCodec *);
 static void decompress(int, int, XCodec *);
 static bool fill(int, Buffer *);
 static void flush(int, Buffer *);
 static void process_files(int, char *[], FileAction, XCodec *);
+static void time_stats(void);
 static void usage(void);
 
 int
@@ -36,17 +40,22 @@ main(int argc, char *argv[])
 	XCDatabase database("/database");
 	XCodec codec("/main", &database);
 	FileAction action;
+	bool timers;
 	int ch;
 
 	action = None;
+	timers = false;
 
-	while ((ch = getopt(argc, argv, "?cd")) != -1) {
+	while ((ch = getopt(argc, argv, "?cdT")) != -1) {
 		switch (ch) {
 		case 'c':
 			action = Compress;
 			break;
 		case 'd':
 			action = Decompress;
+			break;
+		case 'T':
+			timers = true;
 			break;
 		case '?':
 		default:
@@ -62,6 +71,8 @@ main(int argc, char *argv[])
 	case Compress:
 	case Decompress:
 		process_files(argc, argv, action, &codec);
+		if (timers)
+			time_stats();
 		break;
 	default:
 		NOTREACHED();
@@ -77,7 +88,9 @@ compress(int ifd, int ofd, XCodec *codec)
 	Buffer input, output;
 
 	while (fill(ifd, &input)) {
+		codec_timer.start();
 		encoder.encode(&output, &input);
+		codec_timer.stop();
 		flush(ofd, &output);
 	}
 	ASSERT(input.empty());
@@ -91,7 +104,9 @@ decompress(int ifd, int ofd, XCodec *codec)
 	Buffer input, output;
 
 	while (fill(ifd, &input)) {
+		codec_timer.start();
 		decoder.decode(&output, &input);
+		codec_timer.stop();
 		flush(ofd, &output);
 	}
 	ASSERT(input.empty());
@@ -194,10 +209,26 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec)
 }
 
 static void
+time_stats(void)
+{
+	std::vector<uintmax_t> samples = codec_timer.samples();
+	std::vector<uintmax_t>::iterator it;
+	LogHandle log("/codec_timer");
+	uintmax_t microseconds;
+
+	INFO(log) << samples.size() << " timer samples.";
+	microseconds = 0;
+	for (it = samples.begin(); it != samples.end(); ++it)
+		microseconds += *it;
+	INFO(log) << microseconds << " total runtime.";
+	INFO(log) << (microseconds / samples.size()) << " mean microseconds/call.";
+}
+
+static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: tack -c [file ...]\n"
-"       tack -d [file ...]\n");
+"usage: tack [-T] -c [file ...]\n"
+"       tack [-T] -d [file ...]\n");
 	exit(1);
 }

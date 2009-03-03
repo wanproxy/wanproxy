@@ -7,6 +7,7 @@
 SRCS+=	event_poll.cc
 SRCS+=	event_system.cc
 SRCS+=	timeout.cc
+SRCS+=	timer.cc
 
 .if !defined(USE_POLL)
 USE_POLL?=	kqueue
