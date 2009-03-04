@@ -31,7 +31,6 @@ Socket::Socket(int fd, int domain)
 
 Socket::~Socket()
 {
-	ASSERT(fd_ == -1);
 	ASSERT(accept_action_ == NULL);
 	ASSERT(accept_callback_ == NULL);
 	ASSERT(connect_callback_ == NULL);
