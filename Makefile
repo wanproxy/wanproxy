@@ -1,3 +1,4 @@
+SUBDIR+=alg
 SUBDIR+=common
 SUBDIR+=event
 SUBDIR+=io
