@@ -1,3 +1,5 @@
+o) Add an IO queueing system that will make it possible to use lio_listio on
+   systems that support it.
 o) The ProxyPipe code uses an asynchronous callback to notify the ProxyClient
    of an error, but this could result delayed cancellation of a write to a
    channel which has given us an error.  As a result, we may get a SIGPIPE.
