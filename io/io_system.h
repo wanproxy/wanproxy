@@ -40,14 +40,17 @@ class IOSystem {
 		Action *write_schedule(void);
 	};
 
-	LogHandle log_;
 	/*
-	 * XXX
-	 * The key needs to be fd and owner, or just owner,
-	 * since an fd may be reused by the OS between when
-	 * we close it and when we detach the channel.
+	 * The map is keyed by fd and channel to prevent collision
+	 * on the fd with a common race on close.  This is also why
+	 * we pass the fd and channel to all functions.  There is
+	 * no interaction, it's just a disambiguator.
 	 */
-	std::map<int, Handle *> handle_map_;
+	typedef std::pair<int, Channel *> handle_key_t;
+	typedef std::map<handle_key_t, Handle *> handle_map_t;
+
+	LogHandle log_;
+	handle_map_t handle_map_;
 
 	IOSystem(void);
 	~IOSystem();
@@ -56,9 +59,9 @@ public:
 	void attach(int, Channel *);
 	void detach(int, Channel *);
 
-	Action *close(int, EventCallback *);
-	Action *read(int, size_t, EventCallback *);
-	Action *write(int, Buffer *, EventCallback *);
+	Action *close(int, Channel *, EventCallback *);
+	Action *read(int, Channel *, size_t, EventCallback *);
+	Action *write(int, Channel *, Buffer *, EventCallback *);
 
 	static IOSystem *instance(void)
 	{

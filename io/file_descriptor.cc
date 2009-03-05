@@ -35,17 +35,17 @@ FileDescriptor::~FileDescriptor()
 Action *
 FileDescriptor::close(EventCallback *cb)
 {
-	return (IOSystem::instance()->close(fd_, cb));
+	return (IOSystem::instance()->close(fd_, this, cb));
 }
 
 Action *
 FileDescriptor::read(size_t amount, EventCallback *cb)
 {
-	return (IOSystem::instance()->read(fd_, amount, cb));
+	return (IOSystem::instance()->read(fd_, this, amount, cb));
 }
 
 Action *
 FileDescriptor::write(Buffer *buffer, EventCallback *cb)
 {
-	return (IOSystem::instance()->write(fd_, buffer, cb));
+	return (IOSystem::instance()->write(fd_, this, buffer, cb));
 }

@@ -268,29 +268,33 @@ IOSystem::~IOSystem()
 void
 IOSystem::attach(int fd, Channel *owner)
 {
-	ASSERT(handle_map_.find(fd) == handle_map_.end());
-	handle_map_[fd] = new IOSystem::Handle(fd, owner);
+	ASSERT(handle_map_.find(handle_key_t(fd, owner)) == handle_map_.end());
+	handle_map_[handle_key_t(fd, owner)] = new IOSystem::Handle(fd, owner);
 }
 
 void
 IOSystem::detach(int fd, Channel *owner)
 {
+	handle_map_t::iterator it;
 	IOSystem::Handle *h;
 
-	h = handle_map_[fd];
+	it = handle_map_.find(handle_key_t(fd, owner));
+	ASSERT(it != handle_map_.end());
+
+	h = it->second;
 	ASSERT(h != NULL);
 	ASSERT(h->owner_ == owner);
 
-	handle_map_.erase(fd);
+	handle_map_.erase(it);
 	delete h;
 }
 
 Action *
-IOSystem::close(int fd, EventCallback *cb)
+IOSystem::close(int fd, Channel *owner, EventCallback *cb)
 {
 	IOSystem::Handle *h;
-	
-	h = handle_map_[fd];
+
+	h = handle_map_[handle_key_t(fd, owner)];
 	ASSERT(h != NULL);
 
 	ASSERT(h->close_callback_ == NULL);
@@ -310,11 +314,11 @@ IOSystem::close(int fd, EventCallback *cb)
 }
 
 Action *
-IOSystem::read(int fd, size_t amount, EventCallback *cb)
+IOSystem::read(int fd, Channel *owner, size_t amount, EventCallback *cb)
 {
 	IOSystem::Handle *h;
-	
-	h = handle_map_[fd];
+
+	h = handle_map_[handle_key_t(fd, owner)];
 	ASSERT(h != NULL);
 
 	ASSERT(h->read_callback_ == NULL);
@@ -327,11 +331,11 @@ IOSystem::read(int fd, size_t amount, EventCallback *cb)
 }
 
 Action *
-IOSystem::write(int fd, Buffer *buffer, EventCallback *cb)
+IOSystem::write(int fd, Channel *owner, Buffer *buffer, EventCallback *cb)
 {
 	IOSystem::Handle *h;
-	
-	h = handle_map_[fd];
+
+	h = handle_map_[handle_key_t(fd, owner)];
 	ASSERT(h != NULL);
 
 	ASSERT(h->write_callback_ == NULL);
