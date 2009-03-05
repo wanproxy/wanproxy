@@ -112,7 +112,10 @@ decompress(int ifd, int ofd, XCodec *codec)
 
 	while (fill(ifd, &input)) {
 		codec_timer.start();
-		decoder.decode(&output, &input);
+		if (!decoder.decode(&output, &input)) {
+			ERROR("/decompress") << "Decode failed.";
+			return;
+		}
 		codec_timer.stop();
 		flush(ofd, &output);
 	}
