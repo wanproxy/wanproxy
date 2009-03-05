@@ -20,30 +20,30 @@ class TimeoutQueue {
 
 		bool operator< (const NanoTime& b) const
 		{
-			if (seconds_ < b.seconds_)
-				return (true);
-			return (nanoseconds_ < b.nanoseconds_);
+			if (seconds_ == b.seconds_)
+				return (nanoseconds_ < b.nanoseconds_);
+			return (seconds_ < b.seconds_);
 		}
 
 		bool operator> (const NanoTime& b) const
 		{
-			if (seconds_ > b.seconds_)
-				return (true);
-			return (nanoseconds_ > b.nanoseconds_);
+			if (seconds_ == b.seconds_)
+				return (nanoseconds_ > b.nanoseconds_);
+			return (seconds_ > b.seconds_);
 		}
 
 		bool operator<= (const NanoTime& b) const
 		{
-			if (*this > b)
-				return (false);
-			return (true);
+			if (seconds_ == b.seconds_)
+				return (nanoseconds_ <= b.nanoseconds_);
+			return (seconds_ <= b.seconds_);
 		}
 
 		bool operator>= (const NanoTime& b) const
 		{
-			if (*this < b)
-				return (false);
-			return (true);
+			if (seconds_ == b.seconds_)
+				return (nanoseconds_ >= b.nanoseconds_);
+			return (seconds_ >= b.seconds_);
 		}
 
 		NanoTime& operator+= (const NanoTime& b)
@@ -51,8 +51,10 @@ class TimeoutQueue {
 			seconds_ += b.seconds_;
 			nanoseconds_ += b.nanoseconds_;
 
-			seconds_ += nanoseconds_ / 1000000000;
-			nanoseconds_ %= 1000000000;
+			if (nanoseconds_ >= 1000000000) {
+				seconds_++;
+				nanoseconds_ -= 1000000000;
+			}
 
 			return (*this);
 		}
@@ -77,10 +79,12 @@ class TimeoutQueue {
 
 	typedef std::map<NanoTime, CallbackQueue> timeout_map_t;
 
+	LogHandle log_;
 	timeout_map_t timeout_queue_;
 public:
 	TimeoutQueue(void)
-	: timeout_queue_()
+	: log_("/event/timeout/queue"),
+	  timeout_queue_()
 	{ }
 
 	~TimeoutQueue()

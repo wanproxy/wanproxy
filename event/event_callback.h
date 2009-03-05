@@ -1,7 +1,6 @@
 #ifndef	EVENT_CALLBACK_H
 #define	EVENT_CALLBACK_H
 
-
 class EventCallback : public Callback {
 	void *userdata_;
 	Event event_;

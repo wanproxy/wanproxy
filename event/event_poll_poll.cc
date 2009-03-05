@@ -100,8 +100,18 @@ EventPoll::wait(int ms)
 		fd->revents = 0;
 	}
 
-	if (idle())
+	/*
+	 * XXX Why wait to call idle() until here?
+	 */
+	if (idle()) {
+		if (ms != -1) {
+			int rv;
+
+			rv = usleep(ms * 1000);
+			ASSERT(rv != -1);
+		}
 		return;
+	}
 
 	int fdcnt = ::poll(fds, nfds, ms);
 	if (fdcnt == -1)

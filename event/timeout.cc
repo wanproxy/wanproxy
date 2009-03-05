@@ -44,8 +44,10 @@ TimeoutQueue::interval(void) const
 		return (0);
 	if (it->first < now)
 		return (0);
-	now -= it->first;
-	return ((now.seconds_ * 1000) + (now.nanoseconds_ / 1000000));
+
+	TimeoutQueue::NanoTime expiry = it->first;
+	expiry -= now;
+	return ((expiry.seconds_ * 1000) + (expiry.nanoseconds_ / 1000000));
 }
 
 void

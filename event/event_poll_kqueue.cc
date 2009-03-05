@@ -101,11 +101,18 @@ EventPoll::wait(int ms)
 	static const unsigned kevcnt = 128;
 	struct timespec ts;
 
-	if (idle())
-		return;
-
 	ts.tv_sec = ms / 1000;
-	ts.tv_nsec = (ms % 1000) * 1000 * 1000;
+	ts.tv_nsec = (ms % 1000) * 1000000;
+
+	if (idle()) {
+		if (ms != -1) {
+			int rv;
+
+			rv = nanosleep(&ts, NULL);
+			ASSERT(rv != -1);
+		}
+		return;
+	}
 
 	struct kevent kev[kevcnt];
 	int evcnt = kevent(kq_, NULL, 0, kev, kevcnt, ms == -1 ? NULL : &ts);
