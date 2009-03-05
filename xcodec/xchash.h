@@ -1,18 +1,18 @@
 #ifndef	XCHASH_H
 #define	XCHASH_H
 
+#include <alg/hash/adler64.h>
+
 template<unsigned Tlength>
 class XCHash {
-	uint32_t sum1_;
-	uint32_t sum2_;
+	Adler64<Tlength> adler64_;
 	uint8_t xor_;
 	uint8_t buffer_[Tlength];
 	uint8_t start_;
 
 public:
 	XCHash(void)
-	: sum1_(0),
-	  sum2_(0),
+	: adler64_(),
 	  xor_(0),
 	  buffer_(),
 	  start_(0)
@@ -25,23 +25,21 @@ public:
 
 	void roll(uint8_t ch)
 	{
+		adler64_ += ch;
+
 		uint8_t dead;
 
 		dead = buffer_[start_];
 
-		sum1_ -= dead;
-		sum2_ -= dead * Tlength;
 		xor_ ^= dead;
 
 		buffer_[start_] = ch;
 		start_ = (start_ + 1) % Tlength;
 
-		sum1_ += ch;
-		sum2_ += sum1_;
 		xor_ ^= ch;
 	}
 
-	static uint64_t mix(uint32_t a, uint32_t b, uint32_t c)
+	static uint32_t mix(uint32_t a, uint32_t b, uint32_t c)
 	{
 		/*
 		 * Bob Jenkins' mix function.
@@ -85,15 +83,32 @@ public:
 		return (c);
 	}
 
+	struct mix_functor {
+		uint8_t c_;
+		uint8_t x_;
+
+		mix_functor(const uint8_t& c, const uint8_t& x)
+		: c_(c),
+		  x_(x)
+		{ }
+
+		uintmax_t operator() (const uint32_t& a, const uint32_t& b)
+		{
+			uint64_t sum;
+
+			sum = 0;
+			sum |= mix(a, b, (b - a) + c_);
+			sum |= (uint64_t)mix(Tlength, c_ << 8 | x_, (uint32_t)sum) << 32;
+
+			return (sum);
+		}
+	};
+
 	uint64_t mix(void) const
 	{
-		uint64_t sum;
+		mix_functor f(buffer_[start_], xor_);
 
-		sum = 0;
-		sum |= mix(sum1_, sum2_, (sum2_ - sum1_) + buffer_[start_]);
-		sum |= mix(Tlength, buffer_[start_] << 8 | xor_, sum) << 32;
-
-		return (sum);
+		return (adler64_.mix(f));
 	}
 
 	static uint64_t hash(const uint8_t *data)

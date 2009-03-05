@@ -2,18 +2,18 @@
 #define	ADLER32_H
 
 /*
- * A modulus-free rolling Adler32.
+ * A modulus-free rolling Adler64.
  */
 
 template<unsigned Tlength>
-class Adler32 {
-	uint16_t sum1_;
-	uint16_t sum2_;
+class Adler64 {
+	uint32_t sum1_;
+	uint32_t sum2_;
 	uint8_t buffer_[Tlength];
 	uint8_t start_;
 
 public:
-	Adler32(void)
+	Adler64(void)
 	: sum1_(0),
 	  sum2_(0),
 	  buffer_(),
@@ -22,10 +22,10 @@ public:
 		memset(buffer_, 0, Tlength);
 	}
 
-	~Adler32()
+	~Adler64()
 	{ }
 
-	Adler32& operator += (const uint8_t& ch)
+	Adler64& operator += (const uint8_t& ch)
 	{
 		uint8_t dead;
 
@@ -43,9 +43,9 @@ public:
 		return (*this);
 	}
 
-	uint32_t sum(void) const
+	uint64_t sum(void) const
 	{
-		return ((sum2_ << 16) | sum1_);
+		return (((uint64_t)sum2_ << 32) | sum1_);
 	}
 
 	template<typename T>
