@@ -6,24 +6,46 @@
 #include <event/callback.h>
 #include <event/timeout.h>
 
-Action *
-TimeoutQueue::append(unsigned secs, Callback *cb)
+TimeoutQueue::NanoTime
+TimeoutQueue::NanoTime::current_time(void)
 {
-	CallbackQueue& queue = timeout_queue_[time(NULL) + secs];
+	struct timespec ts;
+	NanoTime nt;
+	int rv;
+
+	rv = ::clock_gettime(CLOCK_MONOTONIC, &ts);
+	ASSERT(rv != -1);
+
+	nt.seconds_ = ts.tv_sec;
+	nt.nanoseconds_ = ts.tv_nsec;
+
+	return (nt);
+}
+
+Action *
+TimeoutQueue::append(uintmax_t ms, Callback *cb)
+{
+	TimeoutQueue::NanoTime now = TimeoutQueue::NanoTime::current_time();
+
+	now.seconds_ += ms / 1000;
+	now.nanoseconds_ += (ms % 1000) * 1000000;
+
+	CallbackQueue& queue = timeout_queue_[now];
 	Action *a = queue.append(cb);
 	return (a);
 }
 
-time_t
+uintmax_t
 TimeoutQueue::interval(void) const
 {
-	time_t now = time(NULL);
+	TimeoutQueue::NanoTime now = TimeoutQueue::NanoTime::current_time();
 	timeout_map_t::const_iterator it = timeout_queue_.begin();
 	if (it == timeout_queue_.end())
 		return (0);
 	if (it->first < now)
 		return (0);
-	return (it->first - now);
+	now -= it->first;
+	return ((now.seconds_ * 1000) + (now.nanoseconds_ / 1000000));
 }
 
 void
@@ -32,7 +54,7 @@ TimeoutQueue::perform(void)
 	timeout_map_t::iterator it = timeout_queue_.begin();
 	if (it == timeout_queue_.end())
 		return;
-	time_t now = time(NULL);
+	TimeoutQueue::NanoTime now = TimeoutQueue::NanoTime::current_time();
 	if (it->first > now)
 		return;
 	CallbackQueue& queue = it->second;
@@ -48,7 +70,7 @@ TimeoutQueue::ready(void) const
 	timeout_map_t::const_iterator it = timeout_queue_.begin();
 	if (it == timeout_queue_.end())
 		return (false);
-	time_t now = time(NULL);
+	TimeoutQueue::NanoTime now = TimeoutQueue::NanoTime::current_time();
 	if (it->first <= now)
 		return (true);
 	return (false);

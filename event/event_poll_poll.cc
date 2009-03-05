@@ -77,7 +77,7 @@ EventPoll::poll(void)
 }
 
 void
-EventPoll::wait(int secs)
+EventPoll::wait(int ms)
 {
 	poll_handler_map_t::iterator it;
 	std::map<int, short> event_map;
@@ -103,7 +103,7 @@ EventPoll::wait(int secs)
 	if (idle())
 		return;
 
-	int fdcnt = ::poll(fds, nfds, secs > 0 ? secs * 1000 : secs);
+	int fdcnt = ::poll(fds, nfds, ms);
 	if (fdcnt == -1)
 		HALT(log_) << "Could not poll.";
 

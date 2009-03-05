@@ -96,7 +96,7 @@ EventPoll::poll(void)
 }
 
 void
-EventPoll::wait(int secs)
+EventPoll::wait(int ms)
 {
 	static const unsigned kevcnt = 128;
 	struct timespec ts;
@@ -104,11 +104,11 @@ EventPoll::wait(int secs)
 	if (idle())
 		return;
 
-	ts.tv_sec = secs;
-	ts.tv_nsec = 0;
+	ts.tv_sec = ms / 1000;
+	ts.tv_nsec = (ms % 1000) * 1000 * 1000;
 
 	struct kevent kev[kevcnt];
-	int evcnt = kevent(kq_, NULL, 0, kev, kevcnt, secs == -1 ? NULL : &ts);
+	int evcnt = kevent(kq_, NULL, 0, kev, kevcnt, ms == -1 ? NULL : &ts);
 	if (evcnt == -1)
 		HALT(log_) << "Could not poll kqueue.";
 	int i;
