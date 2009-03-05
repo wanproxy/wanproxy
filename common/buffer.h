@@ -772,8 +772,12 @@ public:
 		segment_list_t::iterator it;
 		unsigned skipped;
 
-		if (bytes == length())
+		ASSERT(!empty());
+
+		if (bytes == length()) {
 			clear();
+			return;
+		}
 
 		skipped = 0;
 
@@ -813,8 +817,12 @@ public:
 		segment_list_t::iterator it;
 		unsigned trimmed;
 
-		if (bytes == length())
+		ASSERT(!empty());
+
+		if (bytes == length()) {
 			clear();
+			return;
+		}
 
 		trimmed = 0;
 
