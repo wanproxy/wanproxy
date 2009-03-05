@@ -14,13 +14,6 @@ public:
 	XCodecDecoder(XCodec *);
 	~XCodecDecoder();
 
-private:
-	bool reference(Buffer *, Buffer *);
-	bool unescape(Buffer *, Buffer *);
-	bool declare(Buffer *);
-	bool backreference(Buffer *, Buffer *);
-
-public:
 	bool decode(Buffer *, Buffer *);
 };
 
