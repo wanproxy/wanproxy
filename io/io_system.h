@@ -41,6 +41,12 @@ class IOSystem {
 	};
 
 	LogHandle log_;
+	/*
+	 * XXX
+	 * The key needs to be fd and owner, or just owner,
+	 * since an fd may be reused by the OS between when
+	 * we close it and when we detach the channel.
+	 */
 	std::map<int, Handle *> handle_map_;
 
 	IOSystem(void);
