@@ -32,15 +32,13 @@ Log::log(const Priority& priority, const LogHandle handle,
 
 	for (it = log_masks.begin(); it != log_masks.end(); ++it) {
 		const LogMask& mask = *it;
-
-		if (priority < mask.priority_)
-			continue;
-
 		int rv;
 
 		rv = regexec(&mask.regex_, handle_string.c_str(), 0, NULL, 0);
 		switch (rv) {
 		case 0:
+			if (priority <= mask.priority_)
+				goto done;
 			return;
 		case REG_NOMATCH:
 			continue;
@@ -51,6 +49,7 @@ Log::log(const Priority& priority, const LogHandle handle,
 		NOTREACHED();
 	}
 
+done:
 #ifdef	USE_SYSLOG
 	std::string syslog_message;
 
