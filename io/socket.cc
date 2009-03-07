@@ -337,6 +337,6 @@ socket_name(struct sockaddr_in *sinp)
 	ASSERT(p != NULL);
 
 	std::ostringstream os;
-	os << address << ':' << ::ntohs(sinp->sin_port);
+	os << address << ':' << ntohs(sinp->sin_port);
 	return (os.str());
 }
