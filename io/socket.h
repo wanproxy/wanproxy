@@ -22,6 +22,9 @@ public:
 	Action *connect(struct sockaddr_in *, EventCallback *);
 	bool listen(int=10);
 
+	std::string getpeername(void) const;
+	std::string getsockname(void) const;
+
 private:
 	void accept_callback(Event, void *);
 	void accept_cancel(void);

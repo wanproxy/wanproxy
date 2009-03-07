@@ -19,6 +19,11 @@ public:
 		}
 	}
 
+	const Socket *socket(void) const
+	{
+		return (socket_);
+	}
+
 	Action *close(EventCallback *cb)
 	{
 		return (socket_->close(cb));

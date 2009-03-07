@@ -5,6 +5,8 @@
 
 class Action;
 class FileDescriptor;
+class FlowMonitor;
+class FlowTable;
 class ProxyListener;
 class ProxySocksListener;
 class XCodec;
@@ -12,6 +14,8 @@ class XCodec;
 class WANProxyConfig {
 	LogHandle log_;
 	XCodec *codec_;
+	FlowMonitor *flow_monitor_;
+	std::map<std::string, FlowTable *> flow_tables_;
 	std::set<ProxyListener *> listeners_;
 	std::set<ProxySocksListener *> socks_listeners_;
 	FileDescriptor *config_file_;
@@ -33,6 +37,8 @@ private:
 	void parse(void);
 	void parse(std::vector<std::string>);
 
+	void parse_flow_monitor(std::vector<std::string>);
+	void parse_flow_table(std::vector<std::string>);
 	void parse_log_mask(std::vector<std::string>);
 	void parse_proxy(std::vector<std::string>);
 	void parse_proxy_socks(std::vector<std::string>);

@@ -2,6 +2,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <netdb.h>
 
@@ -16,6 +17,7 @@
 #include <io/socket.h>
 
 static bool socket_address(struct sockaddr_in *, int, const std::string&, uint16_t);
+static std::string socket_name(struct sockaddr_in *);
 
 Socket::Socket(int fd, int domain)
 : FileDescriptor(fd),
@@ -147,6 +149,42 @@ Socket::listen(int backlog)
 	if (rv == -1)
 		return (false);
 	return (true);
+}
+
+std::string
+Socket::getpeername(void) const
+{
+	struct sockaddr_in addr;
+	socklen_t len;
+	int rv;
+
+	len = sizeof addr;
+	rv = ::getpeername(fd_, (struct sockaddr *)&addr, &len);
+	if (rv == -1)
+		return ("<unknown>");
+
+	if (len != sizeof addr)
+		return ("<wrong-domain>");
+
+	return (socket_name(&addr));
+}
+
+std::string
+Socket::getsockname(void) const
+{
+	struct sockaddr_in addr;
+	socklen_t len;
+	int rv;
+
+	len = sizeof addr;
+	rv = ::getsockname(fd_, (struct sockaddr *)&addr, &len);
+	if (rv == -1)
+		return ("<unknown>");
+
+	if (len != sizeof addr)
+		return ("<wrong-domain>");
+
+	return (socket_name(&addr));
 }
 
 void
@@ -286,4 +324,19 @@ socket_address(struct sockaddr_in *sinp, int domain, const std::string& name,
 	memcpy(&sinp->sin_addr, host->h_addr_list[0], sizeof sinp->sin_addr);
 	sinp->sin_port = htons(port);
 	return (true);
+}
+
+static std::string
+socket_name(struct sockaddr_in *sinp)
+{
+	char address[256]; /* XXX */
+	const char *p;
+
+	p = ::inet_ntop(sinp->sin_family, &sinp->sin_addr, address,
+			sizeof address);
+	ASSERT(p != NULL);
+
+	std::ostringstream os;
+	os << address << ':' << ::ntohs(sinp->sin_port);
+	return (os.str());
 }

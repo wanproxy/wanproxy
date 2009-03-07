@@ -4,6 +4,8 @@ PROG_CXX=wanproxy
 #USE_POLL=poll
 #LDADD+=-lstdc++
 
+SRCS+=	flow_monitor.cc
+
 SRCS+=	proxy_client.cc
 SRCS+=	proxy_listener.cc
 SRCS+=	proxy_pipe.cc

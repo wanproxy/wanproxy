@@ -13,9 +13,11 @@
 #include "proxy_socks_connection.h"
 #include "proxy_socks_listener.h"
 
-ProxySocksListener::ProxySocksListener(const std::string& interface,
+ProxySocksListener::ProxySocksListener(FlowTable *flow_table,
+				       const std::string& interface,
 				       unsigned local_port)
 : log_("/wanproxy/proxy_socks_listener"),
+  flow_table_(flow_table),
   server_(NULL),
   action_(NULL),
   interface_(interface),
@@ -60,7 +62,7 @@ ProxySocksListener::accept_complete(Event e, void *)
 
 	if (e.type_ == Event::Done) {
 		Socket *client = (Socket *)e.data_;
-		new ProxySocksConnection(client);
+		new ProxySocksConnection(flow_table_, client);
 	}
 
 	EventCallback *cb = callback(this,

@@ -8,13 +8,17 @@
 
 #include <io/file.h>
 
+#include "flow_monitor.h"
+#include "flow_table.h"
 #include "proxy_listener.h"
 #include "proxy_socks_listener.h"
 #include "wanproxy_config.h"
 
 WANProxyConfig::WANProxyConfig(void)
-: log_("/proxy/config"),
+: log_("/wanproxy/config"),
   codec_(NULL),
+  flow_monitor_(NULL),
+  flow_tables_(),
   listeners_(),
   socks_listeners_(),
   config_file_(NULL),
@@ -29,6 +33,11 @@ WANProxyConfig::~WANProxyConfig()
 	ASSERT(close_action_ == NULL);
 	ASSERT(read_action_ == NULL);
 	ASSERT(read_buffer_.empty());
+
+	if (flow_monitor_ != NULL) {
+		delete flow_monitor_;
+		flow_monitor_ = NULL;
+	}
 
 	std::set<ProxyListener *>::iterator it;
 	while ((it = listeners_.begin()) != listeners_.end()) {
@@ -148,7 +157,11 @@ WANProxyConfig::parse(void)
 void
 WANProxyConfig::parse(std::vector<std::string> tokens)
 {
-	if (tokens[0] == "log-mask") {
+	if (tokens[0] == "flow-monitor") {
+		parse_flow_monitor(tokens);
+	} else if (tokens[0] == "flow-table") {
+		parse_flow_table(tokens);
+	} else if (tokens[0] == "log-mask") {
 		parse_log_mask(tokens);
 	} else if (tokens[0] == "proxy") {
 		parse_proxy(tokens);
@@ -156,6 +169,47 @@ WANProxyConfig::parse(std::vector<std::string> tokens)
 		parse_proxy_socks(tokens);
 	} else {
 		ERROR(log_) << "Unrecognized configuration directive: " << tokens[0];
+	}
+}
+
+void
+WANProxyConfig::parse_flow_monitor(std::vector<std::string> tokens)
+{
+	if (tokens.size() != 1) {
+		ERROR(log_) << "Wrong number of words in flow-monitor (" << tokens.size() << ")";
+		return;
+	}
+
+	if (flow_monitor_ != NULL) {
+		ERROR(log_) << "Ignoring duplicate flow-monitor.";
+		return;
+	}
+	flow_monitor_ = new FlowMonitor();
+}
+
+void
+WANProxyConfig::parse_flow_table(std::vector<std::string> tokens)
+{
+	if (tokens.size() != 2) {
+		ERROR(log_) << "Wrong number of words in flow-table (" << tokens.size() << ")";
+		return;
+	}
+
+	std::string table = tokens[1];
+
+	if (flow_tables_.find(table) != flow_tables_.end()) {
+		ERROR(log_) << "Duplicate definition of flow-table " << table;
+		return;
+	}
+
+	FlowTable *flow_table = new FlowTable(table);
+
+	flow_tables_[table] = flow_table;
+
+	if (flow_monitor_ == NULL) {
+		INFO(log_) << "Not monitoring flow-table " << table;
+	} else {
+		flow_monitor_->monitor(table, flow_table);
 	}
 }
 
@@ -178,44 +232,57 @@ WANProxyConfig::parse_log_mask(std::vector<std::string> tokens)
 void
 WANProxyConfig::parse_proxy(std::vector<std::string> tokens)
 {
-	if (tokens.size() != 10) {
+	if (tokens.size() != 12) {
 		ERROR(log_) << "Wrong number of words in proxy (" << tokens.size() << ")";
 		return;
 	}
 
-	std::string local_host = tokens[1];
-	unsigned local_port = atoi(tokens[2].c_str());
-	if (tokens[3] != "decoder") {
+	if (tokens[1] != "flow-table") {
+		ERROR(log_) << "Missing 'flow-table' statement.";
+		return;
+	}
+
+	FlowTable *flow_table = flow_tables_[tokens[2]];
+	if (flow_table == NULL) {
+		ERROR(log_) << "Flow table '" << tokens[2] << "' not present.";
+		return;
+	}
+
+	std::string local_host = tokens[3];
+	unsigned local_port = atoi(tokens[4].c_str());
+
+	if (tokens[5] != "decoder") {
 		ERROR(log_) << "Missing 'decoder' statement.";
 		return;
 	}
 
 	XCodec *local_codec;
-	if (tokens[4] == "xcodec")
+	if (tokens[6] == "xcodec")
 		local_codec = codec_;
-	else if (tokens[4] == "none")
+	else if (tokens[6] == "none")
 		local_codec = NULL;
 	else {
 		ERROR(log_) << "Malformed decoder name.";
 		return;
 	}
 
-	if (tokens[5] != "to") {
+	if (tokens[7] != "to") {
 		ERROR(log_) << "Missing 'to' statement.";
 		return;
 	}
 
-	std::string remote_host = tokens[6];
-	unsigned remote_port = atoi(tokens[7].c_str());
-	if (tokens[8] != "encoder") {
+	std::string remote_host = tokens[8];
+	unsigned remote_port = atoi(tokens[9].c_str());
+
+	if (tokens[10] != "encoder") {
 		ERROR(log_) << "Missing 'encoder' statement.";
 		return;
 	}
 
 	XCodec *remote_codec;
-	if (tokens[9] == "xcodec")
+	if (tokens[11] == "xcodec")
 		remote_codec = codec_;
-	else if (tokens[9] == "none")
+	else if (tokens[11] == "none")
 		remote_codec = NULL;
 	else {
 		ERROR(log_) << "Malformed encoder name.";
@@ -224,7 +291,8 @@ WANProxyConfig::parse_proxy(std::vector<std::string> tokens)
 
 	INFO(log_) << "Starting proxy from " << local_host << ':' << local_port << " to " << remote_host << ':' << remote_port;
 
-	ProxyListener *listener = new ProxyListener(local_codec,
+	ProxyListener *listener = new ProxyListener(flow_table,
+						    local_codec,
 						    remote_codec,
 						    local_host,
 						    local_port,
@@ -236,17 +304,30 @@ WANProxyConfig::parse_proxy(std::vector<std::string> tokens)
 void
 WANProxyConfig::parse_proxy_socks(std::vector<std::string> tokens)
 {
-	if (tokens.size() != 3) {
+	if (tokens.size() != 5) {
 		ERROR(log_) << "Wrong number of words in proxy-socks (" << tokens.size() << ")";
 		return;
 	}
 
-	std::string local_host = tokens[1];
-	unsigned local_port = atoi(tokens[2].c_str());
+	if (tokens[1] != "flow-table") {
+		ERROR(log_) << "Missing 'flow-table' statement.";
+		return;
+	}
+
+	FlowTable *flow_table = flow_tables_[tokens[2]];
+	if (flow_table == NULL) {
+		ERROR(log_) << "Flow table '" << tokens[2] << "' not present.";
+		return;
+	}
+
+	std::string local_host = tokens[3];
+	unsigned local_port = atoi(tokens[4].c_str());
 
 	INFO(log_) << "Starting socks-proxy on " << local_host << ':' << local_port;
 
-	ProxySocksListener *listener = new ProxySocksListener(local_host, local_port);
+	ProxySocksListener *listener = new ProxySocksListener(flow_table,
+							      local_host,
+							      local_port);
 	socks_listeners_.insert(listener);
 }
 

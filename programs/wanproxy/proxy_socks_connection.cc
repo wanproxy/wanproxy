@@ -9,11 +9,13 @@
 #include <io/file_descriptor.h>
 #include <io/socket.h>
 
+#include "flow_table.h"
 #include "proxy_client.h"
 #include "proxy_socks_connection.h"
 
-ProxySocksConnection::ProxySocksConnection(Channel *client)
+ProxySocksConnection::ProxySocksConnection(FlowTable *flow_table, Socket *client)
 : log_("/wanproxy/proxy_socks_connection"),
+  flow_table_(flow_table),
   client_(client),
   action_(NULL),
   state_(GetSOCKSVersion),
@@ -39,6 +41,10 @@ ProxySocksConnection::read_complete(Event e, void *)
 	switch (e.type_) {
 	case Event::Done:
 		break;
+	case Event::EOS:
+		INFO(log_) << "Client closed before connection established.";
+		schedule_close();
+		return;
 	default:
 		ERROR(log_) << "Unexpected event: " << e;
 		schedule_close();
@@ -207,11 +213,11 @@ ProxySocksConnection::write_complete(Event e, void *)
 		ASSERT(socks5_authenticated_);
 		ASSERT(network_address_ == 0);
 
-		new ProxyClient(NULL, NULL, client_, socks5_remote_name_,
-				network_port_);
+		new ProxyClient(flow_table_, NULL, NULL, client_,
+				socks5_remote_name_, network_port_);
 	} else {
-		new ProxyClient(NULL, NULL, client_, network_address_,
-				network_port_);
+		new ProxyClient(flow_table_, NULL, NULL, client_,
+				network_address_, network_port_);
 	}
 	client_ = NULL;
 	delete this;
