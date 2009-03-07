@@ -16,109 +16,145 @@ XCodecDecoder::~XCodecDecoder()
 { }
 
 bool
-XCodecDecoder::decode(Buffer *output, Buffer *input)
+XCodecDecoder::reference(Buffer *output, Buffer *input)
 {
-	BufferSegment *oseg, *seg;
+	BufferSegment *seg;
 	uint64_t sum;
 
+	if (input->length() - 1 < sizeof sum)
+		return (false);
+	input->moveout((uint8_t *)&sum, 1, sizeof sum);
+	sum = LittleEndian::decode(sum);
+	seg = database_->lookup(sum);
+	if (seg == NULL) {
+		ERROR(log_ + "/decode") << "hash (" << sum << ") not in database.";
+		throw sum;
+	}
+	backref_.declare(sum, seg);
+	output->append(seg);
+	seg->unref();
+	return (true);
+}
+
+bool
+XCodecDecoder::unescape(Buffer *output, Buffer *input)
+{
+	if (input->length() - 1 < 1)
+		return (false);
+	input->skip(1);
+	output->append(input->peek());
+	input->skip(1);
+	return (true);
+}
+
+bool
+XCodecDecoder::declare(Buffer *input)
+{
+	uint64_t sum;
+
+	if (input->length() - 1 < sizeof sum + XCODEC_CHUNK_LENGTH)
+		return (false);
+	input->moveout((uint8_t *)&sum, 1, sizeof sum);
+	sum = LittleEndian::decode(sum);
+	BufferSegment *seg;
+	input->copyout(&seg, XCODEC_CHUNK_LENGTH);
+	input->skip(XCODEC_CHUNK_LENGTH);
+
+	/*
+	 * Make sure this checksum is correct.
+	 */
+	ASSERT(XCHash<XCODEC_CHUNK_LENGTH>::hash(seg->data()) == sum);
+
+	backref_.declare(sum, seg);
+
+	/*
+	 * Duplicate hash - we may be decodeing a
+	 * streaming mode file and using a persistent
+	 * database.
+	 *
+	 * Local hash usage should override the
+	 * database, but if the two are identical we
+	 * have nothing to do.
+	 */
+	BufferSegment *old;
+
+	old = database_->lookup(sum);
+	if (old != NULL) {
+		if (old->match(seg)) {
+			old->unref();
+			seg->unref();
+			return (true);
+		}
+		old->unref();
+
+		ERROR(log_ + "/decode") << "hash (" << sum << ") shadows database definition.";
+		throw sum;
+		/*
+		 * XXX
+		 * Override the database entry.
+		 */
+	} else {
+		database_->enter(sum, seg);
+		seg->unref();
+		/*
+		 * XXX
+		 * We have no collision, enter this
+		 * into the database, as well.
+		 */
+	}
+	return (true);
+}
+
+bool
+XCodecDecoder::backreference(Buffer *output, Buffer *input)
+{
+	BufferSegment *seg;
+
+	while (input->peek() == XCODEC_BACKREF_CHAR) {
+		if (input->length() - 1 < 1)
+			return (false);
+		input->skip(1);
+		uint8_t b;
+		b = input->peek();
+		input->skip(1);
+		seg = backref_.dereference(b);
+		ASSERT(seg != NULL);
+		output->append(seg);
+		seg->unref();
+		if (input->empty())
+			break;
+	}
+	return (true);
+}
+
+bool
+XCodecDecoder::decode(Buffer *output, Buffer *input)
+{
 	while (!input->empty()) {
 		switch (input->peek()) {
 		case XCODEC_HASHREF_CHAR:
-			if (input->length() - 1 < sizeof sum) {
-				DEBUG(log_) << "Short HASHREF.";
-				return (true);
-			}
-
-			input->moveout((uint8_t *)&sum, 1, sizeof sum);
-			sum = LittleEndian::decode(sum);
-			seg = database_->lookup(sum);
-			if (seg == NULL) {
-				ERROR(log_ + "/decode") << "hash (" << sum << ") not in database.";
+			try {
+				if (!reference(output, input))
+					return (true);
+			} catch (uint64_t sum) {
 				return (false);
 			}
-			backref_.declare(sum, seg);
-			output->append(seg);
-			seg->unref();
 			break;
 		case XCODEC_ESCAPE_CHAR:
-			if (input->length() - 1 < 1) {
-				DEBUG(log_) << "Short ESCAPE.";
+			if (!unescape(output, input))
 				return (true);
-			}
-			input->skip(1);
-			output->append(input->peek());
-			input->skip(1);
 			break;
 		case XCODEC_DECLARE_CHAR:
-			if (input->length() - 1 < sizeof sum + XCODEC_CHUNK_LENGTH) {
-				DEBUG(log_) << "Short DECLARE.";
-				return (true);
-			}
-
-			input->moveout((uint8_t *)&sum, 1, sizeof sum);
-			sum = LittleEndian::decode(sum);
-			input->copyout(&seg, XCODEC_CHUNK_LENGTH);
-			input->skip(XCODEC_CHUNK_LENGTH);
-
-			/*
-			 * Make sure this checksum is correct.
-			 */
-			ASSERT(XCHash<XCODEC_CHUNK_LENGTH>::hash(seg->data()) == sum);
-
-			oseg = database_->lookup(sum);
-			if (oseg != NULL) {
-				/*
-				 * If this hash is already in the database for
-				 * this data, use that BufferSegment.
-				 */
-				if (oseg->match(seg)) {
-					seg->unref();
-					seg = oseg;
-					break;
-				}
-				oseg->unref();
-
-				ERROR(log_ + "/decode") << "hash (" << sum << ") shadows database definition.";
-				/*
-				 * XXX
-				 * Override the database entry.
-				 */
+			try {
+				if (!declare(input))
+					return (true);
+			} catch (uint64_t sum) {
 				return (false);
-			} else {
-				database_->enter(sum, seg);
-				/*
-				 * XXX
-				 * We have no collision, enter this
-				 * into the database, as well.
-				 */
 			}
-
-			backref_.declare(sum, seg);
-			seg->unref();
 			break;
 		case XCODEC_BACKREF_CHAR:
-			/*
-			 * We expect long strings of BACKREF since we
-			 * use BACKREFs after our DECLAREs.  So use a
-			 * loop here.
-			 */
-			while (input->peek() == XCODEC_BACKREF_CHAR) {
-				if (input->length() - 1 < 1) {
-					DEBUG(log_) << "Short BACKREF.";
-					return (true);
-				}
-
-				uint8_t b;
-				input->moveout(&b, 1, sizeof b);
-
-				seg = backref_.dereference(b);
-				ASSERT(seg != NULL);
-				output->append(seg);
-				seg->unref();
-
-				if (input->empty())
-					break;
-			}
+			if (!backreference(output, input))
+				return (true);
 			break;
 		default:
 			output->append(input->peek());
