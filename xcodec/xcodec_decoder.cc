@@ -65,10 +65,8 @@ XCodecDecoder::declare(Buffer *input)
 	 */
 	ASSERT(XCHash<XCODEC_CHUNK_LENGTH>::hash(seg->data()) == sum);
 
-	backref_.declare(sum, seg);
-
 	/*
-	 * Duplicate hash - we may be decodeing a
+	 * Duplicate hash - we may be decoding a
 	 * streaming mode file and using a persistent
 	 * database.
 	 *
@@ -81,27 +79,23 @@ XCodecDecoder::declare(Buffer *input)
 	old = database_->lookup(sum);
 	if (old != NULL) {
 		if (old->match(seg)) {
-			old->unref();
+			/*
+			 * Use the old segment rather than this one.
+			 */
 			seg->unref();
-			return (true);
-		}
-		old->unref();
+			seg = old;
+		} else {
+			old->unref();
 
-		ERROR(log_ + "/decode") << "hash (" << sum << ") shadows database definition.";
-		throw sum;
-		/*
-		 * XXX
-		 * Override the database entry.
-		 */
+			ERROR(log_ + "/decode") << "hash (" << sum << ") shadows database definition.";
+			throw sum;
+		}
 	} else {
 		database_->enter(sum, seg);
-		seg->unref();
-		/*
-		 * XXX
-		 * We have no collision, enter this
-		 * into the database, as well.
-		 */
 	}
+	backref_.declare(sum, seg);
+	seg->unref();
+
 	return (true);
 }
 
