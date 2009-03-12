@@ -10,6 +10,43 @@
 std::ostream& operator<< (std::ostream&, const Flow::Direction&);
 std::ostream& operator<< (std::ostream&, const Flow::Endpoint&);
 
+void
+FlowMonitor::Serializer::serialize(const FlowTable *flow_table, const Flow *flow)
+{
+	std::string name = monitor_->flow_tables_[flow_table];
+
+	if (flow == NULL) {
+		tables_[name] = "<nil />";
+		return;
+	}
+
+	std::ostringstream ostr;
+
+	ostr << "<flow direction=\"" << flow->direction_ << "\">";
+	ostr << "<local " << flow->local_ << " />";
+	ostr << "<remote " << flow->remote_ << " />";
+	ostr << "</flow>";
+
+	tables_[name] += ostr.str();
+}
+
+void
+FlowMonitor::Serializer::operator() (Buffer *output) const
+{
+	std::ostringstream ostr;
+
+	/* XXX doctype, etc.  */
+
+	std::map<std::string, std::string>::const_iterator it;
+	for (it = tables_.begin(); it != tables_.end(); ++it) {
+		ostr << "<table name=\"" << it->first << "\">";
+		ostr << it->second;
+		ostr << "</table>";
+	}
+
+	output->append(ostr.str());
+}
+
 FlowMonitor::FlowMonitor(void)
 : log_("/flow/monitor"),
   action_(NULL),
@@ -34,28 +71,23 @@ FlowMonitor::monitor(const std::string& name, FlowTable *flow_table)
 }
 
 void
-FlowMonitor::report_flow(const FlowTable *, const Flow *flow)
-{
-	if (flow == NULL) {
-		return;
-	}
-	INFO(log_) << flow->local_ << flow->direction_ << flow->remote_;
-}
-
-void
 FlowMonitor::report(void)
 {
 	action_->cancel();
 	action_ = NULL;
 
-	std::map<FlowTable *, std::string>::const_iterator it;
+	Serializer serializer(this);
 
+	std::map<const FlowTable *, std::string>::const_iterator it;
 	for (it = flow_tables_.begin(); it != flow_tables_.end(); ++it) {
-		FlowTable *flow_table = it->first;
-
-		INFO(log_) << "Flow table " << it->second << ":";
-		flow_table->enumerate(this, &FlowMonitor::report_flow);
+		const FlowTable *flow_table = it->first;
+		flow_table->enumerate(&serializer, &Serializer::serialize);
 	}
+
+	Buffer buf;
+	serializer(&buf);
+
+	INFO(log_) << buf;
 
 	if (!flow_tables_.empty()) {
 		schedule_timeout();
@@ -74,9 +106,9 @@ operator<< (std::ostream& os, const Flow::Direction& direction)
 {
 	switch (direction) {
 	case Flow::Outgoing:
-		return (os << " -> ");
+		return (os << "outgoing");
 	case Flow::Incoming:
-		return (os << " <- ");
+		return (os << "incoming");
 	default:
 		NOTREACHED();
 	}
@@ -85,5 +117,5 @@ operator<< (std::ostream& os, const Flow::Direction& direction)
 std::ostream&
 operator<< (std::ostream& os, const Flow::Endpoint& endpoint)
 {
-	return (os << endpoint.source_ << " <-> " << endpoint.codec_ << " <-> " << endpoint.destination_);
+	return (os << "source=\"" << endpoint.source_ << "\" destination=\"" << endpoint.destination_ << "\" codec=\"" << endpoint.codec_ << "\"");
 }
