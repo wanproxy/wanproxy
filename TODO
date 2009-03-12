@@ -1,6 +1,10 @@
 o) Connetion table. Database.
 o) Add an IO queueing system that will make it possible to use lio_listio on
    systems that support it.
+o) Make it possible to detect when we are sending to a socket that is also
+   within WANProxy and avoid a system call -- just copy directly to the
+   appropriate buffer.  It should be pretty easy to do this with the IO queueing
+   system if we getpeername/getsockname to identify this occurring.
 o) The ProxyPipe code uses an asynchronous callback to notify the ProxyClient
    of an error, but this could result delayed cancellation of a write to a
    channel which has given us an error.  As a result, we may get a SIGPIPE.
