@@ -64,6 +64,11 @@ public:
 			delete this;
 	}
 
+	unsigned refs(void) const
+	{
+		return (ref_);
+	}
+
 	/*
 	 * Return a mutable pointer to the start of the data.  Discouraaged.
 	 */
@@ -460,17 +465,11 @@ public:
 		/*
 		 * If we are adding less than a single segment worth of data,
 		 * try to append it to the end of the last segment.
-		 *
-		 * XXX Is this special case worthwhile?  It needs to check for
-		 * sharing anyway, and COWing is probably slower than just
-		 * creating a new segment?
 		 */
 		if (len < BUFFER_SEGMENT_SIZE && !data_.empty()) {
-			segment_list_t::iterator it;
-
-			it = --data_.end();
+			segment_list_t::reverse_iterator it = data_.rbegin();
 			seg = *it;
-			if (seg->avail() >= len) {
+			if (seg->refs() == 1 && seg->avail() >= len) {
 				seg = seg->append(buf, len);
 				*it = seg;
 				length_ += len;
