@@ -27,8 +27,8 @@ public:
 	Action *flow(EventCallback *);
 
 private:
-	void read_complete(Event, void *);
-	void write_complete(Event, void *);
+	void read_complete(Event);
+	void write_complete(Event);
 
 	void schedule_read(void);
 	void schedule_write(void);

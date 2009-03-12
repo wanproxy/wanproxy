@@ -26,11 +26,11 @@ public:
 	std::string getsockname(void) const;
 
 private:
-	void accept_callback(Event, void *);
+	void accept_callback(Event);
 	void accept_cancel(void);
 	Action *accept_schedule(void);
 
-	void connect_callback(Event, void *);
+	void connect_callback(Event);
 	void connect_cancel(void);
 	Action *connect_schedule(void);
 

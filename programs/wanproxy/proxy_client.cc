@@ -117,7 +117,7 @@ ProxyClient::close_complete(Event e, void *channel)
 }
 
 void
-ProxyClient::connect_complete(Event e, void *)
+ProxyClient::connect_complete(Event e)
 {
 	remote_action_->cancel();
 	remote_action_ = NULL;

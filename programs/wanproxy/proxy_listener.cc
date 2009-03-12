@@ -50,7 +50,7 @@ ProxyListener::~ProxyListener()
 }
 
 void
-ProxyListener::accept_complete(Event e, void *)
+ProxyListener::accept_complete(Event e)
 {
 	action_->cancel();
 	action_ = NULL;

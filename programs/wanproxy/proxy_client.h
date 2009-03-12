@@ -32,7 +32,7 @@ private:
 	~ProxyClient();
 
 	void close_complete(Event, void *);
-	void connect_complete(Event, void *);
+	void connect_complete(Event);
 	void flow_complete(Event, void *);
 
 	void schedule_close(void);

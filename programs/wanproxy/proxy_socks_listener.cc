@@ -44,7 +44,7 @@ ProxySocksListener::~ProxySocksListener()
 }
 
 void
-ProxySocksListener::accept_complete(Event e, void *)
+ProxySocksListener::accept_complete(Event e)
 {
 	action_->cancel();
 	action_ = NULL;

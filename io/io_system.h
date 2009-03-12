@@ -31,11 +31,11 @@ class IOSystem {
 		void close_cancel(void);
 		Action *close_schedule(void);
 
-		void read_callback(Event, void *);
+		void read_callback(Event);
 		void read_cancel(void);
 		Action *read_schedule(void);
 
-		void write_callback(Event, void *);
+		void write_callback(Event);
 		void write_cancel(void);
 		Action *write_schedule(void);
 	};

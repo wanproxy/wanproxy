@@ -188,7 +188,7 @@ Socket::getsockname(void) const
 }
 
 void
-Socket::accept_callback(Event e, void *)
+Socket::accept_callback(Event e)
 {
 	accept_action_->cancel();
 	accept_action_ = NULL;
@@ -249,7 +249,7 @@ Socket::accept_schedule(void)
 }
 
 void
-Socket::connect_callback(Event e, void *)
+Socket::connect_callback(Event e)
 {
 	connect_action_->cancel();
 	connect_action_ = NULL;

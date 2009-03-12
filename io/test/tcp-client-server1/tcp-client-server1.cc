@@ -65,7 +65,7 @@ public:
 		}
 	}
 
-	void close_complete(Event e, void *)
+	void close_complete(Event e)
 	{
 		action_->cancel();
 		action_ = NULL;
@@ -79,7 +79,7 @@ public:
 		client_ = NULL;
 	}
 
-	void connect_complete(Event e, void *)
+	void connect_complete(Event e)
 	{
 		action_->cancel();
 		action_ = NULL;
@@ -100,7 +100,7 @@ public:
 		action_ = client_->write(&buf, cb);
 	}
 
-	void write_complete(Event e, void *)
+	void write_complete(Event e)
 	{
 		action_->cancel();
 		action_ = NULL;
@@ -182,7 +182,7 @@ public:
 		}
 	}
 
-	void accept_complete(Event e, void *)
+	void accept_complete(Event e)
 	{
 		action_->cancel();
 		action_ = NULL;
@@ -206,7 +206,7 @@ public:
 		action_ = server_->close(cb);
 	}
 
-	void close_complete(Event e, void *)
+	void close_complete(Event e)
 	{
 		action_->cancel();
 		action_ = NULL;
@@ -223,7 +223,7 @@ public:
 		action_ = client_->read(0, cb);
 	}
 
-	void client_read(Event e, void *)
+	void client_read(Event e)
 	{
 		action_->cancel();
 		action_ = NULL;
@@ -262,7 +262,7 @@ public:
 		action_ = client_->close(cb);
 	}
 
-	void client_close(Event e, void *)
+	void client_close(Event e)
 	{
 		action_->cancel();
 		action_ = NULL;

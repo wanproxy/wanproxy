@@ -28,8 +28,8 @@ public:
 	~WANProxyConfig();
 
 private:
-	void close_complete(Event, void *);
-	void read_complete(Event, void *);
+	void close_complete(Event);
+	void read_complete(Event);
 
 	void schedule_close(void);
 	void schedule_read(void);

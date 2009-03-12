@@ -23,7 +23,7 @@ public:
 	~ProxyListener();
 
 private:
-	void accept_complete(Event, void *);
+	void accept_complete(Event);
 };
 
 #endif /* !PROXY_LISTENER_H */

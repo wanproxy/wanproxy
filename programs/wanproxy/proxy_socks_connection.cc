@@ -33,7 +33,7 @@ ProxySocksConnection::~ProxySocksConnection()
 }
 
 void
-ProxySocksConnection::read_complete(Event e, void *)
+ProxySocksConnection::read_complete(Event e)
 {
 	action_->cancel();
 	action_ = NULL;
@@ -183,7 +183,7 @@ ProxySocksConnection::read_complete(Event e, void *)
 }
 
 void
-ProxySocksConnection::write_complete(Event e, void *)
+ProxySocksConnection::write_complete(Event e)
 {
 	action_->cancel();
 	action_ = NULL;
@@ -224,7 +224,7 @@ ProxySocksConnection::write_complete(Event e, void *)
 }
 
 void
-ProxySocksConnection::close_complete(Event e, void *)
+ProxySocksConnection::close_complete(Event e)
 {
 	action_->cancel();
 	action_ = NULL;

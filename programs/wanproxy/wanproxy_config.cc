@@ -48,7 +48,7 @@ WANProxyConfig::~WANProxyConfig()
 }
 
 void
-WANProxyConfig::close_complete(Event e, void *)
+WANProxyConfig::close_complete(Event e)
 {
 	close_action_->cancel();
 	close_action_ = NULL;
@@ -66,7 +66,7 @@ WANProxyConfig::close_complete(Event e, void *)
 }
 
 void
-WANProxyConfig::read_complete(Event e, void *)
+WANProxyConfig::read_complete(Event e)
 {
 	read_action_->cancel();
 	read_action_ = NULL;

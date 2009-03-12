@@ -92,7 +92,7 @@ ProxyPipe::flow(EventCallback *cb)
 }
 
 void
-ProxyPipe::read_complete(Event e, void *)
+ProxyPipe::read_complete(Event e)
 {
 	read_action_->cancel();
 	read_action_ = NULL;
@@ -142,7 +142,7 @@ ProxyPipe::read_complete(Event e, void *)
 }
 
 void
-ProxyPipe::write_complete(Event e, void *)
+ProxyPipe::write_complete(Event e)
 {
 	write_action_->cancel();
 	write_action_ = NULL;

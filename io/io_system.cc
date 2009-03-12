@@ -91,7 +91,7 @@ IOSystem::Handle::close_schedule(void)
 }
 
 void
-IOSystem::Handle::read_callback(Event e, void *)
+IOSystem::Handle::read_callback(Event e)
 {
 	read_action_->cancel();
 	read_action_ = NULL;
@@ -188,7 +188,7 @@ IOSystem::Handle::read_schedule(void)
 }
 
 void
-IOSystem::Handle::write_callback(Event e, void *)
+IOSystem::Handle::write_callback(Event e)
 {
 	write_action_->cancel();
 	write_action_ = NULL;
