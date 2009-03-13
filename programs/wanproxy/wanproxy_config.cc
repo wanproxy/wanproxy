@@ -19,8 +19,8 @@ WANProxyConfig::WANProxyConfig(void)
   codec_(NULL),
   flow_monitor_(NULL),
   flow_tables_(),
-  listeners_(),
-  socks_listeners_(),
+  proxy_listeners_(),
+  proxy_socks_listeners_(),
   config_file_(NULL),
   close_action_(NULL),
   read_action_(NULL),
@@ -39,12 +39,7 @@ WANProxyConfig::~WANProxyConfig()
 		flow_monitor_ = NULL;
 	}
 
-	std::set<ProxyListener *>::iterator it;
-	while ((it = listeners_.begin()) != listeners_.end()) {
-		ProxyListener *listener = *it;
-		delete listener;
-		listeners_.erase(it);
-	}
+	/* XXX Delete listeners, etc.  */
 }
 
 void
@@ -298,7 +293,7 @@ WANProxyConfig::parse_proxy(std::vector<std::string> tokens)
 						    local_port,
 						    remote_host,
 						    remote_port);
-	listeners_.insert(listener);
+	proxy_listeners_.insert(listener);
 }
 
 void
@@ -328,7 +323,7 @@ WANProxyConfig::parse_proxy_socks(std::vector<std::string> tokens)
 	ProxySocksListener *listener = new ProxySocksListener(flow_table,
 							      local_host,
 							      local_port);
-	socks_listeners_.insert(listener);
+	proxy_socks_listeners_.insert(listener);
 }
 
 bool
