@@ -309,7 +309,7 @@ static bool
 socket_address(struct sockaddr_in *sinp, int domain, const std::string& name,
 	       uint16_t port)
 {
-	struct hostent *host = gethostbyname(name.c_str());
+	struct hostent *host = gethostbyname2(name.c_str(), domain);
 	if (host == NULL) {
 		return (false);
 	}
