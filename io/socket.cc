@@ -118,6 +118,23 @@ Socket::connect(struct sockaddr_in *sinp, EventCallback *cb)
 	ASSERT(connect_callback_ == NULL);
 	ASSERT(connect_action_ == NULL);
 
+	/*
+	 * TODO
+	 *
+	 * If the address we are connecting to is the address of another
+	 * Socket, set up some sort of zero-copy IO between them.  This is
+	 * easy enough if we do it right here.  Trying to do it at the file
+	 * descriptor level seems to be really hard since there's a lot of
+	 * races possible there.  This way, we're still at the point of the
+	 * connection set up.
+	 *
+	 * We may want to allow the connection to complete so that calls to
+	 * getsockname(2) and getpeername(2) do what you'd expect.  We may
+	 * still want to poll on the file descriptors even, to make it
+	 * possible to use tcpdrop, etc., to reset the connections.  I guess
+	 * the thing to do is poll if there's no input ready.
+	 */
+
 	int rv = ::connect(fd_, (struct sockaddr *)sinp, sizeof *sinp);
 	switch (rv) {
 	case 0:
