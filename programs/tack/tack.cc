@@ -30,7 +30,7 @@ static void compress(int, int, XCodec *);
 static void decompress(int, int, XCodec *);
 static bool fill(int, Buffer *);
 static void flush(int, Buffer *);
-static void process_files(int, char *[], FileAction, XCodec *);
+static void process_files(int, char *[], FileAction, XCodec *, bool);
 static void time_samples(void);
 static void time_stats(void);
 static void usage(void);
@@ -40,21 +40,25 @@ main(int argc, char *argv[])
 {
 	XCDatabase database("/database");
 	XCodec codec("/main", &database);
-	bool timers, samples;
+	bool timers, quiet_output, samples;
 	FileAction action;
 	int ch;
 
 	action = None;
+	quiet_output = false;
 	samples = false;
 	timers = false;
 
-	while ((ch = getopt(argc, argv, "?cdST")) != -1) {
+	while ((ch = getopt(argc, argv, "?cdQST")) != -1) {
 		switch (ch) {
 		case 'c':
 			action = Compress;
 			break;
 		case 'd':
 			action = Decompress;
+			break;
+		case 'Q':
+			quiet_output = true;
 			break;
 		case 'S':
 			samples = true;
@@ -75,7 +79,7 @@ main(int argc, char *argv[])
 		usage();
 	case Compress:
 	case Decompress:
-		process_files(argc, argv, action, &codec);
+		process_files(argc, argv, action, &codec, quiet_output);
 		if (samples)
 			time_samples();
 		if (timers)
@@ -166,6 +170,11 @@ flush(int fd, Buffer *output)
 {
 	ssize_t len;
 
+	if (fd == -1) {
+		output->clear();
+		return;
+	}
+
 	for (;;) {
 		Buffer::SegmentIterator iter = output->segments();
 		if (iter.end())
@@ -197,13 +206,16 @@ process_file(int ifd, int ofd, FileAction action, XCodec *codec)
 }
 
 static void
-process_files(int argc, char *argv[], FileAction action, XCodec *codec)
+process_files(int argc, char *argv[], FileAction action, XCodec *codec, bool quiet)
 {
 	int ifd, ofd;
 
 	if (argc == 0) {
 		ifd = STDIN_FILENO;
-		ofd = STDOUT_FILENO;
+		if (quiet)
+			ofd = -1;
+		else
+			ofd = STDOUT_FILENO;
 		process_file(ifd, ofd, action, codec);
 	} else {
 		while (argc--) {
@@ -211,7 +223,10 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec)
 			
 			ifd = open(file, O_RDONLY);
 			ASSERT(ifd != -1);
-			ofd = STDOUT_FILENO;
+			if (quiet)
+				ofd = -1;
+			else
+				ofd = STDOUT_FILENO;
 
 			process_file(ifd, ofd, action, codec);
 		}
@@ -248,7 +263,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: tack [-ST] -c [file ...]\n"
-"       tack [-ST] -d [file ...]\n");
+"usage: tack [-QST] -c [file ...]\n"
+"       tack [-QST] -d [file ...]\n");
 	exit(1);
 }
