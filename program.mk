@@ -20,6 +20,7 @@ regress: ${PROG_CXX}
 .endif
 .endif
 
+CSTD?=	c99
 WARNS?=	3
 NO_MAN?=duh
 
