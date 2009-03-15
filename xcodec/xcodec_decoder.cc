@@ -15,146 +15,164 @@ XCodecDecoder::XCodecDecoder(XCodec *codec)
 XCodecDecoder::~XCodecDecoder()
 { }
 
-bool
-XCodecDecoder::reference(Buffer *output, Buffer *input)
-{
-	BufferSegment *seg;
-	uint64_t sum;
-
-	if (input->length() - 1 < sizeof sum)
-		return (false);
-	input->moveout((uint8_t *)&sum, 1, sizeof sum);
-	sum = LittleEndian::decode(sum);
-	seg = database_->lookup(sum);
-	if (seg == NULL) {
-		ERROR(log_ + "/decode") << "hash (" << sum << ") not in database.";
-		throw sum;
-	}
-	backref_.declare(sum, seg);
-	output->append(seg);
-	seg->unref();
-	return (true);
-}
-
-bool
-XCodecDecoder::unescape(Buffer *output, Buffer *input)
-{
-	if (input->length() - 1 < 1)
-		return (false);
-	input->skip(1);
-	output->append(input->peek());
-	input->skip(1);
-	return (true);
-}
-
-bool
-XCodecDecoder::declare(Buffer *input)
-{
-	uint64_t sum;
-
-	if (input->length() - 1 < sizeof sum + XCODEC_CHUNK_LENGTH)
-		return (false);
-	input->moveout((uint8_t *)&sum, 1, sizeof sum);
-	sum = LittleEndian::decode(sum);
-	BufferSegment *seg;
-	input->copyout(&seg, XCODEC_CHUNK_LENGTH);
-	input->skip(XCODEC_CHUNK_LENGTH);
-
-	/*
-	 * Make sure this checksum is correct.
-	 */
-	ASSERT(XCHash<XCODEC_CHUNK_LENGTH>::hash(seg->data()) == sum);
-
-	/*
-	 * Duplicate hash - we may be decoding a
-	 * streaming mode file and using a persistent
-	 * database.
-	 *
-	 * Local hash usage should override the
-	 * database, but if the two are identical we
-	 * have nothing to do.
-	 */
-	BufferSegment *old;
-
-	old = database_->lookup(sum);
-	if (old != NULL) {
-		if (old->match(seg)) {
-			/*
-			 * Use the old segment rather than this one.
-			 */
-			seg->unref();
-			seg = old;
-		} else {
-			old->unref();
-
-			ERROR(log_ + "/decode") << "hash (" << sum << ") shadows database definition.";
-			throw sum;
-		}
-	} else {
-		database_->enter(sum, seg);
-	}
-	backref_.declare(sum, seg);
-	seg->unref();
-
-	return (true);
-}
-
-bool
-XCodecDecoder::backreference(Buffer *output, Buffer *input)
-{
-	BufferSegment *seg;
-
-	while (input->peek() == XCODEC_BACKREF_CHAR) {
-		if (input->length() - 1 < 1)
-			return (false);
-		input->skip(1);
-		uint8_t b;
-		b = input->peek();
-		input->skip(1);
-		seg = backref_.dereference(b);
-		ASSERT(seg != NULL);
-		output->append(seg);
-		seg->unref();
-		if (input->empty())
-			break;
-	}
-	return (true);
-}
-
+/*
+ * Decode an XCodec-encoded stream.  Returns false if there was an
+ * inconsistency in the stream or something malformed.  Returns true
+ * if we were able to process the stream or expect to be able to
+ * once more data arrives.  The input buffer is cleared of anything
+ * we can process right now.
+ */
 bool
 XCodecDecoder::decode(Buffer *output, Buffer *input)
 {
-	while (!input->empty()) {
-		switch (input->peek()) {
+	BufferSegment *seg, *oseg;
+	uint64_t hash;
+	size_t inlen;
+	uint8_t ch;
+
+	inlen = input->length();
+	while (inlen != 0) {
+		ch = input->peek();
+
+		while (!XCODEC_CHAR_SPECIAL(ch)) {
+			inlen--;
+			input->skip(1);
+			output->append(ch);
+
+			if (inlen == 0)
+				break;
+
+			ch = input->peek();
+		}
+
+		ASSERT(inlen == input->length());
+
+		if (inlen == 0)
+			break;
+
+		switch (ch) {
+			/*
+			 * A reference to a hash we are expected to have
+			 * in our database.
+			 */
 		case XCODEC_HASHREF_CHAR:
-			try {
-				if (!reference(output, input))
-					return (true);
-			} catch (uint64_t sum) {
+			if (inlen < 9)
+				return (true);
+
+			input->moveout((uint8_t *)&hash, 1, sizeof hash);
+			hash = LittleEndian::decode(hash);
+
+			seg = database_->lookup(hash);
+			if (seg == NULL) {
+				ERROR(log_) << "Stream referenced unseen hash: " << hash;
 				return (false);
 			}
+			backref_.declare(hash, seg);
+
+			output->append(seg);
+			inlen -= 9;
 			break;
+
+			/*
+			 * A literal character will follow that would
+			 * otherwise have seemed magic.
+			 */
 		case XCODEC_ESCAPE_CHAR:
-			if (!unescape(output, input))
+			if (inlen < 2)
 				return (true);
-			break;
-		case XCODEC_DECLARE_CHAR:
-			try {
-				if (!declare(input))
-					return (true);
-			} catch (uint64_t sum) {
-				return (false);
-			}
-			break;
-		case XCODEC_BACKREF_CHAR:
-			if (!backreference(output, input))
-				return (true);
-			break;
-		default:
+			input->skip(1);
 			output->append(input->peek());
 			input->skip(1);
+			inlen -= 2;
 			break;
+
+			/*
+			 * A learning opportunity -- a hash we should put
+			 * into our database for future use and the data
+			 * it will be used in reference to next time.
+			 */
+		case XCODEC_DECLARE_CHAR:
+			if (inlen < 9 + XCODEC_CHUNK_LENGTH)
+				return (true);
+
+			input->moveout((uint8_t *)&hash, 1, sizeof hash);
+			hash = LittleEndian::decode(hash);
+
+			input->copyout(&seg, XCODEC_CHUNK_LENGTH);
+			input->skip(XCODEC_CHUNK_LENGTH);
+
+			if (XCHash<XCODEC_CHUNK_LENGTH>::hash(seg->data()) != hash) {
+				/* XXX Show expected and actual hash?  */
+				seg->unref();
+				ERROR(log_) << "Data in stream does not have expected hash.";
+				return (false);
+			}
+
+			/*
+			 * Chech whether we already know a hash by this name.
+			 */
+			oseg = database_->lookup(hash);
+			if (oseg != NULL) {
+				/*
+				 * We already know a hash by this name.  Check
+				 * whether it is for the same data.  That would
+				 * be nice.  In that case all we need to do is
+				 * update the backreference window.
+				 */
+				if (seg->match(oseg)) {
+					seg->unref();
+					/*
+					 * NB: Use the existing segment since
+					 * it's nice to share.
+					 */
+					backref_.declare(hash, oseg);
+					oseg->unref();
+				} else {
+					seg->unref();
+					oseg->unref();
+					ERROR(log_) << "Stream includes hash with different local data.";
+					return (false);
+				}
+			} else {
+				/*
+				 * This is a brand new hash.  Enter it into the
+				 * database and the backref window.
+				 */
+				database_->enter(hash, seg);
+				backref_.declare(hash, seg);
+				seg->unref();
+			}
+
+			inlen -= 9 + XCODEC_CHUNK_LENGTH;
+			break;
+
+			/*
+			 * A reference to a recently-used hash.  We expect
+			 * to see a lot of these whenever we see declarations
+			 * since the declarations are desorted in the stream
+			 * and are not literally inserted.
+			 */
+		case XCODEC_BACKREF_CHAR:
+			if (inlen < 2)
+				return (true);
+			input->skip(1);
+			ch = input->peek();
+			input->skip(1);
+
+			seg = backref_.dereference(ch);
+			if (seg == NULL) {
+				ERROR(log_) << "Stream included invalid backref.";
+				return (false);
+			}
+
+			output->append(seg);
+			inlen -= 2;
+			break;
+
+		default:
+			NOTREACHED();
 		}
 	}
+
 	return (true);
 }
