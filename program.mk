@@ -20,14 +20,16 @@ regress: ${PROG_CXX}
 .endif
 .endif
 
-CSTD?=	c99
-WARNS?=	3
-NO_MAN?=duh
-
 CFLAGS+=-I${TOPDIR}
 .if defined(NDEBUG)
 CFLAGS+=-DNDEBUG=1
 .endif
+
+CFLAGS+=-W -Wall -Werror
+CFLAGS+=-Wno-system-headers
+#CFLAGS+=-Wno-unused-parameter
+CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts
+#CFLAGS+=-Winline
 
 .if defined(PROG_CXX)
 __LIBRARIES!=echo ${USE_LIBS} | sort -u | xargs
@@ -35,10 +37,18 @@ __LIBRARIES!=echo ${USE_LIBS} | sort -u | xargs
 .include "${TOPDIR}/${_lib}/lib.mk"
 .endfor
 
-.include <bsd.prog.mk>
+OBJS+=  ${SRCS:R:S/$/.o/g}
+
+all: ${PROG_CXX}
+
+${PROG_CXX}: ${OBJS}
+	${CXX} ${CXXFLAGS} ${LDFLAGS} -o ${.TARGET} ${OBJS} ${LDADD}
+
+CLEANFILES+=${PROG_CXX}
+CLEANFILES+=${OBJS}
+
+.include <bsd.obj.mk>
 .else
 SUBDIR+=
 .include <bsd.subdir.mk>
 .endif
-
-CFLAGS:=${CFLAGS:N-Wsystem-headers}

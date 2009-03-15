@@ -32,14 +32,14 @@ ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
   local_socket_(local_socket),
   remote_action_(NULL),
   remote_codec_(remote_codec),
-  remote_client_(NULL),
+  remote_socket_(NULL),
   incoming_action_(NULL),
   incoming_pipe_(NULL),
   outgoing_action_(NULL),
   outgoing_pipe_(NULL)
 {
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
-	remote_action_ = TCPClient::connect(&remote_client_, remote_name,
+	remote_action_ = TCPClient::connect(&remote_socket_, remote_name,
 					    remote_port, cb);
 }
 
@@ -53,14 +53,14 @@ ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
   local_socket_(local_socket),
   remote_action_(NULL),
   remote_codec_(remote_codec),
-  remote_client_(NULL),
+  remote_socket_(NULL),
   incoming_action_(NULL),
   incoming_pipe_(NULL),
   outgoing_action_(NULL),
   outgoing_pipe_(NULL)
 {
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
-	remote_action_ = TCPClient::connect(&remote_client_, remote_ip,
+	remote_action_ = TCPClient::connect(&remote_socket_, remote_ip,
 					    remote_port, cb);
 }
 
@@ -70,7 +70,7 @@ ProxyClient::~ProxyClient()
 	ASSERT(local_action_ == NULL);
 	ASSERT(local_socket_ == NULL);
 	ASSERT(remote_action_ == NULL);
-	ASSERT(remote_client_ == NULL);
+	ASSERT(remote_socket_ == NULL);
 	ASSERT(incoming_action_ == NULL);
 	ASSERT(incoming_pipe_ == NULL);
 	ASSERT(outgoing_action_ == NULL);
@@ -85,7 +85,7 @@ ProxyClient::close_complete(Event e, void *channel)
 		local_action_ = NULL;
 	}
 
-	if (channel == (void *)remote_client_) {
+	if (channel == (void *)remote_socket_) {
 		remote_action_->cancel();
 		remote_action_ = NULL;
 	}
@@ -105,13 +105,13 @@ ProxyClient::close_complete(Event e, void *channel)
 		local_socket_ = NULL;
 	}
 
-	if (channel == (void *)remote_client_) {
-		ASSERT(remote_client_ != NULL);
-		delete remote_client_;
-		remote_client_ = NULL;
+	if (channel == (void *)remote_socket_) {
+		ASSERT(remote_socket_ != NULL);
+		delete remote_socket_;
+		remote_socket_ = NULL;
 	}
 
-	if (local_socket_ == NULL && remote_client_ == NULL) {
+	if (local_socket_ == NULL && remote_socket_ == NULL) {
 		delete this;
 	}
 }
@@ -141,15 +141,15 @@ ProxyClient::connect_complete(Event e)
 	local.codec_ = local_codec_ == NULL ? "none" : "xcodec";
 
 	Flow::Endpoint remote;
-	remote.source_ = remote_client_->socket()->getsockname();
-	remote.destination_ = remote_client_->socket()->getpeername();
+	remote.source_ = remote_socket_->getsockname();
+	remote.destination_ = remote_socket_->getpeername();
 	remote.codec_ = remote_codec_ == NULL ? "none" : "xcodec";
 
 	outgoing_pipe_ = new ProxyPipe(local_codec_, local_socket_,
-				       remote_client_, remote_codec_);
+				       remote_socket_, remote_codec_);
 	flow_table_->insert(outgoing_pipe_, local, Flow::Outgoing, remote);
 
-	incoming_pipe_ = new ProxyPipe(remote_codec_, remote_client_,
+	incoming_pipe_ = new ProxyPipe(remote_codec_, remote_socket_,
 				       local_socket_, local_codec_);
 	flow_table_->insert(incoming_pipe_, local, Flow::Incoming, remote);
 
@@ -246,8 +246,8 @@ ProxyClient::schedule_close(void)
 	local_action_ = local_socket_->close(lcb);
 
 	ASSERT(remote_action_ == NULL);
-	ASSERT(remote_client_ != NULL);
+	ASSERT(remote_socket_ != NULL);
 	EventCallback *rcb = callback(this, &ProxyClient::close_complete,
-				      (void *)remote_client_);
-	remote_action_ = remote_client_->close(rcb);
+				      (void *)remote_socket_);
+	remote_action_ = remote_socket_->close(rcb);
 }

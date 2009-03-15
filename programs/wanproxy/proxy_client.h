@@ -3,7 +3,6 @@
 
 class FlowTable;
 class ProxyPipe;
-class TCPClient;
 class XCodec;
 
 class ProxyClient {
@@ -17,7 +16,7 @@ class ProxyClient {
 
 	Action *remote_action_;
 	XCodec *remote_codec_;
-	TCPClient *remote_client_;
+	Socket *remote_socket_;
 
 	Action *incoming_action_;
 	ProxyPipe *incoming_pipe_;

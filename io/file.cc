@@ -29,8 +29,10 @@ File::open(const std::string& path, bool read, bool write)
 		flags = O_WRONLY;
 	else if (write && read)
 		flags = O_RDWR;
-	else
+	else {
 		HALT("/file") << "Must be opening file for read or write.";
+		return (NULL);
+	}
 
 	fd = ::open(path.c_str(), flags);
 	if (fd == -1)

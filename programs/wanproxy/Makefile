@@ -1,8 +1,4 @@
 PROG_CXX=wanproxy
-# XXX Uncomment below for Linux.
-#PROG=${PROG_CXX}
-#USE_POLL=poll
-#LDADD+=-lstdc++
 
 SRCS+=	flow_monitor.cc
 

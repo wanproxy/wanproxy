@@ -15,22 +15,22 @@ static uint8_t data[65536];
 class Connector {
 	LogHandle log_;
 	TestGroup group_;
-	TCPClient *client_;
+	Socket *socket_;
 	Action *action_;
 	Test *test_;
 public:
 	Connector(unsigned port)
 	: log_("/connector"),
-	  group_("/test/io/tcp/client/connector", "TCPClient connector"),
-	  client_(NULL),
+	  group_("/test/io/socket/connector", "Socket connector"),
+	  socket_(NULL),
 	  action_(NULL)
 	{
 		test_ = new Test(group_, "TCPClient::connect");
 		EventCallback *cb =
 			callback(this, &Connector::connect_complete);
-		action_ = TCPClient::connect(&client_, "localhost", port, cb);
-		Test _(group_, "TCPClient::connect set TCPClient pointer");
-		if (client_ != NULL)
+		action_ = TCPClient::connect(&socket_, "localhost", port, cb);
+		Test _(group_, "TCPClient::connect set Socket pointer");
+		if (socket_ != NULL)
 			_.pass();
 	}
 
@@ -55,12 +55,12 @@ public:
 			}
 		}
 		{
-			Test _(group_, "Client is closed");
-			if (client_ == NULL)
+			Test _(group_, "Socket is closed");
+			if (socket_ == NULL)
 				_.pass();
 			else {
-				delete client_;
-				client_ = NULL;
+				delete socket_;
+				socket_ = NULL;
 			}
 		}
 	}
@@ -71,12 +71,12 @@ public:
 		action_ = NULL;
 
 		{
-			Test _(group_, "Client closed successfully");
+			Test _(group_, "Socket closed successfully");
 			if (e.type_ == Event::Done)
 				_.pass();
 		}
-		delete client_;
-		client_ = NULL;
+		delete socket_;
+		socket_ = NULL;
 	}
 
 	void connect_complete(Event e)
@@ -97,7 +97,7 @@ public:
 
 		EventCallback *cb = callback(this, &Connector::write_complete);
 		Buffer buf(data, sizeof data);
-		action_ = client_->write(&buf, cb);
+		action_ = socket_->write(&buf, cb);
 	}
 
 	void write_complete(Event e)
@@ -114,7 +114,7 @@ public:
 		}
 
 		EventCallback *cb = callback(this, &Connector::close_complete);
-		action_ = client_->close(cb);
+		action_ = socket_->close(cb);
 	}
 };
 
