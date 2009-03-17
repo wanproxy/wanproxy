@@ -14,7 +14,7 @@ public:
 
 	template<typename T>
 	LogNull&
-	operator << (T x)
+	operator << (T)
 	{
 		return *this;
 	}
