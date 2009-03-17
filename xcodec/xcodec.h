@@ -10,8 +10,7 @@
 #define	XCODEC_CHAR_MASK	(0x03)
 #define	XCODEC_CHAR_SPECIAL(ch)	(((ch) & ~XCODEC_CHAR_MASK) == XCODEC_CHAR_BASE)
 
-#define	XCODEC_CHUNK_LENGTH	(128)
-#define	XCODEC_WINDOW_SIZE	(XCODEC_CHUNK_LENGTH - 1)
+#define	XCODEC_SEGMENT_LENGTH	(128)
 
 class XCodecDecoder;
 class XCodecEncoder;

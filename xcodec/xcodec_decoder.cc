@@ -92,16 +92,16 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			 * it will be used in reference to next time.
 			 */
 		case XCODEC_DECLARE_CHAR:
-			if (inlen < 9 + XCODEC_CHUNK_LENGTH)
+			if (inlen < 9 + XCODEC_SEGMENT_LENGTH)
 				return (true);
 
 			input->moveout((uint8_t *)&hash, 1, sizeof hash);
 			hash = LittleEndian::decode(hash);
 
-			input->copyout(&seg, XCODEC_CHUNK_LENGTH);
-			input->skip(XCODEC_CHUNK_LENGTH);
+			input->copyout(&seg, XCODEC_SEGMENT_LENGTH);
+			input->skip(XCODEC_SEGMENT_LENGTH);
 
-			if (XCHash<XCODEC_CHUNK_LENGTH>::hash(seg->data()) != hash) {
+			if (XCHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data()) != hash) {
 				/* XXX Show expected and actual hash?  */
 				seg->unref();
 				ERROR(log_) << "Data in stream does not have expected hash.";
@@ -143,7 +143,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 				seg->unref();
 			}
 
-			inlen -= 9 + XCODEC_CHUNK_LENGTH;
+			inlen -= 9 + XCODEC_SEGMENT_LENGTH;
 			break;
 
 			/*

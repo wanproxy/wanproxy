@@ -5,13 +5,7 @@
 #include <xcodec/xchash.h>
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_encoder.h>
-
-struct xcodec_special_p {
-	bool operator() (uint8_t ch) const
-	{
-		return (XCODEC_CHAR_SPECIAL(ch));
-	}
-};
+#include <xcodec/xcodec_slice.h>
 
 XCodecEncoder::XCodecEncoder(XCodec *codec)
 : log_("/xcodec/encoder"),
@@ -25,7 +19,8 @@ XCodecEncoder::~XCodecEncoder()
 void
 XCodecEncoder::encode(Buffer *output, Buffer *input)
 {
-	input->escape(XCODEC_ESCAPE_CHAR, xcodec_special_p());
-	output->append(input);
-	input->clear();
+	XCodecSlice slice(database_, input);
+	ASSERT(input->empty());
+
+	slice.encode(&backref_, output);
 }
