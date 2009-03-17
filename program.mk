@@ -23,6 +23,8 @@ regress: ${PROG_CXX}
 CFLAGS+=-I${TOPDIR}
 .if defined(NDEBUG)
 CFLAGS+=-DNDEBUG=1
+.else
+CFLAGS+=-g
 .endif
 
 CFLAGS+=-W -Wall -Werror
