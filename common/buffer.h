@@ -706,6 +706,15 @@ public:
 		moveout(dst, 0, dstsize);
 	}
 
+	void moveout(BufferSegment **segp)
+	{
+		ASSERT(!empty());
+		BufferSegment *seg = data_.front();
+		data_.pop_front();
+		length_ -= seg->length();
+		*segp = seg;
+	}
+
 	uint8_t peek(void) const
 	{
 		ASSERT(length_ != 0);
