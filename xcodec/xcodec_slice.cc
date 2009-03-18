@@ -172,7 +172,7 @@ XCodecSlice::process(Buffer *input)
 				offset_seg_map.push_back(osp);
 
 				/* Do not hash any data until after us.  */
-				base = o + XCODEC_SEGMENT_LENGTH;
+				base = o;
 			}
 
 			/*
