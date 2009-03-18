@@ -1,4 +1,6 @@
+o) Add lots of comments.
 o) Make the XCodec encoder and decoder asynchronous.
+o) Optimize the XCodec encoder a bit more.
 o) Connetion table. Database.
 o) Add an IO queueing system that will make it possible to use lio_listio on
    systems that support it.
