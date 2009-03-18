@@ -45,7 +45,8 @@ XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *input)
 	ASSERT(input->empty());
 }
 
-XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *prefix, uint64_t hash, BufferSegment *seg)
+XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *prefix, uint64_t hash,
+			 BufferSegment *seg)
 : log_("/xcodec/slice"),
   database_(database),
   type_(XCodecSlice::HashReference),
@@ -88,27 +89,31 @@ XCodecSlice::~XCodecSlice()
 }
 
 /*
- * This takes a view of a data stream and turns it into a series of references to other
- * data, declarations of data to be referenced, and data that needs escaped.
+ * This takes a view of a data stream and turns it into a series of references
+ * to other * data, declarations of data to be referenced, and data that needs
+ * escaped.
  *
- * It's very simple and aggressive and performs worse than the original encoder as a
- * result.  The old encoder did a few important things differently.  First, it would start
- * declaring data as soon as we knew we hadn't found a hash for a given chunk of data.  What
- * I mean is that it would look at a segment and a segment but one worth of data until it found
- * either a match or something that didn't collide, and then it would use that.
+ * It's very simple and aggressive and performs worse than the original encoder
+ * as a result.  The old encoder did a few important things differently.  First,
+ * it would start declaring data as soon as we knew we hadn't found a hash for a
+ * given chunk of data.  What I mean is that it would look at a segment and a
+ * segment but one worth of data until it found either a match or something that
+ * didn't collide, and then it would use that.
  *
- * Secondly, as a result of that, it didn't need to do two database lookups, and those things
- * get expensive.
+ * Secondly, as a result of that, it didn't need to do two database lookups, and
+ * those things get expensive.
  *
- * However, we have a few places where we can do better.  First, we can emulate the aggressive
- * declaration (which is better for data and for speed) by looking at the first ohit and seeing
- * when we're a segment length away from it, and then scanning it then and there to find something
- * we can use.  Then we can just put it into the offset_seg_map and we can avoid using the hash_map
- * later on.
+ * However, we have a few places where we can do better.  First, we can emulate
+ * the aggressive declaration (which is better for data and for speed) by
+ * looking at the first ohit and seeing when we're a segment length away from
+ * it, and then scanning it then and there to find something we can use.  Then
+ * we can just put it into the offset_seg_map and we can avoid using the
+ * hash_map later on.
  *
- * Second, we don't need to use a map.  We need the data to be sorted, yes, but just by insertion.
- * Using a deque or vector should give much better performance for the offset_hash_map and the
- * offset_seg_map.  We can just put a pair in them and manage the sorting ourselves, algorithmically.
+ * Second, we don't need to use a map.  We need the data to be sorted, yes, but
+ * just by insertion.  Using a deque or vector should give much better
+ * performance for the offset_hash_map and the offset_seg_map.  We can just put
+ * a pair in them and manage the sorting ourselves, algorithmically.
  *
  * Fourth, probably a lot of other things.
  */
@@ -150,8 +155,8 @@ XCodecSlice::process(Buffer *input)
 			if (oseg != NULL) {
 				/*
 				 * This segment already exists.  If it's
-				 * identical to this chunk of data, then
-				 * that's positively fantastic.
+				 * identical to this chunk of data, then that's
+				 * positively fantastic.
 				 */
 				uint8_t data[XCODEC_SEGMENT_LENGTH];
 				suffix_.copyout(data, start, sizeof data);
@@ -161,8 +166,11 @@ XCodecSlice::process(Buffer *input)
 					continue;
 				}
 
-				/* Identical to this chunk.  */
-				/* The offset-seg map holds our reference.  */
+				/*
+				 * The segment was identical, we can use it.
+				 * We're giving our reference to the offset-seg
+				 * map.
+				 */
 				offset_seg_map[start] = oseg;
 				offset_hash_map[start] = hash;
 
@@ -198,7 +206,8 @@ XCodecSlice::process(Buffer *input)
 		xcodec_slice slice;
 
 		/*
-		 * If this offset-hash corresponds to this offset-segment, use it!
+		 * If this offset-hash corresponds to this offset-segment, use
+		 * it!
 		 */
 		if (osit != offset_seg_map.end()) {
 			if (start == osit->first) {
@@ -212,8 +221,8 @@ XCodecSlice::process(Buffer *input)
 				offset_seg_map.erase(osit);
 			} else if (start < osit->first && end > osit->first) {
 				/*
-				 * This hash would overlap with a offset-segment.
-				 * Skip it.
+				 * This hash would overlap with a
+				 * offset-segment.  Skip it.
 				 */
 				continue;
 			} else {
@@ -238,10 +247,10 @@ XCodecSlice::process(Buffer *input)
 			suffix_.copyout(data, start - soff, sizeof data);
 
 			/*
-			 * We can't assume that this isn't in the database.  Since
-			 * we're declaring things all the time in this stream, we may
-			 * have introduced hits and collisions.  So we, sadly, have
-			 * to go back to the well.
+			 * We can't assume that this isn't in the database.
+			 * Since we're declaring things all the time in this
+			 * stream, we may have introduced hits and collisions.
+			 * So we, sadly, have to go back to the well.
 			 */
 			seg = database_->lookup(hash);
 			if (seg != NULL) {
@@ -259,8 +268,8 @@ XCodecSlice::process(Buffer *input)
 				slice.seg_ = seg;
 			} else {
 				/*
-				 * No hit is fantastic, too -- go ahead and declare this
-				 * hash.
+				 * No hit is fantastic, too -- go ahead and
+				 * declare this hash.
 				 */
 				seg = new BufferSegment();
 				seg->append(data, sizeof data);
@@ -287,9 +296,9 @@ XCodecSlice::process(Buffer *input)
 			}
 		} else {
 			/*
-			 * There should not be any successive overlapping
-			 * hashes if we found a hit in the first pass.  We
-			 * should ASSERT that this looks like we'd expect.
+			 * There should not be any successive overlapping hashes
+			 * if we found a hit in the first pass.  XXX We should
+			 * ASSERT that this looks like we'd expect.
 			 */
 		}
 
@@ -323,8 +332,8 @@ XCodecSlice::process(Buffer *input)
 	}
 
 	/*
-	 * The segment map should be empty, too.  It should only have entries that
-	 * correspond to offset-hash entries.
+	 * The segment map should be empty, too.  It should only have entries
+	 * that correspond to offset-hash entries.
 	 */
 	ASSERT(offset_seg_map.empty());
 }
