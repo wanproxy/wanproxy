@@ -1,15 +1,12 @@
 #ifndef	XCODEC_SLICE_H
 #define	XCODEC_SLICE_H
 
-#define	XCODEC_SLICE_SIZE	(XCODEC_SEGMENT_LENGTH * XCODEC_SEGMENT_LENGTH)
-
 class XCBackref;
 class XCDatabase;
 
 class XCodecSlice {
 	enum Type {
 		EscapeData,
-		HashDeclare,
 		HashReference,
 	};
 
@@ -19,12 +16,16 @@ class XCodecSlice {
 	Type type_;
 
 	Buffer prefix_;
+	std::map<uint64_t, BufferSegment *> declarations_;
 	uint64_t hash_;
 	BufferSegment *seg_;
-	Buffer suffix_;
 	XCodecSlice *next_;
+	Buffer suffix_;
 public:
 	XCodecSlice(XCDatabase *, Buffer *, XCodecSlice * = NULL);
+private:
+	XCodecSlice(XCDatabase *, Buffer *, uint64_t, BufferSegment *, XCodecSlice *);
+public:
 	~XCodecSlice();
 
 	void encode(XCBackref *, Buffer *) const;
