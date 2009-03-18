@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <deque>
 #include <map>
 #include <vector>
 
