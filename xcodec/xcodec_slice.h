@@ -21,7 +21,6 @@ class XCodecSlice {
 	XCDatabase *database_;
 
 	std::set<uint64_t> declarations_;
-	Buffer prefix_;
 	std::vector<Data> data_;
 	Buffer suffix_;
 public:

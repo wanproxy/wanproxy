@@ -42,12 +42,11 @@ XCodecSlice::Data::~Data()
 XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *input)
 : log_("/xcodec/slice"),
   database_(database),
-  prefix_(),
   data_(),
   suffix_()
 {
 	if (input->length() < XCODEC_SEGMENT_LENGTH) {
-		prefix_.append(input);
+		suffix_.append(input);
 		input->clear();
 		return;
 	}
@@ -86,7 +85,6 @@ XCodecSlice::~XCodecSlice()
 void
 XCodecSlice::process(Buffer *input)
 {
-	ASSERT(prefix_.empty());
 	ASSERT(suffix_.empty());
 	ASSERT(input->length() >= XCODEC_SEGMENT_LENGTH);
 
@@ -161,7 +159,7 @@ XCodecSlice::process(Buffer *input)
 	 */
 
 	/* Reserve room for all-references.  */
-	data_.reserve(prefix_.length() / XCODEC_SEGMENT_LENGTH);
+	data_.reserve(suffix_.length() / XCODEC_SEGMENT_LENGTH);
 
 	std::deque<std::pair<unsigned, uint64_t> >::iterator ohit;
 	BufferSegment *seg;
@@ -309,12 +307,6 @@ void
 XCodecSlice::encode(XCBackref *backref, Buffer *output) const
 {
 	uint64_t lehash;
-
-	if (!prefix_.empty()) {
-		Buffer prefix(prefix_);
-		prefix.escape(XCODEC_ESCAPE_CHAR, xcodec_special_p());
-		output->append(prefix);
-	}
 
 	std::set<uint64_t> need_declared(declarations_);
 
