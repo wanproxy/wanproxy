@@ -26,14 +26,13 @@ struct xcodec_slice {
 	{ }
 };
 
-XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *input, XCodecSlice *next)
+XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *input)
 : log_("/xcodec/slice"),
   database_(database),
   type_(XCodecSlice::EscapeData),
   prefix_(),
   hash_(0),
   seg_(NULL),
-  next_(next),
   suffix_()
 {
 	if (input->length() < XCODEC_SEGMENT_LENGTH) {
@@ -46,14 +45,13 @@ XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *input, XCodecSlice *next)
 	ASSERT(input->empty());
 }
 
-XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *prefix, uint64_t hash, BufferSegment *seg, XCodecSlice *next)
+XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *prefix, uint64_t hash, BufferSegment *seg)
 : log_("/xcodec/slice"),
   database_(database),
   type_(XCodecSlice::HashReference),
   prefix_(),
   hash_(hash),
   seg_(NULL),
-  next_(next),
   suffix_()
 {
 	if (prefix != NULL) {
@@ -81,9 +79,11 @@ XCodecSlice::~XCodecSlice()
 		seg_ = NULL;
 	}
 
-	if (next_ != NULL) {
-		delete next_;
-		next_ = NULL;
+	std::deque<XCodecSlice *>::iterator chit;
+	while ((chit = children_.begin()) != children_.end()) {
+		XCodecSlice *slice = *chit;
+		delete slice;
+		children_.erase(chit);
 	}
 }
 
@@ -109,10 +109,6 @@ XCodecSlice::~XCodecSlice()
  * Second, we don't need to use a map.  We need the data to be sorted, yes, but just by insertion.
  * Using a deque or vector should give much better performance for the offset_hash_map and the
  * offset_seg_map.  We can just put a pair in them and manage the sorting ourselves, algorithmically.
- *
- * Third, we can trivially get rid of the xcodec_slice structure and its vector if we go back to
- * keeping a deque of XCodecSlice children.  Then we can just populate that directly since we won't
- * have to order things wonkily to get the correct data ordering.
  *
  * Fourth, probably a lot of other things.
  */
@@ -182,13 +178,8 @@ XCodecSlice::process(Buffer *input)
 		seg->unref();
 	}
 
-	std::vector<xcodec_slice> slices;
-
-	/* Reserve room for all-refs.  This should be worst-case, too, XXX +/- 1? XXX  */
-	slices.reserve(suffix_.length() / XCODEC_SEGMENT_LENGTH);
-
 	/*
-	 * Now compile the offset-hash map into the slices vector.
+	 * Now compile the offset-hash map into child slices.
 	 */
 	std::map<unsigned, uint64_t>::iterator ohit;
 	BufferSegment *seg;
@@ -319,24 +310,9 @@ XCodecSlice::process(Buffer *input)
 		soff = end;
 
 		/*
-		 * Now add this reference and prefixing data to the vector.
+		 * Now create the child slice.
 		 */
-		slices.push_back(slice);
-	}
-
-	/*
-	 * The segment map should be empty, too.  It should only have entries that
-	 * correspond to offset-hash entries.
-	 */
-	ASSERT(offset_seg_map.empty());
-
-	/*
-	 * Now convert the slices vector into a chain of slices.
-	 */
-	std::vector<xcodec_slice>::reverse_iterator xsit;
-	for (xsit = slices.rbegin(); xsit != slices.rend(); ++xsit) {
-		xcodec_slice& slice = *xsit;
-		next_ = new XCodecSlice(database_, &slice.prefix_, slice.hash_, slice.seg_, next_);
+		children_.push_back(new XCodecSlice(database_, &slice.prefix_, slice.hash_, slice.seg_));
 		ASSERT(slice.prefix_.empty());
 
 		/*
@@ -345,6 +321,12 @@ XCodecSlice::process(Buffer *input)
 		slice.seg_->unref();
 		slice.seg_ = NULL;
 	}
+
+	/*
+	 * The segment map should be empty, too.  It should only have entries that
+	 * correspond to offset-hash entries.
+	 */
+	ASSERT(offset_seg_map.empty());
 }
 
 void
@@ -364,10 +346,10 @@ XCodecSlice::encode(XCBackref *backref, Buffer *output) const
 	 * reference trigger declaration.  This gives massively worse overhead
 	 * since the backref window is basically useless.
 	 */
-	std::map<uint64_t, BufferSegment *>::const_iterator it;
-	for (it = declarations_.begin(); it != declarations_.end(); ++it) {
-		uint64_t hash = it->first;
-		BufferSegment *seg = it->second;
+	std::map<uint64_t, BufferSegment *>::const_iterator dit;
+	for (dit = declarations_.begin(); dit != declarations_.end(); ++dit) {
+		uint64_t hash = dit->first;
+		BufferSegment *seg = dit->second;
 
 		output->append(XCODEC_DECLARE_CHAR);
 		lehash = LittleEndian::encode(hash);
@@ -392,8 +374,12 @@ XCodecSlice::encode(XCBackref *backref, Buffer *output) const
 		}
 	}
 
-	if (next_ != NULL)
-		next_->encode(backref, output);
+	std::deque<XCodecSlice *>::const_iterator chit;
+	for (chit = children_.begin(); chit != children_.end(); ++chit) {
+		const XCodecSlice *slice = *chit;
+
+		slice->encode(backref, output);
+	}
 
 	if (!suffix_.empty()) {
 		Buffer suffix(suffix_);

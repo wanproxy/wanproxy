@@ -19,12 +19,12 @@ class XCodecSlice {
 	std::map<uint64_t, BufferSegment *> declarations_;
 	uint64_t hash_;
 	BufferSegment *seg_;
-	XCodecSlice *next_;
+	std::deque<XCodecSlice *> children_;
 	Buffer suffix_;
 public:
-	XCodecSlice(XCDatabase *, Buffer *, XCodecSlice * = NULL);
+	XCodecSlice(XCDatabase *, Buffer *);
 private:
-	XCodecSlice(XCDatabase *, Buffer *, uint64_t, BufferSegment *, XCodecSlice *);
+	XCodecSlice(XCDatabase *, Buffer *, uint64_t, BufferSegment *);
 public:
 	~XCodecSlice();
 
