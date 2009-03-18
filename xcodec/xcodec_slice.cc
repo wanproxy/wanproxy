@@ -110,12 +110,7 @@ XCodecSlice::~XCodecSlice()
  * we can just put it into the offset_seg_map and we can avoid using the
  * hash_map later on.
  *
- * Second, we don't need to use a map.  We need the data to be sorted, yes, but
- * just by insertion.  Using a deque or vector should give much better
- * performance for the offset_hash_map and the offset_seg_map.  We can just put
- * a pair in them and manage the sorting ourselves, algorithmically.
- *
- * Fourth, probably a lot of other things.
+ * Probably a lot of other things.
  */
 void
 XCodecSlice::process(Buffer *input)
@@ -126,8 +121,8 @@ XCodecSlice::process(Buffer *input)
 	ASSERT(input->length() >= XCODEC_SEGMENT_LENGTH);
 
 	XCHash<XCODEC_SEGMENT_LENGTH> xcodec_hash;
-	std::map<unsigned, uint64_t> offset_hash_map;
-	std::map<unsigned, BufferSegment *> offset_seg_map;
+	std::deque<std::pair<unsigned, uint64_t> > offset_hash_map;
+	std::deque<std::pair<unsigned, BufferSegment *> > offset_seg_map;
 	unsigned o = 0;
 	unsigned base = 0;
 
@@ -171,8 +166,10 @@ XCodecSlice::process(Buffer *input)
 				 * We're giving our reference to the offset-seg
 				 * map.
 				 */
-				offset_seg_map[start] = oseg;
-				offset_hash_map[start] = hash;
+				std::pair<unsigned, BufferSegment *> osp;
+				osp.first = start;
+				osp.second = oseg;
+				offset_seg_map.push_back(osp);
 
 				/* Do not hash any data until after us.  */
 				base = o + XCODEC_SEGMENT_LENGTH;
@@ -181,7 +178,10 @@ XCodecSlice::process(Buffer *input)
 			/*
 			 * No collision, remember this for later.
 			 */
-			offset_hash_map[start] = hash;
+			std::pair<unsigned, uint64_t> ohp;
+			ohp.first = start;
+			ohp.second = hash;
+			offset_hash_map.push_back(ohp);
 		}
 		seg->unref();
 	}
@@ -189,7 +189,7 @@ XCodecSlice::process(Buffer *input)
 	/*
 	 * Now compile the offset-hash map into child slices.
 	 */
-	std::map<unsigned, uint64_t>::iterator ohit;
+	std::deque<std::pair<unsigned, uint64_t> >::iterator ohit;
 	BufferSegment *seg;
 	unsigned soff = 0;
 	while ((ohit = offset_hash_map.begin()) != offset_hash_map.end()) {
@@ -202,7 +202,7 @@ XCodecSlice::process(Buffer *input)
 		 */
 		offset_hash_map.erase(ohit);
 
-		std::map<unsigned, BufferSegment *>::iterator osit = offset_seg_map.begin();
+		std::deque<std::pair<unsigned, BufferSegment *> >::iterator osit = offset_seg_map.begin();
 		xcodec_slice slice;
 
 		/*
