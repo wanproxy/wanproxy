@@ -38,6 +38,9 @@ public:
 		if (hash == 0)
 			return;
 
+		if (present_.find(hash) != present_.end())
+			return;
+
 		uint64_t old = window_[cursor_];
 		if (old != 0) {
 			ASSERT(present_[old] == cursor_);
