@@ -14,25 +14,36 @@ struct xcodec_special_p {
 	}
 };
 
-struct xcodec_slice {
-	Buffer prefix_;
-	uint64_t hash_;
-	BufferSegment *seg_;
+XCodecSlice::Data::Data(void)
+: prefix_(),
+  hash_(),
+  seg_(NULL)
+{ }
 
-	xcodec_slice(void)
-	: prefix_(),
-	  hash_(),
-	  seg_(NULL)
-	{ }
-};
+XCodecSlice::Data::Data(const XCodecSlice::Data& src)
+: prefix_(src.prefix_),
+  hash_(src.hash_),
+  seg_(NULL)
+{
+	if (src.seg_ != NULL) {
+		src.seg_->ref();
+		seg_ = src.seg_;
+	}
+}
+
+XCodecSlice::Data::~Data()
+{
+	if (seg_ != NULL) {
+		seg_->unref();
+		seg_ = NULL;
+	}
+}
 
 XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *input)
 : log_("/xcodec/slice"),
   database_(database),
-  type_(XCodecSlice::EscapeData),
   prefix_(),
-  hash_(0),
-  seg_(NULL),
+  data_(),
   suffix_()
 {
 	if (input->length() < XCODEC_SEGMENT_LENGTH) {
@@ -45,52 +56,12 @@ XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *input)
 	ASSERT(input->empty());
 }
 
-XCodecSlice::XCodecSlice(XCDatabase *database, Buffer *prefix, uint64_t hash,
-			 BufferSegment *seg)
-: log_("/xcodec/slice"),
-  database_(database),
-  type_(XCodecSlice::HashReference),
-  prefix_(),
-  hash_(hash),
-  seg_(NULL),
-  suffix_()
-{
-	if (prefix != NULL) {
-		prefix_.append(prefix);
-		prefix->clear();
-	}
-
-	if (seg != NULL) {
-		seg->ref();
-		seg_ = seg;
-	}
-}
-
 XCodecSlice::~XCodecSlice()
-{
-	std::map<uint64_t, BufferSegment *>::iterator it;
-	while ((it = declarations_.begin()) != declarations_.end()) {
-		BufferSegment *seg = it->second;
-		seg->unref();
-		declarations_.erase(it);
-	}
-
-	if (seg_ != NULL) {
-		seg_->unref();
-		seg_ = NULL;
-	}
-
-	std::deque<XCodecSlice *>::iterator chit;
-	while ((chit = children_.begin()) != children_.end()) {
-		XCodecSlice *slice = *chit;
-		delete slice;
-		children_.erase(chit);
-	}
-}
+{ }
 
 /*
  * This takes a view of a data stream and turns it into a series of references
- * to other * data, declarations of data to be referenced, and data that needs
+ * to other data, declarations of data to be referenced, and data that needs
  * escaped.
  *
  * It's very simple and aggressive and performs worse than the original encoder
@@ -117,7 +88,6 @@ XCodecSlice::process(Buffer *input)
 {
 	ASSERT(prefix_.empty());
 	ASSERT(suffix_.empty());
-	ASSERT(type_ == XCodecSlice::EscapeData);
 	ASSERT(input->length() >= XCODEC_SEGMENT_LENGTH);
 
 	XCHash<XCODEC_SEGMENT_LENGTH> xcodec_hash;
@@ -126,7 +96,7 @@ XCodecSlice::process(Buffer *input)
 	unsigned o = 0;
 	unsigned base = 0;
 
-	while (input->length() >= XCODEC_SEGMENT_LENGTH) {
+	while (!input->empty()) {
 		BufferSegment *seg;
 		input->moveout(&seg);
 
@@ -187,8 +157,12 @@ XCodecSlice::process(Buffer *input)
 	}
 
 	/*
-	 * Now compile the offset-hash map into child slices.
+	 * Now compile the offset-hash map into child data.
 	 */
+
+	/* Reserve room for all-references.  */
+	data_.reserve(prefix_.length() / XCODEC_SEGMENT_LENGTH);
+
 	std::deque<std::pair<unsigned, uint64_t> >::iterator ohit;
 	BufferSegment *seg;
 	unsigned soff = 0;
@@ -203,7 +177,7 @@ XCodecSlice::process(Buffer *input)
 		offset_hash_map.erase(ohit);
 
 		std::deque<std::pair<unsigned, BufferSegment *> >::iterator osit = offset_seg_map.begin();
-		xcodec_slice slice;
+		Data slice;
 
 		/*
 		 * If this offset-hash corresponds to this offset-segment, use
@@ -239,8 +213,8 @@ XCodecSlice::process(Buffer *input)
 		}
 
 		/*
-		 * We have not yet set a seg_ in this xcodec_slice, so it's time
-		 * for us to declare this segment.
+		 * We have not yet set a seg_ in this Data, so it's time for us
+		 * to declare this segment.
 		 */
 		if (slice.seg_ == NULL) {
 			uint8_t data[XCODEC_SEGMENT_LENGTH];
@@ -279,7 +253,7 @@ XCodecSlice::process(Buffer *input)
 				/* Take a reference for the declarations_.  */
 				/* XXX Make sure no dupes!  */
 				seg->ref();
-				declarations_[hash] = seg;
+				declarations_.insert(hash);
 
 				slice.hash_ = hash;
 				/* The slice holds our reference.  */
@@ -321,14 +295,7 @@ XCodecSlice::process(Buffer *input)
 		/*
 		 * Now create the child slice.
 		 */
-		children_.push_back(new XCodecSlice(database_, &slice.prefix_, slice.hash_, slice.seg_));
-		ASSERT(slice.prefix_.empty());
-
-		/*
-		 * Drop the reference we held.
-		 */
-		slice.seg_->unref();
-		slice.seg_ = NULL;
+		data_.push_back(slice);
 	}
 
 	/*
@@ -349,46 +316,45 @@ XCodecSlice::encode(XCBackref *backref, Buffer *output) const
 		output->append(prefix);
 	}
 
-	/*
-	 * XXX
-	 * This destroys locality of reference.  Better to make the first
-	 * reference trigger declaration.  This gives massively worse overhead
-	 * since the backref window is basically useless.
-	 */
-	std::map<uint64_t, BufferSegment *>::const_iterator dit;
-	for (dit = declarations_.begin(); dit != declarations_.end(); ++dit) {
-		uint64_t hash = dit->first;
-		BufferSegment *seg = dit->second;
+	std::set<uint64_t> need_declared(declarations_);
 
-		output->append(XCODEC_DECLARE_CHAR);
-		lehash = LittleEndian::encode(hash);
-		output->append((const uint8_t *)&lehash, sizeof lehash);
-		output->append(seg);
+	std::vector<Data>::const_iterator dit;
+	for (dit = data_.begin(); dit != data_.end(); ++dit) {
+		Buffer prefix(dit->prefix_);
+		prefix.escape(XCODEC_ESCAPE_CHAR, xcodec_special_p());
+		output->append(prefix);
 
-		backref->declare(hash, seg);
-	}
+		if (dit->seg_ == NULL)
+			continue;
 
-	if (type_ == XCodecSlice::HashReference) {
+		if (need_declared.find(dit->hash_) != need_declared.end()) {
+			uint64_t shash = XCHash<XCODEC_SEGMENT_LENGTH>::hash(dit->seg_->data());
+			ASSERT(shash == dit->hash_);
+
+			output->append(XCODEC_DECLARE_CHAR);
+			lehash = LittleEndian::encode(dit->hash_);
+			output->append((const uint8_t *)&lehash, sizeof lehash);
+			output->append(dit->seg_);
+
+			backref->declare(dit->hash_, dit->seg_);
+
+			need_declared.erase(dit->hash_);
+		}
+
 		uint8_t b;
-
-		if (backref->present(hash_, &b)) {
+		if (backref->present(dit->hash_, &b)) {
 			output->append(XCODEC_BACKREF_CHAR);
 			output->append(b);
 		} else {
 			output->append(XCODEC_HASHREF_CHAR);
-			lehash = LittleEndian::encode(hash_);
+			lehash = LittleEndian::encode(dit->hash_);
 			output->append((const uint8_t *)&lehash, sizeof lehash);
 
-			backref->declare(hash_, seg_);
+			backref->declare(dit->hash_, dit->seg_);
 		}
 	}
 
-	std::deque<XCodecSlice *>::const_iterator chit;
-	for (chit = children_.begin(); chit != children_.end(); ++chit) {
-		const XCodecSlice *slice = *chit;
-
-		slice->encode(backref, output);
-	}
+	ASSERT(need_declared.empty());
 
 	if (!suffix_.empty()) {
 		Buffer suffix(suffix_);
