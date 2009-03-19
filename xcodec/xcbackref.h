@@ -3,7 +3,8 @@
 
 #include <map>
 
-#define	XCBACKREF_COUNT		(0xff)
+#define	XCBACKREF_MAX		(0xff)
+#define	XCBACKREF_COUNT		(XCBACKREF_MAX + 1)
 
 class XCBackref {
 	uint64_t window_[XCBACKREF_COUNT];
