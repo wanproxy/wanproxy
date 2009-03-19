@@ -9,6 +9,7 @@
 EventSystem::EventSystem(void)
 : log_("/event/system"),
   queue_(),
+  timeout_queue_(),
   poll_()
 {
 	INFO(log_) << "Starting event system.";
