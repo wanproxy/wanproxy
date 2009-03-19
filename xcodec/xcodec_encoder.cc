@@ -6,7 +6,6 @@
 #include <xcodec/xchash.h>
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_encoder.h>
-//#include <xcodec/xcodec_slice.h>
 
 struct xcodec_special_p {
 	bool operator() (uint8_t ch) const
