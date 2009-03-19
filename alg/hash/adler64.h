@@ -1,5 +1,5 @@
-#ifndef	ADLER32_H
-#define	ADLER32_H
+#ifndef	ADLER64_H
+#define	ADLER64_H
 
 /*
  * A modulus-free rolling Adler64.
@@ -55,4 +55,4 @@ public:
 	}
 };
 
-#endif /* !ADLER32_H */
+#endif /* !ADLER64_H */
