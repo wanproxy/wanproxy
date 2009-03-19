@@ -101,10 +101,9 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			input->copyout(&seg, XCODEC_SEGMENT_LENGTH);
 			input->skip(XCODEC_SEGMENT_LENGTH);
 
-			uint64_t shash = XCHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
-			if (shash != hash) {
+			if (XCHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data()) != hash) {
 				seg->unref();
-				ERROR(log_) << "Data in stream does not have expected hash.  (stream " << shash << " expected " << hash << ")";
+				ERROR(log_) << "Data in stream does not have expected hash.";
 				return (false);
 			}
 
