@@ -77,6 +77,7 @@ void
 XCodecEncoder::encode(Buffer *output, Buffer *input)
 {
 	if (input->length() < XCODEC_SEGMENT_LENGTH) {
+		input->escape(XCODEC_ESCAPE_CHAR, xcodec_special_p());
 		output->append(input);
 		input->clear();
 		return;
