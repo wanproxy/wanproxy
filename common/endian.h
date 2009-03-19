@@ -67,11 +67,11 @@ struct HostEndian {
 };
 
 #if BYTE_ORDER == LITTLE_ENDIAN
-struct LittleEndian : HostEndian { };
-struct BigEndian : SwapEndian { };
+typedef	HostEndian	LittleEndian;
+typedef	SwapEndian	BigEndian;
 #elif BYTE_ORDER == BIG_ENDIAN
-struct LittleEndian : SwapEndian { };
-struct BigEndian : HostEndian { };
+typedef	SwapEndian	LittleEndian;
+typedef	HostEndian	BigEndian;
 #endif
 
 #endif /* !ENDIAN_H */
