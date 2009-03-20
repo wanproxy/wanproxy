@@ -13,7 +13,7 @@ TimeoutQueue::NanoTime::current_time(void)
 	NanoTime nt;
 	int rv;
 
-#if defined(_POSIX_TIMERS)
+#if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
 	struct timespec ts;
 
 	rv = ::clock_gettime(CLOCK_MONOTONIC, &ts);

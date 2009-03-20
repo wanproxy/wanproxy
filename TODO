@@ -1,9 +1,13 @@
 o) Add lots of comments.
 o) Make the XCodec encoder and decoder asynchronous.
-o) Optimize the XCodec encoder a bit more.
-o) Connetion table. Database.
+o) Connection table. Database.
 o) Add an IO queueing system that will make it possible to use lio_listio on
    systems that support it.
+o) Allow chaining codecs.
+o) Run-length-encoding.
+o) Do some information exchange out-of-band when setting up connections between
+   WANProxy instances so we know what Channel to send requests for declarations
+   on.
 o) Make it possible to detect when we are sending to a socket that is also
    within WANProxy and avoid a system call -- just copy directly to the
    appropriate buffer.  It should be pretty easy to do this with the IO queueing
