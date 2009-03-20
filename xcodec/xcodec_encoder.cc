@@ -128,6 +128,12 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 
 				/* Do not hash any data until after us.  */
 				base = o;
+
+				/*
+				 * XXX
+				 * Remove any previous hashes that overlap with
+				 * us.
+				 */
 			} else {
 				/*
 				 * If there is a previous hash in the
