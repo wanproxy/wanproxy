@@ -20,6 +20,12 @@ regress: ${PROG_CXX}
 .endif
 .endif
 
+.if !target(regress)
+regress: ${PROG_CXX}
+.endif
+
+.PHONY: regress
+
 CFLAGS+=-I${TOPDIR}
 .if defined(NDEBUG)
 CFLAGS+=-DNDEBUG=1
@@ -46,8 +52,8 @@ all: ${PROG_CXX}
 ${PROG_CXX}: ${OBJS}
 	${CXX} ${CXXFLAGS} ${LDFLAGS} -o ${.TARGET} ${OBJS} ${LDADD}
 
-CLEANFILES+=${PROG_CXX}
-CLEANFILES+=${OBJS}
+clean:
+	rm -f ${PROG_CXX} ${OBJS}
 
 .include <bsd.obj.mk>
 .else
