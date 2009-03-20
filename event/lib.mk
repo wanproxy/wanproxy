@@ -9,14 +9,19 @@ SRCS+=	event_system.cc
 SRCS+=	timeout.cc
 SRCS+=	timer.cc
 
-.if !defined(USE_POLL)
 OSNAME!=	uname -s
 
+.if !defined(USE_POLL)
 .if ${OSNAME} == "Darwin" || ${OSNAME} == "FreeBSD"
 USE_POLL=	kqueue
 .else
 USE_POLL=	poll
 .endif
+.endif
+
+.if ${OSNAME} == "Linux"
+# Required for clock_gettime(3).
+LDADD+=		-lrt
 .endif
 
 SRCS+=	event_poll_${USE_POLL}.cc
