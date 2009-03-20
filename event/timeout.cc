@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <event/action.h>
 #include <event/callback.h>
@@ -12,7 +13,7 @@ TimeoutQueue::NanoTime::current_time(void)
 	NanoTime nt;
 	int rv;
 
-#if defined(CLOCK_MONOTONIC)
+#if defined(_POSIX_TIMERS)
 	struct timespec ts;
 
 	rv = ::clock_gettime(CLOCK_MONOTONIC, &ts);
