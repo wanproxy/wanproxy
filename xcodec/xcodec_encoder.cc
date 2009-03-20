@@ -7,6 +7,9 @@
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_encoder.h>
 
+typedef	std::pair<unsigned, uint64_t> offset_hash_pair_t;
+typedef	std::pair<unsigned, BufferSegment *> offset_seg_pair_t;
+
 struct xcodec_special_p {
 	bool operator() (uint8_t ch) const
 	{
@@ -53,25 +56,6 @@ XCodecEncoder::~XCodecEncoder()
  * This takes a view of a data stream and turns it into a series of references
  * to other data, declarations of data to be referenced, and data that needs
  * escaped.
- *
- * It's very simple and aggressive and performs worse than the original encoder
- * as a result.  The old encoder did a few important things differently.  First,
- * it would start declaring data as soon as we knew we hadn't found a hash for a
- * given chunk of data.  What I mean is that it would look at a segment and a
- * segment but one worth of data until it found either a match or something that
- * didn't collide, and then it would use that.
- *
- * Secondly, as a result of that, it didn't need to do two database lookups, and
- * those things get expensive.
- *
- * However, we have a few places where we can do better.  First, we can emulate
- * the aggressive declaration (which is better for data and for speed) by
- * looking at the first ohit and seeing when we're a segment length away from
- * it, and then scanning it then and there to find something we can use.  Then
- * we can just put it into the offset_seg_map and we can avoid using the
- * hash_map later on.
- *
- * Probably a lot of other things.
  */
 void
 XCodecEncoder::encode(Buffer *output, Buffer *input)
@@ -84,8 +68,8 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	}
 
 	XCHash<XCODEC_SEGMENT_LENGTH> xcodec_hash;
-	std::deque<std::pair<unsigned, uint64_t> > offset_hash_map;
-	std::deque<std::pair<unsigned, BufferSegment *> > offset_seg_map;
+	std::deque<offset_hash_pair_t> offset_hash_map;
+	std::deque<offset_seg_pair_t> offset_seg_map;
 	Buffer outq;
 	unsigned o = 0;
 	unsigned base = 0;
@@ -109,6 +93,12 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			unsigned start = o - XCODEC_SEGMENT_LENGTH;
 			uint64_t hash = xcodec_hash.mix();
 
+			/*
+			 * XXX
+			 * We can cache presence/non-presence within this part
+			 * of the stream to reduce the size of the map we have
+			 * to look up in.  Doing so should help a lot.
+			 */
 			BufferSegment *oseg;
 			oseg = database_->lookup(hash);
 			if (oseg != NULL) {
@@ -121,6 +111,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				outq.copyout(data, start, sizeof data);
 
 				if (!oseg->match(data, sizeof data)) {
+					oseg->unref();
 					DEBUG(log_) << "Collision in first pass.";
 					continue;
 				}
@@ -130,19 +121,57 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				 * We're giving our reference to the offset-seg
 				 * map.
 				 */
-				std::pair<unsigned, BufferSegment *> osp;
+				offset_seg_pair_t osp;
 				osp.first = start;
 				osp.second = oseg;
 				offset_seg_map.push_back(osp);
 
 				/* Do not hash any data until after us.  */
 				base = o;
+			} else {
+				/*
+				 * If there is a previous hash in the
+				 * offset-hash map that would overlap with this
+				 * hash, then we have no reason to remember this
+				 * hash for later -- unless there are some
+				 * in-stream collisions.  Which is bad, but hard
+				 * to avoid and fairly uncommon.
+				 */
+				if (!offset_hash_map.empty()) {
+					const offset_hash_pair_t& last = offset_hash_map.back();
+
+					if (last.first + XCODEC_SEGMENT_LENGTH > start) {
+						/*
+						 * The last hash in the
+						 * offset-hash map has us
+						 * covered; don't record this
+						 * hash.
+						 */
+						continue;
+					} else {
+						/*
+						 * XXX
+						 * We could go ahead and declare
+						 * the last hash now, but that
+						 * is actually kind of bad for
+						 * performance, even though it
+						 * avoids the in-stream
+						 * collision problem.
+						 *
+						 * It would probably be less bad
+						 * for performance if we got rid
+						 * of the next loop, which is
+						 * probably possible if we play
+						 * our cards right.
+						 */
+					}
+				}
 			}
 
 			/*
 			 * No collision, remember this for later.
 			 */
-			std::pair<unsigned, uint64_t> ohp;
+			offset_hash_pair_t ohp;
 			ohp.first = start;
 			ohp.second = hash;
 			offset_hash_map.push_back(ohp);
@@ -154,7 +183,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	 * Now compile the offset-hash map into child data.
 	 */
 
-	std::deque<std::pair<unsigned, uint64_t> >::iterator ohit;
+	std::deque<offset_hash_pair_t>::iterator ohit;
 	BufferSegment *seg;
 	unsigned soff = 0;
 	while ((ohit = offset_hash_map.begin()) != offset_hash_map.end()) {
@@ -167,7 +196,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		 */
 		offset_hash_map.erase(ohit);
 
-		std::deque<std::pair<unsigned, BufferSegment *> >::iterator osit = offset_seg_map.begin();
+		std::deque<offset_seg_pair_t>::iterator osit = offset_seg_map.begin();
 		Data slice;
 
 		/*
