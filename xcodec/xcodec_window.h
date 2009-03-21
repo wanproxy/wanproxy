@@ -6,6 +6,10 @@
 #define	XCODEC_WINDOW_MAX		(0xff)
 #define	XCODEC_WINDOW_COUNT		(XCODEC_WINDOW_MAX + 1)
 
+/*
+ * XXX
+ * Make more like an LRU and make present() bump up in the window.
+ */
 class XCodecWindow {
 	uint64_t window_[XCODEC_WINDOW_COUNT];
 	unsigned cursor_;
