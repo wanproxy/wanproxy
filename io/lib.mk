@@ -11,3 +11,4 @@ SRCS+=	serial.cc
 SRCS+=	socket.cc
 SRCS+=	tcp_client.cc
 SRCS+=	tcp_server.cc
+SRCS+=	udp_client.cc
