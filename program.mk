@@ -15,7 +15,7 @@ SRCS+=${TEST}.cc
 
 .if !target(regress)
 regress: ${PROG_CXX}
-	${.OBJDIR}/${PROG_CXX}
+	"${.OBJDIR}/${PROG_CXX}"
 .endif
 .endif
 .endif
@@ -26,7 +26,7 @@ regress: ${PROG_CXX}
 
 .PHONY: regress
 
-CFLAGS+=-I${TOPDIR}
+CFLAGS+=-I"${TOPDIR}"
 .if defined(NDEBUG)
 CFLAGS+=-DNDEBUG=1
 .else
