@@ -146,31 +146,39 @@ WANProxyConfig::parse(void)
 		}
 
 		parse(tokens);
+		ASSERT(tokens.empty());
 	}
 }
 
 void
-WANProxyConfig::parse(std::deque<std::string> tokens)
+WANProxyConfig::parse(std::deque<std::string>& tokens)
 {
-	if (tokens[0] == "flow-monitor") {
+	std::string command = tokens.front();
+	tokens.pop_front();
+
+	if (command == "flow-monitor") {
 		parse_flow_monitor(tokens);
-	} else if (tokens[0] == "flow-table") {
+	} else if (command == "flow-table") {
 		parse_flow_table(tokens);
-	} else if (tokens[0] == "log-mask") {
+	} else if (command == "log-mask") {
 		parse_log_mask(tokens);
-	} else if (tokens[0] == "proxy") {
+	} else if (command == "proxy") {
 		parse_proxy(tokens);
-	} else if (tokens[0] == "proxy-socks") {
+	} else if (command == "proxy-socks") {
 		parse_proxy_socks(tokens);
 	} else {
-		ERROR(log_) << "Unrecognized configuration directive: " << tokens[0];
+		tokens.clear();
+		ERROR(log_) << "Unrecognized configuration command: " << command;
 	}
+	if (!tokens.empty())
+		ERROR(log_) << "Unconsumed tokens.";
+	tokens.clear();
 }
 
 void
-WANProxyConfig::parse_flow_monitor(std::deque<std::string> tokens)
+WANProxyConfig::parse_flow_monitor(std::deque<std::string>& tokens)
 {
-	if (tokens.size() != 1) {
+	if (tokens.size() != 0) {
 		ERROR(log_) << "Wrong number of words in flow-monitor (" << tokens.size() << ")";
 		return;
 	}
@@ -183,14 +191,15 @@ WANProxyConfig::parse_flow_monitor(std::deque<std::string> tokens)
 }
 
 void
-WANProxyConfig::parse_flow_table(std::deque<std::string> tokens)
+WANProxyConfig::parse_flow_table(std::deque<std::string>& tokens)
 {
-	if (tokens.size() != 2) {
+	if (tokens.size() != 1) {
 		ERROR(log_) << "Wrong number of words in flow-table (" << tokens.size() << ")";
 		return;
 	}
 
-	std::string table = tokens[1];
+	std::string table = tokens.front();
+	tokens.pop_front();
 
 	if (flow_tables_.find(table) != flow_tables_.end()) {
 		ERROR(log_) << "Duplicate definition of flow-table " << table;
@@ -209,15 +218,18 @@ WANProxyConfig::parse_flow_table(std::deque<std::string> tokens)
 }
 
 void
-WANProxyConfig::parse_log_mask(std::deque<std::string> tokens)
+WANProxyConfig::parse_log_mask(std::deque<std::string>& tokens)
 {
-	if (tokens.size() != 3) {
+	if (tokens.size() != 2) {
 		ERROR(log_) << "Wrong number of words in log-mask (" << tokens.size() << ")";
 		return;
 	}
 
-	std::string handle_regex = tokens[1];
-	std::string priority_mask = tokens[2];
+	std::string handle_regex = tokens.front();
+	tokens.pop_front();
+
+	std::string priority_mask = tokens.front();
+	tokens.pop_front();
 
 	if (!Log::mask(handle_regex, priority_mask)) {
 		ERROR(log_) << "Unable to set log handle \"" << handle_regex << "\" mask to priority \"" << priority_mask << "\"";
@@ -225,64 +237,75 @@ WANProxyConfig::parse_log_mask(std::deque<std::string> tokens)
 }
 
 void
-WANProxyConfig::parse_proxy(std::deque<std::string> tokens)
+WANProxyConfig::parse_proxy(std::deque<std::string>& tokens)
 {
-	if (tokens.size() != 12) {
+	if (tokens.size() != 11) {
 		ERROR(log_) << "Wrong number of words in proxy (" << tokens.size() << ")";
 		return;
 	}
 
-	if (tokens[1] != "flow-table") {
+	if (tokens.front() != "flow-table") {
 		ERROR(log_) << "Missing 'flow-table' statement.";
 		return;
 	}
+	tokens.pop_front();
 
-	FlowTable *flow_table = flow_tables_[tokens[2]];
+	FlowTable *flow_table = flow_tables_[tokens.front()];
 	if (flow_table == NULL) {
-		ERROR(log_) << "Flow table '" << tokens[2] << "' not present.";
+		ERROR(log_) << "Flow table '" << tokens.front() << "' not present.";
 		return;
 	}
+	tokens.pop_front();
 
-	std::string local_host = tokens[3];
-	unsigned local_port = atoi(tokens[4].c_str());
+	std::string local_host = tokens.front();
+	tokens.pop_front();
+	unsigned local_port = atoi(tokens.front().c_str());
+	tokens.pop_front();
 
-	if (tokens[5] != "decoder") {
+	if (tokens.front() != "decoder") {
 		ERROR(log_) << "Missing 'decoder' statement.";
 		return;
 	}
+	tokens.pop_front();
 
 	XCodec *local_codec;
-	if (tokens[6] == "xcodec")
+	if (tokens.front() == "xcodec")
 		local_codec = codec_;
-	else if (tokens[6] == "none")
+	else if (tokens.front() == "none")
 		local_codec = NULL;
 	else {
 		ERROR(log_) << "Malformed decoder name.";
 		return;
 	}
+	tokens.pop_front();
 
-	if (tokens[7] != "to") {
+	if (tokens.front() != "to") {
 		ERROR(log_) << "Missing 'to' statement.";
 		return;
 	}
+	tokens.pop_front();
 
-	std::string remote_host = tokens[8];
-	unsigned remote_port = atoi(tokens[9].c_str());
+	std::string remote_host = tokens.front();
+	tokens.pop_front();
+	unsigned remote_port = atoi(tokens.front().c_str());
+	tokens.pop_front();
 
-	if (tokens[10] != "encoder") {
+	if (tokens.front() != "encoder") {
 		ERROR(log_) << "Missing 'encoder' statement.";
 		return;
 	}
+	tokens.pop_front();
 
 	XCodec *remote_codec;
-	if (tokens[11] == "xcodec")
+	if (tokens.front() == "xcodec")
 		remote_codec = codec_;
-	else if (tokens[11] == "none")
+	else if (tokens.front() == "none")
 		remote_codec = NULL;
 	else {
 		ERROR(log_) << "Malformed encoder name.";
 		return;
 	}
+	tokens.pop_front();
 
 	INFO(log_) << "Starting proxy from " << local_host << ':' << local_port << " to " << remote_host << ':' << remote_port;
 
@@ -297,26 +320,30 @@ WANProxyConfig::parse_proxy(std::deque<std::string> tokens)
 }
 
 void
-WANProxyConfig::parse_proxy_socks(std::deque<std::string> tokens)
+WANProxyConfig::parse_proxy_socks(std::deque<std::string>& tokens)
 {
-	if (tokens.size() != 5) {
+	if (tokens.size() != 4) {
 		ERROR(log_) << "Wrong number of words in proxy-socks (" << tokens.size() << ")";
 		return;
 	}
 
-	if (tokens[1] != "flow-table") {
+	if (tokens.front() != "flow-table") {
 		ERROR(log_) << "Missing 'flow-table' statement.";
 		return;
 	}
+	tokens.pop_front();
 
-	FlowTable *flow_table = flow_tables_[tokens[2]];
+	FlowTable *flow_table = flow_tables_[tokens.front()];
 	if (flow_table == NULL) {
-		ERROR(log_) << "Flow table '" << tokens[2] << "' not present.";
+		ERROR(log_) << "Flow table '" << tokens.front() << "' not present.";
 		return;
 	}
+	tokens.pop_front();
 
-	std::string local_host = tokens[3];
-	unsigned local_port = atoi(tokens[4].c_str());
+	std::string local_host = tokens.front();
+	tokens.pop_front();
+	unsigned local_port = atoi(tokens.front().c_str());
+	tokens.pop_front();
 
 	INFO(log_) << "Starting socks-proxy on " << local_host << ':' << local_port;
 
