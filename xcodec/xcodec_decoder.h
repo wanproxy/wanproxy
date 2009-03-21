@@ -1,14 +1,14 @@
 #ifndef	XCODEC_DECODER_H
 #define	XCODEC_DECODER_H
 
-#include <xcodec/xcbackref.h>
+#include <xcodec/xcodec_window.h>
 
-class XCDatabase;
+class XCodecCache;
 
 class XCodecDecoder {
 	LogHandle log_;
-	XCDatabase *database_;
-	XCBackref backref_;
+	XCodecCache *cache_;
+	XCodecWindow window_;
 
 public:
 	XCodecDecoder(XCodec *);

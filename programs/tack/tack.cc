@@ -11,10 +11,11 @@
 
 #include <common/buffer.h>
 #include <common/endian.h>
+
 #include <event/timer.h>
-#include <xcodec/xcdb.h>
-#include <xcodec/xchash.h>
+
 #include <xcodec/xcodec.h>
+#include <xcodec/xcodec_cache.h>
 #include <xcodec/xcodec_decoder.h>
 #include <xcodec/xcodec_encoder.h>
 
@@ -38,8 +39,8 @@ static void usage(void);
 int
 main(int argc, char *argv[])
 {
-	XCDatabase database("/database");
-	XCodec codec("/main", &database);
+	XCodecCache cache;
+	XCodec codec("/main", &cache);
 	bool timers, quiet_output, samples;
 	FileAction action;
 	int ch;

@@ -1,17 +1,17 @@
-#ifndef	XCHASH_H
-#define	XCHASH_H
+#ifndef	XCODEC_HASH_H
+#define	XCODEC_HASH_H
 
 #include <alg/hash/adler64.h>
 
 template<unsigned Tlength>
-class XCHash {
+class XCodecHash {
 	Adler64<Tlength> adler64_;
 	uint8_t xor_;
 	uint8_t buffer_[Tlength];
 	uint8_t start_;
 
 public:
-	XCHash(void)
+	XCodecHash(void)
 	: adler64_(),
 	  xor_(0),
 	  buffer_(),
@@ -20,7 +20,7 @@ public:
 		memset(buffer_, 0, Tlength);
 	}
 
-	~XCHash()
+	~XCodecHash()
 	{ }
 
 	void roll(uint8_t ch)
@@ -113,7 +113,7 @@ public:
 
 	static uint64_t hash(const uint8_t *data)
 	{
-		XCHash<Tlength> hash;
+		XCodecHash<Tlength> hash;
 		unsigned i;
 
 		for (i = 0; i < Tlength; i++)
@@ -122,4 +122,4 @@ public:
 	}
 };
 
-#endif /* !XCHASH_H */
+#endif /* !XCODEC_HASH_H */

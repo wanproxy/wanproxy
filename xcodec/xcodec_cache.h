@@ -1,5 +1,5 @@
-#ifndef	XCDB_H
-#define	XCDB_H
+#ifndef	XCODEC_CACHE_H
+#define	XCODEC_CACHE_H
 
 #include <ext/hash_map>
 
@@ -38,7 +38,7 @@ namespace __gnu_cxx {
 	};
 }
 
-class XCDatabase {
+class XCodecCache {
 public:
 	typedef __gnu_cxx::hash_map<Hash64, BufferSegment *> segment_hash_map_t;
 
@@ -46,12 +46,12 @@ private:
 	LogHandle log_;
 	segment_hash_map_t segment_hash_map_;
 public:
-	XCDatabase(const LogHandle& log)
-	: log_(log + "/xcodec"),
+	XCodecCache(void)
+	: log_("/xcodec/cache"),
 	  segment_hash_map_()
 	{ }
 
-	~XCDatabase()
+	~XCodecCache()
 	{ }
 
 	void enter(const uint64_t& hash, BufferSegment *seg)
@@ -76,4 +76,4 @@ public:
 	}
 };
 
-#endif /* !XCDB_H */
+#endif /* !XCODEC_CACHE_H */

@@ -1,15 +1,15 @@
 #include <common/buffer.h>
 #include <common/endian.h>
 
-#include <xcodec/xcdb.h>
-#include <xcodec/xchash.h>
 #include <xcodec/xcodec.h>
+#include <xcodec/xcodec_cache.h>
 #include <xcodec/xcodec_decoder.h>
+#include <xcodec/xcodec_hash.h>
 
 XCodecDecoder::XCodecDecoder(XCodec *codec)
 : log_("/xcodec/decoder"),
-  database_(codec->database_),
-  backref_()
+  cache_(codec->cache_),
+  window_()
 { }
 
 XCodecDecoder::~XCodecDecoder()
@@ -62,12 +62,12 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			input->moveout((uint8_t *)&hash, 1, sizeof hash);
 			hash = LittleEndian::decode(hash);
 
-			seg = database_->lookup(hash);
+			seg = cache_->lookup(hash);
 			if (seg == NULL) {
 				ERROR(log_) << "Stream referenced unseen hash: " << hash;
 				return (false);
 			}
-			backref_.declare(hash, seg);
+			window_.declare(hash, seg);
 
 			output->append(seg);
 			inlen -= 9;
@@ -101,7 +101,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			input->copyout(&seg, XCODEC_SEGMENT_LENGTH);
 			input->skip(XCODEC_SEGMENT_LENGTH);
 
-			if (XCHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data()) != hash) {
+			if (XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data()) != hash) {
 				seg->unref();
 				ERROR(log_) << "Data in stream does not have expected hash.";
 				return (false);
@@ -110,7 +110,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			/*
 			 * Chech whether we already know a hash by this name.
 			 */
-			oseg = database_->lookup(hash);
+			oseg = cache_->lookup(hash);
 			if (oseg != NULL) {
 				/*
 				 * We already know a hash by this name.  Check
@@ -124,7 +124,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 					 * NB: Use the existing segment since
 					 * it's nice to share.
 					 */
-					backref_.declare(hash, oseg);
+					window_.declare(hash, oseg);
 					oseg->unref();
 				} else {
 					seg->unref();
@@ -137,8 +137,8 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 				 * This is a brand new hash.  Enter it into the
 				 * database and the backref window.
 				 */
-				database_->enter(hash, seg);
-				backref_.declare(hash, seg);
+				cache_->enter(hash, seg);
+				window_.declare(hash, seg);
 				seg->unref();
 			}
 
@@ -158,7 +158,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			ch = input->peek();
 			input->skip(1);
 
-			seg = backref_.dereference(ch);
+			seg = window_.dereference(ch);
 			if (seg == NULL) {
 				ERROR(log_) << "Stream included invalid backref.";
 				return (false);

@@ -14,18 +14,18 @@
 
 class XCodecDecoder;
 class XCodecEncoder;
-class XCDatabase;
+class XCodecCache;
 
 class XCodec {
 	friend class XCodecDecoder;
 	friend class XCodecEncoder;
 
 	LogHandle log_;
-	XCDatabase *database_;
+	XCodecCache *cache_;
 public:
-	XCodec(const LogHandle& log, XCDatabase *database)
+	XCodec(const LogHandle& log, XCodecCache *database)
 	: log_(log + "/xcodec"),
-	  database_(database)
+	  cache_(database)
 	{ }
 
 	~XCodec()

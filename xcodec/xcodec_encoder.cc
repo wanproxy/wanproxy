@@ -1,11 +1,10 @@
 #include <common/buffer.h>
 #include <common/endian.h>
 
-#include <xcodec/xcbackref.h>
-#include <xcodec/xcdb.h>
-#include <xcodec/xchash.h>
 #include <xcodec/xcodec.h>
+#include <xcodec/xcodec_cache.h>
 #include <xcodec/xcodec_encoder.h>
+#include <xcodec/xcodec_hash.h>
 
 typedef	std::pair<unsigned, uint64_t> offset_hash_pair_t;
 typedef	std::pair<unsigned, BufferSegment *> offset_seg_pair_t;
@@ -45,8 +44,8 @@ XCodecEncoder::Data::~Data()
 
 XCodecEncoder::XCodecEncoder(XCodec *codec)
 : log_("/xcodec/encoder"),
-  database_(codec->database_),
-  backref_()
+  cache_(codec->cache_),
+  window_()
 { }
 
 XCodecEncoder::~XCodecEncoder()
@@ -67,7 +66,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		return;
 	}
 
-	XCHash<XCODEC_SEGMENT_LENGTH> xcodec_hash;
+	XCodecHash<XCODEC_SEGMENT_LENGTH> xcodec_hash;
 	std::deque<offset_hash_pair_t> offset_hash_map;
 	std::deque<offset_seg_pair_t> offset_seg_map;
 	Buffer outq;
@@ -100,7 +99,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			 * to look up in.  Doing so should help a lot.
 			 */
 			BufferSegment *oseg;
-			oseg = database_->lookup(hash);
+			oseg = cache_->lookup(hash);
 			if (oseg != NULL) {
 				/*
 				 * This segment already exists.  If it's
@@ -252,7 +251,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			 * stream, we may have introduced hits and collisions.
 			 * So we, sadly, have to go back to the well.
 			 */
-			seg = database_->lookup(hash);
+			seg = cache_->lookup(hash);
 			if (seg != NULL) {
 				if (!seg->match(data, sizeof data)) {
 					seg->unref();
@@ -274,7 +273,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				seg = new BufferSegment();
 				seg->append(data, sizeof data);
 
-				database_->enter(hash, seg);
+				cache_->enter(hash, seg);
 
 				slice.hash_ = hash;
 				/* The slice holds our reference.  */
@@ -285,7 +284,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				output->append((const uint8_t *)&lehash, sizeof lehash);
 				output->append(slice.seg_);
 
-				backref_.declare(slice.hash_, slice.seg_);
+				window_.declare(slice.hash_, slice.seg_);
 			}
 
 			/*
@@ -328,7 +327,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		 * And output a reference.
 		 */
 		uint8_t b;
-		if (backref_.present(slice.hash_, &b)) {
+		if (window_.present(slice.hash_, &b)) {
 			output->append(XCODEC_BACKREF_CHAR);
 			output->append(b);
 		} else {
@@ -336,7 +335,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			uint64_t lehash = LittleEndian::encode(slice.hash_);
 			output->append((const uint8_t *)&lehash, sizeof lehash);
 
-			backref_.declare(slice.hash_, slice.seg_);
+			window_.declare(slice.hash_, slice.seg_);
 		}
 	}
 

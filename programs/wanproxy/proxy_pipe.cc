@@ -8,7 +8,6 @@
 #include <io/channel.h>
 #include <io/file_descriptor.h>
 
-#include <xcodec/xchash.h>
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_decoder.h>
 #include <xcodec/xcodec_encoder.h>

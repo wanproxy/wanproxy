@@ -1,18 +1,18 @@
-#ifndef	XCBACKREF_H
-#define	XCBACKREF_H
+#ifndef	XCODEC_WINDOW_H
+#define	XCODEC_WINDOW_H
 
 #include <map>
 
-#define	XCBACKREF_MAX		(0xff)
-#define	XCBACKREF_COUNT		(XCBACKREF_MAX + 1)
+#define	XCODEC_WINDOW_MAX		(0xff)
+#define	XCODEC_WINDOW_COUNT		(XCODEC_WINDOW_MAX + 1)
 
-class XCBackref {
-	uint64_t window_[XCBACKREF_COUNT];
+class XCodecWindow {
+	uint64_t window_[XCODEC_WINDOW_COUNT];
 	unsigned cursor_;
 	std::map<uint64_t, unsigned> present_;
 	std::map<uint64_t, BufferSegment *> segments_;
 public:
-	XCBackref(void)
+	XCodecWindow(void)
 	: window_(),
 	  cursor_(0),
 	  present_(),
@@ -20,12 +20,12 @@ public:
 	{
 		unsigned b;
 		
-		for (b = 0; b < XCBACKREF_COUNT; b++) {
+		for (b = 0; b < XCODEC_WINDOW_COUNT; b++) {
 			window_[b] = 0;
 		}
 	}
 
-	~XCBackref()
+	~XCodecWindow()
 	{
 		std::map<uint64_t, BufferSegment *>::iterator it;
 
@@ -53,7 +53,7 @@ public:
 		present_[hash] = cursor_;
 		seg->ref();
 		segments_[hash] = seg;
-		cursor_ = (cursor_ + 1) % XCBACKREF_COUNT;
+		cursor_ = (cursor_ + 1) % XCODEC_WINDOW_COUNT;
 	}
 
 	BufferSegment *dereference(unsigned c) const
@@ -77,4 +77,4 @@ public:
 	}
 };
 
-#endif /* !XCBACKREF_H */
+#endif /* !XCODEC_WINDOW_H */

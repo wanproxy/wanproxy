@@ -9,9 +9,6 @@
 #include <io/socket.h>
 #include <io/tcp_client.h>
 
-#include <xcodec/xchash.h>
-#include <xcodec/xcodec.h>
-
 #include "flow_table.h"
 #include "proxy_client.h"
 #include "proxy_pipe.h"

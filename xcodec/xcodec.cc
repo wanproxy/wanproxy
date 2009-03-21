@@ -1,7 +1,5 @@
 #include <common/buffer.h>
-#include <common/endian.h>
 
-#include <xcodec/xchash.h>
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_decoder.h>
 #include <xcodec/xcodec_encoder.h>

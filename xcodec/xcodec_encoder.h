@@ -1,11 +1,9 @@
 #ifndef	XCODEC_ENCODER_H
 #define	XCODEC_ENCODER_H
 
-#include <set>
+#include <xcodec/xcodec_window.h>
 
-#include <xcodec/xcbackref.h>
-
-class XCDatabase;
+class XCodecCache;
 
 class XCodecEncoder {
 	struct Data {
@@ -19,8 +17,8 @@ class XCodecEncoder {
 	};
 
 	LogHandle log_;
-	XCDatabase *database_;
-	XCBackref backref_;
+	XCodecCache *cache_;
+	XCodecWindow window_;
 
 public:
 	XCodecEncoder(XCodec *);
