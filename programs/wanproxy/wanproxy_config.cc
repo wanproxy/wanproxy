@@ -1,4 +1,4 @@
-#include <vector>
+#include <deque>
 
 #include <common/buffer.h>
 
@@ -127,7 +127,7 @@ WANProxyConfig::parse(void)
 		Buffer line(read_buffer_, pos);
 		read_buffer_.skip(pos + 1);
 
-		std::vector<std::string> tokens;
+		std::deque<std::string> tokens;
 		while (!line.empty()) {
 			unsigned wordlen;
 			if (line.find(' ', &pos)) {
@@ -150,7 +150,7 @@ WANProxyConfig::parse(void)
 }
 
 void
-WANProxyConfig::parse(std::vector<std::string> tokens)
+WANProxyConfig::parse(std::deque<std::string> tokens)
 {
 	if (tokens[0] == "flow-monitor") {
 		parse_flow_monitor(tokens);
@@ -168,7 +168,7 @@ WANProxyConfig::parse(std::vector<std::string> tokens)
 }
 
 void
-WANProxyConfig::parse_flow_monitor(std::vector<std::string> tokens)
+WANProxyConfig::parse_flow_monitor(std::deque<std::string> tokens)
 {
 	if (tokens.size() != 1) {
 		ERROR(log_) << "Wrong number of words in flow-monitor (" << tokens.size() << ")";
@@ -183,7 +183,7 @@ WANProxyConfig::parse_flow_monitor(std::vector<std::string> tokens)
 }
 
 void
-WANProxyConfig::parse_flow_table(std::vector<std::string> tokens)
+WANProxyConfig::parse_flow_table(std::deque<std::string> tokens)
 {
 	if (tokens.size() != 2) {
 		ERROR(log_) << "Wrong number of words in flow-table (" << tokens.size() << ")";
@@ -209,7 +209,7 @@ WANProxyConfig::parse_flow_table(std::vector<std::string> tokens)
 }
 
 void
-WANProxyConfig::parse_log_mask(std::vector<std::string> tokens)
+WANProxyConfig::parse_log_mask(std::deque<std::string> tokens)
 {
 	if (tokens.size() != 3) {
 		ERROR(log_) << "Wrong number of words in log-mask (" << tokens.size() << ")";
@@ -225,7 +225,7 @@ WANProxyConfig::parse_log_mask(std::vector<std::string> tokens)
 }
 
 void
-WANProxyConfig::parse_proxy(std::vector<std::string> tokens)
+WANProxyConfig::parse_proxy(std::deque<std::string> tokens)
 {
 	if (tokens.size() != 12) {
 		ERROR(log_) << "Wrong number of words in proxy (" << tokens.size() << ")";
@@ -297,7 +297,7 @@ WANProxyConfig::parse_proxy(std::vector<std::string> tokens)
 }
 
 void
-WANProxyConfig::parse_proxy_socks(std::vector<std::string> tokens)
+WANProxyConfig::parse_proxy_socks(std::deque<std::string> tokens)
 {
 	if (tokens.size() != 5) {
 		ERROR(log_) << "Wrong number of words in proxy-socks (" << tokens.size() << ")";
