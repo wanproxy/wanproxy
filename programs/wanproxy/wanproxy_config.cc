@@ -1,4 +1,6 @@
 #include <deque>
+#include <fstream>
+#include <sstream>
 
 #include <common/buffer.h>
 
@@ -20,134 +22,17 @@ WANProxyConfig::WANProxyConfig(void)
   flow_monitor_(NULL),
   flow_tables_(),
   proxy_listeners_(),
-  proxy_socks_listeners_(),
-  config_file_(NULL),
-  close_action_(NULL),
-  read_action_(NULL),
-  read_buffer_()
+  proxy_socks_listeners_()
 { }
 
 WANProxyConfig::~WANProxyConfig()
 {
-	ASSERT(config_file_ == NULL);
-	ASSERT(close_action_ == NULL);
-	ASSERT(read_action_ == NULL);
-	ASSERT(read_buffer_.empty());
-
 	if (flow_monitor_ != NULL) {
 		delete flow_monitor_;
 		flow_monitor_ = NULL;
 	}
 
 	/* XXX Delete listeners, etc.  */
-}
-
-void
-WANProxyConfig::close_complete(Event e)
-{
-	close_action_->cancel();
-	close_action_ = NULL;
-
-	switch (e.type_) {
-	case Event::Done:
-		break;
-	default:
-		HALT(log_) << "Unexpected event: " << e;
-	}
-
-	ASSERT(config_file_ != NULL);
-	delete config_file_;
-	config_file_ = NULL;
-}
-
-void
-WANProxyConfig::read_complete(Event e)
-{
-	read_action_->cancel();
-	read_action_ = NULL;
-
-	switch (e.type_) {
-	case Event::Done:
-	case Event::EOS:
-		break;
-	default:
-		HALT(log_) << "Unexpected event: " << e;
-	}
-
-	read_buffer_.append(e.buffer_);
-
-	parse();
-
-#if 0
-	if (e.type_ == Event::EOS)
-		schedule_close();
-	else
-		schedule_read();
-#else
-	/*
-	 * XXX
-	 * The FileDescriptor class doesn't work right with Files yet.  Namely,
-	 * it won't detect EOF.  I think the reason is that the EVFILT_READ
-	 * filter for kqueue doesn't fire if you're at EOF, which seems dumb.
-	 * Need to investigate further.  For now, the config files are small
-	 * enough that this works.
-	 */
-	schedule_close();
-#endif
-}
-
-void
-WANProxyConfig::schedule_close(void)
-{
-	ASSERT(close_action_ == NULL);
-	ASSERT(config_file_ != NULL);
-	EventCallback *cb = callback(this, &WANProxyConfig::close_complete);
-	close_action_ = config_file_->close(cb);
-}
-
-void
-WANProxyConfig::schedule_read(void)
-{
-	ASSERT(read_action_ == NULL);
-	ASSERT(config_file_ != NULL);
-	EventCallback *cb = callback(this, &WANProxyConfig::read_complete);
-	read_action_ = config_file_->read(0, cb);
-}
-
-void
-WANProxyConfig::parse(void)
-{
-	unsigned pos;
-	while (read_buffer_.find('\n', &pos)) {
-		if (read_buffer_.peek() == '#' || pos == 0) {
-			read_buffer_.skip(pos + 1);
-			continue;
-		}
-
-		Buffer line(read_buffer_, pos);
-		read_buffer_.skip(pos + 1);
-
-		std::deque<std::string> tokens;
-		while (!line.empty()) {
-			unsigned wordlen;
-			if (line.find(' ', &pos)) {
-				wordlen = pos; 
-			} else {
-				wordlen = line.length();
-			}
-			uint8_t wordbytes[wordlen];
-			line.moveout(wordbytes, wordlen);
-			if (!line.empty()) {
-				ASSERT(line.peek() == ' ');
-				line.skip(1);
-			}
-			std::string word((const char *)wordbytes, wordlen);
-			tokens.push_back(word);
-		}
-
-		parse(tokens);
-		ASSERT(tokens.empty());
-	}
 }
 
 void
@@ -358,21 +243,40 @@ WANProxyConfig::configure(XCodec *codec, const std::string& name)
 {
 	INFO(log_) << "Configuring WANProxy.";
 
-	if (config_file_ != NULL || codec_ != NULL) {
+	if (codec_ != NULL) {
 		ERROR(log_) << "WANProxy already configured.";
 		return (false);
 	}
 
-	FileDescriptor *file = File::open(name, true, false);
-	if (file == NULL) {
+	std::fstream in;
+	in.open(name.c_str(), std::ios::in);
+
+	if (!in.good()) {
 		ERROR(log_) << "Could not open file: " << name;
 		return (false);
 	}
 
 	codec_ = codec;
-	config_file_ = file;
 
-	schedule_read();
+	std::deque<std::string> tokens;
+
+	while (in.good()) {
+		std::string line;
+		std::getline(in, line);
+
+		if (line[0] == '#' || line.empty())
+			continue;
+
+		std::istringstream is(line);
+		while (is.good()) {
+			std::string word;
+			is >> word;
+			tokens.push_back(word);
+		}
+		ASSERT(!tokens.empty());
+		parse(tokens);
+		ASSERT(tokens.empty());
+	}
 
 	return (true);
 }
