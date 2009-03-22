@@ -60,6 +60,7 @@ private:
 #if defined(USE_POLL_KQUEUE)
 	int kq_;
 #elif defined(USE_POLL_POLL)
+#elif defined(USE_POLL_SELECT)
 #else
 #error "Unsupported poll mechanism."
 #endif

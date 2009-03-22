@@ -30,6 +30,8 @@ SRCS+=	event_poll_${USE_POLL}.cc
 CFLAGS+=-DUSE_POLL_KQUEUE
 .elif ${USE_POLL} == "poll"
 CFLAGS+=-DUSE_POLL_POLL
+.elif ${USE_POLL} == "select"
+CFLAGS+=-DUSE_POLL_SELECT
 .else
 .error "Unsupported poll mechanism."
 .endif
