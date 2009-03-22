@@ -1,0 +1,28 @@
+Top-level directory layout:
+
+Directory	Description
+=============	==============================================================
+alg		Portable implementations of simple, standard algorithms.
+		Organized into sub-directories based on type, i.e. alg/hash is
+		hashing algorithms.
+common		Non-specific functionality that is of general interest, i.e. the
+		logging system, test infrastructure and Buffer class.
+event		The event system and infrastructure to support it, such as the
+		various implementations of the poll interface.
+io		Interface to IO subsystems, namely file descriptors and sockets,
+		as well as abstract classes for such things (i.e. Channel.)
+os		Interfaces to Operating System specific functionality, i.e. to
+		system control and monitoring.  Not for IO abstractions, etc.
+programs	Stand-alone programs.
+		Organized into sub-directories named by program, i.e.
+		programs/wanproxy is WANProxy.
+xcodec		The XCodec codec, which performs deduplication, and its internal
+		interfaces.
+
+Standard sub-directories:
+
+Directory	Description
+=============	==============================================================
+test		Unit tests.
+example		Example programs which may test functionality in a non-automated
+		fashion or merely provide example usage of a complex interface.
