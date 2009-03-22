@@ -1,3 +1,5 @@
+o) A CLI program for management.  Remember to USE_POLL=select since Mac OS X can
+   only use select(2) for stdin and stdout.
 o) Add lots of comments.
 o) Make the XCodec encoder and decoder asynchronous.
 o) Connection table. Database.
