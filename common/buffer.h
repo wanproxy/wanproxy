@@ -1,6 +1,8 @@
 #ifndef	BUFFER_H
 #define	BUFFER_H
 
+#include <string.h> /* memmove(3), memcpy(3), etc.  */
+
 #include <deque>
 
 struct iovec;

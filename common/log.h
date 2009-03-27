@@ -1,6 +1,8 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include <stdlib.h> /* For abort(3).  */
+
 #include <sstream>
 #include <string>
 

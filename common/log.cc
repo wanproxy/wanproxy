@@ -1,5 +1,7 @@
 #include <sys/time.h>
 #include <regex.h>
+#include <stdio.h>
+#include <string.h>
 #ifdef	USE_SYSLOG
 #include <syslog.h>
 #endif

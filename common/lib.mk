@@ -7,5 +7,4 @@
 SRCS+=	buffer.cc
 SRCS+=	log.cc
 
-CFLAGS+=-include common/debug.h
-CFLAGS+=-include common/log.h
+CFLAGS+=-include common/common.h

@@ -20,7 +20,7 @@ public:
 		~Speed()
 		{ }
 
-		const unsigned operator() (void) const
+		unsigned operator() (void) const
 		{
 			return (speed_);
 		}

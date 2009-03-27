@@ -33,6 +33,9 @@ CFLAGS+=-DNDEBUG=1
 CFLAGS+=-g
 .endif
 
+#CFLAGS+=--std gnu++0x
+#CFLAGS+=-pedantic
+CFLAGS+=-Wno-deprecated
 CFLAGS+=-W -Wall -Werror
 CFLAGS+=-Wno-system-headers
 #CFLAGS+=-Wno-unused-parameter
