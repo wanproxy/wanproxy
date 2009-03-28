@@ -50,7 +50,13 @@ public:
 		if (old != 0) {
 			ASSERT(present_[old] == cursor_);
 			present_.erase(old);
-			segments_.erase(old);
+			
+			std::map<uint64_t, BufferSegment *>::iterator it;
+			it = segments_.find(old);
+			ASSERT(it != segments_.end());
+			BufferSegment *oseg = it->second;
+			oseg->unref();
+			segments_.erase(it);
 		}
 
 		window_[cursor_] = hash;
