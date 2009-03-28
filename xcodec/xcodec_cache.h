@@ -52,7 +52,15 @@ public:
 	{ }
 
 	~XCodecCache()
-	{ }
+	{
+		segment_hash_map_t::iterator it;
+		while ((it = segment_hash_map_.begin()) != segment_hash_map_.end()) {
+			BufferSegment *seg = it->second;
+
+			seg->unref();
+			segment_hash_map_.erase(it);
+		}
+	}
 
 	void enter(const uint64_t& hash, BufferSegment *seg)
 	{
