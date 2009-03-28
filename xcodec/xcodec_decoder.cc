@@ -70,6 +70,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			window_.declare(hash, seg);
 
 			output->append(seg);
+			seg->unref();
 			inlen -= 9;
 			break;
 
@@ -165,6 +166,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			}
 
 			output->append(seg);
+			seg->unref();
 			inlen -= 2;
 			break;
 
