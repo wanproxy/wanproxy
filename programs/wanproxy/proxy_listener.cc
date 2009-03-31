@@ -46,7 +46,7 @@ ProxyListener::ProxyListener(FlowTable *flow_table, XCodec *local_codec,
 	accept_action_ = server_->accept(cb);
 
 	Callback *scb = callback(this, &ProxyListener::stop);
-	stop_action_ = EventSystem::instance()->schedule_stop(scb);
+	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
 
 ProxyListener::~ProxyListener()

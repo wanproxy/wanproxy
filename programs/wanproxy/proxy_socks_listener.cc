@@ -40,7 +40,7 @@ ProxySocksListener::ProxySocksListener(FlowTable *flow_table,
 	accept_action_ = server_->accept(cb);
 
 	Callback *scb = callback(this, &ProxySocksListener::stop);
-	stop_action_ = EventSystem::instance()->schedule_stop(scb);
+	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
 
 ProxySocksListener::~ProxySocksListener()

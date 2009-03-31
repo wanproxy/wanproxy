@@ -6,6 +6,10 @@
 #include <event/event_poll.h>
 #include <event/timeout.h>
 
+enum EventInterest {
+	EventInterestStop
+};
+
 class EventSystem {
 	LogHandle log_;
 	CallbackQueue queue_;
@@ -19,8 +23,8 @@ protected:
 
 public:
 	Action *poll(const EventPoll::Type&, int, EventCallback *);
+	Action *register_interest(const EventInterest&, Callback *);
 	Action *schedule(Callback *);
-	Action *schedule_stop(Callback *);
 	Action *timeout(unsigned, Callback *);
 	void start(void);
 	void stop(void);

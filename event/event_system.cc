@@ -34,16 +34,22 @@ EventSystem::poll(const EventPoll::Type& type, int fd, EventCallback *cb)
 }
 
 Action *
-EventSystem::schedule(Callback *cb)
+EventSystem::register_interest(const EventInterest& interest, Callback *cb)
 {
-	Action *a = queue_.append(cb);
-	return (a);
+	switch (interest) {
+	case EventInterestStop: {
+		Action *a = stop_queue_.append(cb);
+		return (a);
+	}
+	default:
+		NOTREACHED();
+	}
 }
 
 Action *
-EventSystem::schedule_stop(Callback *cb)
+EventSystem::schedule(Callback *cb)
 {
-	Action *a = stop_queue_.append(cb);
+	Action *a = queue_.append(cb);
 	return (a);
 }
 

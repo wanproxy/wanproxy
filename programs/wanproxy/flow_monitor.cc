@@ -73,7 +73,7 @@ FlowMonitor::monitor(const std::string& name, FlowTable *flow_table)
 
 		ASSERT(stop_action_ == NULL);
 		Callback *cb = callback(this, &FlowMonitor::stop);
-		stop_action_ = EventSystem::instance()->schedule_stop(cb);
+		stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, cb);
 	}
 }
 

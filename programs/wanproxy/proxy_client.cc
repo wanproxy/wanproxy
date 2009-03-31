@@ -41,7 +41,7 @@ ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
 					    remote_port, cb);
 
 	Callback *scb = callback(this, &ProxyClient::stop);
-	stop_action_ = EventSystem::instance()->schedule_stop(scb);
+	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
 
 ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
@@ -66,7 +66,7 @@ ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
 					    remote_port, cb);
 
 	Callback *scb = callback(this, &ProxyClient::stop);
-	stop_action_ = EventSystem::instance()->schedule_stop(scb);
+	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
 
 
