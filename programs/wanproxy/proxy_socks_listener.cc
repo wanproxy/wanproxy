@@ -19,7 +19,9 @@ ProxySocksListener::ProxySocksListener(FlowTable *flow_table,
 : log_("/wanproxy/proxy_socks_listener"),
   flow_table_(flow_table),
   server_(NULL),
-  action_(NULL),
+  accept_action_(NULL),
+  close_action_(NULL),
+  stop_action_(NULL),
   interface_(interface),
   local_port_(local_port)
 {
@@ -35,19 +37,25 @@ ProxySocksListener::ProxySocksListener(FlowTable *flow_table,
 	}
 
 	EventCallback *cb = callback(this, &ProxySocksListener::accept_complete);
-	action_ = server_->accept(cb);
+	accept_action_ = server_->accept(cb);
+
+	Callback *scb = callback(this, &ProxySocksListener::stop);
+	stop_action_ = EventSystem::instance()->schedule_stop(scb);
 }
 
 ProxySocksListener::~ProxySocksListener()
 {
-	NOTREACHED();
+	ASSERT(server_ == NULL);
+	ASSERT(accept_action_ == NULL);
+	ASSERT(close_action_ == NULL);
+	ASSERT(stop_action_ == NULL);
 }
 
 void
 ProxySocksListener::accept_complete(Event e)
 {
-	action_->cancel();
-	action_ = NULL;
+	accept_action_->cancel();
+	accept_action_ = NULL;
 
 	switch (e.type_) {
 	case Event::Done:
@@ -65,7 +73,39 @@ ProxySocksListener::accept_complete(Event e)
 		new ProxySocksConnection(flow_table_, client);
 	}
 
-	EventCallback *cb = callback(this,
-				     &ProxySocksListener::accept_complete);
-	action_ = server_->accept(cb);
+	EventCallback *cb = callback(this, &ProxySocksListener::accept_complete);
+	accept_action_ = server_->accept(cb);
+}
+
+void
+ProxySocksListener::close_complete(Event e)
+{
+	close_action_->cancel();
+	close_action_ = NULL;
+
+	switch (e.type_) {
+	case Event::Done:
+		break;
+	default:
+		HALT(log_) << "Unexpected event: " << e;
+		return;
+	}
+
+	delete server_;
+	server_ = NULL;
+}
+
+void
+ProxySocksListener::stop(void)
+{
+	stop_action_->cancel();
+	stop_action_ = NULL;
+
+	accept_action_->cancel();
+	accept_action_ = NULL;
+
+	ASSERT(close_action_ == NULL);
+
+	EventCallback *cb = callback(this, &ProxySocksListener::close_complete);
+	close_action_ = server_->close(cb);
 }

@@ -21,6 +21,8 @@ class FlowMonitor {
 
 	LogHandle log_;
 	Action *action_;
+	Action *stop_action_;
+	bool stop_;
 	std::map<const FlowTable *, std::string> flow_tables_;
 public:
 	FlowMonitor(void);
@@ -30,6 +32,7 @@ public:
 private:
 	void report(void);
 	void schedule_timeout(void);
+	void stop(void);
 };
 
 #endif /* !FLOW_MONITOR_H */

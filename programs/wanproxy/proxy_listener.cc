@@ -21,7 +21,9 @@ ProxyListener::ProxyListener(FlowTable *flow_table, XCodec *local_codec,
 : log_("/wanproxy/proxy_listener"),
   flow_table_(flow_table),
   server_(NULL),
-  action_(NULL),
+  accept_action_(NULL),
+  close_action_(NULL),
+  stop_action_(NULL),
   local_codec_(local_codec),
   remote_codec_(remote_codec),
   interface_(interface),
@@ -41,19 +43,25 @@ ProxyListener::ProxyListener(FlowTable *flow_table, XCodec *local_codec,
 	}
 
 	EventCallback *cb = callback(this, &ProxyListener::accept_complete);
-	action_ = server_->accept(cb);
+	accept_action_ = server_->accept(cb);
+
+	Callback *scb = callback(this, &ProxyListener::stop);
+	stop_action_ = EventSystem::instance()->schedule_stop(scb);
 }
 
 ProxyListener::~ProxyListener()
 {
-	NOTREACHED();
+	ASSERT(server_ == NULL);
+	ASSERT(accept_action_ == NULL);
+	ASSERT(close_action_ == NULL);
+	ASSERT(stop_action_ == NULL);
 }
 
 void
 ProxyListener::accept_complete(Event e)
 {
-	action_->cancel();
-	action_ = NULL;
+	accept_action_->cancel();
+	accept_action_ = NULL;
 
 	switch (e.type_) {
 	case Event::Done:
@@ -73,5 +81,38 @@ ProxyListener::accept_complete(Event e)
 	}
 
 	EventCallback *cb = callback(this, &ProxyListener::accept_complete);
-	action_ = server_->accept(cb);
+	accept_action_ = server_->accept(cb);
+}
+
+void
+ProxyListener::close_complete(Event e)
+{
+	close_action_->cancel();
+	close_action_ = NULL;
+
+	switch (e.type_) {
+	case Event::Done:
+		break;
+	default:
+		HALT(log_) << "Unexpected event: " << e;
+		return;
+	}
+
+	delete server_;
+	server_ = NULL;
+}
+
+void
+ProxyListener::stop(void)
+{
+	stop_action_->cancel();
+	stop_action_ = NULL;
+
+	accept_action_->cancel();
+	accept_action_ = NULL;
+
+	ASSERT(close_action_ == NULL);
+
+	EventCallback *cb = callback(this, &ProxyListener::close_complete);
+	close_action_ = server_->close(cb);
 }

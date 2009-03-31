@@ -50,12 +50,15 @@ FlowMonitor::Serializer::operator() (Buffer *output) const
 FlowMonitor::FlowMonitor(void)
 : log_("/flow/monitor"),
   action_(NULL),
+  stop_action_(NULL),
+  stop_(false),
   flow_tables_()
 { }
 
 FlowMonitor::~FlowMonitor()
 {
 	ASSERT(action_ == NULL);
+	ASSERT(stop_action_ == NULL);
 }
 
 void
@@ -67,6 +70,10 @@ FlowMonitor::monitor(const std::string& name, FlowTable *flow_table)
 
 	if (action_ == NULL) {
 		schedule_timeout();
+
+		ASSERT(stop_action_ == NULL);
+		Callback *cb = callback(this, &FlowMonitor::stop);
+		stop_action_ = EventSystem::instance()->schedule_stop(cb);
 	}
 }
 
@@ -99,6 +106,16 @@ FlowMonitor::schedule_timeout(void)
 {
 	Callback *cb = callback(this, &FlowMonitor::report);
 	action_ = EventSystem::instance()->timeout(10 * 1000, cb);
+}
+
+void
+FlowMonitor::stop(void)
+{
+	stop_action_->cancel();
+	stop_action_ = NULL;
+
+	action_->cancel();
+	action_ = NULL;
 }
 
 std::ostream&
