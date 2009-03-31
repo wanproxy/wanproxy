@@ -24,6 +24,7 @@ ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
 			 const std::string& remote_name, unsigned remote_port)
 : log_("/wanproxy/proxy/client"),
   flow_table_(flow_table),
+  stop_action_(NULL),
   local_action_(NULL),
   local_codec_(local_codec),
   local_socket_(local_socket),
@@ -38,6 +39,9 @@ ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
 	remote_action_ = TCPClient::connect(&remote_socket_, remote_name,
 					    remote_port, cb);
+
+	Callback *scb = callback(this, &ProxyClient::stop);
+	stop_action_ = EventSystem::instance()->schedule_stop(scb);
 }
 
 ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
@@ -45,6 +49,7 @@ ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
 			 uint32_t remote_ip, uint16_t remote_port)
 : log_("/wanproxy/proxy/client"),
   flow_table_(flow_table),
+  stop_action_(NULL),
   local_action_(NULL),
   local_codec_(local_codec),
   local_socket_(local_socket),
@@ -59,11 +64,15 @@ ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
 	remote_action_ = TCPClient::connect(&remote_socket_, remote_ip,
 					    remote_port, cb);
+
+	Callback *scb = callback(this, &ProxyClient::stop);
+	stop_action_ = EventSystem::instance()->schedule_stop(scb);
 }
 
 
 ProxyClient::~ProxyClient()
 {
+	ASSERT(stop_action_ == NULL);
 	ASSERT(local_action_ == NULL);
 	ASSERT(local_socket_ == NULL);
 	ASSERT(remote_action_ == NULL);
@@ -212,8 +221,42 @@ ProxyClient::flow_complete(Event e, void *pipe)
 }
 
 void
+ProxyClient::stop(void)
+{
+	stop_action_->cancel();
+	stop_action_ = NULL;
+
+	/*
+	 * Connecting.
+	 */
+	if (local_action_ == NULL && remote_action_ != NULL &&
+	    outgoing_pipe_ == NULL) {
+		remote_action_->cancel();
+		remote_action_ = NULL;
+
+		schedule_close();
+		return;
+	}
+
+	/*
+	 * Already closing.  Should not happen.
+	 */
+	if (local_action_ != NULL || remote_action_ != NULL) {
+		HALT(log_) << "Client already closing during stop.";
+		return;
+	}
+
+	schedule_close();
+}
+
+void
 ProxyClient::schedule_close(void)
 {
+	if (stop_action_ != NULL) {
+		stop_action_->cancel();
+		stop_action_ = NULL;
+	}
+
 	if (outgoing_pipe_ != NULL) {
 		ASSERT(outgoing_action_ != NULL);
 		outgoing_action_->cancel();

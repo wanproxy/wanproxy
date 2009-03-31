@@ -10,6 +10,8 @@ class ProxyClient {
 
 	FlowTable *flow_table_;
 
+	Action *stop_action_;
+
 	Action *local_action_;
 	XCodec *local_codec_;
 	Socket *local_socket_;
@@ -33,6 +35,7 @@ private:
 	void close_complete(Event, void *);
 	void connect_complete(Event);
 	void flow_complete(Event, void *);
+	void stop(void);
 
 	void schedule_close(void);
 };
