@@ -14,8 +14,6 @@ class WANProxyConfig {
 	XCodec *codec_;
 	FlowMonitor *flow_monitor_;
 	std::map<std::string, FlowTable *> flow_tables_;
-	std::set<ProxyListener *> proxy_listeners_;
-	std::set<ProxySocksListener *> proxy_socks_listeners_;
 public:
 	WANProxyConfig(void);
 	~WANProxyConfig();

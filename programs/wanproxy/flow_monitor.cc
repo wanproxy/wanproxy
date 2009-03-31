@@ -116,6 +116,8 @@ FlowMonitor::stop(void)
 
 	action_->cancel();
 	action_ = NULL;
+
+	/* WANProxyConfig will delete us.  */
 }
 
 std::ostream&

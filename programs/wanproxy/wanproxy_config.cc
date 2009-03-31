@@ -20,9 +20,7 @@ WANProxyConfig::WANProxyConfig(void)
 : log_("/wanproxy/config"),
   codec_(NULL),
   flow_monitor_(NULL),
-  flow_tables_(),
-  proxy_listeners_(),
-  proxy_socks_listeners_()
+  flow_tables_()
 { }
 
 WANProxyConfig::~WANProxyConfig()
@@ -32,7 +30,10 @@ WANProxyConfig::~WANProxyConfig()
 		flow_monitor_ = NULL;
 	}
 
-	/* XXX Delete listeners, etc.  */
+	std::map<std::string, FlowTable *>::iterator fit;
+	for (fit = flow_tables_.begin(); fit != flow_tables_.end(); ++fit)
+		delete fit->second;
+	flow_tables_.clear();
 }
 
 void
@@ -194,14 +195,8 @@ WANProxyConfig::parse_proxy(std::deque<std::string>& tokens)
 
 	INFO(log_) << "Starting proxy from " << local_host << ':' << local_port << " to " << remote_host << ':' << remote_port;
 
-	ProxyListener *listener = new ProxyListener(flow_table,
-						    local_codec,
-						    remote_codec,
-						    local_host,
-						    local_port,
-						    remote_host,
-						    remote_port);
-	proxy_listeners_.insert(listener);
+	new ProxyListener(flow_table, local_codec, remote_codec,
+			  local_host, local_port, remote_host, remote_port);
 }
 
 void
@@ -232,10 +227,7 @@ WANProxyConfig::parse_proxy_socks(std::deque<std::string>& tokens)
 
 	INFO(log_) << "Starting socks-proxy on " << local_host << ':' << local_port;
 
-	ProxySocksListener *listener = new ProxySocksListener(flow_table,
-							      local_host,
-							      local_port);
-	proxy_socks_listeners_.insert(listener);
+	new ProxySocksListener(flow_table, local_host, local_port);
 }
 
 bool

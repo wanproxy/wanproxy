@@ -100,6 +100,8 @@ ProxyListener::close_complete(Event e)
 
 	delete server_;
 	server_ = NULL;
+
+	delete this;
 }
 
 void
