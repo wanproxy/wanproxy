@@ -1,3 +1,4 @@
+#include <sys/errno.h>
 #include <poll.h>
 
 #include <common/buffer.h>
@@ -114,8 +115,13 @@ EventPoll::wait(int ms)
 	}
 
 	int fdcnt = ::poll(fds, nfds, ms);
-	if (fdcnt == -1)
+	if (fdcnt == -1) {
+		if (errno == EINTR) {
+			INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";
+			return;
+		}
 		HALT(log_) << "Could not poll.";
+	}
 
 	for (i = 0; i < nfds; i++) {
 		struct pollfd *fd = &fds[i];

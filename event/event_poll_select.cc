@@ -1,3 +1,4 @@
+#include <sys/errno.h>
 #include <sys/select.h>
 
 #include <common/buffer.h>
@@ -128,8 +129,13 @@ EventPoll::wait(int ms)
 	}
 
 	int fdcnt = ::select(maxfd + 1, &read_set, &write_set, NULL, tvp);
-	if (fdcnt == -1)
+	if (fdcnt == -1) {
+		if (errno == EINTR) {
+			INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";
+			return;
+		}
 		HALT(log_) << "Could not select.";
+	}
 
 	int fd;
 	for (fd = 0; fdcnt != 0 && fd <= maxfd; fd++) {
