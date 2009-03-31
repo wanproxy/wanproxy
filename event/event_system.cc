@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <unistd.h>
 
 #include <common/buffer.h>
@@ -6,13 +7,19 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
+static void signal_stop(int);
+
 EventSystem::EventSystem(void)
 : log_("/event/system"),
   queue_(),
+  stop_(),
+  stop_queue_(),
   timeout_queue_(),
   poll_()
 {
 	INFO(log_) << "Starting event system.";
+
+	signal(SIGINT, signal_stop);
 }
 
 EventSystem::~EventSystem()
@@ -34,6 +41,13 @@ EventSystem::schedule(Callback *cb)
 }
 
 Action *
+EventSystem::schedule_stop(Callback *cb)
+{
+	Action *a = stop_queue_.append(cb);
+	return (a);
+}
+
+Action *
 EventSystem::timeout(unsigned secs, Callback *cb)
 {
 	Action *a = timeout_queue_.append(secs, cb);
@@ -44,6 +58,16 @@ void
 EventSystem::start(void)
 {
 	for (;;) {
+		/*
+		 * If we have been told to stop, fire all shutdown events.
+		 */
+		if (stop_ && !stop_queue_.empty()) {
+			INFO(log_) << "Running stop handlers.";
+			while (!stop_queue_.empty())
+				stop_queue_.perform();
+			INFO(log_) << "Stop handlers have been run.";
+		}
+
 		/*
 		 * If there are time-triggered events whose time has come,
 		 * run them.
@@ -87,4 +111,19 @@ EventSystem::start(void)
 		 */
 		poll_.wait();
 	}
+}
+
+void
+EventSystem::stop(void)
+{
+	signal(SIGINT, SIG_DFL);
+	INFO(log_) << "Stopping event system.";
+	stop_ = true;
+}
+
+static void
+signal_stop(int signo)
+{
+	ASSERT(signo == SIGINT);
+	EventSystem::instance()->stop();
 }

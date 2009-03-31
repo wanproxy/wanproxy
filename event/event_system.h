@@ -9,6 +9,8 @@
 class EventSystem {
 	LogHandle log_;
 	CallbackQueue queue_;
+	bool stop_;
+	CallbackQueue stop_queue_;
 	TimeoutQueue timeout_queue_;
 	EventPoll poll_;
 protected:
@@ -18,8 +20,10 @@ protected:
 public:
 	Action *poll(const EventPoll::Type&, int, EventCallback *);
 	Action *schedule(Callback *);
+	Action *schedule_stop(Callback *);
 	Action *timeout(unsigned, Callback *);
 	void start(void);
+	void stop(void);
 
 	static EventSystem *instance(void)
 	{

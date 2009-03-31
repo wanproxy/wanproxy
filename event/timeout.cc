@@ -71,10 +71,9 @@ TimeoutQueue::perform(void)
 	if (it->first > now)
 		return;
 	CallbackQueue& queue = it->second;
-	if (queue.empty())
-		timeout_queue_.erase(it);
-	else
+	while (!queue.empty())
 		queue.perform();
+	timeout_queue_.erase(it);
 }
 
 bool

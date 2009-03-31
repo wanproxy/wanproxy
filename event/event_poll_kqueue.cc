@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <sys/errno.h>
 #include <sys/event.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -116,8 +117,14 @@ EventPoll::wait(int ms)
 
 	struct kevent kev[kevcnt];
 	int evcnt = kevent(kq_, NULL, 0, kev, kevcnt, ms == -1 ? NULL : &ts);
-	if (evcnt == -1)
+	if (evcnt == -1) {
+		if (errno == EINTR) {
+			INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";
+			return;
+		}
 		HALT(log_) << "Could not poll kqueue.";
+	}
+
 	int i;
 	for (i = 0; i < evcnt; i++) {
 		struct kevent *ev = &kev[i];

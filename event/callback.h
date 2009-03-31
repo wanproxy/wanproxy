@@ -80,7 +80,9 @@ public:
 	{ }
 
 	~CallbackQueue()
-	{ }
+	{
+		ASSERT(queue_.empty());
+	}
 
 	Action *append(Callback *cb)
 	{
@@ -89,14 +91,13 @@ public:
 		return (a);
 	}
 
-	bool empty(void)
+	bool empty(void) const
 	{
 		return (queue_.empty());
 	}
 
 	void perform(void)
 	{
-
 		if (queue_.empty())
 			return;
 		CallbackAction *a = queue_.front();

@@ -92,14 +92,18 @@ public:
 
 	bool empty(void) const
 	{
+		timeout_map_t::const_iterator it;
+
 		/*
 		 * Since we allow elements within each CallbackQueue to be
-		 * cancelled, this may be incorrect, but will be corrected by
-		 * the perform method.  The same caveat applies to ready() and
-		 * interval().  Luckily, it should be seldom that a user is
-		 * cancelling a callback that has not been invoked by perform().
+		 * cancelled, we must scan them.
 		 */
-		return (timeout_queue_.empty());
+		for (it = timeout_queue_.begin(); it != timeout_queue_.end(); ++it) {
+			if (it->second.empty())
+				continue;
+			return (false);
+		}
+		return (true);
 	}
 
 	Action *append(uintmax_t, Callback *);
