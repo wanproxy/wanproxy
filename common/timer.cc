@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <event/timer.h>
+#include <common/timer.h>
 
 void
 Timer::start(void)

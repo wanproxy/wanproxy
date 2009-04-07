@@ -12,8 +12,7 @@
 
 #include <common/buffer.h>
 #include <common/endian.h>
-
-#include <event/timer.h>
+#include <common/timer.h>
 
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_cache.h>

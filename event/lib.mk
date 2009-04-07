@@ -7,7 +7,6 @@
 SRCS+=	event_poll.cc
 SRCS+=	event_system.cc
 SRCS+=	timeout.cc
-SRCS+=	timer.cc
 
 OSNAME!=	uname -s
 
