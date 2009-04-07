@@ -9,7 +9,8 @@
 
 #include <io/file_descriptor.h>
 #include <io/socket.h>
-#include <io/tcp_client.h>
+
+#include <net/tcp_client.h>
 
 Action *
 TCPClient::connect(Socket **socketp, const std::string& name, int port,

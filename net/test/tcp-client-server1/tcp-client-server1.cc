@@ -7,8 +7,9 @@
 
 #include <io/file_descriptor.h>
 #include <io/socket.h>
-#include <io/tcp_client.h>
-#include <io/tcp_server.h>
+
+#include <net/tcp_client.h>
+#include <net/tcp_server.h>
 
 static uint8_t data[65536];
 
@@ -21,7 +22,7 @@ class Connector {
 public:
 	Connector(unsigned port)
 	: log_("/connector"),
-	  group_("/test/io/socket/connector", "Socket connector"),
+	  group_("/test/net/socket/connector", "Socket connector"),
 	  socket_(NULL),
 	  action_(NULL)
 	{
@@ -130,7 +131,7 @@ class Listener {
 public:
 	Listener(void)
 	: log_("/listener"),
-	  group_("/test/io/tcp_server/listener", "Socket listener"),
+	  group_("/test/net/tcp_server/listener", "Socket listener"),
 	  action_(NULL),
 	  connector_(NULL),
 	  client_(NULL),

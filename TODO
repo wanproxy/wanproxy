@@ -1,3 +1,5 @@
+o) Should Socket be in 'net' or in 'io'?  I guess 'io' if we add Unix domain
+   sockets at some point!
 o) A CLI program for management.  Remember to USE_POLL=select since Mac OS X can
    only use select(2) for stdin and stdout.
 o) Add lots of comments.

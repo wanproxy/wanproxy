@@ -8,7 +8,8 @@
 #include <io/channel.h>
 #include <io/file_descriptor.h>
 #include <io/socket.h>
-#include <io/tcp_server.h>
+
+#include <net/tcp_server.h>
 
 #include "proxy_client.h"
 #include "proxy_listener.h"

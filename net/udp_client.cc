@@ -9,7 +9,8 @@
 
 #include <io/file_descriptor.h>
 #include <io/socket.h>
-#include <io/udp_client.h>
+
+#include <net/udp_client.h>
 
 Action *
 UDPClient::connect(Socket **socketp, const std::string& name, int port,

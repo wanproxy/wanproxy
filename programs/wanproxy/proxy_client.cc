@@ -7,7 +7,8 @@
 
 #include <io/file_descriptor.h>
 #include <io/socket.h>
-#include <io/tcp_client.h>
+
+#include <net/tcp_client.h>
 
 #include "flow_table.h"
 #include "proxy_client.h"

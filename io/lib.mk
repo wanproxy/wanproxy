@@ -9,6 +9,3 @@ SRCS+=	file_descriptor.cc
 SRCS+=	io_system.cc
 SRCS+=	serial.cc
 SRCS+=	socket.cc
-SRCS+=	tcp_client.cc
-SRCS+=	tcp_server.cc
-SRCS+=	udp_client.cc

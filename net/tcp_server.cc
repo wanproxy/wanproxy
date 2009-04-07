@@ -9,7 +9,8 @@
 
 #include <io/file_descriptor.h>
 #include <io/socket.h>
-#include <io/tcp_server.h>
+
+#include <net/tcp_server.h>
 
 TCPServer *
 TCPServer::listen(const std::string& name, unsigned *portp)
