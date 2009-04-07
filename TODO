@@ -1,3 +1,5 @@
+o) Change socket API to just take a string for the connection name and have
+   networking code pass in stuff in the form of "[host]:service".
 o) Should Socket be in 'net' or in 'io'?  I guess 'io' if we add Unix domain
    sockets at some point!
 o) A CLI program for management.  Remember to USE_POLL=select since Mac OS X can
