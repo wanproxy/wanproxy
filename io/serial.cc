@@ -2,6 +2,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <unistd.h>
 
 #include <common/buffer.h>
 
