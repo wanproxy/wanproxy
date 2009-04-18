@@ -9,8 +9,6 @@ SRCS+=	file_descriptor.cc
 SRCS+=	io_system.cc
 SRCS+=	socket.cc
 
-OSNAME!=	uname -s
-
 .if ${OSNAME} == "SunOS"
 # Required for sockets.
 LDADD+=		-lnsl

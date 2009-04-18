@@ -33,10 +33,15 @@ CFLAGS+=-DNDEBUG=1
 CFLAGS+=-g
 .endif
 
+OSNAME!=uname -s
+
 #CFLAGS+=--std gnu++0x
 #CFLAGS+=-pedantic
 CFLAGS+=-Wno-deprecated
-CFLAGS+=-W -Wall -Werror
+CFLAGS+=-W -Wall
+.if ${OSNAME} != "OpenBSD"
+CFLAGS+=-Werror
+.endif
 CFLAGS+=-Wno-system-headers
 #CFLAGS+=-Wno-unused-parameter
 CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts

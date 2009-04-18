@@ -8,8 +8,6 @@ SRCS+=	event_poll.cc
 SRCS+=	event_system.cc
 SRCS+=	timeout.cc
 
-OSNAME!=	uname -s
-
 .if !defined(USE_POLL)
 .if ${OSNAME} == "Darwin" || ${OSNAME} == "FreeBSD"
 USE_POLL=	kqueue
