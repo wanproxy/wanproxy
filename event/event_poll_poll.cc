@@ -1,4 +1,5 @@
 #include <sys/errno.h>
+#include <errno.h>
 #include <poll.h>
 #include <unistd.h>
 

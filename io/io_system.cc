@@ -1,5 +1,6 @@
 #include <sys/errno.h>
 #include <sys/uio.h>
+#include <errno.h>
 #include <limits.h>
 #include <unistd.h>
 

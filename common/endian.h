@@ -1,6 +1,18 @@
 #ifndef	ENDIAN_H
 #define	ENDIAN_H
 
+#if !defined(BYTE_ORDER) && !defined(LITTLE_ENDIAN) && !defined(BIG_ENDIAN)
+#define	LITTLE_ENDIAN	1234
+#define	BIG_ENDIAN	4321
+#if defined(_LITTLE_ENDIAN)
+#define	BYTE_ORDER	LITTLE_ENDIAN
+#elif defined(_BIG_ENDIAN)
+#define	BYTE_ORDER	BIG_ENDIAN
+#else
+#error "Can't determine host byte order."
+#endif
+#endif
+
 #ifndef	BYTE_ORDER
 #error "BYTE_ORDER must be defined."
 #else

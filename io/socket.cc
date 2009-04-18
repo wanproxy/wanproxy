@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 
@@ -102,7 +103,7 @@ Socket::connect(uint32_t ip, uint16_t port, EventCallback *cb)
 	struct sockaddr_in connect_address;
 
 	memset(&connect_address, 0, sizeof connect_address);
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__sun__)
 	connect_address.sin_len = sizeof connect_address;
 #endif
 	connect_address.sin_family = domain_;
@@ -326,15 +327,26 @@ static bool
 socket_address(struct sockaddr_in *sinp, int domain, const std::string& name,
 	       uint16_t port)
 {
-	struct hostent *host = gethostbyname2(name.c_str(), domain);
+	struct hostent *host;
+#if !defined(__sun__)
+	host = gethostbyname2(name.c_str(), domain);
+#else
+	host = gethostbyname(name.c_str()); /* Hope for the best!  */
+#endif
 	if (host == NULL) {
 		return (false);
 	}
+	/*
+	 * XXX
+	 * Remove this assertion and find the resolution which yields the right
+	 * domain and fail if we can't find one.  Blowing up here is just such
+	 * a bad idea.
+	 */
 	ASSERT(host->h_addrtype == domain);
 	ASSERT(host->h_length == sizeof sinp->sin_addr);
 
 	memset(sinp, 0, sizeof *sinp);
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__sun__)
 	sinp->sin_len = sizeof *sinp;
 #endif
 	sinp->sin_family = domain;
