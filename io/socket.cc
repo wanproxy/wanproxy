@@ -358,6 +358,7 @@ socket_address(struct sockaddr_in *sinp, int domain, const std::string& name,
 static std::string
 socket_name(struct sockaddr_in *sinp)
 {
+	/* XXX getnameinfo(3) */
 	char address[256]; /* XXX */
 	const char *p;
 
