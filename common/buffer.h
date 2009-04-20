@@ -66,6 +66,9 @@ public:
 			delete this;
 	}
 
+	/*
+	 * Return the number of outstanding references.
+	 */
 	unsigned refs(void) const
 	{
 		return (ref_);
@@ -314,10 +317,31 @@ public:
 	}
 };
 
+/*
+ * A Buffer is a list of reference-counted, shareable BufferSegments.
+ * Operations on Buffers are translated into the appropriate BufferSegment
+ * operation and may result in the modification of, copying of (i.e. COW) and
+ * creation of BufferSegments, including both their data and their metadata.
+ *
+ * For example, appending data from an external source to a Buffer may involve
+ * the creation of BufferSegments and copying data from said source into them,
+ * or if there is room in the last BufferSegment in the Buffer, the data may be
+ * appended to the BufferSegment in place.
+ *
+ * Almost all operations are built on either BufferSegment operations or
+ * operations on the list that contains them, with the exception of a cached
+ * length value which is reliable since BufferSegments must not change out from
+ * under a Buffer in data or metadata, which provides for much faster
+ * performance than scanning the entire list in every possible scenario.
+ */
 class Buffer {
 public:
 	typedef	std::deque<BufferSegment *> segment_list_t;
 
+	/*
+	 * A SegmentIterator allows for enumeration of the BufferSegments that
+	 * comprise a Buffer.
+	 */
 	class SegmentIterator {
 		const segment_list_t& list_;
 		segment_list_t::const_iterator iterator_;
@@ -359,12 +383,18 @@ private:
 	size_t length_;
 	segment_list_t data_;
 public:
+	/*
+	 * Create a Buffer with no BufferSegments.
+	 */
 	Buffer(void)
 	: length_(0),
 	  data_()
 	{
 	}
 
+	/*
+	 * Create a Buffer and append byte data to it from an external source.
+	 */
 	Buffer(const uint8_t *buf, size_t len)
 	: length_(0),
 	  data_()
@@ -372,6 +402,9 @@ public:
 		append(buf, len);
 	}
 
+	/*
+	 * Create a Buffer and append data to it from another Buffer.
+	 */
 	Buffer(const Buffer& source)
 	: length_(0),
 	  data_()
@@ -379,6 +412,10 @@ public:
 		append(source);
 	}
 
+	/*
+	 * Create a Buffer and append at most len bytes of data to it from
+	 * another Buffer.
+	 */
 	Buffer(const Buffer& source, size_t len)
 	: length_(0),
 	  data_()
@@ -386,6 +423,10 @@ public:
 		append(source, len);
 	}
 
+	/*
+	 * Create a Buffer and append C++ std::string data to it.  This is not
+	 * optimal (goes through c_str()), but is also not very common.
+	 */
 	Buffer(const std::string& str)
 	: length_(0),
 	  data_()
@@ -393,11 +434,17 @@ public:
 		append((const uint8_t *)str.c_str(), str.length());
 	}
 
+	/*
+	 * Merely clear a Buffer out to destruct it.
+	 */
 	~Buffer()
 	{
 		clear();
 	}
 
+	/*
+	 * Overwrite this Buffer's data with that of another buffer.
+	 */
 	Buffer& operator= (const Buffer& source)
 	{
 		clear();
@@ -405,6 +452,9 @@ public:
 		return (*this);
 	}
 
+	/*
+	 * Overwrite this Buffer's data with that of a C++ std::string.
+	 */
 	Buffer& operator= (const std::string& str)
 	{
 		clear();
@@ -412,11 +462,18 @@ public:
 		return (*this);
 	}
 
+	/*
+	 * Append a C++ std::string's data to a Buffer.  This is not optimal
+	 * (goes through c_str()), but is also not very common.
+	 */
 	void append(const std::string& str)
 	{
 		append((const uint8_t *)str.c_str(), str.length());
 	}
 
+	/*
+	 * Append BufferSegments from another Buffer to this Buffer.
+	 */
 	void append(const Buffer& buf)
 	{
 		segment_list_t::const_iterator it;
@@ -425,6 +482,9 @@ public:
 			append(*it);
 	}
 
+	/*
+	 * Append at most len bytes of data from another Buffer to this Buffer.
+	 */
 	void append(const Buffer& buf, size_t len)
 	{
 		if (len == 0)
@@ -436,16 +496,25 @@ public:
 			trim(buf.length() - len);
 	}
 
+	/*
+	 * Append BufferSegments from another Buffer to this Buffer.
+	 */
 	void append(const Buffer *buf)
 	{
 		append(*buf);
 	}
 
+	/*
+	 * Append at most len bytes of data from another Buffer to this Buffer.
+	 */
 	void append(const Buffer *buf, size_t len)
 	{
 		append(*buf, len);
 	}
 
+	/*
+	 * Append a single BufferSegment to this Buffer.
+	 */
 	void append(BufferSegment *seg)
 	{
 		ASSERT(seg->length() != 0);
@@ -454,11 +523,17 @@ public:
 		length_ += seg->length();
 	}
 
+	/*
+	 * Append a single byte to this Buffer.
+	 */
 	void append(uint8_t ch)
 	{
 		append(&ch, 1);
 	}
 
+	/*
+	 * Append multiple bytes to this Buffer.
+	 */
 	void append(const uint8_t *buf, size_t len)
 	{
 		BufferSegment *seg;
@@ -496,6 +571,10 @@ public:
 		seg->unref();
 	}
 
+	/*
+	 * Drop references to all BufferSegments in this Buffer and remove them
+	 * from its list.
+	 */
 	void clear(void)
 	{
 		segment_list_t::iterator it;
@@ -510,6 +589,10 @@ public:
 		ASSERT(length_ == 0);
 	}
 
+	/*
+	 * Copy up to dstsize bytes out of this Buffer starting at offset to a
+	 * byte buffer.
+	 */
 	size_t copyout(uint8_t *dst, unsigned offset, size_t dstsize) const
 	{
 		segment_list_t::const_iterator it;
@@ -533,11 +616,19 @@ public:
 		return (copied);
 	}
 
+	/*
+	 * Copy up to dstsize bytes out the beginning of this Buffer starting to
+	 * a byte buffer.
+	 */
 	size_t copyout(uint8_t *dst, size_t dstsize) const
 	{
 		return (copyout(dst, 0, dstsize));
 	}
 
+	/*
+	 * Append at most len bytes from the start of this Buffer to a specified
+	 * BufferSegment.
+	 */
 	size_t copyout(BufferSegment *seg, size_t len) const
 	{
 		ASSERT(seg->avail() >= len);
@@ -546,6 +637,11 @@ public:
 		return (len);
 	}
 
+	/*
+	 * Take a reference to a BufferSegment of len bytes and create one from
+	 * the start of this Buffer if the first BufferSegment is not of the
+	 * expected length.
+	 */
 	size_t copyout(BufferSegment **segp, size_t len) const
 	{
 		BufferSegment *src = data_.front();
@@ -560,16 +656,27 @@ public:
 		return (copyout(seg, len));
 	}
 
+	/*
+	 * Get a SegmentIterator that can be used to enumerate BufferSegments in
+	 * this Buffer.
+	 */
 	SegmentIterator segments(void) const
 	{
 		return (SegmentIterator(data_));
 	}
 
+	/*
+	 * Returns true if this Buffer is empty.
+	 */
 	bool empty(void) const
 	{
 		return (data_.empty());
 	}
 
+	/*
+	 * Returns true if this Buffer's contents are identical to those of a
+	 * specified Buffer.
+	 */
 	bool equal(Buffer *buf) const
 	{
 		if (length() != buf->length())
@@ -577,6 +684,10 @@ public:
 		return (prefix(buf));
 	}
 
+	/*
+	 * Returns true if this Buffer's contents are identical to those of a
+	 * specified byte-buffer.
+	 */
 	bool equal(const uint8_t *buf, size_t len) const
 	{
 		if (len != length())
@@ -584,12 +695,20 @@ public:
 		return (prefix(buf, len));
 	}
 
+	/*
+	 * Returns true if this Buffer's contents are identical to those of a
+	 * specified C++ std::string.
+	 */
 	bool equal(const std::string& str) const
 	{
 		Buffer tmp(str);
 		return (equal(&tmp));
 	}
 
+	/*
+	 * Escapes every character in this Buffer for which the supplied
+	 * predicate is true with the supplied escape character esc.
+	 */
 	template<typename T>
 	void escape(uint8_t esc, T predicate)
 	{
@@ -649,6 +768,11 @@ public:
 		}
 	}
 
+	/*
+	 * Finds the first occurance of character ch in this Buffer's data and
+	 * sets offsetp to the offset it was found at.  If a limit is given, at
+	 * most that many characters will be searched.
+	 */
 	bool find(uint8_t ch, unsigned *offsetp, size_t limit = 0) const
 	{
 		segment_list_t::const_iterator it;
@@ -676,11 +800,18 @@ public:
 		return (false);
 	}
 
+	/*
+	 * Returns the current amount of data associated with this Buffer.
+	 */
 	size_t length(void) const
 	{
 		return (length_);
 	}
 
+	/*
+	 * Move up to dstsize bytes out of this Buffer starting at offset and
+	 * into a supplied byte-buffer.
+	 */
 	void moveout(uint8_t *dst, unsigned offset, size_t dstsize)
 	{
 		ASSERT(length() >= offset + dstsize);
@@ -689,11 +820,19 @@ public:
 		skip(offset + dstsize);
 	}
 
+	/*
+	 * Move up to dstsize bytes from the start of this Buffer and into a
+	 * supplied byte-buffer.
+	 */
 	void moveout(uint8_t *dst, size_t dstsize)
 	{
 		moveout(dst, 0, dstsize);
 	}
 
+	/*
+	 * Move up to dstsize bytes out of this Buffer starting at offset and
+	 * into a supplied Buffer.
+	 */
 	void moveout(Buffer *dst, unsigned offset, size_t dstsize)
 	{
 		ASSERT(length() >= offset + dstsize);
@@ -703,11 +842,19 @@ public:
 		skip(dstsize);
 	}
 
+	/*
+	 * Move up to dstsize bytes from the start of this Buffer and into a
+	 * supplied Buffer.
+	 */
 	void moveout(Buffer *dst, size_t dstsize)
 	{
 		moveout(dst, 0, dstsize);
 	}
 
+	/*
+	 * Move the first BufferSegment in this Buffer out of it and give our
+	 * reference to it to the caller.
+	 */
 	void moveout(BufferSegment **segp)
 	{
 		ASSERT(!empty());
@@ -717,6 +864,9 @@ public:
 		*segp = seg;
 	}
 
+	/*
+	 * Look at the first character in this Buffer.
+	 */
 	uint8_t peek(void) const
 	{
 		ASSERT(length_ != 0);
@@ -725,6 +875,10 @@ public:
 		return (seg->data()[0]);
 	}
 
+	/*
+	 * Returns true if the supplied C++ std::string is a prefix of this
+	 * Buffer.
+	 */
 	bool prefix(const std::string& str) const
 	{
 		ASSERT(str.length() > 0);
@@ -734,6 +888,9 @@ public:
 		return (prefix(&tmp));
 	}
 
+	/*
+	 * Returns true if the supplied byte-buffer is a prefix of this Buffer.
+	 */
 	bool prefix(const uint8_t *buf, size_t len) const
 	{
 		ASSERT(len > 0);
@@ -743,6 +900,10 @@ public:
 		return (prefix(&tmp));
 	}
 
+	/*
+	 * Returns true if the supplied Buffer's data is a prefix of this
+	 * Buffer.
+	 */
 	bool prefix(const Buffer *buf) const
 	{
 		ASSERT(buf->length() > 0);
@@ -775,6 +936,8 @@ public:
 	}
 
 	/*
+	 * Remove the leading bytes from this Buffer.
+	 *
 	 * XXX Keep in sync with trim().
 	 */
 	void skip(size_t bytes)
@@ -820,6 +983,8 @@ public:
 	}
 
 	/*
+	 * Remove the trailing bytes from this Buffer.
+	 *
 	 * XXX Keep in sync with skip().
 	 */
 	void trim(size_t bytes)
@@ -864,7 +1029,9 @@ public:
 		length_ -= trimmed;
 	}
 
-	/* And now the fancypants stuff.  */
+	/*
+	 * Apply to a function each byte in this Buffer.
+	 */
 	template<typename T>
 	void foreach_byte(T& f) const
 	{
@@ -879,6 +1046,9 @@ public:
 		}
 	}
 
+	/*
+	 * Apply to a function each BufferSegment in this Buffer.
+	 */
 	template<typename T>
 	void foreach_segment(T& f) const
 	{
@@ -888,6 +1058,11 @@ public:
 			f(*it);
 	}
 
+	/*
+	 * Fill a suppled iovec which has at most a specified number of elements
+	 * with the contents of this Buffer and return the number which were
+	 * populated.
+	 */
 	size_t fill_iovec(struct iovec *, size_t) const;
 };
 
