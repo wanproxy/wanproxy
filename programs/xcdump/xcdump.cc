@@ -17,6 +17,10 @@
 
 #define	XCDUMP_IOVEC_SIZE	(IOV_MAX)
 
+static int dump_verbosity;
+
+static void bhexdump(Buffer *, const uint8_t *, size_t);
+static void bprintf(Buffer *, const char *, ...);
 static void dump(int, int);
 static bool fill(int, Buffer *);
 static void flush(int, Buffer *);
@@ -28,8 +32,11 @@ main(int argc, char *argv[])
 {
 	int ch;
 
-	while ((ch = getopt(argc, argv, "?")) != -1) {
+	while ((ch = getopt(argc, argv, "?v")) != -1) {
 		switch (ch) {
+		case 'v':
+			dump_verbosity++;
+			break;
 		case '?':
 		default:
 			usage();
@@ -41,6 +48,26 @@ main(int argc, char *argv[])
 	process_files(argc, argv);
 
 	return (0);
+}
+
+static void
+bhexdump(Buffer *output, const uint8_t *data, size_t len)
+{
+	while (len--)
+		bprintf(output, "%02x", *data++);
+}
+
+static void
+bprintf(Buffer *output, const char *fmt, ...)
+{
+	char buf[65536];
+	va_list ap;
+
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof buf, fmt, ap);
+	va_end(ap);
+
+	output->append(std::string(buf));
 }
 
 static void
@@ -61,7 +88,10 @@ dump(int ifd, int ofd)
 			while (!XCODEC_CHAR_SPECIAL(ch)) {
 				inlen--;
 				input.skip(1);
-				output.append("<literal />\n");
+				bprintf(&output, "<literal");
+				if (dump_verbosity > 0)
+					bprintf(&output, " character=\"0x%02x\"", ch);
+				bprintf(&output, "/>\n");
 
 				if (inlen == 0)
 					break;
@@ -82,8 +112,10 @@ dump(int ifd, int ofd)
 				input.moveout((uint8_t *)&hash, 1, sizeof hash);
 				hash = LittleEndian::decode(hash);
 
-				output.append("<hash-reference />\n");
-				output.append("<window-declare />\n");
+				bprintf(&output, "<hash-reference");
+				if (dump_verbosity > 0)
+					bprintf(&output, " hash=\"0x%016jx\"", (uintmax_t)hash);
+				bprintf(&output, "/>\n");
 				inlen -= 9;
 				continue;
 
@@ -91,7 +123,11 @@ dump(int ifd, int ofd)
 				if (inlen < 2)
 					break;
 				input.skip(1);
-				output.append("<escape />\n");
+				ch = input.peek();
+				bprintf(&output, "<escape");
+				if (dump_verbosity > 0)
+					bprintf(&output, " character=\"0x%02x\"", ch);
+				bprintf(&output, "/>\n");
 				input.skip(1);
 				inlen -= 2;
 				continue;
@@ -106,8 +142,16 @@ dump(int ifd, int ofd)
 				input.copyout(&seg, XCODEC_SEGMENT_LENGTH);
 				input.skip(XCODEC_SEGMENT_LENGTH);
 
-				output.append("<hash-declare />\n");
-				output.append("<window-declare />\n");
+				bprintf(&output, "<hash-declare");
+				if (dump_verbosity > 0) {
+					bprintf(&output, " hash=\"0x%016jx\"", (uintmax_t)hash);
+					if (dump_verbosity > 1) {
+						bprintf(&output, " data=\"");
+						bhexdump(&output, seg->data(), seg->length());
+						bprintf(&output, "\"");
+					}
+				}
+				bprintf(&output, "/>\n");
 
 				seg->unref();
 				inlen -= 9 + XCODEC_SEGMENT_LENGTH;
@@ -120,7 +164,10 @@ dump(int ifd, int ofd)
 				ch = input.peek();
 				input.skip(1);
 
-				output.append("<window-reference />\n");
+				bprintf(&output, "<back-reference");
+				if (dump_verbosity > 0)
+					bprintf(&output, " offset=\"%u\"", ch);
+				bprintf(&output, "/>\n");
 
 				inlen -= 2;
 				continue;
@@ -227,6 +274,6 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: xcdump [file ...]\n");
+"usage: xcdump [-v] [file ...]\n");
 	exit(1);
 }
