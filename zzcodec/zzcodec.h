@@ -1,8 +1,8 @@
 #ifndef	ZZCODEC_H
 #define	ZZCODEC_H
 
-#define	ZZCODEC_COLUMNS	(128)
-#define	ZZCODEC_ROWS	(128)
+#define	ZZCODEC_COLUMNS	(BUFFER_SEGMENT_SIZE)
+#define	ZZCODEC_ROWS	(BUFFER_SEGMENT_SIZE)
 
 class ZZCodec {
 	LogHandle log_;

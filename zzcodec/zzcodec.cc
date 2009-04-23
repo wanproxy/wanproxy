@@ -85,7 +85,7 @@ ZZCodec::decode(Buffer *output, Buffer *input) const
 		if (inlen == 0)
 			break;
 
-		Buffer rows[ZZCODEC_ROWS];
+		BufferSegment *rows[ZZCODEC_ROWS];
 		unsigned i;
 
 		switch (ch) {
@@ -98,19 +98,24 @@ ZZCodec::decode(Buffer *output, Buffer *input) const
 
 			input->skip(1);
 
-			for (i = 0; i < ZZCODEC_COLUMNS * ZZCODEC_ROWS; i++) {
-				Buffer *row = &rows[transform_[i]];
+			for (i = 0; i < ZZCODEC_ROWS; i++) {
+				rows[i] = new BufferSegment();
+			}
 
-				row->append(input->peek());
+			for (i = 0; i < ZZCODEC_COLUMNS * ZZCODEC_ROWS; i++) {
+				BufferSegment *row = rows[transform_[i]];
+
+				row = row->append(input->peek());
+				ASSERT(row == rows[transform_[i]]);
 				input->skip(1);
 			}
 
 			for (i = 0; i < ZZCODEC_ROWS; i++) {
-				Buffer *row = &rows[i];
+				BufferSegment *row = rows[i];
 
 				ASSERT(row->length() == ZZCODEC_COLUMNS);
 				output->append(row);
-				row->clear();
+				row->unref();
 			}
 
 			inlen -= 1 + (ZZCODEC_COLUMNS * ZZCODEC_ROWS);
