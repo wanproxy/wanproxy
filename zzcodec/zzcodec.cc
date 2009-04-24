@@ -28,6 +28,14 @@ ZZCodec::ZZCodec(void)
 
 	transform_[m++] = y;
 
+	/*
+	 * XXX
+	 *
+	 * Really we just start with, say, j=1, go down one row and then back
+	 * up one row, and then j=2 to go down one row, then another, and then
+	 * up and up again, etc., increasing j until it is equal to ROWS, then
+	 * just continue on until the array is full.
+	 */
 	while (m < ZZCODEC_COLUMNS * ZZCODEC_ROWS) {
 		while (y + 1 < ZZCODEC_ROWS && x != 0) {
 			y++;
