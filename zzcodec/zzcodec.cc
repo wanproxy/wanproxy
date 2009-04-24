@@ -20,50 +20,48 @@ ZZCodec::ZZCodec(void)
 : log_("/zzcodec"),
   transform_()
 {
-	unsigned m, x, y;
+	unsigned f, c, m, y;
 
+	f = 0;
+	c = 1;
 	m = 0;
-	x = 0;
-	y = 0;
 
-	transform_[m++] = y;
+	transform_[m++] = f;
+	transform_[m++] = c;
+	transform_[m++] = f;
 
 	/*
-	 * XXX
+	 * Compute the zig-zag transformation table.  The mth element goes into
+	 * the yth row.
 	 *
-	 * Really we just start with, say, j=1, go down one row and then back
-	 * up one row, and then j=2 to go down one row, then another, and then
-	 * up and up again, etc., increasing j until it is equal to ROWS, then
-	 * just continue on until the array is full.
+	 * XXX Consolidate or at least reduce differences between the loops!
 	 */
-	while (m < ZZCODEC_COLUMNS * ZZCODEC_ROWS) {
-		while (y + 1 < ZZCODEC_ROWS && x != 0) {
-			y++;
-			x--;
+	for (;;) {
+		if (c + 2 < ZZCODEC_ROWS)
+			c += 2;
+		else
+			f++;
 
+		for (y = f; y <= c; y++)
 			transform_[m++] = y;
-		}
 
-		if (y + 1 == ZZCODEC_ROWS) {
-			x++;
-		} else {
-			y++;
-		}
-		transform_[m++] = y;
+		if (f != 0)
+			break;
 
-		while (x + 1 < ZZCODEC_COLUMNS && y != 0) {
-			y--;
-			x++;
+		for (y = c; y > 0; y--)
+			transform_[m++] = y - 1;
+	}
 
+	while (f != c) {
+		f++;
+
+		for (y = c; y >= f; y--)
 			transform_[m++] = y;
-		}
 
-		if (x + 1 == ZZCODEC_COLUMNS) {
-			y++;
-		} else {
-			x++;
-		}
-		transform_[m++] = y;
+		for (y = f; y < c; y++)
+			transform_[m++] = y + 1;
+
+		f++;
 	}
 }
 
