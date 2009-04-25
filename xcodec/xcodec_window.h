@@ -23,7 +23,7 @@ public:
 	  segments_()
 	{
 		unsigned b;
-		
+
 		for (b = 0; b < XCODEC_WINDOW_COUNT; b++) {
 			window_[b] = 0;
 		}
@@ -50,7 +50,7 @@ public:
 		if (old != 0) {
 			ASSERT(present_[old] == cursor_);
 			present_.erase(old);
-			
+
 			std::map<uint64_t, BufferSegment *>::iterator it;
 			it = segments_.find(old);
 			ASSERT(it != segments_.end());
