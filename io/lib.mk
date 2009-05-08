@@ -4,7 +4,6 @@
 
 .PATH: ${TOPDIR}/io
 
-SRCS+=	file.cc
 SRCS+=	file_descriptor.cc
 SRCS+=	io_system.cc
 SRCS+=	socket.cc

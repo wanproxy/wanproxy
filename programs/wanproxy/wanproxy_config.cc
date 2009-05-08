@@ -8,8 +8,6 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/file.h>
-
 #include "flow_monitor.h"
 #include "flow_table.h"
 #include "proxy_listener.h"
