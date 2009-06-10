@@ -14,6 +14,8 @@ o) Run-length-encoding.
 o) Do some information exchange out-of-band when setting up connections between
    WANProxy instances so we know what Channel to send requests for declarations
    on.
+o) Send definitions out-of-band, too, so that QoS and backpressure on one connection
+   can't delay other connections.
 o) Make it possible to detect when we are sending to a socket that is also
    within WANProxy and avoid a system call -- just copy directly to the
    appropriate buffer.  It should be pretty easy to do this with the IO queueing
