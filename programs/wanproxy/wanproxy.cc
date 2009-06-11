@@ -17,9 +17,6 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <xcodec/xcodec.h>
-#include <xcodec/xcodec_cache.h>
-
 #include "wanproxy_config.h"
 
 static void usage(void);
@@ -47,11 +44,8 @@ main(int argc, char *argv[])
 	if (configfile == "")
 		usage();
 
-	XCodecCache cache;
-	XCodec codec("/wanproxy", &cache);
-
 	WANProxyConfig config;
-	if (!config.configure(&codec, configfile))
+	if (!config.configure(configfile))
 		HALT("/wanproxy") << "Could not configure proxies.";
 
 #if PROXYPIPE_BUG
