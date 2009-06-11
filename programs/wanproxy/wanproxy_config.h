@@ -1,6 +1,8 @@
 #ifndef	WANPROXY_CONFIG_H
 #define	WANPROXY_CONFIG_H
 
+class Config;
+
 class WANProxyConfig {
 	LogHandle log_;
 	Config *config_;

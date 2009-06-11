@@ -70,7 +70,7 @@ WANProxyConfig::parse_create(std::deque<std::string>& tokens)
 	}
 
 	if (!config_->create(tokens[0], tokens[1])) {
-		ERROR(log_) << "Object (" << tokens[0] << ") could not be created.";
+		ERROR(log_) << "Object (" << tokens[1] << ") could not be created.";
 		return;
 	}
 	tokens.clear();
