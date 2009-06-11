@@ -42,7 +42,7 @@ public:
 		if (std::find(str.begin(), str.end(), '"') != str.end())
 			return (false);
 
-		strings_[cv] = vstr;
+		strings_[cv] = str;
 		return (true);
 	}
 };
