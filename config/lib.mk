@@ -5,3 +5,5 @@
 .PATH: ${TOPDIR}/config
 
 SRCS+=	config.cc
+SRCS+=	config_class.cc
+SRCS+=	config_object.cc

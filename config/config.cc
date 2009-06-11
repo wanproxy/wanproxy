@@ -1,6 +1,10 @@
 #include <string>
 
 #include <config/config.h>
+#include <config/config_class.h>
+#include <config/config_object.h>
+#include <config/config_type.h>
+#include <config/config_value.h>
 
 Config::Config(void)
 : log_("/config"),
@@ -22,8 +26,10 @@ Config::activate(const std::string& oname)
 		return (false);
 	}
 
-	DEBUG(log_) << __PRETTY_FUNCTION__ << ", oname=\"" << oname << "\"";
-	return (true);
+	ConfigObject *co = object_map_[oname];
+	ConfigClass *cc = co->class_;
+
+	return (cc->activate(co));
 }
 
 bool
@@ -38,7 +44,11 @@ Config::create(const std::string& cname, const std::string& oname)
 		return (false);
 	}
 
-	DEBUG(log_) << __PRETTY_FUNCTION__ << ", cname=\"" << cname << "\", oname=\"" << oname << "\"";
+	ConfigClass *cc = class_map_[cname];
+	ConfigObject *co = new ConfigObject(cc);
+
+	object_map_[oname] = co;
+
 	return (true);
 }
 
@@ -51,7 +61,22 @@ Config::set(const std::string& oname, const std::string& mname,
 		return (false);
 	}
 
-	DEBUG(log_) << __PRETTY_FUNCTION__ << ", oname=\"" << oname << "\", mname=\"" << mname << "\"" << ", vstr=\"" << vstr << "\"";
+	ConfigObject *co = object_map_[oname];
+	ConfigClass *cc = co->class_;
+
+	ConfigType *ct = cc->member(mname);
+	if (ct == NULL) {
+		ERROR(log_) << "No such member (" << mname << ") in object (" << oname << ")";
+		return (false);
+	}
+
+	ConfigValue *cv = new ConfigValue(ct);
+	if (!ct->set(cv, vstr)) {
+		delete cv;
+		return (false);
+	}
+	cc->set(co, mname, cv);
+
 	return (true);
 }
 
