@@ -5,6 +5,8 @@
 #include <common/buffer.h>
 
 #include <config/config.h>
+#include <config/config_class.h>
+#include <config/config_class_log_mask.h>
 
 #include <event/action.h>
 #include <event/callback.h>
@@ -123,6 +125,7 @@ WANProxyConfig::configure(const std::string& name)
 	}
 
 	config_ = new Config();
+	config_->import("log-mask", &config_class_log_mask);
 #if 0
 	config_->import("codec", &codec_class_);
 	config_->import("interface", &interface_class_);
