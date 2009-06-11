@@ -3,15 +3,18 @@
 
 #include <map>
 
+class Config;
 class ConfigClass;
 class ConfigValue;
 
 struct ConfigObject {
+	Config *config_;
 	ConfigClass *class_;
 	std::map<std::string, ConfigValue *> members_;
 
-	ConfigObject(ConfigClass *cc)
-	: class_(cc),
+	ConfigObject(Config *config, ConfigClass *cc)
+	: config_(config),
+	  class_(cc),
 	  members_()
 	{ }
 

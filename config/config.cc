@@ -45,7 +45,7 @@ Config::create(const std::string& cname, const std::string& oname)
 	}
 
 	ConfigClass *cc = class_map_[cname];
-	ConfigObject *co = new ConfigObject(cc);
+	ConfigObject *co = new ConfigObject(this, cc);
 
 	object_map_[oname] = co;
 
@@ -70,7 +70,7 @@ Config::set(const std::string& oname, const std::string& mname,
 		return (false);
 	}
 
-	ConfigValue *cv = new ConfigValue(ct);
+	ConfigValue *cv = new ConfigValue(this, ct);
 	if (!ct->set(cv, vstr)) {
 		delete cv;
 		return (false);
