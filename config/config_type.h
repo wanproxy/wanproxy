@@ -1,6 +1,8 @@
 #ifndef	CONFIG_TYPE_H
 #define	CONFIG_TYPE_H
 
+class ConfigValue;
+
 class ConfigType {
 	std::string name_;
 protected:

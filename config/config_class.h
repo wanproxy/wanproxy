@@ -18,7 +18,7 @@ protected:
 	: name_(name),
 	  members_()
 	{ }
-private:
+
 	~ConfigClass();
 
 protected:
