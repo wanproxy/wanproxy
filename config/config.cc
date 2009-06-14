@@ -70,7 +70,7 @@ Config::set(const std::string& oname, const std::string& mname,
 		return (false);
 	}
 
-	ConfigValue *cv = new ConfigValue(this, ct);
+	ConfigValue *cv = new ConfigValue(this, ct, vstr);
 	if (!ct->set(cv, vstr)) {
 		delete cv;
 		return (false);

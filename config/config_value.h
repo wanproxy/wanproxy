@@ -7,10 +7,12 @@ class ConfigType;
 struct ConfigValue {
 	Config *config_;
 	ConfigType *type_;
+	std::string string_;
 
-	ConfigValue(Config *config, ConfigType *type)
+	ConfigValue(Config *config, ConfigType *type, const std::string& string)
 	: config_(config),
-	  type_(type)
+	  type_(type),
+	  string_(string)
 	{ }
 
 	~ConfigValue()
