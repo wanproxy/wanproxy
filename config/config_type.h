@@ -10,7 +10,7 @@ protected:
 	: name_(name)
 	{ }
 
-	~ConfigType()
+	virtual ~ConfigType()
 	{ }
 public:
 	virtual bool set(ConfigValue *, const std::string&) = 0;

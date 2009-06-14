@@ -19,7 +19,7 @@ protected:
 	  members_()
 	{ }
 
-	~ConfigClass();
+	virtual ~ConfigClass();
 
 protected:
 	void add_member(const std::string& mname, ConfigType *type)
