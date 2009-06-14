@@ -121,7 +121,7 @@ public:
 	}
 
 	static void log(const Priority&, const LogHandle, const std::string);
-	static bool mask(const std::string&, const std::string&);
+	static bool mask(const std::string&, const Priority&);
 };
 
 	/* A panic condition.  */

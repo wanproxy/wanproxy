@@ -22,18 +22,17 @@ ConfigClassLogMask::activate(ConfigObject *co)
 	if (!regexct->get(regexcv, &regex))
 		return (false);
 
-	/* XXX enum */
 	ConfigValue *maskcv = co->members_["mask"];
 	if (maskcv == NULL)
 		return (false);
 
-	ConfigTypeString *maskct = dynamic_cast<ConfigTypeString *>(maskcv->type_);
+	ConfigTypeLogLevel *maskct = dynamic_cast<ConfigTypeLogLevel *>(maskcv->type_);
 	if (maskct == NULL)
 		return (false);
 
-	std::string mask;
-	if (!maskct->get(maskcv, &mask))
+	Log::Priority priority;
+	if (!maskct->get(maskcv, &priority))
 		return (false);
 
-	return (Log::mask(regex, mask));
+	return (Log::mask(regex, priority));
 }

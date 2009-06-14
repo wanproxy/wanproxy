@@ -1,6 +1,7 @@
 #ifndef	CONFIG_CLASS_LOG_MASK_H
 #define	CONFIG_CLASS_LOG_MASK_H
 
+#include <config/config_type_log_level.h>
 #include <config/config_type_string.h>
 
 class ConfigObject;
@@ -11,7 +12,7 @@ public:
 	: ConfigClass("log-mask")
 	{
 		add_member("regex", &config_type_string);
-		add_member("mask", &config_type_string);
+		add_member("mask", &config_type_log_level);
 	}
 
 	~ConfigClassLogMask()

@@ -18,7 +18,6 @@ struct LogMask {
 
 static std::list<LogMask> log_masks;
 
-static bool priority_parse(const std::string&, Log::Priority *);
 #ifdef	USE_SYSLOG
 static int syslog_priority(const Log::Priority&);
 #endif
@@ -77,7 +76,7 @@ done:
 }
 
 bool
-Log::mask(const std::string& handle_regex, const std::string& priority_mask)
+Log::mask(const std::string& handle_regex, const Log::Priority& priority)
 {
 	LogMask mask;
 
@@ -85,53 +84,11 @@ Log::mask(const std::string& handle_regex, const std::string& priority_mask)
 		      REG_NOSUB | REG_EXTENDED) != 0) {
 		return (false);
 	}
-
-	if (!priority_parse(priority_mask, &mask.priority_)) {
-		::regfree(&mask.regex_);
-		return (false);
-	}
+	mask.priority_ = priority;
 
 	log_masks.push_back(mask);
 
 	return (true);
-}
-
-static bool
-priority_parse(const std::string& priority, Log::Priority *priorityp)
-{
-	if (priority == "EMERG") {
-		*priorityp = Log::Emergency;
-		return (true);
-	}
-	if (priority == "ALERT") {
-		*priorityp = Log::Alert;
-		return (true);
-	}
-	if (priority == "CRIT") {
-		*priorityp = Log::Critical;
-		return (true);
-	}
-	if (priority == "ERR") {
-		*priorityp = Log::Error;
-		return (true);
-	}
-	if (priority == "WARNING") {
-		*priorityp = Log::Warning;
-		return (true);
-	}
-	if (priority == "NOTICE") {
-		*priorityp = Log::Notice;
-		return (true);
-	}
-	if (priority == "INFO") {
-		*priorityp = Log::Info;
-		return (true);
-	}
-	if (priority == "DEBUG") {
-		*priorityp = Log::Debug;
-		return (true);
-	}
-	return (false);
 }
 
 #ifdef	USE_SYSLOG
