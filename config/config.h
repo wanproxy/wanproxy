@@ -20,6 +20,16 @@ public:
 	bool set(const std::string&, const std::string&, const std::string&);
 
 	void import(const std::string&, ConfigClass *);
+
+	ConfigObject *lookup(const std::string& oname) const
+	{
+		std::map<std::string, ConfigObject *>::const_iterator omit;
+
+		omit = object_map_.find(oname);
+		if (omit == object_map_.end())
+			return (NULL);
+		return (omit->second);
+	}
 };
 
 #endif /* !CONFIG_H */
