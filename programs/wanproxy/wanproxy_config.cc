@@ -127,11 +127,11 @@ WANProxyConfig::configure(const std::string& name)
 	config_ = new Config();
 	config_->import(&config_class_log_mask);
 #if 0
-	config_->import(&codec_class_);
-	config_->import(&interface_class_);
-	config_->import(&peer_class_);
-	config_->import(&proxy_class_);
-	config_->import(&proxy_socks_);
+	config_->import(&wanproxy_config_class_codec);
+	config_->import(&wanproxy_config_class_interface);
+	config_->import(&wanproxy_config_class_peer);
+	config_->import(&wanproxy_config_class_proxy);
+	config_->import(&wanproxy_config_class_proxy_socks);
 #endif
 
 	std::deque<std::string> tokens;
