@@ -1,7 +1,0 @@
-o) ConfigClassCodec.
-o) ConfigClassInterface.
-o) ConfigClassPeer.
-o) ConfigClassProxy.
-o) ConfigClassProxySocks.
-o) Move the WANProxy-only ones to programs/wanproxy or make their compilation
-   conditional on some variable.
