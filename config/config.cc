@@ -70,6 +70,42 @@ Config::set(const std::string& oname, const std::string& mname,
 		return (false);
 	}
 
+	if (vstr[0] == '$') {
+		std::string::const_iterator dot;
+
+		dot = std::find(vstr.begin(), vstr.end(), '.');
+
+		std::string ooname(vstr.begin() + 1, dot);
+		std::string omname(dot, vstr.end());
+
+		if (ooname == "" || omname == "") {
+			ERROR(log_) << "Refernece to invalid object (" << ooname << ") or member (" << omname << ") by name.";
+			return (false);
+		}
+
+		if (object_map_.find(ooname) == object_map_.end()) {
+			ERROR(log_) << "Reference to non-existant object (" << ooname << ")";
+			return (false);
+		}
+
+		ConfigObject *oco = object_map_[ooname];
+		ConfigClass *occ = oco->class_;
+
+		ConfigType *oct = occ->member(mname);
+		if (oct == NULL) {
+			ERROR(log_) << "Reference to non-existant member (" << omname << ") in object (" << ooname << ")";
+			return (false);
+		}
+
+		ConfigValue *ocv = oco->members_[omname];
+		if (ocv == NULL) {
+			ERROR(log_) << "Reference to uninitialized member (" << omname << ") in object (" << ooname << ")";
+			return (false);
+		}
+
+		return (set(oname, mname, ocv->string_));
+	}
+
 	ConfigValue *cv = new ConfigValue(this, ct, vstr);
 	if (!ct->set(cv, vstr)) {
 		delete cv;
