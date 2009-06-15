@@ -125,14 +125,13 @@ WANProxyConfig::configure(const std::string& name)
 	}
 
 	config_ = new Config();
-	config_->import("log-mask", &config_class_log_mask);
+	config_->import(&config_class_log_mask);
 #if 0
-	config_->import("codec", &codec_class_);
-	config_->import("interface", &interface_class_);
-	config_->import("log-mask", &log_mask_class_);
-	config_->import("peer", &peer_class_);
-	config_->import("proxy", &proxy_class_);
-	config_->import("proxy-socks", &proxy_socks_);
+	config_->import(&codec_class_);
+	config_->import(&interface_class_);
+	config_->import(&peer_class_);
+	config_->import(&proxy_class_);
+	config_->import(&proxy_socks_);
 #endif
 
 	std::deque<std::string> tokens;

@@ -117,10 +117,10 @@ Config::set(const std::string& oname, const std::string& mname,
 }
 
 void
-Config::import(const std::string& cname, ConfigClass *cc)
+Config::import(ConfigClass *cc)
 {
-	if (class_map_.find(cname) != class_map_.end())
+	if (class_map_.find(cc->name_) != class_map_.end())
 		return;
 
-	class_map_[cname] = cc;
+	class_map_[cc->name_] = cc;
 }

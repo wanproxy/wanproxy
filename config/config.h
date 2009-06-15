@@ -19,7 +19,7 @@ public:
 	bool create(const std::string&, const std::string&);
 	bool set(const std::string&, const std::string&, const std::string&);
 
-	void import(const std::string&, ConfigClass *);
+	void import(ConfigClass *);
 
 	ConfigObject *lookup(const std::string& oname) const
 	{
