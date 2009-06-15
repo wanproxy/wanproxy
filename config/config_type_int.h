@@ -11,7 +11,7 @@ class ConfigTypeInt : public ConfigType {
 	std::map<ConfigValue *, intmax_t> ints_;
 public:
 	ConfigTypeInt(void)
-	: ConfigType("string"),
+	: ConfigType("int"),
 	  ints_()
 	{ }
 
@@ -31,6 +31,6 @@ public:
 	bool set(ConfigValue *cv, const std::string& vstr);
 };
 
-extern ConfigTypeInt config_type_string;
+extern ConfigTypeInt config_type_int;
 
 #endif /* !CONFIG_TYPE_INT_H */

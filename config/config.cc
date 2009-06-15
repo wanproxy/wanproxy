@@ -76,7 +76,7 @@ Config::set(const std::string& oname, const std::string& mname,
 		dot = std::find(vstr.begin(), vstr.end(), '.');
 
 		std::string ooname(vstr.begin() + 1, dot);
-		std::string omname(dot, vstr.end());
+		std::string omname(dot + 1, vstr.end());
 
 		if (ooname == "" || omname == "") {
 			ERROR(log_) << "Refernece to invalid object (" << ooname << ") or member (" << omname << ") by name.";

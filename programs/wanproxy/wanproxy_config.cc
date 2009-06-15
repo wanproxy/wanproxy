@@ -13,6 +13,7 @@
 #include <event/event_system.h>
 
 #include "wanproxy_config.h"
+#include "wanproxy_config_class_interface.h"
 
 WANProxyConfig::WANProxyConfig(void)
 : log_("/wanproxy/config"),
@@ -126,9 +127,9 @@ WANProxyConfig::configure(const std::string& name)
 
 	config_ = new Config();
 	config_->import(&config_class_log_mask);
+	config_->import(&wanproxy_config_class_interface);
 #if 0
 	config_->import(&wanproxy_config_class_codec);
-	config_->import(&wanproxy_config_class_interface);
 	config_->import(&wanproxy_config_class_peer);
 	config_->import(&wanproxy_config_class_proxy);
 	config_->import(&wanproxy_config_class_proxy_socks);
