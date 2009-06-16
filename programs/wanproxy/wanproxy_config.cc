@@ -16,6 +16,8 @@
 #include "wanproxy_config_class_codec.h"
 #include "wanproxy_config_class_interface.h"
 #include "wanproxy_config_class_peer.h"
+#include "wanproxy_config_class_proxy.h"
+#include "wanproxy_config_class_proxy_socks.h"
 
 WANProxyConfig::WANProxyConfig(void)
 : log_("/wanproxy/config"),
@@ -132,10 +134,8 @@ WANProxyConfig::configure(const std::string& name)
 	config_->import(&wanproxy_config_class_interface);
 	config_->import(&wanproxy_config_class_peer);
 	config_->import(&wanproxy_config_class_codec);
-#if 0
 	config_->import(&wanproxy_config_class_proxy);
 	config_->import(&wanproxy_config_class_proxy_socks);
-#endif
 
 	std::deque<std::string> tokens;
 

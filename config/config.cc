@@ -12,8 +12,10 @@ Config::Config(void)
 
 Config::~Config()
 {
+#if 0 /* XXX NOTYET */
 	ASSERT(class_map_.empty());
 	ASSERT(object_map_.empty());
+#endif
 }
 
 bool
