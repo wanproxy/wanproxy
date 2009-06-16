@@ -1,5 +1,3 @@
-#include <string>
-
 #include <config/config.h>
 #include <config/config_type_pointer.h>
 #include <config/config_value.h>

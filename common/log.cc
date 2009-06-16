@@ -9,7 +9,6 @@
 #include <iostream>
 #include <list>
 #include <sstream>
-#include <string>
 
 struct LogMask {
 	regex_t regex_;

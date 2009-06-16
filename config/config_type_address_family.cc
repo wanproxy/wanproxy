@@ -1,5 +1,3 @@
-#include <string>
-
 #include <config/config_type_address_family.h>
 
 struct ConfigTypeAddressFamily::Mapping config_type_address_family_map[] = {

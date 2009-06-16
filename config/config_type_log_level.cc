@@ -1,5 +1,3 @@
-#include <string>
-
 #include <config/config_type_log_level.h>
 
 struct ConfigTypeLogLevel::Mapping config_type_log_level_map[] = {

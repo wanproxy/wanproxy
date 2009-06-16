@@ -1,5 +1,3 @@
-#include <string>
-
 #include <config/config_class.h>
 #include <config/config_class_address.h>
 #include <config/config_object.h>

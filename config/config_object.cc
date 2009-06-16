@@ -1,5 +1,3 @@
-#include <string>
-
 #include <config/config_object.h>
 #include <config/config_value.h>
 

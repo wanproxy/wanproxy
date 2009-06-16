@@ -2,7 +2,6 @@
 #include <limits.h>
 
 #include <iostream>
-#include <string>
 
 #include <common/debug.h>
 #include <common/log.h>

@@ -1,8 +1,6 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include <string>
-
 #include <config/config_type_int.h>
 
 ConfigTypeInt config_type_int;

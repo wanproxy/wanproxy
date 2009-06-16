@@ -1,5 +1,3 @@
-#include <string>
-
 #include "wanproxy_config_type_codec.h"
 
 struct WANProxyConfigTypeCodec::Mapping wanproxy_config_type_codec_map[] = {
