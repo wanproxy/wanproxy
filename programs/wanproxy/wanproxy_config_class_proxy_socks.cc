@@ -7,9 +7,20 @@
 WANProxySocksConfigClassProxySocks wanproxy_config_class_proxy_socks;
 
 bool
-WANProxySocksConfigClassProxySocks::activate(ConfigObject *)
+WANProxySocksConfigClassProxySocks::activate(ConfigObject *co)
 {
 	/* Extract interface.  */
+	ConfigValue *interfacecv = co->members_["interface"];
+	if (interfacecv == NULL)
+		return (false);
+
+	ConfigTypePointer *interfacect = dynamic_cast<ConfigTypePointer *>(interfacecv->type_);
+	if (interfacect == NULL)
+		return (false);
+
+	ConfigObject *interfaceco;
+	if (!interfacect->get(interfacecv, &interfaceco))
+		return (false);
 
 	return (true);
 }
