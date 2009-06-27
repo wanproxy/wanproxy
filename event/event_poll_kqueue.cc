@@ -84,18 +84,6 @@ EventPoll::cancel(const Type& type, int fd)
 	ASSERT(evcnt == 0);
 }
 
-bool
-EventPoll::idle(void) const
-{
-	return (read_poll_.empty() && write_poll_.empty());
-}
-
-void
-EventPoll::poll(void)
-{
-	return (wait(0));
-}
-
 void
 EventPoll::wait(int ms)
 {
@@ -152,10 +140,4 @@ EventPoll::wait(int ms)
 		}
 		poll_handler->callback(Event(Event::Done, ev->fflags));
 	}
-}
-
-void
-EventPoll::wait(void)
-{
-	return (wait(-1));
 }

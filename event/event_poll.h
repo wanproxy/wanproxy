@@ -70,11 +70,22 @@ private:
 
 	Action *poll(const Type&, int, EventCallback *);
 	void cancel(const Type&, int);
-
-	bool idle(void) const;
-	void poll(void);
 	void wait(int);
-	void wait(void);
+
+	bool idle(void) const
+	{
+		return (read_poll_.empty() && write_poll_.empty());
+	}
+
+	void poll(void)
+	{
+		wait(0);
+	}
+
+	void wait(void)
+	{
+		wait(-1);
+	}
 };
 
 #endif /* !EVENT_POLL_H */
