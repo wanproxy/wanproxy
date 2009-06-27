@@ -4,4 +4,4 @@ SRCS+=	xcdump.cc
 
 TOPDIR=${.CURDIR}/../..
 USE_LIBS=common xcodec
-.include "${TOPDIR}/program.mk"
+.include "${TOPDIR}/common/program.mk"
