@@ -7,12 +7,15 @@ alg		Portable implementations of simple, standard algorithms.
 		hashing algorithms.
 common		Non-specific functionality that is of general interest, i.e. the
 		logging system, test infrastructure and Buffer class.
+config		General-purpose configuration system infrastructure and some
+		essential types and classes.
 event		The event system and infrastructure to support it, such as the
 		various implementations of the poll interface.
 io		Interface to IO subsystems, namely file descriptors and sockets,
 		as well as abstract classes for such things (i.e. Channel.)
 os		Interfaces to Operating System specific functionality, i.e. to
 		system control and monitoring.  Not for IO abstractions, etc.
+		Nothing here yet.
 programs	Stand-alone programs.
 		Organized into sub-directories named by program, i.e.
 		programs/wanproxy is WANProxy.
