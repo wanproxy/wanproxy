@@ -3,10 +3,14 @@
 
 #include <config/config_type_pointer.h>
 
+class ProxySocksListener;
+
 class WANProxySocksConfigClassProxySocks : public ConfigClass {
+	std::map<ConfigObject *, ProxySocksListener *> object_listener_map_;
 public:
 	WANProxySocksConfigClassProxySocks(void)
-	: ConfigClass("proxy-socks")
+	: ConfigClass("proxy-socks"),
+	  object_listener_map_()
 	{
 		add_member("interface", &config_type_pointer);
 	}
