@@ -9,7 +9,6 @@ WANProxyConfigClassInterface wanproxy_config_class_interface;
 bool
 WANProxyConfigClassInterface::activate(ConfigObject *)
 {
-	ERROR("/wanproxy/config/interface") << __PRETTY_FUNCTION__ << " not yet implemented.";
-	/* XXX Stubbed out for testing.  */
+	/* Eventually would like to do something more useful here.  */
 	return (true);
 }

@@ -3,10 +3,14 @@
 
 #include <config/config_type_pointer.h>
 
+class ProxyListener;
+
 class WANProxyConfigClassProxy : public ConfigClass {
+	std::map<ConfigObject *, ProxyListener *> object_listener_map_;
 public:
 	WANProxyConfigClassProxy(void)
-	: ConfigClass("proxy")
+	: ConfigClass("proxy"),
+	  object_listener_map_()
 	{
 		add_member("interface", &config_type_pointer);
 		add_member("decoder", &config_type_pointer);

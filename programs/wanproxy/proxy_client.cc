@@ -154,11 +154,13 @@ ProxyClient::connect_complete(Event e)
 
 	outgoing_pipe_ = new ProxyPipe(local_codec_, local_socket_,
 				       remote_socket_, remote_codec_);
-	flow_table_->insert(outgoing_pipe_, local, Flow::Outgoing, remote);
+	if (flow_table_ != NULL)
+		flow_table_->insert(outgoing_pipe_, local, Flow::Outgoing, remote);
 
 	incoming_pipe_ = new ProxyPipe(remote_codec_, remote_socket_,
 				       local_socket_, local_codec_);
-	flow_table_->insert(incoming_pipe_, local, Flow::Incoming, remote);
+	if (flow_table_ != NULL)
+		flow_table_->insert(incoming_pipe_, local, Flow::Incoming, remote);
 
 	EventCallback *ocb = callback(this, &ProxyClient::flow_complete,
 				      (void *)outgoing_pipe_);
@@ -178,7 +180,8 @@ ProxyClient::flow_complete(Event e, void *pipe)
 
 		ASSERT(outgoing_pipe_ != NULL);
 
-		flow_table_->erase(outgoing_pipe_);
+		if (flow_table_ != NULL)
+			flow_table_->erase(outgoing_pipe_);
 
 		delete outgoing_pipe_;
 		outgoing_pipe_ = NULL;
@@ -190,7 +193,8 @@ ProxyClient::flow_complete(Event e, void *pipe)
 
 		ASSERT(incoming_pipe_ != NULL);
 
-		flow_table_->erase(incoming_pipe_);
+		if (flow_table_ != NULL)
+			flow_table_->erase(incoming_pipe_);
 
 		delete incoming_pipe_;
 		incoming_pipe_ = NULL;
@@ -263,7 +267,8 @@ ProxyClient::schedule_close(void)
 		outgoing_action_->cancel();
 		outgoing_action_ = NULL;
 
-		flow_table_->erase(outgoing_pipe_);
+		if (flow_table_ != NULL)
+			flow_table_->erase(outgoing_pipe_);
 
 		delete outgoing_pipe_;
 		outgoing_pipe_ = NULL;
@@ -274,7 +279,8 @@ ProxyClient::schedule_close(void)
 		incoming_action_->cancel();
 		incoming_action_ = NULL;
 
-		flow_table_->erase(incoming_pipe_);
+		if (flow_table_ != NULL)
+			flow_table_->erase(incoming_pipe_);
 
 		delete incoming_pipe_;
 		incoming_pipe_ = NULL;
