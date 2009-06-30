@@ -1,14 +1,11 @@
 #ifndef	PROXY_CLIENT_H
 #define	PROXY_CLIENT_H
 
-class FlowTable;
 class ProxyPipe;
 class XCodec;
 
 class ProxyClient {
 	LogHandle log_;
-
-	FlowTable *flow_table_;
 
 	Action *stop_action_;
 
@@ -27,8 +24,8 @@ class ProxyClient {
 	ProxyPipe *outgoing_pipe_;
 
 public:
-	ProxyClient(FlowTable *, XCodec *, XCodec *, Socket *, const std::string&, unsigned);
-	ProxyClient(FlowTable *, XCodec *, XCodec *, Socket *, uint32_t, uint16_t);
+	ProxyClient(XCodec *, XCodec *, Socket *, const std::string&, unsigned);
+	ProxyClient(XCodec *, XCodec *, Socket *, uint32_t, uint16_t);
 private:
 	~ProxyClient();
 

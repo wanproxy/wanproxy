@@ -10,7 +10,6 @@
 
 #include <net/tcp_client.h>
 
-#include "flow_table.h"
 #include "proxy_client.h"
 #include "proxy_pipe.h"
 
@@ -20,11 +19,10 @@
  * stupid redundancy.
  */
 
-ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
-			 XCodec *remote_codec, Socket *local_socket,
-			 const std::string& remote_name, unsigned remote_port)
+ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
+			 Socket *local_socket, const std::string& remote_name,
+			 unsigned remote_port)
 : log_("/wanproxy/proxy/client"),
-  flow_table_(flow_table),
   stop_action_(NULL),
   local_action_(NULL),
   local_codec_(local_codec),
@@ -45,11 +43,10 @@ ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
 
-ProxyClient::ProxyClient(FlowTable *flow_table, XCodec *local_codec,
-			 XCodec *remote_codec, Socket *local_socket,
-			 uint32_t remote_ip, uint16_t remote_port)
+ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
+			 Socket *local_socket, uint32_t remote_ip,
+			 uint16_t remote_port)
 : log_("/wanproxy/proxy/client"),
-  flow_table_(flow_table),
   stop_action_(NULL),
   local_action_(NULL),
   local_codec_(local_codec),
@@ -142,25 +139,11 @@ ProxyClient::connect_complete(Event e)
 		return;
 	}
 
-	Flow::Endpoint local;
-	local.source_ = local_socket_->getpeername();
-	local.destination_ = local_socket_->getsockname();
-	local.codec_ = local_codec_ == NULL ? "none" : "xcodec";
-
-	Flow::Endpoint remote;
-	remote.source_ = remote_socket_->getsockname();
-	remote.destination_ = remote_socket_->getpeername();
-	remote.codec_ = remote_codec_ == NULL ? "none" : "xcodec";
-
 	outgoing_pipe_ = new ProxyPipe(local_codec_, local_socket_,
 				       remote_socket_, remote_codec_);
-	if (flow_table_ != NULL)
-		flow_table_->insert(outgoing_pipe_, local, Flow::Outgoing, remote);
 
 	incoming_pipe_ = new ProxyPipe(remote_codec_, remote_socket_,
 				       local_socket_, local_codec_);
-	if (flow_table_ != NULL)
-		flow_table_->insert(incoming_pipe_, local, Flow::Incoming, remote);
 
 	EventCallback *ocb = callback(this, &ProxyClient::flow_complete,
 				      (void *)outgoing_pipe_);
@@ -180,9 +163,6 @@ ProxyClient::flow_complete(Event e, void *pipe)
 
 		ASSERT(outgoing_pipe_ != NULL);
 
-		if (flow_table_ != NULL)
-			flow_table_->erase(outgoing_pipe_);
-
 		delete outgoing_pipe_;
 		outgoing_pipe_ = NULL;
 	}
@@ -192,9 +172,6 @@ ProxyClient::flow_complete(Event e, void *pipe)
 		incoming_action_ = NULL;
 
 		ASSERT(incoming_pipe_ != NULL);
-
-		if (flow_table_ != NULL)
-			flow_table_->erase(incoming_pipe_);
 
 		delete incoming_pipe_;
 		incoming_pipe_ = NULL;
@@ -267,9 +244,6 @@ ProxyClient::schedule_close(void)
 		outgoing_action_->cancel();
 		outgoing_action_ = NULL;
 
-		if (flow_table_ != NULL)
-			flow_table_->erase(outgoing_pipe_);
-
 		delete outgoing_pipe_;
 		outgoing_pipe_ = NULL;
 	}
@@ -278,9 +252,6 @@ ProxyClient::schedule_close(void)
 		ASSERT(incoming_action_ != NULL);
 		incoming_action_->cancel();
 		incoming_action_ = NULL;
-
-		if (flow_table_ != NULL)
-			flow_table_->erase(incoming_pipe_);
 
 		delete incoming_pipe_;
 		incoming_pipe_ = NULL;

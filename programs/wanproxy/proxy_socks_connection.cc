@@ -9,13 +9,11 @@
 #include <io/file_descriptor.h>
 #include <io/socket.h>
 
-#include "flow_table.h"
 #include "proxy_client.h"
 #include "proxy_socks_connection.h"
 
-ProxySocksConnection::ProxySocksConnection(FlowTable *flow_table, Socket *client)
+ProxySocksConnection::ProxySocksConnection(Socket *client)
 : log_("/wanproxy/proxy_socks_connection"),
-  flow_table_(flow_table),
   client_(client),
   action_(NULL),
   state_(GetSOCKSVersion),
@@ -213,11 +211,11 @@ ProxySocksConnection::write_complete(Event e)
 		ASSERT(socks5_authenticated_);
 		ASSERT(network_address_ == 0);
 
-		new ProxyClient(flow_table_, NULL, NULL, client_,
-				socks5_remote_name_, network_port_);
+		new ProxyClient(NULL, NULL, client_, socks5_remote_name_,
+				network_port_);
 	} else {
-		new ProxyClient(flow_table_, NULL, NULL, client_,
-				network_address_, network_port_);
+		new ProxyClient(NULL, NULL, client_, network_address_,
+				network_port_);
 	}
 	client_ = NULL;
 	delete this;

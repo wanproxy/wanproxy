@@ -1,13 +1,11 @@
 #ifndef	PROXY_LISTENER_H
 #define	PROXY_LISTENER_H
 
-class FlowTable;
 class TCPServer;
 class XCodec;
 
 class ProxyListener {
 	LogHandle log_;
-	FlowTable *flow_table_;
 	TCPServer *server_;
 	Action *accept_action_;
 	Action *close_action_;
@@ -20,8 +18,8 @@ class ProxyListener {
 	unsigned remote_port_;
 
 public:
-	ProxyListener(FlowTable *, XCodec *, XCodec *, const std::string&,
-		      unsigned, const std::string&, unsigned);
+	ProxyListener(XCodec *, XCodec *, const std::string&, unsigned,
+		      const std::string&, unsigned);
 	~ProxyListener();
 
 private:

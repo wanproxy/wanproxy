@@ -60,7 +60,7 @@ WANProxySocksConfigClassProxySocks::activate(ConfigObject *co)
 	if (!interface_portct->get(interface_portcv, &interface_portint))
 		return (false);
 
-	ProxySocksListener *listener = new ProxySocksListener(NULL, interface_hoststr, interface_portint);
+	ProxySocksListener *listener = new ProxySocksListener(interface_hoststr, interface_portint);
 	object_listener_map_[co] = listener;
 
 	return (true);

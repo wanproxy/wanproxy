@@ -14,13 +14,11 @@
 #include "proxy_client.h"
 #include "proxy_listener.h"
 
-ProxyListener::ProxyListener(FlowTable *flow_table, XCodec *local_codec,
-			     XCodec *remote_codec, const std::string& interface,
-			     unsigned local_port,
+ProxyListener::ProxyListener(XCodec *local_codec, XCodec *remote_codec,
+			     const std::string& interface, unsigned local_port,
 			     const std::string& remote_name,
 			     unsigned remote_port)
 : log_("/wanproxy/proxy_listener"),
-  flow_table_(flow_table),
   server_(NULL),
   accept_action_(NULL),
   close_action_(NULL),
@@ -77,8 +75,8 @@ ProxyListener::accept_complete(Event e)
 
 	if (e.type_ == Event::Done) {
 		Socket *client = (Socket *)e.data_;
-		new ProxyClient(flow_table_, local_codec_, remote_codec_,
-				client, remote_name_, remote_port_);
+		new ProxyClient(local_codec_, remote_codec_, client,
+				remote_name_, remote_port_);
 	}
 
 	EventCallback *cb = callback(this, &ProxyListener::accept_complete);

@@ -1,8 +1,6 @@
 #ifndef	PROXY_SOCKS_CONNECTION_H
 #define	PROXY_SOCKS_CONNECTION_H
 
-class FlowTable;
-
 class ProxySocksConnection {
 	enum State {
 		GetSOCKSVersion,
@@ -24,7 +22,6 @@ class ProxySocksConnection {
 	};
 
 	LogHandle log_;
-	FlowTable *flow_table_;
 	Socket *client_;
 	Action *action_;
 	State state_;
@@ -34,7 +31,7 @@ class ProxySocksConnection {
 	std::string socks5_remote_name_;
 
 public:
-	ProxySocksConnection(FlowTable *, Socket *);
+	ProxySocksConnection(Socket *);
 private:
 	~ProxySocksConnection();
 

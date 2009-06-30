@@ -1,7 +1,5 @@
 PROG_CXX=wanproxy
 
-SRCS+=	flow_monitor.cc
-
 SRCS+=	proxy_client.cc
 SRCS+=	proxy_listener.cc
 SRCS+=	proxy_pipe.cc

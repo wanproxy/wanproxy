@@ -149,7 +149,7 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 		encodercodec = NULL;
 	}
 
-	ProxyListener *listener = new ProxyListener(NULL, decodercodec, encodercodec, interface_hoststr, interface_portint, peer_hoststr, peer_portint);
+	ProxyListener *listener = new ProxyListener(decodercodec, encodercodec, interface_hoststr, interface_portint, peer_hoststr, peer_portint);
 	object_listener_map_[co] = listener;
 
 	return (true);
