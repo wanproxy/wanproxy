@@ -1,4 +1,4 @@
-o) Unify the listeners already.
+For 0.5.0:
 o) Add configuration helpers such that I can get rid of all of the mess in the
    proxy classes.
 o) Add a function to convert network representations of IPs into strings so the
@@ -6,37 +6,45 @@ o) Add a function to convert network representations of IPs into strings so the
    for IPv4.  Ew.
 o) Change socket API to just take a string for the connection name and have
    networking code pass in stuff in the form of "[host]:service".
-o) Should Socket be in 'net' or in 'io'?  I guess 'io' if we add Unix domain
-   sockets at some point!
-o) A CLI program for management.  Remember to USE_POLL=select since Mac OS X can
-   only use select(2) for stdin and stdout.
-o) Add lots of comments.
-o) Make the XCodec encoder and decoder asynchronous.
-o) Connection table. Database.
-o) Add an IO queueing system that will make it possible to use lio_listio on
-   systems that support it.
-o) Allow chaining codecs.
-o) Run-length-encoding.
+
+For 0.6.0:
+o) Unify the listeners already.
+
+For 0.7.0:
 o) Do some information exchange out-of-band when setting up connections between
    WANProxy instances so we know what Channel to send requests for declarations
    on.
-o) Send definitions out-of-band, too, so that QoS and backpressure on one connection
-   can't delay other connections.
+
+For 0.8.0:
+o) Cache hierarchy, including persistent storage.
+
+After 1.0.0:
+o) A CLI program for management.  Remember to USE_POLL=select since Mac OS X can
+   only use select(2) for stdin and stdout.
 o) Make it possible to detect when we are sending to a socket that is also
    within WANProxy and avoid a system call -- just copy directly to the
    appropriate buffer.  It should be pretty easy to do this with the IO queueing
    system if we getpeername/getsockname to identify this occurring.
+o) Add an IO queueing system that will make it possible to use lio_listio on
+   systems that support it.
+o) Make the XCodec encoder and decoder asynchronous.
+o) Connection table. Database.
+o) HTTP termination and reinitiation good enough to support an HTTP proxy mode.
+
+Ongoing:
+o) Add lots of comments.
+o) Fix bugs.
+
+Maybe:
+o) Send definitions out-of-band, too, so that QoS and backpressure on one connection
+   can't delay other connections.
+o) Should Socket be in 'net' or in 'io'?  I guess 'io' if we add Unix domain
+   sockets at some point!
 o) The ProxyPipe code uses an asynchronous callback to notify the ProxyClient
    of an error, but this could result delayed cancellation of a write to a
    channel which has given us an error.  As a result, we may get a SIGPIPE.
    There has to be a good way to solve this.
-o) HTTP termination and reinitiation good enough to support an HTTP proxy mode.
-o) Fix bugs.
-o) Secondary storage using tcache.
 o) In-path forwarding using BPF and a tiny network stack.
-o) Experiment with new codecs.  Current ideas involve using collision-prone
-   hashes and variable-length tree encodings.  Others will present themselves,
-   no doubt.
-o) Better API for handling network addresses.
+o) Run-length-encoding.
 o) Many compression algorithms.
-o) Chain codecs, etc.
+o) Allow chaining codecs.
