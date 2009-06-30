@@ -1,3 +1,9 @@
+o) Unify the listeners already.
+o) Add configuration helpers such that I can get rid of all of the mess in the
+   proxy classes.
+o) Add a function to convert network representations of IPs into strings so the
+   SOCKS4 code doesn't necessitate its own duplication of API that's specialized
+   for IPv4.  Ew.
 o) Change socket API to just take a string for the connection name and have
    networking code pass in stuff in the form of "[host]:service".
 o) Should Socket be in 'net' or in 'io'?  I guess 'io' if we add Unix domain
