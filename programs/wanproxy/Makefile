@@ -1,4 +1,4 @@
-PROG_CXX=wanproxy
+PROGRAM=wanproxy
 
 SRCS+=	proxy_client.cc
 SRCS+=	proxy_listener.cc

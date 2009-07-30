@@ -10,18 +10,18 @@ TEST=${NETWORK_TEST}
 
 .if defined(TEST)
 .if !defined(SKIP_TESTS)
-PROG_CXX=${TEST}
+PROGRAM=${TEST}
 SRCS+=${TEST}.cc
 
 .if !target(regress)
-regress: ${PROG_CXX}
-	${.OBJDIR}/${PROG_CXX}
+regress: ${PROGRAM}
+	${.OBJDIR}/${PROGRAM}
 .endif
 .endif
 .endif
 
 .if !target(regress)
-regress: ${PROG_CXX}
+regress: ${PROGRAM}
 .endif
 
 .PHONY: regress
@@ -49,7 +49,7 @@ CFLAGS+=-Wno-system-headers
 CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts
 #CFLAGS+=-Winline
 
-.if defined(PROG_CXX)
+.if defined(PROGRAM)
 __LIBRARIES!=echo ${USE_LIBS} | sort -u | xargs
 .for _lib in ${__LIBRARIES}
 .include "${TOPDIR}/${_lib}/lib.mk"
@@ -57,13 +57,13 @@ __LIBRARIES!=echo ${USE_LIBS} | sort -u | xargs
 
 OBJS+=  ${SRCS:R:S/$/.o/g}
 
-all: ${PROG_CXX}
+all: ${PROGRAM}
 
-${PROG_CXX}: ${OBJS}
+${PROGRAM}: ${OBJS}
 	${CXX} ${CXXFLAGS} ${LDFLAGS} -o ${.TARGET} ${OBJS} ${LDADD}
 
 clean:
-	rm -f ${PROG_CXX} ${OBJS}
+	rm -f ${PROGRAM} ${OBJS}
 
 .include <bsd.obj.mk>
 .else

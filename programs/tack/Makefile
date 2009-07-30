@@ -1,4 +1,4 @@
-PROG_CXX=tack
+PROGRAM=tack
 
 SRCS+=	tack.cc
 

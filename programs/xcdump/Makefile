@@ -1,4 +1,4 @@
-PROG_CXX=xcdump
+PROGRAM=xcdump
 
 SRCS+=	xcdump.cc
 

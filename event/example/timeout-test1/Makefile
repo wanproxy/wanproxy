@@ -1,4 +1,4 @@
-PROG_CXX=timeout-test1
+PROGRAM=timeout-test1
 
 SRCS+=	timeout-test1.cc
 
