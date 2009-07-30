@@ -26,14 +26,16 @@ regress: ${PROG_CXX}
 
 .PHONY: regress
 
+OSNAME!=uname -s
+
 CFLAGS+=-I${TOPDIR}
 .if defined(NDEBUG)
 CFLAGS+=-DNDEBUG=1
 .else
+.if ${OSNAME} != "SunOS"
 CFLAGS+=-g
 .endif
-
-OSNAME!=uname -s
+.endif
 
 #CFLAGS+=--std gnu++0x
 #CFLAGS+=-pedantic
