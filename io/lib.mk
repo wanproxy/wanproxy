@@ -13,3 +13,5 @@ SRCS+=	socket.cc
 LDADD+=		-lnsl
 LDADD+=		-lsocket
 .endif
+
+IO_REQUIRES=	event
