@@ -53,6 +53,13 @@ CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wsha
 __LIBRARIES!=echo ${USE_LIBS} | sort -u | xargs
 .for _lib in ${__LIBRARIES}
 .include "${TOPDIR}/${_lib}/lib.mk"
+.if defined(${_lib:U}_REQUIRES)
+.for _lib2 in ${${_lib:U}_REQUIRES}
+.if empty(__LIBRARIES:M${_lib2})
+.error "Inclusion of library ${_lib} requires library ${_lib2}."
+.endif
+.endfor
+.endif
 .endfor
 
 OBJS+=  ${SRCS:R:S/$/.o/g}
