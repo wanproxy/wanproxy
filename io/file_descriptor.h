@@ -11,9 +11,9 @@ public:
 	FileDescriptor(int);
 	~FileDescriptor();
 
-	Action *close(EventCallback *);
-	Action *read(size_t, EventCallback *);
-	Action *write(Buffer *, EventCallback *);
+	virtual Action *close(EventCallback *);
+	virtual Action *read(size_t, EventCallback *);
+	virtual Action *write(Buffer *, EventCallback *);
 };
 
 #endif /* !FILE_DESCRIPTOR_H */
