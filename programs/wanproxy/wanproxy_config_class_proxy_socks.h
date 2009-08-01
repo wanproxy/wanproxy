@@ -5,10 +5,10 @@
 
 class ProxySocksListener;
 
-class WANProxySocksConfigClassProxySocks : public ConfigClass {
+class WANProxyConfigClassProxySocks : public ConfigClass {
 	std::map<ConfigObject *, ProxySocksListener *> object_listener_map_;
 public:
-	WANProxySocksConfigClassProxySocks(void)
+	WANProxyConfigClassProxySocks(void)
 	: ConfigClass("proxy-socks"),
 	  object_listener_map_()
 	{
@@ -16,12 +16,12 @@ public:
 	}
 
 	/* XXX So wrong.  */
-	~WANProxySocksConfigClassProxySocks()
+	~WANProxyConfigClassProxySocks()
 	{ }
 
 	bool activate(ConfigObject *);
 };
 
-extern WANProxySocksConfigClassProxySocks wanproxy_config_class_proxy_socks;
+extern WANProxyConfigClassProxySocks wanproxy_config_class_proxy_socks;
 
 #endif /* !WANPROXY_SOCKS_CONFIG_CLASS_PROXY_SOCKS_H */

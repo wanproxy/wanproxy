@@ -11,10 +11,10 @@
 #include "wanproxy_config_class_interface.h"
 #include "wanproxy_config_class_proxy_socks.h"
 
-WANProxySocksConfigClassProxySocks wanproxy_config_class_proxy_socks;
+WANProxyConfigClassProxySocks wanproxy_config_class_proxy_socks;
 
 bool
-WANProxySocksConfigClassProxySocks::activate(ConfigObject *co)
+WANProxyConfigClassProxySocks::activate(ConfigObject *co)
 {
 	if (object_listener_map_.find(co) != object_listener_map_.end())
 		return (false);
