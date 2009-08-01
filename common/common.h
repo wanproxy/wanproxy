@@ -4,6 +4,7 @@
 #include <common/debug.h>
 #include <common/log.h>
 
+#include <algorithm>
 #include <stdint.h> /* XXX cstdint */
 #include <string> /* Already here for log.h, but be explicit.  */
 
