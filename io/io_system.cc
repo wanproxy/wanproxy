@@ -12,6 +12,8 @@
 
 #include <io/io_system.h>
 
+#define	IO_READ_BUFFER_SIZE	65536
+
 IOSystem::Handle::Handle(int fd, Channel *owner)
 : log_("/io/system/handle"),
   fd_(fd),
@@ -109,12 +111,15 @@ IOSystem::Handle::read_callback(Event e)
 	size_t rlen;
 
 	if (read_amount_ == 0)
-		rlen = 65536;
-	else
+		rlen = IO_READ_BUFFER_SIZE;
+	else {
 		rlen = read_amount_ - read_buffer_.length();
-	ASSERT(rlen != 0);
+		ASSERT(rlen != 0);
+		if (rlen > IO_READ_BUFFER_SIZE)
+			rlen = IO_READ_BUFFER_SIZE;
+	}
 
-	uint8_t data[rlen];
+	uint8_t data[IO_READ_BUFFER_SIZE];
 	ssize_t len = ::read(fd_, data, sizeof data);
 	if (len == -1) {
 		switch (errno) {
