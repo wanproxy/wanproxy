@@ -15,7 +15,7 @@ class Socket : public FileDescriptor {
 public:
 	~Socket();
 
-	Action *accept(EventCallback *);
+	virtual Action *accept(EventCallback *);
 	bool bind(const std::string&, unsigned *);
 	Action *connect(const std::string&, unsigned, EventCallback *);
 	Action *connect(uint32_t, uint16_t, EventCallback *);
