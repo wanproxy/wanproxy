@@ -349,6 +349,7 @@ IOSystem::write(int fd, Channel *owner, Buffer *buffer, EventCallback *cb)
 	ASSERT(h->write_action_ == NULL);
 	ASSERT(h->write_buffer_.empty());
 
+	ASSERT(!buffer->empty());
 	h->write_buffer_.append(buffer);
 	buffer->clear();
 
