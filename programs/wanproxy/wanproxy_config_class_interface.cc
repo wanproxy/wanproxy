@@ -7,8 +7,11 @@
 WANProxyConfigClassInterface wanproxy_config_class_interface;
 
 bool
-WANProxyConfigClassInterface::activate(ConfigObject *)
+WANProxyConfigClassInterface::activate(ConfigObject *co)
 {
+	if (!ConfigClassAddress::activate(co))
+		return (false);
+
 	/* Eventually would like to do something more useful here.  */
 	return (true);
 }
