@@ -13,7 +13,7 @@
 UnixServer *
 UnixServer::listen(const std::string& name)
 {
-	Socket *socket = Socket::create(PF_UNIX, SOCK_STREAM, "unix");
+	Socket *socket = Socket::create(PF_UNIX, SOCK_STREAM, "");
 	if (socket == NULL) {
 		ERROR("/unix/server") << "Unable to create socket.";
 		return (NULL);

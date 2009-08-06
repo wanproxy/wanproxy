@@ -14,7 +14,7 @@ Action *
 UnixClient::connect(Socket **socketp, const std::string& name,
 		   EventCallback *cb)
 {
-	Socket *socket = Socket::create(PF_LOCAL, SOCK_STREAM, "tcp");
+	Socket *socket = Socket::create(PF_UNIX, SOCK_STREAM, "");
 	ASSERT(socket != NULL);
 	*socketp = socket;
 	return (socket->connect(name, cb));
