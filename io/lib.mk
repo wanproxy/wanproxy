@@ -7,6 +7,8 @@
 SRCS+=	file_descriptor.cc
 SRCS+=	io_system.cc
 SRCS+=	socket.cc
+SRCS+=	unix_client.cc
+SRCS+=	unix_server.cc
 
 .if ${OSNAME} == "SunOS"
 # Required for sockets.

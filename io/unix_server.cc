@@ -23,7 +23,7 @@ UnixServer::listen(const std::string& name)
 	 * After this we could leak a socket, sigh.  Need a blocking close, or
 	 * a pool to return the socket to.
 	 */
-	if (!socket->bind(name, portp)) {
+	if (!socket->bind(name)) {
 		ERROR("/unix/server") << "Socket bind failed, leaking socket.";
 		return (NULL);
 	}
