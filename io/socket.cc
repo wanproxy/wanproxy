@@ -366,11 +366,18 @@ Socket::connect_schedule(void)
 Socket *
 Socket::create(int domain, int type, const std::string& protocol)
 {
-	struct protoent *proto = getprotobyname(protocol.c_str());
-	if (proto == NULL)
-		HALT("/socket") << "Invalid protocol: " << protocol;
+	int protonum;
 
-	int s = ::socket(domain, type, proto->p_proto);
+	if (protocol == "") {
+		protonum = 0;
+	} else {
+		struct protoent *proto = getprotobyname(protocol.c_str());
+		if (proto == NULL)
+			HALT("/socket") << "Invalid protocol: " << protocol;
+		protonum = proto->p_proto;
+	}
+
+	int s = ::socket(domain, type, protonum);
 	if (s == -1)
 		return (NULL);
 
