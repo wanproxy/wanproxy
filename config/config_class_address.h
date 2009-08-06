@@ -15,10 +15,13 @@ public:
 		add_member("family", &config_type_address_family);
 		add_member("host", &config_type_string);
 		add_member("port", &config_type_int);
+		add_member("path", &config_type_string);
 	}
 
 	~ConfigClassAddress()
 	{ }
+
+	bool activate(ConfigObject *);
 };
 
 extern ConfigClassAddress config_class_address;

@@ -5,6 +5,7 @@
 
 enum ConfigAddressFamily {
 	ConfigAddressFamilyIPv4,
+	ConfigAddressFamilyUnix,
 };
 
 typedef ConfigTypeEnum<ConfigAddressFamily> ConfigTypeAddressFamily;

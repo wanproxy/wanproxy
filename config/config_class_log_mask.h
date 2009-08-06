@@ -18,7 +18,7 @@ public:
 	~ConfigClassLogMask()
 	{ }
 
-	bool activate(ConfigObject *co);
+	bool activate(ConfigObject *);
 };
 
 extern ConfigClassLogMask config_class_log_mask;

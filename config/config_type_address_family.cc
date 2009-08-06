@@ -2,6 +2,7 @@
 
 struct ConfigTypeAddressFamily::Mapping config_type_address_family_map[] = {
 	{ "IPv4",	ConfigAddressFamilyIPv4 },
+	{ "Unix",	ConfigAddressFamilyUnix },
 	{ NULL,		ConfigAddressFamilyIPv4 }
 };
 
