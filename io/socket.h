@@ -16,10 +16,12 @@ public:
 	~Socket();
 
 	virtual Action *accept(EventCallback *);
+	bool bind(const std::string&);
 	bool bind(const std::string&, unsigned *);
+	Action *connect(const std::string&, EventCallback *);
 	Action *connect(const std::string&, unsigned, EventCallback *);
 	Action *connect(uint32_t, uint16_t, EventCallback *);
-	Action *connect(struct sockaddr_in *, EventCallback *);
+	Action *connect(struct sockaddr *, size_t, EventCallback *);
 	bool listen(int=10);
 
 	std::string getpeername(void) const;

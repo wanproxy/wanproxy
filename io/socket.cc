@@ -1,6 +1,7 @@
 #include <sys/errno.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
@@ -16,6 +17,14 @@
 
 #include <io/file_descriptor.h>
 #include <io/socket.h>
+
+/*
+ * XXX
+ *
+ * socket_name() and get*name() do not work with AF_UNIX, but the AF_UNIX stuff
+ * is pretty temporary -- soon all of the bind()/connect() variants will be
+ * collapsed in to one, I hope.
+ */
 
 static bool socket_address(struct sockaddr_in *, int, const std::string&, uint16_t);
 static std::string socket_name(struct sockaddr_in *);
@@ -52,6 +61,28 @@ Socket::accept(EventCallback *cb)
 }
 
 bool
+Socket::bind(const std::string& name)
+{
+	struct sockaddr_un bind_address;
+
+	/* XXX Check for length.  */
+
+	memset(&bind_address, 0, sizeof bind_address);
+#if !defined(__linux__) && !defined(__sun__)
+	bind_address.sun_len = sizeof bind_address;
+#endif
+	bind_address.sun_family = domain_;
+	strncpy(bind_address.sun_path, name.c_str(), sizeof bind_address.sun_path);
+
+	int rv = ::bind(fd_, (struct sockaddr *)&bind_address,
+			sizeof bind_address);
+	if (rv == -1)
+		return (false);
+
+	return (true);
+}
+
+bool
 Socket::bind(const std::string& name, unsigned *portp)
 {
 	struct sockaddr_in bind_address;
@@ -78,6 +109,27 @@ Socket::bind(const std::string& name, unsigned *portp)
 }
 
 Action *
+Socket::connect(const std::string& name, EventCallback *cb)
+{
+	ASSERT(connect_callback_ == NULL);
+	ASSERT(connect_action_ == NULL);
+
+	struct sockaddr_un connect_address;
+
+	/* XXX Check for length.  */
+
+	memset(&connect_address, 0, sizeof connect_address);
+#if !defined(__linux__) && !defined(__sun__)
+	connect_address.sun_len = sizeof connect_address;
+#endif
+	connect_address.sun_family = domain_;
+	strncpy(connect_address.sun_path, name.c_str(), sizeof connect_address.sun_path);
+
+	return (this->connect((struct sockaddr *)&connect_address,
+			      sizeof connect_address, cb));
+}
+
+Action *
 Socket::connect(const std::string& name, unsigned port, EventCallback *cb)
 {
 	ASSERT(connect_callback_ == NULL);
@@ -91,7 +143,8 @@ Socket::connect(const std::string& name, unsigned port, EventCallback *cb)
 		return (a);
 	}
 
-	return (this->connect(&connect_address, cb));
+	return (this->connect((struct sockaddr *)&connect_address,
+			      sizeof connect_address, cb));
 }
 
 Action *
@@ -110,11 +163,12 @@ Socket::connect(uint32_t ip, uint16_t port, EventCallback *cb)
 	connect_address.sin_addr.s_addr = BigEndian::encode(ip);
 	connect_address.sin_port = BigEndian::encode(port);
 
-	return (this->connect(&connect_address, cb));
+	return (this->connect((struct sockaddr *)&connect_address,
+			      sizeof connect_address, cb));
 }
 
 Action *
-Socket::connect(struct sockaddr_in *sinp, EventCallback *cb)
+Socket::connect(struct sockaddr *sap, size_t salen, EventCallback *cb)
 {
 	ASSERT(connect_callback_ == NULL);
 	ASSERT(connect_action_ == NULL);
@@ -136,7 +190,7 @@ Socket::connect(struct sockaddr_in *sinp, EventCallback *cb)
 	 * the thing to do is poll if there's no input ready.
 	 */
 
-	int rv = ::connect(fd_, (struct sockaddr *)sinp, sizeof *sinp);
+	int rv = ::connect(fd_, sap, salen);
 	switch (rv) {
 	case 0:
 		cb->event(Event(Event::Done, 0));
