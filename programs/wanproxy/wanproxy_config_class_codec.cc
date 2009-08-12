@@ -17,13 +17,10 @@ WANProxyConfigClassCodec::activate(ConfigObject *co)
 	if (object_codec_map_.find(co) != object_codec_map_.end())
 		return (false);
 
-	ConfigValue *codeccv = co->members_["codec"];
+	WANProxyConfigTypeCodec *codecct;
+	ConfigValue *codeccv = co->get("codec", &codecct);
 	if (codeccv == NULL)
 		return (true);
-
-	WANProxyConfigTypeCodec *codecct = dynamic_cast<WANProxyConfigTypeCodec *>(codeccv->type_);
-	if (codecct == NULL)
-		return (false);
 
 	WANProxyConfigCodec codec;
 	if (!codecct->get(codeccv, &codec))

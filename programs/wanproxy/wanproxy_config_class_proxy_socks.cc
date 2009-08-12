@@ -20,40 +20,28 @@ WANProxyConfigClassProxySocks::activate(ConfigObject *co)
 		return (false);
 
 	/* Extract interface.  */
-	ConfigValue *interfacecv = co->members_["interface"];
+	ConfigTypePointer *interfacect;
+	ConfigValue *interfacecv = co->get("interface", &interfacect);
 	if (interfacecv == NULL)
 		return (false);
 
-	ConfigTypePointer *interfacect = dynamic_cast<ConfigTypePointer *>(interfacecv->type_);
-	if (interfacect == NULL)
-		return (false);
-
+	WANProxyConfigClassInterface *interfacecc;
 	ConfigObject *interfaceco;
-	if (!interfacect->get(interfacecv, &interfaceco))
+	if (!interfacect->get(interfacecv, &interfaceco, &interfacecc))
 		return (false);
 
-	WANProxyConfigClassInterface *interfacecc = dynamic_cast<WANProxyConfigClassInterface *>(interfaceco->class_);
-	if (interfacecc == NULL)
-		return (false);
-
-	ConfigValue *interface_hostcv = interfaceco->members_["host"];
+	ConfigTypeString *interface_hostct;
+	ConfigValue *interface_hostcv = interfaceco->get("host", &interface_hostct);
 	if (interface_hostcv == NULL)
-		return (false);
-
-	ConfigTypeString *interface_hostct = dynamic_cast<ConfigTypeString *>(interface_hostcv->type_);
-	if (interface_hostct == NULL)
 		return (false);
 
 	std::string interface_hoststr;
 	if (!interface_hostct->get(interface_hostcv, &interface_hoststr))
 		return (false);
 
-	ConfigValue *interface_portcv = interfaceco->members_["port"];
+	ConfigTypeString *interface_portct;
+	ConfigValue *interface_portcv = interfaceco->get("port", &interface_portct);
 	if (interface_portcv == NULL)
-		return (false);
-
-	ConfigTypeString *interface_portct = dynamic_cast<ConfigTypeString *>(interface_portcv->type_);
-	if (interface_portct == NULL)
 		return (false);
 
 	std::string interface_portstr;

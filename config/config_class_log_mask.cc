@@ -8,24 +8,18 @@ ConfigClassLogMask config_class_log_mask;
 bool
 ConfigClassLogMask::activate(ConfigObject *co)
 {
-	ConfigValue *regexcv = co->members_["regex"];
+	ConfigTypeString *regexct;
+	ConfigValue *regexcv = co->get("regex", &regexct);
 	if (regexcv == NULL)
-		return (false);
-
-	ConfigTypeString *regexct = dynamic_cast<ConfigTypeString *>(regexcv->type_);
-	if (regexct == NULL)
 		return (false);
 
 	std::string regex;
 	if (!regexct->get(regexcv, &regex))
 		return (false);
 
-	ConfigValue *maskcv = co->members_["mask"];
+	ConfigTypeLogLevel *maskct;
+	ConfigValue *maskcv = co->get("mask", &maskct);
 	if (maskcv == NULL)
-		return (false);
-
-	ConfigTypeLogLevel *maskct = dynamic_cast<ConfigTypeLogLevel *>(maskcv->type_);
-	if (maskct == NULL)
 		return (false);
 
 	Log::Priority priority;

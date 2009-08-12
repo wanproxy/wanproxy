@@ -3,6 +3,7 @@
 
 #include <map>
 
+#include <config/config_object.h>
 #include <config/config_type.h>
 
 class ConfigValue;
@@ -20,11 +21,29 @@ public:
 		pointers_.clear();
 	}
 
-	bool get(ConfigValue *cv, ConfigObject **cop)
+	template<typename T>
+	bool get(ConfigValue *cv, ConfigObject **cop, T **ccp) const
 	{
-		if (pointers_.find(cv) == pointers_.end())
+		std::map<ConfigValue *, ConfigObject *>::const_iterator it;
+
+		it = pointers_.find(cv);
+		if (it == pointers_.end())
 			return (false);
-		*cop = pointers_[cv];
+
+		ConfigObject *co = it->second;
+		if (co == NULL) {
+			*cop = NULL;
+			*ccp = NULL;
+			return (true);
+		}
+
+		T *cc = co->coerce<T>();
+		if (cc == NULL)
+			return (false);
+
+		*cop = co;
+		*ccp = cc;
+
 		return (true);
 	}
 

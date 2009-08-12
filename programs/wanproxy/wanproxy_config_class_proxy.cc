@@ -22,40 +22,28 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 		return (false);
 
 	/* Extract interface.  */
-	ConfigValue *interfacecv = co->members_["interface"];
+	ConfigTypePointer *interfacect;
+	ConfigValue *interfacecv = co->get("interface", &interfacect);
 	if (interfacecv == NULL)
 		return (false);
 
-	ConfigTypePointer *interfacect = dynamic_cast<ConfigTypePointer *>(interfacecv->type_);
-	if (interfacect == NULL)
-		return (false);
-
+	WANProxyConfigClassInterface *interfacecc;
 	ConfigObject *interfaceco;
-	if (!interfacect->get(interfacecv, &interfaceco))
+	if (!interfacect->get(interfacecv, &interfaceco, &interfacecc))
 		return (false);
 
-	WANProxyConfigClassInterface *interfacecc = dynamic_cast<WANProxyConfigClassInterface *>(interfaceco->class_);
-	if (interfacecc == NULL)
-		return (false);
-
-	ConfigValue *interface_hostcv = interfaceco->members_["host"];
+	ConfigTypeString *interface_hostct;
+	ConfigValue *interface_hostcv = interfaceco->get("host", &interface_hostct);
 	if (interface_hostcv == NULL)
-		return (false);
-
-	ConfigTypeString *interface_hostct = dynamic_cast<ConfigTypeString *>(interface_hostcv->type_);
-	if (interface_hostct == NULL)
 		return (false);
 
 	std::string interface_hoststr;
 	if (!interface_hostct->get(interface_hostcv, &interface_hoststr))
 		return (false);
 
-	ConfigValue *interface_portcv = interfaceco->members_["port"];
+	ConfigTypeString *interface_portct;
+	ConfigValue *interface_portcv = interfaceco->get("port", &interface_portct);
 	if (interface_portcv == NULL)
-		return (false);
-
-	ConfigTypeString *interface_portct = dynamic_cast<ConfigTypeString *>(interface_portcv->type_);
-	if (interface_portct == NULL)
 		return (false);
 
 	std::string interface_portstr;
@@ -63,63 +51,46 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 		return (false);
 
 	/* Extract decoder.  */
-	ConfigValue *decodercv = co->members_["decoder"];
+	ConfigTypePointer *decoderct;
+	ConfigValue *decodercv = co->get("decoder", &decoderct);
 	if (decodercv == NULL)
 		return (false);
 
-	ConfigTypePointer *decoderct = dynamic_cast<ConfigTypePointer *>(decodercv->type_);
-	if (decoderct == NULL)
-		return (false);
-
+	WANProxyConfigClassCodec *decodercc;
 	ConfigObject *decoderco;
-	if (!decoderct->get(decodercv, &decoderco))
+	if (!decoderct->get(decodercv, &decoderco, &decodercc))
 		return (false);
 
 	XCodec *decodercodec;
 	if (decoderco != NULL) {
-		WANProxyConfigClassCodec *decodercc = dynamic_cast<WANProxyConfigClassCodec *>(decoderco->class_);
-		if (decodercc == NULL)
-			return (false);
 		decodercodec = decodercc->get(decoderco);
 	} else {
 		decodercodec = NULL;
 	}
 
 	/* Extract peer.  */
-	ConfigValue *peercv = co->members_["peer"];
+	ConfigTypePointer *peerct;
+	ConfigValue *peercv = co->get("peer", &peerct);
 	if (peercv == NULL)
 		return (false);
 
-	ConfigTypePointer *peerct = dynamic_cast<ConfigTypePointer *>(peercv->type_);
-	if (peerct == NULL)
-		return (false);
-
+	WANProxyConfigClassPeer *peercc;
 	ConfigObject *peerco;
-	if (!peerct->get(peercv, &peerco))
+	if (!peerct->get(peercv, &peerco, &peercc))
 		return (false);
 
-	WANProxyConfigClassPeer *peercc = dynamic_cast<WANProxyConfigClassPeer *>(peerco->class_);
-	if (peercc == NULL)
-		return (false);
-
-	ConfigValue *peer_hostcv = peerco->members_["host"];
+	ConfigTypeString *peer_hostct;
+	ConfigValue *peer_hostcv = peerco->get("host", &peer_hostct);
 	if (peer_hostcv == NULL)
-		return (false);
-
-	ConfigTypeString *peer_hostct = dynamic_cast<ConfigTypeString *>(peer_hostcv->type_);
-	if (peer_hostct == NULL)
 		return (false);
 
 	std::string peer_hoststr;
 	if (!peer_hostct->get(peer_hostcv, &peer_hoststr))
 		return (false);
 
-	ConfigValue *peer_portcv = peerco->members_["port"];
+	ConfigTypeString *peer_portct;
+	ConfigValue *peer_portcv = peerco->get("port", &peer_portct);
 	if (peer_portcv == NULL)
-		return (false);
-
-	ConfigTypeString *peer_portct = dynamic_cast<ConfigTypeString *>(peer_portcv->type_);
-	if (peer_portct == NULL)
 		return (false);
 
 	std::string peer_portstr;
@@ -127,23 +98,18 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 		return (false);
 
 	/* Extract encoder.  */
-	ConfigValue *encodercv = co->members_["encoder"];
+	ConfigTypePointer *encoderct;
+	ConfigValue *encodercv = co->get("encoder", &encoderct);
 	if (encodercv == NULL)
 		return (false);
 
-	ConfigTypePointer *encoderct = dynamic_cast<ConfigTypePointer *>(encodercv->type_);
-	if (encoderct == NULL)
-		return (false);
-
+	WANProxyConfigClassCodec *encodercc;
 	ConfigObject *encoderco;
-	if (!encoderct->get(encodercv, &encoderco))
+	if (!encoderct->get(encodercv, &encoderco, &encodercc))
 		return (false);
 
 	XCodec *encodercodec;
 	if (encoderco != NULL) {
-		WANProxyConfigClassCodec *encodercc = dynamic_cast<WANProxyConfigClassCodec *>(encoderco->class_);
-		if (encodercc == NULL)
-			return (false);
 		encodercodec = encodercc->get(encoderco);
 	} else {
 		encodercodec = NULL;

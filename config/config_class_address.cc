@@ -8,12 +8,9 @@ ConfigClassAddress config_class_address;
 bool
 ConfigClassAddress::activate(ConfigObject *co)
 {
-	ConfigValue *familycv = co->members_["family"];
+	ConfigTypeAddressFamily *familyct;
+	ConfigValue *familycv = co->get("family", &familyct);
 	if (familycv == NULL)
-		return (false);
-
-	ConfigTypeAddressFamily *familyct = dynamic_cast<ConfigTypeAddressFamily *>(familycv->type_);
-	if (familyct == NULL)
 		return (false);
 
 	ConfigAddressFamily family;
@@ -21,13 +18,13 @@ ConfigClassAddress::activate(ConfigObject *co)
 		return (false);
 
 	if (family == ConfigAddressFamilyIPv4) {
-		if (co->members_["path"] != NULL)
+		if (co->has("path"))
 			return (false);
 		return (true);
 	}
 
 	if (family == ConfigAddressFamilyUnix) {
-		if (co->members_["host"] != NULL || co->members_["port"] != NULL)
+		if (co->has("host") || co->has("port"))
 			return (false);
 		return (true);
 	}
