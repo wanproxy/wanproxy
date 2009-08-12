@@ -1,22 +1,31 @@
 For 0.5.0:
 o) Add configuration helpers such that I can get rid of all of the mess in the
    proxy classes.
+   XXX GCC bugs prevented using the most straightforward version.
 o) Add a function to convert network representations of IPs into strings so the
    SOCKS4 code doesn't necessitate its own duplication of API that's specialized
    for IPv4.  Ew.
 o) Change socket API to just take a string for the connection name and have
    networking code pass in stuff in the form of "[host]:service".
+o) Support for using service names instead of ports.  Enum or string?
 
 For 0.6.0:
-o) Unify the listeners already.
+o) Make interface/listener objects automatically start listening.
+o) IPv6.
+o) Clean up address configuration objects to be more sensible, being either
+   specific components of addresses (e.g. to specify an IP address) or socket
+   addresses (e.g. AF_UNIX paths, IP+port pairs for TCP or UDP or SCTP.)
+o) Connector abstraction: connection pooling / connecting via a SOCKS server.
 
 For 0.7.0:
+o) New splice/ProxyPipe API and a producer/consumer data flow model.
 o) Do some information exchange out-of-band when setting up connections between
    WANProxy instances so we know what Channel to send requests for declarations
    on.
 
 For 0.8.0:
 o) Cache hierarchy, including persistent storage.
+o) TLS.
 
 After 1.0.0:
 o) A CLI program for management.  Remember to USE_POLL=select since Mac OS X can
