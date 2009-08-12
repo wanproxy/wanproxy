@@ -2,7 +2,6 @@
 #define	CONFIG_CLASS_ADDRESS_H
 
 #include <config/config_type_address_family.h>
-#include <config/config_type_int.h>
 #include <config/config_type_string.h>
 
 class ConfigObject;
@@ -14,7 +13,7 @@ public:
 	{
 		add_member("family", &config_type_address_family);
 		add_member("host", &config_type_string);
-		add_member("port", &config_type_int);
+		add_member("port", &config_type_string); /* XXX enum?  */
 		add_member("path", &config_type_string);
 	}
 

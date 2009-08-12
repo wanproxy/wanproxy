@@ -29,7 +29,12 @@ public:
 		return (socket_->close(cb));
 	}
 
-	static TCPServer *listen(const std::string&, unsigned *);
+	std::string getsockname(void) const
+	{
+		return (socket_->getsockname());
+	}
+
+	static TCPServer *listen(const std::string&);
 };
 
 #endif /* !TCP_SERVER_H */

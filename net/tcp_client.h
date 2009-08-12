@@ -2,9 +2,7 @@
 #define	TCP_CLIENT_H
 
 struct TCPClient {
-	static Action *connect(Socket **, const std::string&, int,
-			       EventCallback *);
-	static Action *connect(Socket **, uint32_t, uint16_t,
+	static Action *connect(Socket **, const std::string&,
 			       EventCallback *);
 };
 

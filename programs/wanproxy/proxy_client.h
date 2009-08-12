@@ -24,8 +24,7 @@ class ProxyClient {
 	ProxyPipe *outgoing_pipe_;
 
 public:
-	ProxyClient(XCodec *, XCodec *, Socket *, const std::string&, unsigned);
-	ProxyClient(XCodec *, XCodec *, Socket *, uint32_t, uint16_t);
+	ProxyClient(XCodec *, XCodec *, Socket *, const std::string&);
 private:
 	~ProxyClient();
 

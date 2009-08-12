@@ -14,17 +14,15 @@
 #include "proxy_socks_connection.h"
 #include "proxy_socks_listener.h"
 
-ProxySocksListener::ProxySocksListener(const std::string& interface,
-				       unsigned local_port)
+ProxySocksListener::ProxySocksListener(const std::string& interface)
 : log_("/wanproxy/proxy_socks_listener"),
   server_(NULL),
   accept_action_(NULL),
   close_action_(NULL),
   stop_action_(NULL),
-  interface_(interface),
-  local_port_(local_port)
+  interface_(interface)
 {
-	server_ = TCPServer::listen(interface, &local_port_);
+	server_ = TCPServer::listen(interface);
 	if (server_ == NULL) {
 		/* XXX
 		 * Should retry with a delay in case of a restart?  Or just use

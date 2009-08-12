@@ -20,7 +20,7 @@ class Connector {
 	Action *action_;
 	Test *test_;
 public:
-	Connector(unsigned port)
+	Connector(const std::string& remote)
 	: log_("/connector"),
 	  group_("/test/net/socket/connector", "Socket connector"),
 	  socket_(NULL),
@@ -29,7 +29,7 @@ public:
 		test_ = new Test(group_, "TCPClient::connect");
 		EventCallback *cb =
 			callback(this, &Connector::connect_complete);
-		action_ = TCPClient::connect(&socket_, "localhost", port, cb);
+		action_ = TCPClient::connect(&socket_, remote, cb);
 		Test _(group_, "TCPClient::connect set Socket pointer");
 		if (socket_ != NULL)
 			_.pass();
@@ -127,7 +127,6 @@ class Listener {
 	Connector *connector_;
 	Socket *client_;
 	Buffer read_buffer_;
-	unsigned port_;
 public:
 	Listener(void)
 	: log_("/listener"),
@@ -135,18 +134,17 @@ public:
 	  action_(NULL),
 	  connector_(NULL),
 	  client_(NULL),
-	  read_buffer_(),
-	  port_(1024)
+	  read_buffer_()
 	{
 		{
 			Test _(group_, "TCPServer::listen");
-			server_ = TCPServer::listen("localhost", &port_);
+			server_ = TCPServer::listen("localhost:0");
 			if (server_ == NULL)
 				return;
 			_.pass();
 		}
 
-		connector_ = new Connector(port_);
+		connector_ = new Connector(server_->getsockname());
 
 		EventCallback *cb = callback(this, &Listener::accept_complete);
 		action_ = server_->accept(cb);

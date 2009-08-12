@@ -52,15 +52,16 @@ WANProxyConfigClassProxySocks::activate(ConfigObject *co)
 	if (interface_portcv == NULL)
 		return (false);
 
-	ConfigTypeInt *interface_portct = dynamic_cast<ConfigTypeInt *>(interface_portcv->type_);
+	ConfigTypeString *interface_portct = dynamic_cast<ConfigTypeString *>(interface_portcv->type_);
 	if (interface_portct == NULL)
 		return (false);
 
-	intmax_t interface_portint;
-	if (!interface_portct->get(interface_portcv, &interface_portint))
+	std::string interface_portstr;
+	if (!interface_portct->get(interface_portcv, &interface_portstr))
 		return (false);
 
-	ProxySocksListener *listener = new ProxySocksListener(interface_hoststr, interface_portint);
+	std::string interface_address = interface_hoststr + ':' + interface_portstr;
+	ProxySocksListener *listener = new ProxySocksListener(interface_address);
 	object_listener_map_[co] = listener;
 
 	return (true);

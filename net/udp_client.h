@@ -2,7 +2,7 @@
 #define	UDP_CLIENT_H
 
 struct UDPClient {
-	static Action *connect(Socket **, const std::string&, int,
+	static Action *connect(Socket **, const std::string&,
 			       EventCallback *);
 };
 

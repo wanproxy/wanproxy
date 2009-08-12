@@ -18,6 +18,78 @@
 #include <io/file_descriptor.h>
 #include <io/socket.h>
 
+struct socket_address {
+	union {
+		struct sockaddr sockaddr_;
+		struct sockaddr_in inet_;
+		struct sockaddr_un unix_;
+	} addr_;
+	size_t addrlen_;
+
+	socket_address(void)
+	: addr_(),
+	  addrlen_(0)
+	{
+		memset(&addr_, 0, sizeof addr_);
+	}
+
+	bool operator() (int domain, const std::string& str)
+	{
+		addr_.sockaddr_.sa_family = domain;
+
+		switch (domain) {
+		case AF_INET: {
+			std::string::size_type pos = str.find(':');
+			if (pos == std::string::npos)
+				return (false);
+
+			std::string name(str, 0, pos);
+			std::string service(str, pos + 1);
+
+			struct hostent *host;
+#if !defined(__sun__)
+			host = gethostbyname2(name.c_str(), domain);
+#else
+			host = gethostbyname(name.c_str()); /* Hope for the best!  */
+#endif
+			if (host == NULL)
+				return (false);
+			/*
+			 * XXX
+			 * Remove this assertion and find the resolution which yields the right
+			 * domain and fail if we can't find one.  Blowing up here is just such
+			 * a bad idea.
+			 */
+			ASSERT(host->h_addrtype == domain);
+			ASSERT(host->h_length == sizeof addr_.inet_.sin_addr);
+
+			memcpy(&addr_.inet_.sin_addr, host->h_addr_list[0], sizeof addr_.inet_.sin_addr);
+
+			std::istringstream istr(service);
+			unsigned port;
+			istr >> port;
+
+			addr_.inet_.sin_port = htons(port);
+
+			addrlen_ = sizeof addr_.inet_;
+			break;
+		}
+		case AF_UNIX:
+			strncpy(addr_.unix_.sun_path, str.c_str(), sizeof addr_.unix_.sun_path);
+			addrlen_ = sizeof addr_.unix_;
+			break;
+		default:
+			HALT("/socket/address") << "Addresss family not supported: " << domain;
+			return (false);
+		}
+
+#if !defined(__linux__) && !defined(__sun__)
+		addr_.sockaddr_.sa_len = addrlen_;
+#endif
+		return (true);
+	}
+};
+
 /*
  * XXX
  *
@@ -26,7 +98,6 @@
  * collapsed in to one, I hope.
  */
 
-static bool socket_address(struct sockaddr_in *, int, const std::string&, uint16_t);
 static std::string socket_name(struct sockaddr_in *);
 
 Socket::Socket(int fd, int domain)
@@ -63,47 +134,14 @@ Socket::accept(EventCallback *cb)
 bool
 Socket::bind(const std::string& name)
 {
-	struct sockaddr_un bind_address;
+	socket_address addr;
 
-	/* XXX Check for length.  */
+	if (!addr(domain_, name))
+		return (false);
 
-	memset(&bind_address, 0, sizeof bind_address);
-#if !defined(__linux__) && !defined(__sun__)
-	bind_address.sun_len = sizeof bind_address;
-#endif
-	bind_address.sun_family = domain_;
-	strncpy(bind_address.sun_path, name.c_str(), sizeof bind_address.sun_path);
-
-	int rv = ::bind(fd_, (struct sockaddr *)&bind_address,
-			sizeof bind_address);
+	int rv = ::bind(fd_, &addr.addr_.sockaddr_, addr.addrlen_);
 	if (rv == -1)
 		return (false);
-
-	return (true);
-}
-
-bool
-Socket::bind(const std::string& name, unsigned *portp)
-{
-	struct sockaddr_in bind_address;
-
-	if (!socket_address(&bind_address, domain_, name, *portp))
-		return (false);
-
-	int rv = ::bind(fd_, (struct sockaddr *)&bind_address,
-			sizeof bind_address);
-	if (rv == -1)
-		return (false);
-
-	if (*portp == 0) {
-		socklen_t addrlen = sizeof bind_address;
-		rv = ::getsockname(fd_, (struct sockaddr *)&bind_address,
-				   &addrlen);
-		if (rv == -1 || addrlen != sizeof bind_address)
-			return (false);
-		ASSERT(bind_address.sin_family == domain_);
-		*portp = ntohs(bind_address.sin_port);
-	}
 
 	return (true);
 }
@@ -114,64 +152,12 @@ Socket::connect(const std::string& name, EventCallback *cb)
 	ASSERT(connect_callback_ == NULL);
 	ASSERT(connect_action_ == NULL);
 
-	struct sockaddr_un connect_address;
+	socket_address addr;
 
-	/* XXX Check for length.  */
-
-	memset(&connect_address, 0, sizeof connect_address);
-#if !defined(__linux__) && !defined(__sun__)
-	connect_address.sun_len = sizeof connect_address;
-#endif
-	connect_address.sun_family = domain_;
-	strncpy(connect_address.sun_path, name.c_str(), sizeof connect_address.sun_path);
-
-	return (this->connect((struct sockaddr *)&connect_address,
-			      sizeof connect_address, cb));
-}
-
-Action *
-Socket::connect(const std::string& name, unsigned port, EventCallback *cb)
-{
-	ASSERT(connect_callback_ == NULL);
-	ASSERT(connect_action_ == NULL);
-
-	struct sockaddr_in connect_address;
-
-	if (!socket_address(&connect_address, domain_, name, port)) {
-		cb->event(Event(Event::Error, ENOENT));
-		Action *a = EventSystem::instance()->schedule(cb);
-		return (a);
+	if (!addr(domain_, name)) {
+		cb->event(Event(Event::Error, EINVAL));
+		return (EventSystem::instance()->schedule(cb));
 	}
-
-	return (this->connect((struct sockaddr *)&connect_address,
-			      sizeof connect_address, cb));
-}
-
-Action *
-Socket::connect(uint32_t ip, uint16_t port, EventCallback *cb)
-{
-	ASSERT(connect_callback_ == NULL);
-	ASSERT(connect_action_ == NULL);
-
-	struct sockaddr_in connect_address;
-
-	memset(&connect_address, 0, sizeof connect_address);
-#if !defined(__linux__) && !defined(__sun__)
-	connect_address.sin_len = sizeof connect_address;
-#endif
-	connect_address.sin_family = domain_;
-	connect_address.sin_addr.s_addr = BigEndian::encode(ip);
-	connect_address.sin_port = BigEndian::encode(port);
-
-	return (this->connect((struct sockaddr *)&connect_address,
-			      sizeof connect_address, cb));
-}
-
-Action *
-Socket::connect(struct sockaddr *sap, size_t salen, EventCallback *cb)
-{
-	ASSERT(connect_callback_ == NULL);
-	ASSERT(connect_action_ == NULL);
 
 	/*
 	 * TODO
@@ -190,7 +176,7 @@ Socket::connect(struct sockaddr *sap, size_t salen, EventCallback *cb)
 	 * the thing to do is poll if there's no input ready.
 	 */
 
-	int rv = ::connect(fd_, sap, salen);
+	int rv = ::connect(fd_, &addr.addr_.sockaddr_, addr.addrlen_);
 	switch (rv) {
 	case 0:
 		cb->event(Event(Event::Done, 0));
@@ -382,38 +368,6 @@ Socket::create(int domain, int type, const std::string& protocol)
 		return (NULL);
 
 	return (new Socket(s, domain));
-}
-
-static bool
-socket_address(struct sockaddr_in *sinp, int domain, const std::string& name,
-	       uint16_t port)
-{
-	struct hostent *host;
-#if !defined(__sun__)
-	host = gethostbyname2(name.c_str(), domain);
-#else
-	host = gethostbyname(name.c_str()); /* Hope for the best!  */
-#endif
-	if (host == NULL) {
-		return (false);
-	}
-	/*
-	 * XXX
-	 * Remove this assertion and find the resolution which yields the right
-	 * domain and fail if we can't find one.  Blowing up here is just such
-	 * a bad idea.
-	 */
-	ASSERT(host->h_addrtype == domain);
-	ASSERT(host->h_length == sizeof sinp->sin_addr);
-
-	memset(sinp, 0, sizeof *sinp);
-#if !defined(__linux__) && !defined(__sun__)
-	sinp->sin_len = sizeof *sinp;
-#endif
-	sinp->sin_family = domain;
-	memcpy(&sinp->sin_addr, host->h_addr_list[0], sizeof sinp->sin_addr);
-	sinp->sin_port = htons(port);
-	return (true);
 }
 
 static std::string

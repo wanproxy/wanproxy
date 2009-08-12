@@ -13,21 +13,11 @@
 #include <net/tcp_client.h>
 
 Action *
-TCPClient::connect(Socket **socketp, const std::string& name, int port,
+TCPClient::connect(Socket **socketp, const std::string& name,
 		   EventCallback *cb)
 {
 	Socket *socket = Socket::create(PF_INET, SOCK_STREAM, "tcp");
 	ASSERT(socket != NULL);
 	*socketp = socket;
-	return (socket->connect(name, port, cb));
-}
-
-Action *
-TCPClient::connect(Socket **socketp, uint32_t ip, uint16_t port,
-		   EventCallback *cb)
-{
-	Socket *socket = Socket::create(PF_INET, SOCK_STREAM, "tcp");
-	ASSERT(socket != NULL);
-	*socketp = socket;
-	return (socket->connect(ip, port, cb));
+	return (socket->connect(name, cb));
 }

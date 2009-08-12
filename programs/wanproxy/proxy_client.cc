@@ -13,15 +13,8 @@
 #include "proxy_client.h"
 #include "proxy_pipe.h"
 
-/*
- * XXX
- * Need to set up a Socket::Address class and all that, to avoid this
- * stupid redundancy.
- */
-
 ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
-			 Socket *local_socket, const std::string& remote_name,
-			 unsigned remote_port)
+			 Socket *local_socket, const std::string& remote_name)
 : log_("/wanproxy/proxy/client"),
   stop_action_(NULL),
   local_action_(NULL),
@@ -36,37 +29,11 @@ ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
   outgoing_pipe_(NULL)
 {
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
-	remote_action_ = TCPClient::connect(&remote_socket_, remote_name,
-					    remote_port, cb);
+	remote_action_ = TCPClient::connect(&remote_socket_, remote_name, cb);
 
 	Callback *scb = callback(this, &ProxyClient::stop);
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
-
-ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
-			 Socket *local_socket, uint32_t remote_ip,
-			 uint16_t remote_port)
-: log_("/wanproxy/proxy/client"),
-  stop_action_(NULL),
-  local_action_(NULL),
-  local_codec_(local_codec),
-  local_socket_(local_socket),
-  remote_action_(NULL),
-  remote_codec_(remote_codec),
-  remote_socket_(NULL),
-  incoming_action_(NULL),
-  incoming_pipe_(NULL),
-  outgoing_action_(NULL),
-  outgoing_pipe_(NULL)
-{
-	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
-	remote_action_ = TCPClient::connect(&remote_socket_, remote_ip,
-					    remote_port, cb);
-
-	Callback *scb = callback(this, &ProxyClient::stop);
-	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
-}
-
 
 ProxyClient::~ProxyClient()
 {

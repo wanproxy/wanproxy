@@ -207,16 +207,23 @@ ProxySocksConnection::write_complete(Event e)
 		return;
 	}
 
+	std::ostringstream remote_name;
+
 	if (state_ == GetSOCKS5Port && socks5_remote_name_ != "") {
 		ASSERT(socks5_authenticated_);
 		ASSERT(network_address_ == 0);
 
-		new ProxyClient(NULL, NULL, client_, socks5_remote_name_,
-				network_port_);
+		remote_name << socks5_remote_name_ << ':' << network_port_;
 	} else {
-		new ProxyClient(NULL, NULL, client_, network_address_,
-				network_port_);
+		remote_name << ((network_address_ >> 24) & 0xff) << '.';
+		remote_name << ((network_address_ >> 16) & 0xff) << '.';
+		remote_name << ((network_address_ >>  8) & 0xff) << '.';
+		remote_name << ((network_address_ >>  0) & 0xff) << ':';
+		remote_name << network_port_;
 	}
+
+	new ProxyClient(NULL, NULL, client_, remote_name.str());
+
 	client_ = NULL;
 	delete this;
 }

@@ -20,7 +20,7 @@ class Connector {
 	Action *action_;
 	Test *test_;
 public:
-	Connector(unsigned port)
+	Connector(const std::string& remote)
 	: log_("/connector"),
 	  group_("/test/io/socket/connector", "Socket connector"),
 	  socket_(NULL),
@@ -36,7 +36,7 @@ public:
 		test_ = new Test(group_, "Socket::connect");
 		EventCallback *cb =
 			callback(this, &Connector::connect_complete);
-		action_ = socket_->connect("localhost", port, cb);
+		action_ = socket_->connect(remote, cb);
 	}
 
 	~Connector()
@@ -131,7 +131,6 @@ class Listener {
 	Connector *connector_;
 	Socket *client_;
 	Buffer read_buffer_;
-	unsigned port_;
 public:
 	Listener(void)
 	: log_("/listener"),
@@ -139,8 +138,7 @@ public:
 	  action_(NULL),
 	  connector_(NULL),
 	  client_(NULL),
-	  read_buffer_(),
-	  port_(1024)
+	  read_buffer_()
 	{
 		{
 			Test _(group_, "Socket::create");
@@ -151,9 +149,7 @@ public:
 		}
 		{
 			Test _(group_, "Socket bind to localhost, port=0");
-			port_ = 0;
-			if (socket_->bind("localhost", &port_) &&
-			    port_ != 0)
+			if (socket_->bind("localhost:0"))
 				_.pass();
 		}
 		{
@@ -163,7 +159,7 @@ public:
 			_.pass();
 		}
 
-		connector_ = new Connector(port_);
+		connector_ = new Connector(socket_->getsockname());
 
 		EventCallback *cb = callback(this, &Listener::accept_complete);
 		action_ = socket_->accept(cb);

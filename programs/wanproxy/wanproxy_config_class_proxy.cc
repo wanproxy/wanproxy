@@ -54,12 +54,12 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	if (interface_portcv == NULL)
 		return (false);
 
-	ConfigTypeInt *interface_portct = dynamic_cast<ConfigTypeInt *>(interface_portcv->type_);
+	ConfigTypeString *interface_portct = dynamic_cast<ConfigTypeString *>(interface_portcv->type_);
 	if (interface_portct == NULL)
 		return (false);
 
-	intmax_t interface_portint;
-	if (!interface_portct->get(interface_portcv, &interface_portint))
+	std::string interface_portstr;
+	if (!interface_portct->get(interface_portcv, &interface_portstr))
 		return (false);
 
 	/* Extract decoder.  */
@@ -118,12 +118,12 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	if (peer_portcv == NULL)
 		return (false);
 
-	ConfigTypeInt *peer_portct = dynamic_cast<ConfigTypeInt *>(peer_portcv->type_);
+	ConfigTypeString *peer_portct = dynamic_cast<ConfigTypeString *>(peer_portcv->type_);
 	if (peer_portct == NULL)
 		return (false);
 
-	intmax_t peer_portint;
-	if (!peer_portct->get(peer_portcv, &peer_portint))
+	std::string peer_portstr;
+	if (!peer_portct->get(peer_portcv, &peer_portstr))
 		return (false);
 
 	/* Extract encoder.  */
@@ -149,7 +149,10 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 		encodercodec = NULL;
 	}
 
-	ProxyListener *listener = new ProxyListener(decodercodec, encodercodec, interface_hoststr, interface_portint, peer_hoststr, peer_portint);
+	std::string interface_address = interface_hoststr + ':' + interface_portstr;
+	std::string peer_address = peer_hoststr + ':' + peer_portstr;
+
+	ProxyListener *listener = new ProxyListener(decodercodec, encodercodec, interface_address, peer_address);
 	object_listener_map_[co] = listener;
 
 	return (true);

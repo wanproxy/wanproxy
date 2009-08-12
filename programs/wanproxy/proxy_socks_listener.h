@@ -11,10 +11,9 @@ class ProxySocksListener {
 	Action *close_action_;
 	Action *stop_action_;
 	std::string interface_;
-	unsigned local_port_;
 
 public:
-	ProxySocksListener(const std::string&, unsigned);
+	ProxySocksListener(const std::string&);
 	~ProxySocksListener();
 
 private:

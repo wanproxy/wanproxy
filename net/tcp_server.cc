@@ -13,7 +13,7 @@
 #include <net/tcp_server.h>
 
 TCPServer *
-TCPServer::listen(const std::string& name, unsigned *portp)
+TCPServer::listen(const std::string& name)
 {
 	Socket *socket = Socket::create(PF_INET, SOCK_STREAM, "tcp");
 	if (socket == NULL) {
@@ -25,7 +25,7 @@ TCPServer::listen(const std::string& name, unsigned *portp)
 	 * After this we could leak a socket, sigh.  Need a blocking close, or
 	 * a pool to return the socket to.
 	 */
-	if (!socket->bind(name, portp)) {
+	if (!socket->bind(name)) {
 		ERROR("/tcp/server") << "Socket bind failed, leaking socket.";
 		return (NULL);
 	}

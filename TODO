@@ -2,14 +2,12 @@ For 0.5.0:
 o) Add configuration helpers such that I can get rid of all of the mess in the
    proxy classes.
    XXX GCC bugs prevented using the most straightforward version.
-o) Add a function to convert network representations of IPs into strings so the
-   SOCKS4 code doesn't necessitate its own duplication of API that's specialized
-   for IPv4.  Ew.
-o) Change socket API to just take a string for the connection name and have
-   networking code pass in stuff in the form of "[host]:service".
-o) Support for using service names instead of ports.  Enum or string?
 
 For 0.6.0:
+o) Put host in brackets in bind()/connect() to make IPv6 possible.
+o) Support for using service names instead of ports.
+   Make ports enums that can be either integers or service names?  Or just use
+   strings and check the sanity in Socket::socket_address::operator() ?
 o) Make interface/listener objects automatically start listening.
 o) IPv6.
 o) Clean up address configuration objects to be more sensible, being either
