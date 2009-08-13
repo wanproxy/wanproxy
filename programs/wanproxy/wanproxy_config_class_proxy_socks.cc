@@ -7,6 +7,8 @@
 #include <event/action.h>
 #include <event/event.h>
 
+#include <io/socket_types.h>
+
 #include "proxy_socks_listener.h"
 #include "wanproxy_config_class_interface.h"
 #include "wanproxy_config_class_proxy_socks.h"
@@ -30,6 +32,15 @@ WANProxyConfigClassProxySocks::activate(ConfigObject *co)
 	if (!interfacect->get(interfacecv, &interfaceco, &interfacecc))
 		return (false);
 
+	ConfigTypeAddressFamily *interface_familyct;
+	ConfigValue *interface_familycv = interfaceco->get("family", &interface_familyct);
+	if (interface_familycv == NULL)
+		return (false);
+
+	SocketAddressFamily interface_family;
+	if (!interface_familyct->get(interface_familycv, &interface_family))
+		return (false);
+
 	ConfigTypeString *interface_hostct;
 	ConfigValue *interface_hostcv = interfaceco->get("host", &interface_hostct);
 	if (interface_hostcv == NULL)
@@ -49,7 +60,7 @@ WANProxyConfigClassProxySocks::activate(ConfigObject *co)
 		return (false);
 
 	std::string interface_address = '[' + interface_hoststr + ']' + ':' + interface_portstr;
-	ProxySocksListener *listener = new ProxySocksListener(interface_address);
+	ProxySocksListener *listener = new ProxySocksListener(interface_family, interface_address);
 	object_listener_map_[co] = listener;
 
 	return (true);

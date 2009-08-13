@@ -4,7 +4,6 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/file_descriptor.h>
 #include <io/socket.h>
 #include <io/unix_server.h>
 

@@ -6,7 +6,6 @@
 #include <event/event_system.h>
 
 #include <io/channel.h>
-#include <io/file_descriptor.h>
 
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_decoder.h>

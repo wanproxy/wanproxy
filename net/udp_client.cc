@@ -4,16 +4,15 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/file_descriptor.h>
 #include <io/socket.h>
 
 #include <net/udp_client.h>
 
 Action *
-UDPClient::connect(Socket **socketp, const std::string& name,
-		   EventCallback *cb)
+UDPClient::connect(Socket **socketp, SocketAddressFamily family,
+		   const std::string& name, EventCallback *cb)
 {
-	Socket *socket = Socket::create(SocketAddressFamilyIPv4, SocketTypeDatagram, "udp");
+	Socket *socket = Socket::create(family, SocketTypeDatagram, "udp");
 	ASSERT(socket != NULL);
 	*socketp = socket;
 	return (socket->connect(name, cb));

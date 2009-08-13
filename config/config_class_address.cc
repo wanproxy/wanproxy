@@ -13,17 +13,17 @@ ConfigClassAddress::activate(ConfigObject *co)
 	if (familycv == NULL)
 		return (false);
 
-	ConfigAddressFamily family;
+	SocketAddressFamily family;
 	if (!familyct->get(familycv, &family))
 		return (false);
 
-	if (family == ConfigAddressFamilyIPv4) {
+	if (family == SocketAddressFamilyIPv4) {
 		if (co->has("path"))
 			return (false);
 		return (true);
 	}
 
-	if (family == ConfigAddressFamilyUnix) {
+	if (family == SocketAddressFamilyUnix) {
 		if (co->has("host") || co->has("port"))
 			return (false);
 		return (true);

@@ -4,15 +4,14 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/file_descriptor.h>
 #include <io/socket.h>
 
 #include <net/tcp_server.h>
 
 TCPServer *
-TCPServer::listen(const std::string& name)
+TCPServer::listen(SocketAddressFamily family, const std::string& name)
 {
-	Socket *socket = Socket::create(SocketAddressFamilyIPv4, SocketTypeStream, "tcp");
+	Socket *socket = Socket::create(family, SocketTypeStream, "tcp");
 	if (socket == NULL) {
 		ERROR("/tcp/server") << "Unable to create socket.";
 		return (NULL);

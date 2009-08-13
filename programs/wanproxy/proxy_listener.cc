@@ -5,8 +5,6 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/channel.h>
-#include <io/file_descriptor.h>
 #include <io/socket.h>
 
 #include <net/tcp_server.h>
@@ -15,7 +13,9 @@
 #include "proxy_listener.h"
 
 ProxyListener::ProxyListener(XCodec *local_codec, XCodec *remote_codec,
+			     SocketAddressFamily interface_family,
 			     const std::string& interface,
+			     SocketAddressFamily remote_family,
 			     const std::string& remote_name)
 : log_("/wanproxy/proxy_listener"),
   server_(NULL),
@@ -25,9 +25,10 @@ ProxyListener::ProxyListener(XCodec *local_codec, XCodec *remote_codec,
   local_codec_(local_codec),
   remote_codec_(remote_codec),
   interface_(interface),
+  remote_family_(remote_family),
   remote_name_(remote_name)
 {
-	server_ = TCPServer::listen(interface);
+	server_ = TCPServer::listen(interface_family, interface);
 	if (server_ == NULL) {
 		/* XXX
 		 * Should retry with a delay in case of a restart?  Or just use
@@ -73,7 +74,7 @@ ProxyListener::accept_complete(Event e)
 	if (e.type_ == Event::Done) {
 		Socket *client = (Socket *)e.data_;
 		new ProxyClient(local_codec_, remote_codec_, client,
-				remote_name_);
+				remote_family_, remote_name_);
 	}
 
 	EventCallback *cb = callback(this, &ProxyListener::accept_complete);

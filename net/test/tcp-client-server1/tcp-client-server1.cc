@@ -5,7 +5,6 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/file_descriptor.h>
 #include <io/socket.h>
 
 #include <net/tcp_client.h>
@@ -20,16 +19,16 @@ class Connector {
 	Action *action_;
 	Test *test_;
 public:
-	Connector(const std::string& remote)
+	Connector(const std::string& suffix, SocketAddressFamily family, const std::string& remote)
 	: log_("/connector"),
-	  group_("/test/net/socket/connector", "Socket connector"),
+	  group_("/test/net/socket/connector" + suffix, "Socket connector"),
 	  socket_(NULL),
 	  action_(NULL)
 	{
 		test_ = new Test(group_, "TCPClient::connect");
 		EventCallback *cb =
 			callback(this, &Connector::connect_complete);
-		action_ = TCPClient::connect(&socket_, remote, cb);
+		action_ = TCPClient::connect(&socket_, family, remote, cb);
 		Test _(group_, "TCPClient::connect set Socket pointer");
 		if (socket_ != NULL)
 			_.pass();
@@ -128,9 +127,9 @@ class Listener {
 	Socket *client_;
 	Buffer read_buffer_;
 public:
-	Listener(void)
+	Listener(const std::string& suffix, SocketAddressFamily family)
 	: log_("/listener"),
-	  group_("/test/net/tcp_server/listener", "Socket listener"),
+	  group_("/test/net/tcp_server/listener" + suffix, "Socket listener"),
 	  action_(NULL),
 	  connector_(NULL),
 	  client_(NULL),
@@ -138,13 +137,13 @@ public:
 	{
 		{
 			Test _(group_, "TCPServer::listen");
-			server_ = TCPServer::listen("[localhost]:0");
+			server_ = TCPServer::listen(family, "[localhost]:0");
 			if (server_ == NULL)
 				return;
 			_.pass();
 		}
 
-		connector_ = new Connector(server_->getsockname());
+		connector_ = new Connector(suffix, family, server_->getsockname());
 
 		EventCallback *cb = callback(this, &Listener::accept_complete);
 		action_ = server_->accept(cb);
@@ -287,7 +286,7 @@ main(void)
 	for (i = 0; i < sizeof data; i++)
 		data[i] = random() % 0xff;
 
-	Listener *l = new Listener();
+	Listener *l4 = new Listener("/ipv4", SocketAddressFamilyIPv4);
 	EventSystem::instance()->start();
-	delete l;
+	delete l4;
 }

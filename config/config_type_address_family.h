@@ -3,13 +3,9 @@
 
 #include <config/config_type_enum.h>
 
-enum ConfigAddressFamily {
-	ConfigAddressFamilyIPv4,
-	ConfigAddressFamilyIPv6,
-	ConfigAddressFamilyUnix,
-};
+#include <io/socket_types.h>
 
-typedef ConfigTypeEnum<ConfigAddressFamily> ConfigTypeAddressFamily;
+typedef ConfigTypeEnum<SocketAddressFamily> ConfigTypeAddressFamily;
 
 extern ConfigTypeAddressFamily config_type_address_family;
 

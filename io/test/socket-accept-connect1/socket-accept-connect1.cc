@@ -5,7 +5,6 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/file_descriptor.h>
 #include <io/socket.h>
 
 static uint8_t data[65536];

@@ -5,8 +5,6 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/channel.h>
-#include <io/file_descriptor.h>
 #include <io/socket.h>
 
 #include "proxy_client.h"
@@ -224,7 +222,8 @@ ProxySocksConnection::write_complete(Event e)
 		remote_name << ':' << network_port_;
 	}
 
-	new ProxyClient(NULL, NULL, client_, remote_name.str());
+	/* XXX IPv6 for SOCKS5?  */
+	new ProxyClient(NULL, NULL, client_, SocketAddressFamilyIPv4, remote_name.str());
 
 	client_ = NULL;
 	delete this;

@@ -34,7 +34,7 @@ public:
 		return (socket_->getsockname());
 	}
 
-	static TCPServer *listen(const std::string&);
+	static TCPServer *listen(SocketAddressFamily, const std::string&);
 };
 
 #endif /* !TCP_SERVER_H */

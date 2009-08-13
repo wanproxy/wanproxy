@@ -13,10 +13,12 @@ class ProxyListener {
 	XCodec *local_codec_;
 	XCodec *remote_codec_;
 	std::string interface_;
+	SocketAddressFamily remote_family_;
 	std::string remote_name_;
 
 public:
-	ProxyListener(XCodec *, XCodec *, const std::string&,
+	ProxyListener(XCodec *, XCodec *, SocketAddressFamily,
+		      const std::string&, SocketAddressFamily,
 		      const std::string&);
 	~ProxyListener();
 

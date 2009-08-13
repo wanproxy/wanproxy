@@ -4,16 +4,15 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/file_descriptor.h>
 #include <io/socket.h>
 
 #include <net/tcp_client.h>
 
 Action *
-TCPClient::connect(Socket **socketp, const std::string& name,
-		   EventCallback *cb)
+TCPClient::connect(Socket **socketp, SocketAddressFamily family,
+		   const std::string& name, EventCallback *cb)
 {
-	Socket *socket = Socket::create(SocketAddressFamilyIPv4, SocketTypeStream, "tcp");
+	Socket *socket = Socket::create(family, SocketTypeStream, "tcp");
 	ASSERT(socket != NULL);
 	*socketp = socket;
 	return (socket->connect(name, cb));

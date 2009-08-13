@@ -13,7 +13,7 @@ class ProxySocksListener {
 	std::string interface_;
 
 public:
-	ProxySocksListener(const std::string&);
+	ProxySocksListener(SocketAddressFamily, const std::string&);
 	~ProxySocksListener();
 
 private:

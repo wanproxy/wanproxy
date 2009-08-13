@@ -7,6 +7,8 @@
 #include <event/action.h>
 #include <event/event.h>
 
+#include <io/socket_types.h>
+
 #include "proxy_listener.h"
 #include "wanproxy_config_class_codec.h"
 #include "wanproxy_config_class_interface.h"
@@ -30,6 +32,15 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	WANProxyConfigClassInterface *interfacecc;
 	ConfigObject *interfaceco;
 	if (!interfacect->get(interfacecv, &interfaceco, &interfacecc))
+		return (false);
+
+	ConfigTypeAddressFamily *interface_familyct;
+	ConfigValue *interface_familycv = interfaceco->get("family", &interface_familyct);
+	if (interface_familycv == NULL)
+		return (false);
+
+	SocketAddressFamily interface_family;
+	if (!interface_familyct->get(interface_familycv, &interface_family))
 		return (false);
 
 	ConfigTypeString *interface_hostct;
@@ -79,6 +90,15 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	if (!peerct->get(peercv, &peerco, &peercc))
 		return (false);
 
+	ConfigTypeAddressFamily *peer_familyct;
+	ConfigValue *peer_familycv = peerco->get("family", &peer_familyct);
+	if (peer_familycv == NULL)
+		return (false);
+
+	SocketAddressFamily peer_family;
+	if (!peer_familyct->get(peer_familycv, &peer_family))
+		return (false);
+
 	ConfigTypeString *peer_hostct;
 	ConfigValue *peer_hostcv = peerco->get("host", &peer_hostct);
 	if (peer_hostcv == NULL)
@@ -118,7 +138,7 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	std::string interface_address = '[' + interface_hoststr + ']' + ':' + interface_portstr;
 	std::string peer_address = '[' + peer_hoststr + ']' + ':' + peer_portstr;
 
-	ProxyListener *listener = new ProxyListener(decodercodec, encodercodec, interface_address, peer_address);
+	ProxyListener *listener = new ProxyListener(decodercodec, encodercodec, interface_family, interface_address, peer_family, peer_address);
 	object_listener_map_[co] = listener;
 
 	return (true);

@@ -5,8 +5,6 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/channel.h>
-#include <io/file_descriptor.h>
 #include <io/socket.h>
 
 #include <net/tcp_server.h>
@@ -14,7 +12,7 @@
 #include "proxy_socks_connection.h"
 #include "proxy_socks_listener.h"
 
-ProxySocksListener::ProxySocksListener(const std::string& interface)
+ProxySocksListener::ProxySocksListener(SocketAddressFamily family, const std::string& interface)
 : log_("/wanproxy/proxy_socks_listener"),
   server_(NULL),
   accept_action_(NULL),
@@ -22,7 +20,7 @@ ProxySocksListener::ProxySocksListener(const std::string& interface)
   stop_action_(NULL),
   interface_(interface)
 {
-	server_ = TCPServer::listen(interface);
+	server_ = TCPServer::listen(family, interface);
 	if (server_ == NULL) {
 		/* XXX
 		 * Should retry with a delay in case of a restart?  Or just use

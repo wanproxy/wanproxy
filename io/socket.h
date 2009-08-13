@@ -1,16 +1,8 @@
 #ifndef	SOCKET_H
 #define	SOCKET_H
 
-enum SocketAddressFamily {
-	SocketAddressFamilyIPv4,
-	SocketAddressFamilyIPv6,
-	SocketAddressFamilyUnix,
-};
-
-enum SocketType {
-	SocketTypeStream,
-	SocketTypeDatagram,
-};
+#include <io/file_descriptor.h>
+#include <io/socket_types.h>
 
 class Socket : public FileDescriptor {
 	LogHandle log_;

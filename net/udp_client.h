@@ -2,8 +2,8 @@
 #define	UDP_CLIENT_H
 
 struct UDPClient {
-	static Action *connect(Socket **, const std::string&,
-			       EventCallback *);
+	static Action *connect(Socket **, SocketAddressFamily,
+			       const std::string&, EventCallback *);
 };
 
 #endif /* !UDP_CLIENT_H */

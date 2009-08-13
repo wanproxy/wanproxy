@@ -2,6 +2,7 @@
 #define	CHANNEL_H
 
 class Action;
+class Buffer;
 class EventCallback;
 
 class Channel {

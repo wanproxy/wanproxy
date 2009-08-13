@@ -1,10 +1,10 @@
 #include <config/config_type_address_family.h>
 
 struct ConfigTypeAddressFamily::Mapping config_type_address_family_map[] = {
-	{ "IPv4",	ConfigAddressFamilyIPv4 },
-	{ "IPv6",	ConfigAddressFamilyIPv6 },
-	{ "Unix",	ConfigAddressFamilyUnix },
-	{ NULL,		ConfigAddressFamilyIPv4 }
+	{ "IPv4",	SocketAddressFamilyIPv4 },
+	{ "IPv6",	SocketAddressFamilyIPv6 },
+	{ "Unix",	SocketAddressFamilyUnix },
+	{ NULL,		SocketAddressFamilyUnspecified }
 };
 
 ConfigTypeAddressFamily

@@ -5,7 +5,6 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/file_descriptor.h>
 #include <io/socket.h>
 
 #include <net/tcp_client.h>
@@ -14,7 +13,8 @@
 #include "proxy_pipe.h"
 
 ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
-			 Socket *local_socket, const std::string& remote_name)
+			 Socket *local_socket, SocketAddressFamily family,
+			 const std::string& remote_name)
 : log_("/wanproxy/proxy/client"),
   stop_action_(NULL),
   local_action_(NULL),
@@ -29,7 +29,7 @@ ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
   outgoing_pipe_(NULL)
 {
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
-	remote_action_ = TCPClient::connect(&remote_socket_, remote_name, cb);
+	remote_action_ = TCPClient::connect(&remote_socket_, family, remote_name, cb);
 
 	Callback *scb = callback(this, &ProxyClient::stop);
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
