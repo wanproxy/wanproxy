@@ -65,14 +65,14 @@ struct socket_address {
 		memset(&addr_, 0, sizeof addr_);
 	}
 
-	bool operator() (int domain, const std::string& str)
+	bool operator() (int domain, const std::string& str, const std::string& protocol)
 	{
 		addr_.sockaddr_.sa_family = domain;
 
 		switch (domain) {
 		case AF_INET6:
 #if defined(__sun__)
-			ERROR(log_) << "IPv6 is not supported on Solaris yet due to API deficiencies.";
+			ERROR("/socket/address") << "IPv6 is not supported on Solaris yet due to API deficiencies.";
 			return (false);
 #endif
 		case AF_INET: {
@@ -92,8 +92,10 @@ struct socket_address {
 #else
 			host = gethostbyname(name.c_str()); /* Hope for the best!  */
 #endif
-			if (host == NULL)
+			if (host == NULL) {
+				ERROR("/socket/address") << "Could not look up host by name: " << name;
 				return (false);
+			}
 			/*
 			 * XXX
 			 * Remove this assertion and find the resolution which yields the right
@@ -102,9 +104,17 @@ struct socket_address {
 			 */
 			ASSERT(host->h_addrtype == domain);
 
-			std::istringstream istr(service);
 			unsigned port;
-			istr >> port;
+			struct servent *serv = getservbyname(service.c_str(), protocol.c_str());
+			if (serv != NULL) {
+				port = serv->s_port;
+			} else {
+				port = atoi(service.c_str());
+				if (port == 0 && service != "0") {
+					ERROR("/socket/address") << "Could not look up service by name: " << port;
+					return (false);
+				}
+			}
 
 			switch (domain) {
 			case AF_INET:
@@ -138,10 +148,11 @@ struct socket_address {
 	}
 };
 
-Socket::Socket(int fd, int domain)
+Socket::Socket(int fd, int domain, const std::string& protocol)
 : FileDescriptor(fd),
   log_("/socket"),
   domain_(domain),
+  protocol_(protocol),
   accept_action_(NULL),
   accept_callback_(NULL),
   connect_callback_(NULL),
@@ -174,7 +185,7 @@ Socket::bind(const std::string& name)
 {
 	socket_address addr;
 
-	if (!addr(domain_, name)) {
+	if (!addr(domain_, name, protocol_)) {
 		ERROR(log_) << "Invalid name for bind: " << name;
 		return (false);
 	}
@@ -194,7 +205,7 @@ Socket::connect(const std::string& name, EventCallback *cb)
 
 	socket_address addr;
 
-	if (!addr(domain_, name)) {
+	if (!addr(domain_, name, protocol_)) {
 		ERROR(log_) << "Invalid name for connect: " << name;
 		cb->event(Event(Event::Error, EINVAL));
 		return (EventSystem::instance()->schedule(cb));
@@ -317,7 +328,7 @@ Socket::accept_callback(Event e)
 		}
 	}
 
-	Socket *child = new Socket(s, domain_);
+	Socket *child = new Socket(s, domain_, protocol_);
 	accept_callback_->event(Event(Event::Done, 0, (void *)child));
 	Action *a = EventSystem::instance()->schedule(accept_callback_);
 	accept_action_ = a;
@@ -444,5 +455,5 @@ Socket::create(SocketAddressFamily family, SocketType type, const std::string& p
 	if (s == -1)
 		return (NULL);
 
-	return (new Socket(s, domainnum));
+	return (new Socket(s, domainnum, protocol));
 }

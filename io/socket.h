@@ -7,12 +7,13 @@
 class Socket : public FileDescriptor {
 	LogHandle log_;
 	int domain_;
+	std::string protocol_;
 	Action *accept_action_;
 	EventCallback *accept_callback_;
 	EventCallback *connect_callback_;
 	Action *connect_action_;
 
-	Socket(int, int);
+	Socket(int, int, const std::string&);
 public:
 	~Socket();
 
