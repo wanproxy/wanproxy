@@ -17,7 +17,8 @@ ConfigClassAddress::activate(ConfigObject *co)
 	if (!familyct->get(familycv, &family))
 		return (false);
 
-	if (family == SocketAddressFamilyIPv4) {
+	if (family == SocketAddressFamilyIPv4 ||
+	    family == SocketAddressFamilyIPv6) {
 		if (co->has("path"))
 			return (false);
 		return (true);
