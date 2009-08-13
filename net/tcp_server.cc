@@ -1,6 +1,3 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-
 #include <common/buffer.h>
 
 #include <event/action.h>
@@ -15,7 +12,7 @@
 TCPServer *
 TCPServer::listen(const std::string& name)
 {
-	Socket *socket = Socket::create(PF_INET, SOCK_STREAM, "tcp");
+	Socket *socket = Socket::create(SocketAddressFamilyIPv4, SocketTypeStream, "tcp");
 	if (socket == NULL) {
 		ERROR("/tcp/server") << "Unable to create socket.";
 		return (NULL);

@@ -356,24 +356,62 @@ Socket::connect_schedule(void)
 }
 
 Socket *
-Socket::create(int domain, int type, const std::string& protocol)
+Socket::create(SocketAddressFamily family, SocketType type, const std::string& protocol)
 {
+	int domainnum;
+
+	switch (family) {
+	case SocketAddressFamilyIPv4:
+		domainnum = AF_INET;
+		break;
+
+	case SocketAddressFamilyIPv6:
+		domainnum = AF_INET6;
+		break;
+	
+	case SocketAddressFamilyUnix:
+		domainnum = AF_UNIX;
+		break;
+	
+	default:
+		ERROR("/socket") << "Unsupported address family.";
+		return (NULL);
+	}
+
+	int typenum;
+
+	switch (type) {
+	case SocketTypeStream:
+		typenum = SOCK_STREAM;
+		break;
+
+	case SocketTypeDatagram:
+		typenum = SOCK_DGRAM;
+		break;
+
+	default:
+		ERROR("/socket") << "Unsupported socket type.";
+		return (NULL);
+	}
+
 	int protonum;
 
 	if (protocol == "") {
 		protonum = 0;
 	} else {
 		struct protoent *proto = getprotobyname(protocol.c_str());
-		if (proto == NULL)
-			HALT("/socket") << "Invalid protocol: " << protocol;
+		if (proto == NULL) {
+			ERROR("/socket") << "Invalid protocol: " << protocol;
+			return (NULL);
+		}
 		protonum = proto->p_proto;
 	}
 
-	int s = ::socket(domain, type, protonum);
+	int s = ::socket(domainnum, typenum, protonum);
 	if (s == -1)
 		return (NULL);
 
-	return (new Socket(s, domain));
+	return (new Socket(s, domainnum));
 }
 
 static std::string

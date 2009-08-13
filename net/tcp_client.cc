@@ -1,6 +1,3 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-
 #include <common/buffer.h>
 
 #include <event/action.h>
@@ -16,7 +13,7 @@ Action *
 TCPClient::connect(Socket **socketp, const std::string& name,
 		   EventCallback *cb)
 {
-	Socket *socket = Socket::create(PF_INET, SOCK_STREAM, "tcp");
+	Socket *socket = Socket::create(SocketAddressFamilyIPv4, SocketTypeStream, "tcp");
 	ASSERT(socket != NULL);
 	*socketp = socket;
 	return (socket->connect(name, cb));

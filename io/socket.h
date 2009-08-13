@@ -1,7 +1,16 @@
 #ifndef	SOCKET_H
 #define	SOCKET_H
 
-struct sockaddr_in;
+enum SocketAddressFamily {
+	SocketAddressFamilyIPv4,
+	SocketAddressFamilyIPv6,
+	SocketAddressFamilyUnix,
+};
+
+enum SocketType {
+	SocketTypeStream,
+	SocketTypeDatagram,
+};
 
 class Socket : public FileDescriptor {
 	LogHandle log_;
@@ -33,7 +42,7 @@ private:
 	Action *connect_schedule(void);
 
 public:
-	static Socket *create(int, int, const std::string&);
+	static Socket *create(SocketAddressFamily, SocketType, const std::string&);
 };
 
 #endif /* !SOCKET_H */

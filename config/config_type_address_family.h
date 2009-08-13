@@ -5,6 +5,7 @@
 
 enum ConfigAddressFamily {
 	ConfigAddressFamilyIPv4,
+	ConfigAddressFamilyIPv6,
 	ConfigAddressFamilyUnix,
 };
 

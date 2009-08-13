@@ -1,6 +1,3 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-
 #include <common/buffer.h>
 #include <common/test.h>
 
@@ -28,7 +25,7 @@ public:
 	{
 		{
 			Test _(group_, "Socket::create");
-			socket_ = Socket::create(PF_INET, SOCK_STREAM, "tcp");
+			socket_ = Socket::create(SocketAddressFamilyIPv4, SocketTypeStream, "tcp");
 			if (socket_ == NULL)
 				return;
 			_.pass();
@@ -142,7 +139,7 @@ public:
 	{
 		{
 			Test _(group_, "Socket::create");
-			socket_ = Socket::create(PF_INET, SOCK_STREAM, "tcp");
+			socket_ = Socket::create(SocketAddressFamilyIPv4, SocketTypeStream, "tcp");
 			if (socket_ == NULL)
 				return;
 			_.pass();
