@@ -48,3 +48,4 @@ o) In-path forwarding using BPF and a tiny network stack.
 o) Run-length-encoding.
 o) Many compression algorithms.
 o) Allow chaining codecs.
+o) SOCKS IPv6 support.
