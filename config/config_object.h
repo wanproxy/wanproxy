@@ -39,17 +39,28 @@ public:
 	{
 		std::map<std::string, ConfigValue *>::const_iterator it;
 
+		/*
+		 * Some versions of GCC are in fact so broken that we have to
+		 * set *ctp to NULL in *all* of these cases.  Have tried shaving
+		 * the yak and gotten only despair.
+		 */
 		it = members_.find(name);
-		if (it == members_.end())
+		if (it == members_.end()) {
+			*ctp = NULL; /* XXX GCC -Wuninitialized.  */
 			return (NULL);
+		}
 
 		ConfigValue *cv = it->second;
-		if (cv == NULL)
+		if (cv == NULL) {
+			*ctp = NULL; /* XXX GCC -Wuninitialized.  */
 			return (NULL);
+		}
 
 		T *ct = dynamic_cast<T *>(cv->type_);
-		if (ct == NULL)
+		if (ct == NULL) {
+			*ctp = NULL; /* XXX GCC -Wuninitialized.  */
 			return (NULL);
+		}
 
 		*ctp = ct;
 		return (cv);
