@@ -31,6 +31,9 @@ o) HTTP termination and reinitiation good enough to support an HTTP proxy mode.
 Ongoing:
 o) Add lots of comments.
 o) Fix bugs.
+o) Audit log levels.
+o) Try to remove HALTs and NOTREACHEDs that aren't legitimate.
+o) Give better debug information from configuration system.
 
 Maybe:
 o) Send definitions out-of-band, too, so that QoS and backpressure on one connection
