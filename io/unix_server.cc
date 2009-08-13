@@ -1,5 +1,3 @@
-#include <sys/socket.h>
-
 #include <common/buffer.h>
 
 #include <event/action.h>
