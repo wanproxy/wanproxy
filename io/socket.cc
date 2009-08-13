@@ -81,7 +81,7 @@ struct socket_address {
 			addrlen_ = sizeof addr_.unix_;
 			break;
 		default:
-			HALT("/socket/address") << "Addresss family not supported: " << domain;
+			ERROR("/socket/address") << "Addresss family not supported: " << domain;
 			return (false);
 		}
 
@@ -200,7 +200,7 @@ Socket::connect(const std::string& name, EventCallback *cb)
 		}
 		break;
 	default:
-		HALT(log_) << "Connect returned " << errno;
+		HALT(log_) << "Connect returned unexpected value: " << rv;
 	}
 	return (cancellation(this, &Socket::connect_cancel));
 }
