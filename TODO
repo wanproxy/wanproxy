@@ -2,7 +2,6 @@ For 0.5.1:
 o) Support for using service names instead of ports.
    Make ports enums that can be either integers or service names?  Or just use
    strings and check the sanity in Socket::socket_address::operator() ?
-o) IPv6.
 
 For 0.6.0:
 o) Make interface/listener objects automatically start listening.
