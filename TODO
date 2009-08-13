@@ -1,5 +1,4 @@
 For 0.6.0:
-o) Put host in brackets in bind()/connect() to make IPv6 possible.
 o) Support for using service names instead of ports.
    Make ports enums that can be either integers or service names?  Or just use
    strings and check the sanity in Socket::socket_address::operator() ?

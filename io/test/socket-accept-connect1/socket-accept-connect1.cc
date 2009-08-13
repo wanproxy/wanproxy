@@ -149,7 +149,7 @@ public:
 		}
 		{
 			Test _(group_, "Socket bind to localhost, port=0");
-			if (socket_->bind("localhost:0"))
+			if (socket_->bind("[localhost]:0"))
 				_.pass();
 		}
 		{

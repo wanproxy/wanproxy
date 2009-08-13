@@ -115,8 +115,8 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 		encodercodec = NULL;
 	}
 
-	std::string interface_address = interface_hoststr + ':' + interface_portstr;
-	std::string peer_address = peer_hoststr + ':' + peer_portstr;
+	std::string interface_address = '[' + interface_hoststr + ']' + ':' + interface_portstr;
+	std::string peer_address = '[' + peer_hoststr + ']' + ':' + peer_portstr;
 
 	ProxyListener *listener = new ProxyListener(decodercodec, encodercodec, interface_address, peer_address);
 	object_listener_map_[co] = listener;

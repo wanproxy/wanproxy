@@ -48,7 +48,7 @@ WANProxyConfigClassProxySocks::activate(ConfigObject *co)
 	if (!interface_portct->get(interface_portcv, &interface_portstr))
 		return (false);
 
-	std::string interface_address = interface_hoststr + ':' + interface_portstr;
+	std::string interface_address = '[' + interface_hoststr + ']' + ':' + interface_portstr;
 	ProxySocksListener *listener = new ProxySocksListener(interface_address);
 	object_listener_map_[co] = listener;
 

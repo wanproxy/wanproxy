@@ -138,7 +138,7 @@ public:
 	{
 		{
 			Test _(group_, "TCPServer::listen");
-			server_ = TCPServer::listen("localhost:0");
+			server_ = TCPServer::listen("[localhost]:0");
 			if (server_ == NULL)
 				return;
 			_.pass();

@@ -43,7 +43,10 @@ struct socket_address {
 			if (pos == std::string::npos)
 				return (false);
 
-			std::string name(str, 0, pos);
+			if (pos < 3 || str[0] != '[' || str[pos - 1] != ']')
+				return (false);
+
+			std::string name(str, 1, pos - 2);
 			std::string service(str, pos + 1);
 
 			struct hostent *host;
@@ -136,8 +139,10 @@ Socket::bind(const std::string& name)
 {
 	socket_address addr;
 
-	if (!addr(domain_, name))
+	if (!addr(domain_, name)) {
+		ERROR(log_) << "Invalid name for bind: " << name;
 		return (false);
+	}
 
 	int rv = ::bind(fd_, &addr.addr_.sockaddr_, addr.addrlen_);
 	if (rv == -1)
@@ -155,6 +160,7 @@ Socket::connect(const std::string& name, EventCallback *cb)
 	socket_address addr;
 
 	if (!addr(domain_, name)) {
+		ERROR(log_) << "Invalid name for connect: " << name;
 		cb->event(Event(Event::Error, EINVAL));
 		return (EventSystem::instance()->schedule(cb));
 	}
@@ -382,6 +388,6 @@ socket_name(struct sockaddr_in *sinp)
 	ASSERT(p != NULL);
 
 	std::ostringstream os;
-	os << address << ':' << ntohs(sinp->sin_port);
+	os << '[' << address << ']' << ':' << ntohs(sinp->sin_port);
 	return (os.str());
 }
