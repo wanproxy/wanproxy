@@ -287,6 +287,8 @@ main(void)
 		data[i] = random() % 0xff;
 
 	Listener *l4 = new Listener("/ipv4", SocketAddressFamilyIPv4);
+	Listener *l6 = new Listener("/ipv6", SocketAddressFamilyIPv6);
 	EventSystem::instance()->start();
 	delete l4;
+	delete l6;
 }

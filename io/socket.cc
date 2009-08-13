@@ -18,10 +18,43 @@
 #include <io/socket.h>
 
 struct socket_address {
-	union {
+	union address_union {
 		struct sockaddr sockaddr_;
 		struct sockaddr_in inet_;
+		struct sockaddr_in6 inet6_;
 		struct sockaddr_un unix_;
+
+		operator std::string (void) const
+		{
+			/* XXX getnameinfo(3); */
+			char address[256]; /* XXX*/
+			const char *p;
+
+			std::ostringstream str;
+
+			switch (sockaddr_.sa_family) {
+			case AF_INET:
+				p = ::inet_ntop(inet_.sin_family,
+						&inet_.sin_addr,
+						address, sizeof address);
+				ASSERT(p != NULL);
+
+				str << '[' << address << ']' << ':' << ntohs(inet_.sin_port);
+				break;
+			case AF_INET6:
+				p = ::inet_ntop(inet6_.sin6_family,
+						&inet6_.sin6_addr,
+						address, sizeof address);
+				ASSERT(p != NULL);
+
+				str << '[' << address << ']' << ':' << ntohs(inet6_.sin6_port);
+				break;
+			default:
+				return ("<unsupported-address-family>");
+			}
+
+			return (str.str());
+		}
 	} addr_;
 	size_t addrlen_;
 
@@ -37,16 +70,21 @@ struct socket_address {
 		addr_.sockaddr_.sa_family = domain;
 
 		switch (domain) {
+		case AF_INET6:
+#if defined(__sun__)
+			ERROR(log_) << "IPv6 is not supported on Solaris yet due to API deficiencies.";
+			return (false);
+#endif
 		case AF_INET: {
-			std::string::size_type pos = str.find(':');
+			std::string::size_type pos = str.find(']');
 			if (pos == std::string::npos)
 				return (false);
 
-			if (pos < 3 || str[0] != '[' || str[pos - 1] != ']')
+			if (pos < 3 || str[0] != '[' || str[pos + 1] != ':')
 				return (false);
 
-			std::string name(str, 1, pos - 2);
-			std::string service(str, pos + 1);
+			std::string name(str, 1, pos - 1);
+			std::string service(str, pos + 2);
 
 			struct hostent *host;
 #if !defined(__sun__)
@@ -63,17 +101,25 @@ struct socket_address {
 			 * a bad idea.
 			 */
 			ASSERT(host->h_addrtype == domain);
-			ASSERT(host->h_length == sizeof addr_.inet_.sin_addr);
-
-			memcpy(&addr_.inet_.sin_addr, host->h_addr_list[0], sizeof addr_.inet_.sin_addr);
 
 			std::istringstream istr(service);
 			unsigned port;
 			istr >> port;
 
-			addr_.inet_.sin_port = htons(port);
-
-			addrlen_ = sizeof addr_.inet_;
+			switch (domain) {
+			case AF_INET:
+				ASSERT(host->h_length == sizeof addr_.inet_.sin_addr);
+				memcpy(&addr_.inet_.sin_addr, host->h_addr_list[0], sizeof addr_.inet_.sin_addr);
+				addr_.inet_.sin_port = htons(port);
+				addrlen_ = sizeof addr_.inet_;
+				break;
+			case AF_INET6:
+				ASSERT(host->h_length == sizeof addr_.inet6_.sin6_addr);
+				memcpy(&addr_.inet6_.sin6_addr, host->h_addr_list[0], sizeof addr_.inet6_.sin6_addr);
+				addr_.inet6_.sin6_port = htons(port);
+				addrlen_ = sizeof addr_.inet6_;
+				break;
+			}
 			break;
 		}
 		case AF_UNIX:
@@ -91,16 +137,6 @@ struct socket_address {
 		return (true);
 	}
 };
-
-/*
- * XXX
- *
- * socket_name() and get*name() do not work with AF_UNIX, but the AF_UNIX stuff
- * is pretty temporary -- soon all of the bind()/connect() variants will be
- * collapsed in to one, I hope.
- */
-
-static std::string socket_name(struct sockaddr_in *);
 
 Socket::Socket(int fd, int domain)
 : FileDescriptor(fd),
@@ -217,37 +253,35 @@ Socket::listen(int backlog)
 std::string
 Socket::getpeername(void) const
 {
-	struct sockaddr_in addr;
+	socket_address::address_union un;
 	socklen_t len;
 	int rv;
 
-	len = sizeof addr;
-	rv = ::getpeername(fd_, (struct sockaddr *)&addr, &len);
+	len = sizeof un;
+	rv = ::getpeername(fd_, &un.sockaddr_, &len);
 	if (rv == -1)
 		return ("<unknown>");
 
-	if (len != sizeof addr)
-		return ("<wrong-domain>");
+	/* XXX Check len.  */
 
-	return (socket_name(&addr));
+	return ((std::string)un);
 }
 
 std::string
 Socket::getsockname(void) const
 {
-	struct sockaddr_in addr;
+	socket_address::address_union un;
 	socklen_t len;
 	int rv;
 
-	len = sizeof addr;
-	rv = ::getsockname(fd_, (struct sockaddr *)&addr, &len);
+	len = sizeof un;
+	rv = ::getsockname(fd_, &un.sockaddr_, &len);
 	if (rv == -1)
 		return ("<unknown>");
 
-	if (len != sizeof addr)
-		return ("<wrong-domain>");
+	/* XXX Check len.  */
 
-	return (socket_name(&addr));
+	return ((std::string)un);
 }
 
 void
@@ -411,20 +445,4 @@ Socket::create(SocketAddressFamily family, SocketType type, const std::string& p
 		return (NULL);
 
 	return (new Socket(s, domainnum));
-}
-
-static std::string
-socket_name(struct sockaddr_in *sinp)
-{
-	/* XXX getnameinfo(3) */
-	char address[256]; /* XXX */
-	const char *p;
-
-	p = ::inet_ntop(sinp->sin_family, &sinp->sin_addr, address,
-			sizeof address);
-	ASSERT(p != NULL);
-
-	std::ostringstream os;
-	os << '[' << address << ']' << ':' << ntohs(sinp->sin_port);
-	return (os.str());
 }
