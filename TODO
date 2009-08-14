@@ -1,3 +1,6 @@
+For 0.5.1:
+o) New splice/ProxyPipe API and a producer/consumer data flow model.
+
 For 0.6.0:
 o) Make interface/listener objects automatically start listening.
 o) Clean up address configuration objects to be more sensible, being either
@@ -6,7 +9,6 @@ o) Clean up address configuration objects to be more sensible, being either
 o) Connector abstraction: connection pooling / connecting via a SOCKS server.
 
 For 0.7.0:
-o) New splice/ProxyPipe API and a producer/consumer data flow model.
 o) Do some information exchange out-of-band when setting up connections between
    WANProxy instances so we know what Channel to send requests for declarations
    on.
