@@ -16,6 +16,7 @@
 
 PipePairEcho::Half::Half(Half *response_pipe)
 : response_pipe_(response_pipe),
+  source_eos_(false),
   output_action_(NULL),
   output_buffer_(),
   output_callback_(NULL)
@@ -31,22 +32,29 @@ PipePairEcho::Half::~Half()
 Action *
 PipePairEcho::Half::input(Buffer *buf, EventCallback *cb)
 {
-	ASSERT(!buf->empty()); /* XXX Support NULL/empty buf for flush/EOF?  */
-
 	if (response_pipe_->output_callback_ != NULL) {
 		ASSERT(response_pipe_->output_buffer_.empty());
 		ASSERT(response_pipe_->output_action_ == NULL);
 
-		Buffer tmp;
-		tmp.append(buf);
-		buf->clear();
+		if (!buf->empty()) {
+			Buffer tmp;
+			tmp.append(buf);
+			buf->clear();
 
-		response_pipe_->output_callback_->event(Event(Event::Done, 0, tmp));
+			response_pipe_->output_callback_->event(Event(Event::Done, 0, tmp));
+		} else {
+			response_pipe_->source_eos_ = true;
+			response_pipe_->output_callback_->event(Event(Event::EOS, 0));
+		}
 		response_pipe_->output_action_ = EventSystem::instance()->schedule(response_pipe_->output_callback_);
 		response_pipe_->output_callback_ = NULL;
 	} else {
-		response_pipe_->output_buffer_.append(buf);
-		buf->clear();
+		if (!buf->empty()) {
+			response_pipe_->output_buffer_.append(buf);
+			buf->clear();
+		} else {
+			response_pipe_->source_eos_ = true;
+		}
 	}
 
 	cb->event(Event(Event::Done, 0));
@@ -59,9 +67,15 @@ PipePairEcho::Half::output(EventCallback *cb)
 	ASSERT(output_action_ == NULL);
 	ASSERT(output_callback_ == NULL);
 
-	if (!output_buffer_.empty()) {
-		cb->event(Event(Event::Done, 0, output_buffer_));
-		output_buffer_.clear();
+	if (!output_buffer_.empty() || source_eos_) {
+		if (source_eos_) {
+			cb->event(Event(Event::EOS, 0, output_buffer_));
+			if (!output_buffer_.empty())
+				output_buffer_.clear();
+		} else {
+			cb->event(Event(Event::Done, 0, output_buffer_));
+			output_buffer_.clear();
+		}
 
 		return (EventSystem::instance()->schedule(cb));
 	}

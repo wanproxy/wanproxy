@@ -6,6 +6,7 @@ class EventCallback;
 
 class PipeNull : public Pipe {
 	Buffer input_buffer_;
+	bool input_eos_;
 
 	Action *output_action_;
 	EventCallback *output_callback_;

@@ -63,7 +63,6 @@ public:
 
 		switch (e.type_) {
 		case Event::Done:
-		case Event::EOS:
 			break;
 		default:
 			HALT(log_) << "Unexpected event: " << e;
@@ -81,14 +80,25 @@ public:
 
 		switch (e.type_) {
 		case Event::Done:
+		case Event::EOS:
 			break;
 		default:
 			HALT(log_) << "Unexpected event: " << e;
 			return;
 		}
 
-		EventCallback *cb = callback(this, &Catenate::write_complete);
-		output_action_ = output_.write(&e.buffer_, cb);
+		if (!e.buffer_.empty()) {
+			EventCallback *cb = callback(this, &Catenate::write_complete);
+			output_action_ = output_.write(&e.buffer_, cb);
+		} else {
+			ASSERT(e.type_ == Event::EOS);
+
+			EventCallback *icb = callback(this, &Catenate::close_complete, &input_);
+			input_action_ = input_.close(icb);
+
+			EventCallback *ocb = callback(this, &Catenate::close_complete, &output_);
+			output_action_ = output_.close(ocb);
+		}
 	}
 
 	void write_complete(Event e)
@@ -106,6 +116,27 @@ public:
 
 		EventCallback *cb = callback(this, &Catenate::read_complete);
 		input_action_ = input_.read(0, cb);
+	}
+
+	void close_complete(Event e, FileDescriptor *fd)
+	{
+		if (fd == &input_) {
+			input_action_->cancel();
+			input_action_ = NULL;
+		} else if (fd == &output_) {
+			output_action_->cancel();
+			output_action_ = NULL;
+		} else {
+			NOTREACHED();
+		}
+
+		switch (e.type_) {
+		case Event::Done:
+			break;
+		default:
+			HALT(log_) << "Unexpected event: " << e;
+			return;
+		}
 	}
 };
 

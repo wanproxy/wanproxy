@@ -5,6 +5,8 @@ class PipePairEcho : public PipePair {
 	class Half : public Pipe {
 		Half *response_pipe_;
 
+		bool source_eos_;
+
 		Action *output_action_;
 		Buffer output_buffer_;
 		EventCallback *output_callback_;

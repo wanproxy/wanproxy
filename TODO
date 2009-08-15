@@ -1,8 +1,14 @@
 For 0.5.1:
 o) PipeEndpoint.
 o) Channel Endpoint.
-o) Add a flush/EOS indicator to Pipe::input().
+o) Add a flush token for Pipe::input() ?
 o) Add a flesh Event type for Pipe::output() ?
+   XXX It's unclear, but I think a flush method or similar may be needed to
+       implement buffer limiting?  A flush method being like input(), except
+       that it only returns once the last Pipe in the Pipeline has returned
+       flush complete, or error if data cannot be flushed because there is not
+       enough to finish processing the data that is pending, at which point
+       you at least know that everything else has been flushed?
 o) Add XCodec Pipes.
 o) Adapt ProxyPipe to use Pipes.
 o) Some decent way to configure Pipelines.

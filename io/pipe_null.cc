@@ -15,6 +15,7 @@
 
 PipeNull::PipeNull(void)
 : input_buffer_(),
+  input_eos_(false),
   output_action_(NULL),
   output_callback_(NULL)
 {
@@ -29,22 +30,29 @@ PipeNull::~PipeNull()
 Action *
 PipeNull::input(Buffer *buf, EventCallback *cb)
 {
-	ASSERT(!buf->empty()); /* XXX Support NULL/empty buf for flush/EOF?  */
-
 	if (output_callback_ != NULL) {
 		ASSERT(input_buffer_.empty());
 		ASSERT(output_action_ == NULL);
 
-		Buffer tmp;
-		tmp.append(buf);
-		buf->clear();
+		if (!buf->empty()) {
+			Buffer tmp;
+			tmp.append(buf);
+			buf->clear();
 
-		output_callback_->event(Event(Event::Done, 0, tmp));
+			output_callback_->event(Event(Event::Done, 0, tmp));
+		} else {
+			input_eos_ = true;
+			output_callback_->event(Event(Event::EOS, 0));
+		}
 		output_action_ = EventSystem::instance()->schedule(output_callback_);
 		output_callback_ = NULL;
 	} else {
-		input_buffer_.append(buf);
-		buf->clear();
+		if (!buf->empty()) {
+			input_buffer_.append(buf);
+			buf->clear();
+		} else {
+			input_eos_ = true;
+		}
 	}
 
 	cb->event(Event(Event::Done, 0));
@@ -57,9 +65,15 @@ PipeNull::output(EventCallback *cb)
 	ASSERT(output_action_ == NULL);
 	ASSERT(output_callback_ == NULL);
 
-	if (!input_buffer_.empty()) {
-		cb->event(Event(Event::Done, 0, input_buffer_));
-		input_buffer_.clear();
+	if (!input_buffer_.empty() || input_eos_) {
+		if (input_eos_) {
+			cb->event(Event(Event::EOS, 0, input_buffer_));
+			if (!input_buffer_.empty())
+				input_buffer_.clear();
+		} else {
+			cb->event(Event(Event::Done, 0, input_buffer_));
+			input_buffer_.clear();
+		}
 
 		return (EventSystem::instance()->schedule(cb));
 	}
