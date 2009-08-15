@@ -53,6 +53,10 @@ struct Event {
 		data_ = e.data_;
 		return (*this);
 	}
+
+private:
+	/* Prevent accidental void * use.  */
+	Event(Type, int, const Buffer *);
 };
 
 static inline std::ostream&
