@@ -3,7 +3,6 @@ o) Add a flush/EOS indicator to Pipe::input().
 o) Add a flesh Event type for Pipe::output() ?
 o) Add XCodec Pipes.
 o) Adapt ProxyPipe to use Pipes.
-o) Write some sample bidirectional Pipes.
 o) Some decent way to configure Pipelines.
 o) Figure out a good name for a Pipeline, since Pipeline seems rubbish.
 

@@ -35,11 +35,11 @@ PipeNull::input(Buffer *buf, EventCallback *cb)
 		ASSERT(input_buffer_.empty());
 		ASSERT(output_action_ == NULL);
 
-		Buffer output;
-		output.append(buf);
+		Buffer tmp;
+		tmp.append(buf);
 		buf->clear();
 
-		output_callback_->event(Event(Event::Done, 0, output));
+		output_callback_->event(Event(Event::Done, 0, tmp));
 		output_action_ = EventSystem::instance()->schedule(output_callback_);
 		output_callback_ = NULL;
 	} else {
