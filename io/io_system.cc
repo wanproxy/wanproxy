@@ -119,6 +119,7 @@ IOSystem::Handle::read_callback(Event e)
 			rlen = IO_READ_BUFFER_SIZE;
 	}
 
+	/* XXX Read into an iovec of BufferSegments?  */
 	uint8_t data[IO_READ_BUFFER_SIZE];
 	ssize_t len = ::read(fd_, data, sizeof data);
 	if (len == -1) {
