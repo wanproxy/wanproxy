@@ -1,10 +1,15 @@
 For 0.5.1:
+o) PipeEndpoint.
+o) Channel Endpoint.
 o) Add a flush/EOS indicator to Pipe::input().
 o) Add a flesh Event type for Pipe::output() ?
 o) Add XCodec Pipes.
 o) Adapt ProxyPipe to use Pipes.
 o) Some decent way to configure Pipelines.
 o) Figure out a good name for a Pipeline, since Pipeline seems rubbish.
+o) Merge two Pipelines.
+o) Convert the SOCKS proxy server to a PipeEndpoint that merges the Pipeline
+   that it is connected to with a newly-created one.
 
 For 0.6.0:
 o) Make interface/listener objects automatically start listening.
