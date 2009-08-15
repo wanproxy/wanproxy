@@ -14,7 +14,6 @@ FileDescriptor::FileDescriptor(int fd)
   fd_(fd)
 {
 	int flags = ::fcntl(fd_, F_GETFL, 0);
-
 	if (flags == -1)
 		HALT(log_) << "Could not get flags for file descriptor.";
 
