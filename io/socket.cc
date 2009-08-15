@@ -452,8 +452,10 @@ Socket::create(SocketAddressFamily family, SocketType type, const std::string& p
 	}
 
 	int s = ::socket(domainnum, typenum, protonum);
-	if (s == -1)
+	if (s == -1) {
+		ERROR("/socket") << "Could not create socket: " << strerror(errno);
 		return (NULL);
+	}
 
 	return (new Socket(s, domainnum, protocol));
 }
