@@ -23,8 +23,8 @@ class XCodec {
 	LogHandle log_;
 	XCodecCache *cache_;
 public:
-	XCodec(const LogHandle& log, XCodecCache *database)
-	: log_(log + "/xcodec"),
+	XCodec(XCodecCache *database)
+	: log_("/xcodec"),
 	  cache_(database)
 	{ }
 

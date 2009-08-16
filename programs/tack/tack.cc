@@ -40,7 +40,7 @@ int
 main(int argc, char *argv[])
 {
 	XCodecCache cache;
-	XCodec codec("/main", &cache);
+	XCodec codec(&cache);
 	bool timers, quiet_output, samples;
 	FileAction action;
 	int ch;
