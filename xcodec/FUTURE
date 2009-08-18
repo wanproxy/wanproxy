@@ -1,5 +1,8 @@
 Possibly-bad future ideas:
 
+(o) Add an out-of-window prefix e.g. ESCAPE 00 [declaration or reference] that
+    is processed ahead of over stuff in the stream, to make it possible to
+    handle querying the remote side for data.
 (o) Incorporate run-length encoding.
 (o) Make definitions and references actually insert data, not just add to the
     backref table.
@@ -12,3 +15,6 @@ Possibly-bad future ideas:
     stuff might help increase our hash entropy?  Been a while since I really
     read up on the subject and would do well to do so again.  Currently the
     entropy is not great.
+(o) Incorporate occasional (figure out frequency) CRCs or such of the next N
+    bytes of decoded data to make it possible to detect any hash mismatches,
+    using a different hash function to any that go into the hash.
