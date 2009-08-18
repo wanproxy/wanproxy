@@ -1,0 +1,14 @@
+Possibly-bad future ideas:
+
+(o) Incorporate run-length encoding.
+(o) Make definitions and references actually insert data, not just add to the
+    backref table.
+(o) Make a uuid or similar part of the hash name so that collisions caused by
+    restart don't confuse remote side.
+(o) Add a 'generation' field to the hash as sent on wire and handle collisions
+    that way?  Then first form of hash is fastest, followed by second, etc., as
+    they are search -- can also put their data in a map.
+(o) Possibly use two hash functions -- even just mixing crc in with the Adler
+    stuff might help increase our hash entropy?  Been a while since I really
+    read up on the subject and would do well to do so again.  Currently the
+    entropy is not great.
