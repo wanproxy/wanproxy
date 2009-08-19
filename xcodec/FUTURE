@@ -1,7 +1,5 @@
 Possibly-bad future ideas:
 
-(o) Merge the two loops in the encoder and see if it actually helps with
-    performance.
 (o) Add an out-of-window prefix e.g. ESCAPE 00 [declaration or reference] that
     is processed ahead of over stuff in the stream, to make it possible to
     handle querying the remote side for data.
