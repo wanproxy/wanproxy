@@ -227,37 +227,37 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 	uint8_t data[XCODEC_SEGMENT_LENGTH];
 	input->copyout(data, offset, sizeof data);
 
-	if (oseg->match(data, sizeof data)) {
-		if (offset != 0) {
-			Buffer prefix;
-			input->moveout(&prefix, 0, offset);
+	if (!oseg->match(data, sizeof data))
+		return (false);
 
-			prefix.escape(XCODEC_ESCAPE_CHAR, xcodec_special_p());
-			output->append(prefix);
-			prefix.clear();
-		}
+	if (offset != 0) {
+		Buffer prefix;
+		input->moveout(&prefix, 0, offset);
 
-		/*
-		 * Skip to the end.
-		 */
-		input->skip(XCODEC_SEGMENT_LENGTH); 
-
-		/*
-		 * And output a reference.
-		 */
-		uint8_t b;
-		if (window_.present(hash, &b)) {
-			output->append(XCODEC_BACKREF_CHAR);
-			output->append(b);
-		} else {
-			output->append(XCODEC_HASHREF_CHAR);
-			uint64_t lehash = LittleEndian::encode(hash);
-			output->append((const uint8_t *)&lehash, sizeof lehash);
-
-			window_.declare(hash, oseg);
-		}
-
-		return (true);
+		prefix.escape(XCODEC_ESCAPE_CHAR, xcodec_special_p());
+		output->append(prefix);
+		prefix.clear();
 	}
-	return (false);
+
+	/*
+	 * Skip to the end.
+	 */
+	input->skip(XCODEC_SEGMENT_LENGTH); 
+
+	/*
+	 * And output a reference.
+	 */
+	uint8_t b;
+	if (window_.present(hash, &b)) {
+		output->append(XCODEC_BACKREF_CHAR);
+		output->append(b);
+	} else {
+		output->append(XCODEC_HASHREF_CHAR);
+		uint64_t lehash = LittleEndian::encode(hash);
+		output->append((const uint8_t *)&lehash, sizeof lehash);
+
+		window_.declare(hash, oseg);
+	}
+
+	return (true);
 }
