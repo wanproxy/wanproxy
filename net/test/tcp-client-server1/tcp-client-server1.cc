@@ -286,9 +286,11 @@ main(void)
 	for (i = 0; i < sizeof data; i++)
 		data[i] = random() % 0xff;
 
+	Listener *l = new Listener("/ip", SocketAddressFamilyIP, "[localhost]:0");
 	Listener *l4 = new Listener("/ipv4", SocketAddressFamilyIPv4, "[localhost]:0");
 	Listener *l6 = new Listener("/ipv6", SocketAddressFamilyIPv6, "[::1]:0");
 	EventSystem::instance()->start();
+	delete l;
 	delete l4;
 	delete l6;
 }
