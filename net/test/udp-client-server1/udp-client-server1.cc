@@ -126,7 +126,7 @@ class Listener {
 	Connector *connector_;
 	Buffer read_buffer_;
 public:
-	Listener(const std::string& suffix, SocketAddressFamily family)
+	Listener(const std::string& suffix, SocketAddressFamily family, const std::string& name)
 	: log_("/listener"),
 	  group_("/test/net/udp_server/listener" + suffix, "Socket listener"),
 	  action_(NULL),
@@ -135,7 +135,7 @@ public:
 	{
 		{
 			Test _(group_, "UDPServer::listen");
-			server_ = UDPServer::listen(family, "[localhost]:0");
+			server_ = UDPServer::listen(family, name);
 			if (server_ == NULL)
 				return;
 			_.pass();
@@ -226,8 +226,8 @@ main(void)
 	for (i = 0; i < sizeof data; i++)
 		data[i] = random() % 0xff;
 
-	Listener *l4 = new Listener("/ipv4", SocketAddressFamilyIPv4);
-	Listener *l6 = new Listener("/ipv6", SocketAddressFamilyIPv6);
+	Listener *l4 = new Listener("/ipv4", SocketAddressFamilyIPv4, "[localhost]:0");
+	Listener *l6 = new Listener("/ipv6", SocketAddressFamilyIPv6, "[::1]:0");
 	EventSystem::instance()->start();
 	delete l4;
 	delete l6;
