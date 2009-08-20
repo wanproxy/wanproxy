@@ -16,32 +16,6 @@ struct xcodec_special_p {
 	}
 };
 
-XCodecEncoder::Data::Data(void)
-: prefix_(),
-  hash_(),
-  seg_(NULL)
-{ }
-
-XCodecEncoder::Data::Data(const XCodecEncoder::Data& src)
-: prefix_(src.prefix_),
-  hash_(src.hash_),
-  seg_(NULL)
-{
-	if (src.seg_ != NULL) {
-		src.seg_->ref();
-		seg_ = src.seg_;
-	}
-}
-
-XCodecEncoder::Data::~Data()
-{
-	if (seg_ != NULL) {
-		seg_->unref();
-		seg_ = NULL;
-	}
-}
-
-
 XCodecEncoder::XCodecEncoder(XCodec *codec)
 : log_("/xcodec/encoder"),
   cache_(codec->cache_),

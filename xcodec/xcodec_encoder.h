@@ -6,16 +6,6 @@
 class XCodecCache;
 
 class XCodecEncoder {
-	struct Data {
-		Buffer prefix_;
-		uint64_t hash_;
-		BufferSegment *seg_;
-
-		Data(void);
-		Data(const Data&);
-		~Data();
-	};
-
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
