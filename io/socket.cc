@@ -457,6 +457,17 @@ Socket::create(SocketAddressFamily family, SocketType type, const std::string& p
 
 	int s = ::socket(domainnum, typenum, protonum);
 	if (s == -1) {
+		/*
+		 * If we were trying to create an IPv6 socket for a request that
+		 * did not specify IPv4 vs. IPv6 and the system claims that the
+		 * protocol is not supported, try explicitly creating an IPv4
+		 * socket.
+		 */
+		if (errno == EPROTONOSUPPORT && domainnum == AF_INET6 &&
+		    family == SocketAddressFamilyIP) {
+			DEBUG("/socket") << "IPv6 socket create failed; trying IPv4.";
+			return (Socket::create(SocketAddressFamilyIPv4, type, protocol, hint));
+		}
 		ERROR("/socket") << "Could not create socket: " << strerror(errno);
 		return (NULL);
 	}
