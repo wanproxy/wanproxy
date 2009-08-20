@@ -1,4 +1,4 @@
-For 0.5.1:
+For 0.5.2:
 o) Make UnixClient and UnixServer take the SocketType as an argument to make
    it possible to support both stream-orientation and datagram-orientation?
    Would need to update UnixServer's API to support both models.
