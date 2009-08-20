@@ -17,18 +17,20 @@ ConfigClassAddress::activate(ConfigObject *co)
 	if (!familyct->get(familycv, &family))
 		return (false);
 
-	if (family == SocketAddressFamilyIPv4 ||
-	    family == SocketAddressFamilyIPv6) {
+	switch (family) {
+	case SocketAddressFamilyIP:
+	case SocketAddressFamilyIPv4:
+	case SocketAddressFamilyIPv6:
 		if (co->has("path"))
 			return (false);
 		return (true);
-	}
 
-	if (family == SocketAddressFamilyUnix) {
+	case SocketAddressFamilyUnix:
 		if (co->has("host") || co->has("port"))
 			return (false);
 		return (true);
+	
+	default:
+		return (false);
 	}
-
-	return (false);
 }

@@ -7,13 +7,14 @@
 class Socket : public FileDescriptor {
 	LogHandle log_;
 	int domain_;
-	std::string protocol_;
+	int socktype_;
+	int protocol_;
 	Action *accept_action_;
 	EventCallback *accept_callback_;
 	EventCallback *connect_callback_;
 	Action *connect_action_;
 
-	Socket(int, int, const std::string&);
+	Socket(int, int, int, int);
 public:
 	~Socket();
 
@@ -35,7 +36,7 @@ private:
 	Action *connect_schedule(void);
 
 public:
-	static Socket *create(SocketAddressFamily, SocketType, const std::string&);
+	static Socket *create(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");
 };
 
 #endif /* !SOCKET_H */

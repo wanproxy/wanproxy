@@ -65,16 +65,11 @@ struct socket_address {
 		memset(&addr_, 0, sizeof addr_);
 	}
 
-	bool operator() (int domain, const std::string& str, const std::string& protocol)
+	bool operator() (int domain, int socktype, int protocol, const std::string& str)
 	{
-		addr_.sockaddr_.sa_family = domain;
-
 		switch (domain) {
+		case AF_UNSPEC:
 		case AF_INET6:
-#if defined(__sun__)
-			ERROR("/socket/address") << "IPv6 is not supported on Solaris yet due to API deficiencies.";
-			return (false);
-#endif
 		case AF_INET: {
 			std::string::size_type pos = str.find(']');
 			if (pos == std::string::npos)
@@ -86,72 +81,52 @@ struct socket_address {
 			std::string name(str, 1, pos - 1);
 			std::string service(str, pos + 2);
 
-			struct hostent *host;
-#if !defined(__sun__)
-			host = gethostbyname2(name.c_str(), domain);
-#else
-			host = gethostbyname(name.c_str()); /* Hope for the best!  */
-#endif
-			if (host == NULL) {
-				ERROR("/socket/address") << "Could not look up host by name: " << name;
+			struct addrinfo hints;
+
+			memset(&hints, 0, sizeof hints);
+			hints.ai_family = domain;
+			hints.ai_socktype = socktype;
+			hints.ai_protocol = protocol;
+
+			struct addrinfo *ai;
+			int rv = getaddrinfo(name.c_str(), service.c_str(), &hints, &ai);
+			if (rv != 0) {
+				ERROR("/socket/address") << "Could not look up " << str << ": " << strerror(errno);
 				return (false);
 			}
+
 			/*
-			 * XXX
-			 * Remove this assertion and find the resolution which yields the right
-			 * domain and fail if we can't find one.  Blowing up here is just such
-			 * a bad idea.
+			 * Just use the first one.
+			 * XXX Will we ever get one in the wrong family?  Is the hint mandatory?
 			 */
-			ASSERT(host->h_addrtype == domain);
+			memcpy(&addr_.sockaddr_, ai->ai_addr, ai->ai_addrlen);
+			addrlen_ = ai->ai_addrlen;
 
-			unsigned port;
-			struct servent *serv = getservbyname(service.c_str(), protocol.c_str());
-			if (serv != NULL) {
-				port = serv->s_port;
-			} else {
-				port = atoi(service.c_str());
-				if (port == 0 && service != "0") {
-					ERROR("/socket/address") << "Could not look up service by name: " << port;
-					return (false);
-				}
-			}
-
-			switch (domain) {
-			case AF_INET:
-				ASSERT(host->h_length == sizeof addr_.inet_.sin_addr);
-				memcpy(&addr_.inet_.sin_addr, host->h_addr_list[0], sizeof addr_.inet_.sin_addr);
-				addr_.inet_.sin_port = htons(port);
-				addrlen_ = sizeof addr_.inet_;
-				break;
-			case AF_INET6:
-				ASSERT(host->h_length == sizeof addr_.inet6_.sin6_addr);
-				memcpy(&addr_.inet6_.sin6_addr, host->h_addr_list[0], sizeof addr_.inet6_.sin6_addr);
-				addr_.inet6_.sin6_port = htons(port);
-				addrlen_ = sizeof addr_.inet6_;
-				break;
-			}
+			freeaddrinfo(ai);
 			break;
 		}
 		case AF_UNIX:
+			addr_.unix_.sun_family = domain;
 			strncpy(addr_.unix_.sun_path, str.c_str(), sizeof addr_.unix_.sun_path);
 			addrlen_ = sizeof addr_.unix_;
+#if !defined(__linux__) && !defined(__sun__)
+			addr_.unix_.sun_len = addrlen_;
+#endif
 			break;
 		default:
 			ERROR("/socket/address") << "Addresss family not supported: " << domain;
 			return (false);
 		}
 
-#if !defined(__linux__) && !defined(__sun__)
-		addr_.sockaddr_.sa_len = addrlen_;
-#endif
 		return (true);
 	}
 };
 
-Socket::Socket(int fd, int domain, const std::string& protocol)
+Socket::Socket(int fd, int domain, int socktype, int protocol)
 : FileDescriptor(fd),
   log_("/socket"),
   domain_(domain),
+  socktype_(socktype),
   protocol_(protocol),
   accept_action_(NULL),
   accept_callback_(NULL),
@@ -185,7 +160,7 @@ Socket::bind(const std::string& name)
 {
 	socket_address addr;
 
-	if (!addr(domain_, name, protocol_)) {
+	if (!addr(domain_, socktype_, protocol_, name)) {
 		ERROR(log_) << "Invalid name for bind: " << name;
 		return (false);
 	}
@@ -205,7 +180,7 @@ Socket::connect(const std::string& name, EventCallback *cb)
 
 	socket_address addr;
 
-	if (!addr(domain_, name, protocol_)) {
+	if (!addr(domain_, socktype_, protocol_, name)) {
 		ERROR(log_) << "Invalid name for connect: " << name;
 		cb->event(Event(Event::Error, EINVAL));
 		return (EventSystem::instance()->schedule(cb));
@@ -328,7 +303,7 @@ Socket::accept_callback(Event e)
 		}
 	}
 
-	Socket *child = new Socket(s, domain_, protocol_);
+	Socket *child = new Socket(s, domain_, socktype_, protocol_);
 	accept_callback_->event(Event(Event::Done, 0, (void *)child));
 	Action *a = EventSystem::instance()->schedule(accept_callback_);
 	accept_action_ = a;
@@ -400,28 +375,8 @@ Socket::connect_schedule(void)
 }
 
 Socket *
-Socket::create(SocketAddressFamily family, SocketType type, const std::string& protocol)
+Socket::create(SocketAddressFamily family, SocketType type, const std::string& protocol, const std::string& hint)
 {
-	int domainnum;
-
-	switch (family) {
-	case SocketAddressFamilyIPv4:
-		domainnum = AF_INET;
-		break;
-
-	case SocketAddressFamilyIPv6:
-		domainnum = AF_INET6;
-		break;
-	
-	case SocketAddressFamilyUnix:
-		domainnum = AF_UNIX;
-		break;
-	
-	default:
-		ERROR("/socket") << "Unsupported address family.";
-		return (NULL);
-	}
-
 	int typenum;
 
 	switch (type) {
@@ -451,11 +406,60 @@ Socket::create(SocketAddressFamily family, SocketType type, const std::string& p
 		protonum = proto->p_proto;
 	}
 
+	int domainnum;
+
+	switch (family) {
+	case SocketAddressFamilyIP:
+		if (hint == "") {
+			ERROR("/socket") << "Must specify hint address for IP sockets or specify IPv4 or IPv6 explicitly.";
+			return (NULL);
+		} else {
+			socket_address addr;
+
+			if (!addr(AF_UNSPEC, typenum, protonum, hint)) {
+				ERROR("/socket") << "Invalid hint: " << hint;
+				return (NULL);
+			}
+			
+			/* XXX Just make socket_address::operator() smarter about AF_UNSPEC?  */
+			switch (addr.addr_.sockaddr_.sa_family) {
+			case AF_INET:
+				domainnum = AF_INET;
+				break;
+
+			case AF_INET6:
+				domainnum = AF_INET6;
+				break;
+
+			default:
+				ERROR("/socket") << "Unsupported address family for hint: " << hint;
+				return (NULL);
+			}
+			break;
+		}
+
+	case SocketAddressFamilyIPv4:
+		domainnum = AF_INET;
+		break;
+
+	case SocketAddressFamilyIPv6:
+		domainnum = AF_INET6;
+		break;
+	
+	case SocketAddressFamilyUnix:
+		domainnum = AF_UNIX;
+		break;
+	
+	default:
+		ERROR("/socket") << "Unsupported address family.";
+		return (NULL);
+	}
+
 	int s = ::socket(domainnum, typenum, protonum);
 	if (s == -1) {
 		ERROR("/socket") << "Could not create socket: " << strerror(errno);
 		return (NULL);
 	}
 
-	return (new Socket(s, domainnum, protocol));
+	return (new Socket(s, domainnum, typenum, protonum));
 }

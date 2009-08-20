@@ -2,6 +2,7 @@
 #define	IO_SOCKET_TYPES_H
 
 enum SocketAddressFamily {
+	SocketAddressFamilyIP,
 	SocketAddressFamilyIPv4,
 	SocketAddressFamilyIPv6,
 	SocketAddressFamilyUnix,

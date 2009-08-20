@@ -11,7 +11,7 @@
 TCPServer *
 TCPServer::listen(SocketAddressFamily family, const std::string& name)
 {
-	Socket *socket = Socket::create(family, SocketTypeStream, "tcp");
+	Socket *socket = Socket::create(family, SocketTypeStream, "tcp", name);
 	if (socket == NULL) {
 		ERROR("/tcp/server") << "Unable to create socket.";
 		return (NULL);

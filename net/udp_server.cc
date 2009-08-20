@@ -11,7 +11,7 @@
 UDPServer *
 UDPServer::listen(SocketAddressFamily family, const std::string& name)
 {
-	Socket *socket = Socket::create(family, SocketTypeDatagram, "udp");
+	Socket *socket = Socket::create(family, SocketTypeDatagram, "udp", name);
 	if (socket == NULL) {
 		ERROR("/udp/server") << "Unable to create socket.";
 		return (NULL);

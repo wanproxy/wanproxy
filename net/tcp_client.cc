@@ -12,7 +12,7 @@ Action *
 TCPClient::connect(Socket **socketp, SocketAddressFamily family,
 		   const std::string& name, EventCallback *cb)
 {
-	Socket *socket = Socket::create(family, SocketTypeStream, "tcp");
+	Socket *socket = Socket::create(family, SocketTypeStream, "tcp", name);
 	ASSERT(socket != NULL);
 	*socketp = socket;
 	return (socket->connect(name, cb));
