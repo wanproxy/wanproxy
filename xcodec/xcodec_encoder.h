@@ -15,6 +15,9 @@ public:
 	~XCodecEncoder();
 
 	void encode(Buffer *, Buffer *);
+private:
+	void encode_declaration(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment **);
+	bool encode_reference(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment *);
 };
 
 #endif /* !XCODEC_ENCODER_H */

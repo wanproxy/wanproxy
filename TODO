@@ -1,5 +1,4 @@
 For 0.5.1:
-o) Clean up XCodecEncoder after the rewrite.  Reduce duplicated code at minimum.
 o) PipeEndpoint.
 o) Channel Endpoint.
 o) Add a flush token for Pipe::input() ?
