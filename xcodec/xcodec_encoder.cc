@@ -7,7 +7,6 @@
 #include <xcodec/xcodec_hash.h>
 
 typedef	std::pair<unsigned, uint64_t> offset_hash_pair_t;
-typedef	std::pair<unsigned, BufferSegment *> offset_seg_pair_t;
 
 struct xcodec_special_p {
 	bool operator() (uint8_t ch) const
