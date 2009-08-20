@@ -1,5 +1,6 @@
 #include <sys/errno.h>
 #include <sys/select.h>
+#include <errno.h>
 
 #include <common/buffer.h>
 
