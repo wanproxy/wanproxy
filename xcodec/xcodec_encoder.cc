@@ -178,18 +178,6 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 void
 XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, BufferSegment **segp)
 {
-	uint8_t data[XCODEC_SEGMENT_LENGTH];
-	input->copyout(data, offset, sizeof data);
-
-	/*
-	 * No hit is fantastic, too -- go ahead and
-	 * declare this hash.
-	 */
-	BufferSegment *nseg = new BufferSegment();
-	nseg->append(data, sizeof data);
-
-	cache_->enter(hash, nseg);
-
 	if (offset != 0) {
 		Buffer prefix;
 		input->moveout(&prefix, 0, offset);
@@ -198,6 +186,11 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 		output->append(prefix);
 		prefix.clear();
 	}
+
+	BufferSegment *nseg;
+	input->copyout(&nseg, XCODEC_SEGMENT_LENGTH);
+
+	cache_->enter(hash, nseg);
 
 	output->append(XCODEC_DECLARE_CHAR);
 	uint64_t lehash = LittleEndian::encode(hash);
