@@ -805,7 +805,7 @@ public:
 	 * which the supplied predicate is true.
 	 */
 	template<typename T>
-	bool find(T predicate, unsigned *offsetp) const
+	bool find_if(T predicate, unsigned *offsetp) const
 	{
 		segment_list_t::const_iterator it;
 		unsigned offset;
