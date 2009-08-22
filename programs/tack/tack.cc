@@ -41,7 +41,7 @@ main(int argc, char *argv[])
 {
 	XCodecCache cache;
 	XCodec codec(&cache);
-	bool timers, quiet_output, samples;
+	bool timers, quiet_output, samples, verbose;
 	FileAction action;
 	int ch;
 
@@ -49,14 +49,18 @@ main(int argc, char *argv[])
 	quiet_output = false;
 	samples = false;
 	timers = false;
+	verbose = false;
 
-	while ((ch = getopt(argc, argv, "?cdQST")) != -1) {
+	while ((ch = getopt(argc, argv, "?cdvQST")) != -1) {
 		switch (ch) {
 		case 'c':
 			action = Compress;
 			break;
 		case 'd':
 			action = Decompress;
+			break;
+		case 'v':
+			verbose = true;
 			break;
 		case 'Q':
 			quiet_output = true;
@@ -74,6 +78,12 @@ main(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
+
+	if (verbose) {
+		Log::mask(".?", Log::Debug);
+	} else {
+		Log::mask(".?", Log::Info);
+	}
 
 	switch (action) {
 	case None:
@@ -264,7 +274,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: tack [-QST] -c [file ...]\n"
-"       tack [-QST] -d [file ...]\n");
+"usage: tack [-vQST] -c [file ...]\n"
+"       tack [-vQST] -d [file ...]\n");
 	exit(1);
 }
