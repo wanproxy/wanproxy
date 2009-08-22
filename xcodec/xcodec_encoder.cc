@@ -47,24 +47,51 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 
 	have_candidate = false;
 
+	/*
+	 * While there is input.
+	 */
 	while (!input->empty()) {
+		/*
+		 * Take the first BufferSegment out of the input Buffer.
+		 */
 		BufferSegment *seg;
 		input->moveout(&seg);
 
+		/*
+		 * And add it to a temporary Buffer where input is queued.
+		 */
 		outq.append(seg);
 
+		/*
+		 * And for every byte in this BufferSegment.
+		 */
 		const uint8_t *p;
 		for (p = seg->data(); p < seg->end(); p++) {
+			/*
+			 * Add it to the rolling hash.
+			 */
 			xcodec_hash.roll(*p);
+
+			/*
+			 * If the rolling hash does not cover an entire
+			 * segment yet, just keep adding to it.
+			 */
 			if (++o < XCODEC_SEGMENT_LENGTH)
 				continue;
 
+			/*
+			 * And then mix the hash's internal state into a
+			 * uint64_t that we can use to refer to that data
+			 * and to look up possible past occurances of that
+			 * data in the XCodecCache.
+			 */
 			unsigned start = o - XCODEC_SEGMENT_LENGTH;
 			uint64_t hash = xcodec_hash.mix();
 
 			/*
 			 * If there is a pending candidate hash that wouldn't
-			 * overlap with tis one, declare it now.
+			 * overlap with the data that the rolling hash presently
+			 * covers, declare it now.
 			 */
 			if (have_candidate && candidate.first + XCODEC_SEGMENT_LENGTH <= start) {
 				BufferSegment *nseg;
@@ -81,6 +108,11 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				 * it immediately.
 				 */
 				if (hash == candidate.second) {
+					/*
+					 * If it's a hash collision, though, nevermind.
+					 * Skip trying to use this hash as a reference,
+					 * too, and go on to the next one.
+					 */
 					if (!encode_reference(output, &outq, start, hash, nseg)) {
 						nseg->unref();
 						DEBUG(log_) << "Collision in adjacent-declare pass.";
@@ -88,6 +120,11 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 					}
 					nseg->unref();
 
+					/*
+					 * But if there's no collection, then we can move
+					 * on to looking for the *next* hash/data to declare
+					 * or reference.
+					 */
 					o = 0;
 
 					DEBUG(log_) << "Hit in adjacent-declare pass.";
@@ -109,10 +146,23 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				 */
 				if (encode_reference(output, &outq, start, hash, oseg)) {
 					oseg->unref();
+
 					o = 0;
+
+					/*
+					 * We have output any data before this hash
+					 * in escaped form, so any candidate hash
+					 * before it is invalid now.
+					 */
 					have_candidate = false;
 					continue;
 				}
+
+				/*
+				 * This hash isn't usable because it collides
+				 * with another, so keep looking for something
+				 * viable.
+				 */
 				oseg->unref();
 				DEBUG(log_) << "Collision in first pass.";
 				continue;
@@ -123,9 +173,23 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			 * we don't already have one.
 			 */
 			if (have_candidate) {
+				/*
+				 * We already have a hash that occurs earlier,
+				 * isn't a collision and includes data that's
+				 * covered by this hash, so don't remember it
+				 * and keep going.
+				 */
 				ASSERT(candidate.first + XCODEC_SEGMENT_LENGTH > start);
 				continue;
 			}
+
+			/*
+			 * The hash at this offset doesn't collide with any
+			 * other and is the first viable hash we've seen so far
+			 * in the stream, so remember it so that if we don't
+			 * find something to reference we can declare this one
+			 * for future use.
+			 */
 			candidate.first = start;
 			candidate.second = hash;
 			have_candidate = true;
@@ -133,6 +197,12 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 
 		seg->unref();
 	}
+
+	/*
+	 * Done processing input.  If there's still data in the outq Buffer,
+	 * then we need to declare any candidate hashes and escape any data
+	 * after them.
+	 */
 
 	/*
 	 * There's a hash we can declare, do it.
@@ -143,6 +213,10 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		have_candidate = false;
 	}
 
+	/*
+	 * There's data after that hash or no candidate hash, so
+	 * just escape it.
+	 */
 	if (!outq.empty()) {
 		Buffer suffix(outq);
 		outq.clear();
