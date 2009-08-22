@@ -801,6 +801,33 @@ public:
 	}
 
 	/*
+	 * Finds the offset of the first character in this Buffer for
+	 * which the supplied predicate is true.
+	 */
+	template<typename T>
+	bool find(T predicate, unsigned *offsetp) const
+	{
+		segment_list_t::const_iterator it;
+		unsigned offset;
+
+		offset = 0;
+
+		for (it = data_.begin(); it != data_.end(); ++it) {
+			const BufferSegment *seg = *it;
+			const uint8_t *p;
+
+			for (p = seg->data(); p < seg->end(); p++) {
+				if (predicate(*p)) {
+					*offsetp = offset;
+					return (true);
+				}
+				offset++;
+			}
+		}
+		return (false);
+	}
+
+	/*
 	 * Returns the current amount of data associated with this Buffer.
 	 */
 	size_t length(void) const
