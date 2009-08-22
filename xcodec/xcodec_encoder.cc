@@ -61,23 +61,47 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 
 			unsigned start = o - XCODEC_SEGMENT_LENGTH;
 			uint64_t hash = xcodec_hash.mix();
-			bool hash_collision;
 
+			/*
+			 * If there is a pending candidate hash that wouldn't
+			 * overlap with tis one, declare it now.
+			 */
+			if (have_candidate && candidate.first + XCODEC_SEGMENT_LENGTH <= start) {
+				BufferSegment *nseg;
+				encode_declaration(output, &outq, candidate.first, candidate.second, &nseg);
+
+				o -= candidate.first + XCODEC_SEGMENT_LENGTH;
+				start = o - XCODEC_SEGMENT_LENGTH;
+
+				have_candidate = false;
+
+				/*
+				 * If, on top of that, the just-declared hash is
+				 * the same as the current hash, consider referencing
+				 * it immediately.
+				 */
+				if (hash == candidate.second) {
+					if (!encode_reference(output, &outq, start, hash, nseg)) {
+						nseg->unref();
+						DEBUG(log_) << "Collision in adjacent-declare pass.";
+						continue;
+					}
+					nseg->unref();
+
+					o = 0;
+
+					DEBUG(log_) << "Hit in adjacent-declare pass.";
+					continue;
+				}
+				nseg->unref();
+			}
+
+			/*
+			 * Now attempt to encode this hash as a reference if it
+			 * has been defined before.
+			 */
 			BufferSegment *oseg = cache_->lookup(hash);
 			if (oseg != NULL) {
-				/*
-				 * Before outputing this reference, if we have
-				 * a pending declaration, we should use it.
-				 */
-				if (have_candidate && candidate.first + XCODEC_SEGMENT_LENGTH <= start) {
-					encode_declaration(output, &outq, candidate.first, candidate.second, NULL);
-
-					o -= candidate.first + XCODEC_SEGMENT_LENGTH;
-					start = o - XCODEC_SEGMENT_LENGTH;
-
-					have_candidate = false;
-				}
-
 				/*
 				 * This segment already exists.  If it's
 				 * identical to this chunk of data, then that's
@@ -91,77 +115,20 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				}
 				oseg->unref();
 				DEBUG(log_) << "Collision in first pass.";
-				hash_collision = true;
-
-				/*
-				 * Fall through to defining the previous hash if
-				 * it is appropriate to do so.
-				 */
-				if (!have_candidate) {
-					/* Nothing more to do.  */
-					continue;
-				}
-			} else {
-				hash_collision = false;
-			}
-
-			if (have_candidate) {
-				/*
-				 * If there is a previous hash in the
-				 * offset-hash map that would overlap with this
-				 * hash, then we have no reason to remember this
-				 * hash for later.
-				 */
-				if (candidate.first + XCODEC_SEGMENT_LENGTH > start) {
-					/* We might still find an alternative.  */
-					continue;
-				}
-
-				ASSERT(!hash_collision);
-				BufferSegment *nseg;
-				encode_declaration(output, &outq, candidate.first, candidate.second, &nseg);
-
-				o -= candidate.first + XCODEC_SEGMENT_LENGTH;
-				start = o - XCODEC_SEGMENT_LENGTH;
-
-				have_candidate = false;
-
-				/*
-				 * If this hash is the same as the has for
-				 * the current data, then make sure that they
-				 * are compatible before remembering the
-				 * current hash
-				 */
-				if (!hash_collision && hash == candidate.second) {
-					if (!encode_reference(output, &outq, start, hash, nseg)) {
-						nseg->unref();
-						DEBUG(log_) << "Collision in adjacent-declare pass.";
-						continue;
-					}
-					nseg->unref();
-
-					DEBUG(log_) << "Hit in adjacent-declare pass.";
-
-					o = 0;
-					continue;
-				}
-				nseg->unref();
-
-				/*
-				 * Remember the current hash.
-				 */
+				continue;
 			}
 
 			/*
-			 * No collision, remember this for later.
+			 * Not defined before, it's a candidate for declaration if
+			 * we don't already have one.
 			 */
-			if (!hash_collision) {
-				ASSERT(!have_candidate);
-				candidate.first = start;
-				candidate.second = hash;
-				have_candidate = true;
+			if (have_candidate) {
+				ASSERT(candidate.first + XCODEC_SEGMENT_LENGTH > start);
+				continue;
 			}
-
+			candidate.first = start;
+			candidate.second = hash;
+			have_candidate = true;
 		}
 
 		seg->unref();
