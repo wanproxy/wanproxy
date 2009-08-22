@@ -40,9 +40,12 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	}
 
 	XCodecHash<XCODEC_SEGMENT_LENGTH> xcodec_hash;
-	std::deque<offset_hash_pair_t> offset_hash_map;
+	offset_hash_pair_t candidate;
+	bool have_candidate;
 	Buffer outq;
 	unsigned o = 0;
+
+	have_candidate = false;
 
 	while (!input->empty()) {
 		BufferSegment *seg;
@@ -70,7 +73,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				if (encode_reference(output, &outq, start, hash, oseg)) {
 					oseg->unref();
 					o = 0;
-					offset_hash_map.clear();
+					have_candidate = false;
 					continue;
 				}
 				oseg->unref();
@@ -81,32 +84,33 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				 * Fall through to defining the previous hash if
 				 * it is appropriate to do so.
 				 */
+				if (!have_candidate) {
+					/* Nothing more to do.  */
+					continue;
+				}
 			} else {
 				hash_collision = false;
 			}
 
-			if (!offset_hash_map.empty()) {
+			if (have_candidate) {
 				/*
 				 * If there is a previous hash in the
 				 * offset-hash map that would overlap with this
 				 * hash, then we have no reason to remember this
 				 * hash for later.
 				 */
-				const offset_hash_pair_t& last = offset_hash_map.back();
-
-				if (last.first + XCODEC_SEGMENT_LENGTH > start) {
+				if (candidate.first + XCODEC_SEGMENT_LENGTH > start) {
 					/* We might still find an alternative.  */
 					continue;
 				}
 
 				BufferSegment *nseg;
-				encode_declaration(output, &outq, last.first, last.second, &nseg);
+				encode_declaration(output, &outq, candidate.first, candidate.second, &nseg);
 
-				o -= last.first + XCODEC_SEGMENT_LENGTH;
+				o -= candidate.first + XCODEC_SEGMENT_LENGTH;
 				start = o - XCODEC_SEGMENT_LENGTH;
 
-				uint64_t ohash = last.second;
-				offset_hash_map.clear();
+				have_candidate = false;
 
 				/*
 				 * If this hash is the same as the has for
@@ -114,7 +118,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				 * are compatible before remembering the
 				 * current hash
 				 */
-				if (!hash_collision && hash == ohash) {
+				if (!hash_collision && hash == candidate.second) {
 					if (!encode_reference(output, &outq, start, hash, nseg)) {
 						nseg->unref();
 						DEBUG(log_) << "Collision in adjacent-declare pass.";
@@ -138,10 +142,10 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			 * No collision, remember this for later.
 			 */
 			if (!hash_collision) {
-				offset_hash_pair_t ohp;
-				ohp.first = start;
-				ohp.second = hash;
-				offset_hash_map.push_back(ohp);
+				ASSERT(!have_candidate);
+				candidate.first = start;
+				candidate.second = hash;
+				have_candidate = true;
 			}
 
 		}
@@ -152,12 +156,10 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	/*
 	 * There's a hash we can declare, do it.
 	 */
-	if (!offset_hash_map.empty()) {
+	if (have_candidate) {
 		ASSERT(!outq.empty());
-		const offset_hash_pair_t& last = offset_hash_map.back();
-
-		encode_declaration(output, &outq, last.first, last.second, NULL);
-		offset_hash_map.clear();
+		encode_declaration(output, &outq, candidate.first, candidate.second, NULL);
+		have_candidate = false;
 	}
 
 	if (!outq.empty()) {
@@ -170,7 +172,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		outq.clear();
 	}
 
-	ASSERT(offset_hash_map.empty());
+	ASSERT(!have_candidate);
 	ASSERT(outq.empty());
 	ASSERT(input->empty());
 }
