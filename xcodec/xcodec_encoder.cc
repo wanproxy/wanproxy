@@ -66,6 +66,19 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			BufferSegment *oseg = cache_->lookup(hash);
 			if (oseg != NULL) {
 				/*
+				 * Before outputing this reference, if we have
+				 * a pending declaration, we should use it.
+				 */
+				if (have_candidate && candidate.first + XCODEC_SEGMENT_LENGTH <= start) {
+					encode_declaration(output, &outq, candidate.first, candidate.second, NULL);
+
+					o -= candidate.first + XCODEC_SEGMENT_LENGTH;
+					start = o - XCODEC_SEGMENT_LENGTH;
+
+					have_candidate = false;
+				}
+
+				/*
 				 * This segment already exists.  If it's
 				 * identical to this chunk of data, then that's
 				 * positively fantastic.
@@ -104,6 +117,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 					continue;
 				}
 
+				ASSERT(!hash_collision);
 				BufferSegment *nseg;
 				encode_declaration(output, &outq, candidate.first, candidate.second, &nseg);
 
