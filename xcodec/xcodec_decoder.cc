@@ -81,11 +81,16 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 		case XCODEC_ESCAPE_CHAR:
 			if (inlen < 2)
 				return (true);
-			input->skip(1);
-			output->append(input->peek());
-			input->skip(1);
-			inlen -= 2;
-			break;
+			input->copyout(&ch, 1, sizeof ch);
+			if (XCODEC_CHAR_SPECIAL(ch)) {
+				output->append(ch);
+				input->skip(2);
+				inlen -= 2;
+				break;
+			}
+
+			ERROR(log_) << "Extended functions not implemented yet.";
+			return (false);
 
 			/*
 			 * A learning opportunity -- a hash we should put
