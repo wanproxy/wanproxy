@@ -2,6 +2,8 @@ For 0.5.2:
 o) Make UnixClient and UnixServer take the SocketType as an argument to make
    it possible to support both stream-orientation and datagram-orientation?
    Would need to update UnixServer's API to support both models.
+o) Something higher-level than Pipe which supports various disciplines and
+   makes it easier to write stream processing modules.
 o) PipeEndpoint.
 o) Channel Endpoint.
 o) Add a flush token for Pipe::input() ?
