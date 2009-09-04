@@ -88,10 +88,23 @@ struct socket_address {
 			hints.ai_socktype = socktype;
 			hints.ai_protocol = protocol;
 
+			/*
+			 * Mac OS X ~Snow Leopard~ cannot handle a service name
+			 * of "0" where older Mac OS X could.  Don't know if
+			 * that is because it's not in services(5) or due to
+			 * some attempt at input validation.  So work around it
+			 * here, sigh.
+			 */
+			const char *servptr;
+			if (service == "" || service == "0")
+				servptr = NULL;
+			else
+				servptr = service.c_str();
+
 			struct addrinfo *ai;
-			int rv = getaddrinfo(name.c_str(), service.c_str(), &hints, &ai);
+			int rv = getaddrinfo(name.c_str(), servptr, &hints, &ai);
 			if (rv != 0) {
-				ERROR("/socket/address") << "Could not look up " << str << ": " << strerror(errno);
+				ERROR("/socket/address") << "Could not look up " << str << ": " << gai_strerror(rv);
 				return (false);
 			}
 
