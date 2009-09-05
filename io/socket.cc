@@ -30,42 +30,8 @@ struct socket_address {
 		struct sockaddr_in6 inet6_;
 #endif
 		struct sockaddr_un unix_;
-
-		operator std::string (void) const
-		{
-			/* XXX getnameinfo(3); */
-			char address[256]; /* XXX*/
-			const char *p;
-
-			std::ostringstream str;
-
-			switch (sockaddr_.sa_family) {
-			case AF_INET:
-				p = ::inet_ntop(inet_.sin_family,
-						&inet_.sin_addr,
-						address, sizeof address);
-				ASSERT(p != NULL);
-
-				str << '[' << address << ']' << ':' << ntohs(inet_.sin_port);
-				break;
-#if defined(AF_INET6)
-			case AF_INET6:
-				p = ::inet_ntop(inet6_.sin6_family,
-						&inet6_.sin6_addr,
-						address, sizeof address);
-				ASSERT(p != NULL);
-
-				str << '[' << address << ']' << ':' << ntohs(inet6_.sin6_port);
-				break;
-#endif
-			default:
-				return ("<unsupported-address-family>");
-			}
-
-			return (str.str());
-		}
 	} addr_;
-	size_t addrlen_;
+	socklen_t addrlen_;
 
 	socket_address(void)
 	: addr_(),
@@ -81,7 +47,8 @@ struct socket_address {
 		case AF_UNSPEC:
 		case AF_INET6:
 #endif
-		case AF_INET: {
+		case AF_INET:
+		{
 			std::string::size_type pos = str.find(']');
 			if (pos == std::string::npos)
 				return (false);
@@ -143,6 +110,40 @@ struct socket_address {
 		}
 
 		return (true);
+	}
+
+	operator std::string (void) const
+	{
+		std::ostringstream str;
+
+		switch (addr_.sockaddr_.sa_family) {
+#if defined(AF_INET6)
+		case AF_INET6:
+#endif
+		case AF_INET:
+		{
+			char host[NI_MAXHOST], serv[NI_MAXSERV];
+			int flags;
+			int rv;
+
+			/* XXX If we ever support !NI_NUMERICSERV, need NI_DGRAM for UDP.  */
+			flags = NI_NUMERICHOST | NI_NUMERICSERV;
+
+			rv = getnameinfo(&addr_.sockaddr_, addrlen_, host, sizeof host, serv, sizeof serv, flags);
+			if (rv == -1)
+				return ("<getnameinfo-error>");
+
+			str << '[' << host << ']' << ':' << serv;
+			break;
+		}
+		case AF_UNIX:
+			str << addr_.unix_.sun_path;
+			break;
+		default:
+			return  ("<address-family-not-supported>");
+		}
+
+		return (str.str());
 	}
 };
 
@@ -263,35 +264,33 @@ Socket::listen(int backlog)
 std::string
 Socket::getpeername(void) const
 {
-	socket_address::address_union un;
-	socklen_t len;
+	socket_address sa;
 	int rv;
 
-	len = sizeof un;
-	rv = ::getpeername(fd_, &un.sockaddr_, &len);
+	sa.addrlen_ = sizeof sa.addr_;
+	rv = ::getpeername(fd_, &sa.addr_.sockaddr_, &sa.addrlen_);
 	if (rv == -1)
 		return ("<unknown>");
 
 	/* XXX Check len.  */
 
-	return ((std::string)un);
+	return ((std::string)sa);
 }
 
 std::string
 Socket::getsockname(void) const
 {
-	socket_address::address_union un;
-	socklen_t len;
+	socket_address sa;
 	int rv;
 
-	len = sizeof un;
-	rv = ::getsockname(fd_, &un.sockaddr_, &len);
+	sa.addrlen_ = sizeof sa.addr_;
+	rv = ::getsockname(fd_, &sa.addr_.sockaddr_, &sa.addrlen_);
 	if (rv == -1)
 		return ("<unknown>");
 
 	/* XXX Check len.  */
 
-	return ((std::string)un);
+	return ((std::string)sa);
 }
 
 void
