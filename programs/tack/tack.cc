@@ -3,7 +3,6 @@
 #include <sys/uio.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
 
