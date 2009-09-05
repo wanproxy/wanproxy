@@ -22,6 +22,121 @@
  * wrong in many, many ways.
  */
 
+#if defined(__OPENNT)
+struct addrinfo {
+	int ai_family;
+	int ai_socktype;
+	int ai_protocol;
+	struct sockaddr *ai_addr;
+	socklen_t ai_addrlen;
+
+	struct sockaddr_in _ai_inet;
+};
+
+static int
+getaddrinfo(const char *host, const char *serv, const struct addrinfo *hints,
+	    struct addrinfo **aip)
+{
+	struct addrinfo *ai;
+	struct hostent *he;
+
+	he = gethostbyname(host);
+	if (he == NULL)
+		return (1);
+
+	ai = new addrinfo;
+	ai->ai_family = AF_INET;
+	ai->ai_socktype = hints->ai_socktype;
+	ai->ai_protocol = hints->ai_protocol;
+	ai->ai_addr = (struct sockaddr *)&ai->_ai_inet;
+	ai->ai_addrlen = sizeof ai->_ai_inet;
+
+	memset(&ai->_ai_inet, 0, sizeof ai->_ai_inet);
+	ai->_ai_inet.sin_family = AF_INET;
+	/* XXX _ai_inet.sin_addr on non-__OPENNT */
+
+	ASSERT(he->h_length == sizeof ai->_ai_inet.sin_addr);
+	memcpy(&ai->_ai_inet.sin_addr, he->h_addr_list[0], he->h_length);
+
+	if (serv != NULL) {
+		unsigned long port;
+		char *end;
+
+		port = strtoul(serv, &end, 0);
+		if (*end == '\0') {
+			ai->_ai_inet.sin_port = htons(port);
+		} else {
+			struct protoent *pe;
+			struct servent *se;
+
+			pe = getprotobynumber(ai->ai_protocol);
+			if (pe == NULL) {
+				free(ai);
+				return (2);
+			}
+
+			se = getservbyname(serv, pe->p_name);
+			if (se == NULL) {
+				free(ai);
+				return (3);
+			}
+
+			ai->_ai_inet.sin_port = se->s_port;
+		}
+	}
+
+	*aip = ai;
+	return (0);
+}
+
+static const char *
+gai_strerror(int rv)
+{
+	switch (rv) {
+	case 1:
+		return "could not look up host";
+	case 2:
+		return "could not look up protocol";
+	case 3:
+		return "could not look up service";
+	default:
+		NOTREACHED();
+		return "internal error";
+	}
+}
+
+static void
+freeaddrinfo(struct addrinfo *ai)
+{
+	delete ai;
+}
+
+#define	NI_MAXHOST	1024
+#define	NI_MAXSERV	16
+#define	NI_NUMERICHOST	0
+#define	NI_NUMERICSERV	0
+
+static int
+getnameinfo(const struct sockaddr *sa, socklen_t salen, char *host,
+	    size_t hostlen, char *serv, size_t servlen, int flags)
+{
+	struct sockaddr_in *inet = (struct sockaddr_in *)sa;
+	char *p;
+
+	if (inet->sin_family != AF_INET || salen != sizeof *inet || flags != 0)
+		return (ENOTSUP);
+
+	p = inet_ntoa(inet->sin_addr);
+	if (p == NULL)
+		return (EINVAL);
+
+	snprintf(host, hostlen, "%s", p);
+	snprintf(serv, servlen, "%hu", ntohs(inet->sin_port));
+
+	return (0);
+}
+#endif
+
 struct socket_address {
 	union address_union {
 		struct sockaddr sockaddr_;
@@ -191,8 +306,10 @@ Socket::bind(const std::string& name)
 	}
 
 	int rv = ::bind(fd_, &addr.addr_.sockaddr_, addr.addrlen_);
-	if (rv == -1)
+	if (rv == -1) {
+		ERROR(log_) << "Could not bind: " << strerror(errno);
 		return (false);
+	}
 
 	return (true);
 }
