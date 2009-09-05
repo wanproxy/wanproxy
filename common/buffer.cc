@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include <common/debug.h>
-#include <common/log.h>
+#include <common/limits.h>
 
 #include <common/buffer.h>
 
