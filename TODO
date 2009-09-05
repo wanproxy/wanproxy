@@ -23,6 +23,9 @@ o) Figure out a good name for a Pipeline, since Pipeline seems rubbish.
 o) Merge two Pipelines.
 o) Convert the SOCKS proxy server to a PipeEndpoint that merges the Pipeline
    that it is connected to with a newly-created one.
+o) Move to the getrusage-based Timer class and make it clear that that is what
+   it is for.  Perhaps create a Timer base class and a UserTimer and WallTimer
+   for real use?
 
 For 0.6.0:
 o) Remove the xor_ from XCodecHash and just use Adler64::operator+=.  The xor
