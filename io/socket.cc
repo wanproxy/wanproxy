@@ -17,11 +17,18 @@
 
 #include <io/socket.h>
 
+/*
+ * XXX Presently using AF_INET6 as the test for what is supported, but that is
+ * wrong in many, many ways.
+ */
+
 struct socket_address {
 	union address_union {
 		struct sockaddr sockaddr_;
 		struct sockaddr_in inet_;
+#if defined(AF_INET6)
 		struct sockaddr_in6 inet6_;
+#endif
 		struct sockaddr_un unix_;
 
 		operator std::string (void) const
@@ -41,6 +48,7 @@ struct socket_address {
 
 				str << '[' << address << ']' << ':' << ntohs(inet_.sin_port);
 				break;
+#if defined(AF_INET6)
 			case AF_INET6:
 				p = ::inet_ntop(inet6_.sin6_family,
 						&inet6_.sin6_addr,
@@ -49,6 +57,7 @@ struct socket_address {
 
 				str << '[' << address << ']' << ':' << ntohs(inet6_.sin6_port);
 				break;
+#endif
 			default:
 				return ("<unsupported-address-family>");
 			}
@@ -68,8 +77,10 @@ struct socket_address {
 	bool operator() (int domain, int socktype, int protocol, const std::string& str)
 	{
 		switch (domain) {
+#if defined(AF_INET6)
 		case AF_UNSPEC:
 		case AF_INET6:
+#endif
 		case AF_INET: {
 			std::string::size_type pos = str.find(']');
 			if (pos == std::string::npos)
@@ -122,7 +133,7 @@ struct socket_address {
 			addr_.unix_.sun_family = domain;
 			strncpy(addr_.unix_.sun_path, str.c_str(), sizeof addr_.unix_.sun_path);
 			addrlen_ = sizeof addr_.unix_;
-#if !defined(__linux__) && !defined(__sun__)
+#if !defined(__linux__) && !defined(__sun__) && !defined(__OPENNT)
 			addr_.unix_.sun_len = addrlen_;
 #endif
 			break;
@@ -423,6 +434,7 @@ Socket::create(SocketAddressFamily family, SocketType type, const std::string& p
 
 	switch (family) {
 	case SocketAddressFamilyIP:
+#if defined(AF_INET6)
 		if (hint == "") {
 			ERROR("/socket") << "Must specify hint address for IP sockets or specify IPv4 or IPv6 explicitly.";
 			return (NULL);
@@ -450,14 +462,21 @@ Socket::create(SocketAddressFamily family, SocketType type, const std::string& p
 			}
 			break;
 		}
+#else
+		(void)hint;
+		domainnum = AF_INET;
+		break;
+#endif
 
 	case SocketAddressFamilyIPv4:
 		domainnum = AF_INET;
 		break;
 
+#if defined(AF_INET6)
 	case SocketAddressFamilyIPv6:
 		domainnum = AF_INET6;
 		break;
+#endif
 	
 	case SocketAddressFamilyUnix:
 		domainnum = AF_UNIX;
@@ -470,6 +489,7 @@ Socket::create(SocketAddressFamily family, SocketType type, const std::string& p
 
 	int s = ::socket(domainnum, typenum, protonum);
 	if (s == -1) {
+#if defined(AF_INET6)
 		/*
 		 * If we were trying to create an IPv6 socket for a request that
 		 * did not specify IPv4 vs. IPv6 and the system claims that the
@@ -481,6 +501,7 @@ Socket::create(SocketAddressFamily family, SocketType type, const std::string& p
 			DEBUG("/socket") << "IPv6 socket create failed; trying IPv4.";
 			return (Socket::create(SocketAddressFamilyIPv4, type, protocol, hint));
 		}
+#endif
 		ERROR("/socket") << "Could not create socket: " << strerror(errno);
 		return (NULL);
 	}
