@@ -67,12 +67,13 @@ OBJS+=  ${SRCS:R:S/$/.o/g}
 all: ${PROGRAM}
 
 ${PROGRAM}: ${OBJS}
-	${CXX} ${CXXFLAGS} ${LDFLAGS} -o ${.TARGET} ${OBJS} ${LDADD}
+	${CXX} ${CXXFLAGS} ${CFLAGS} ${LDFLAGS} -o ${.TARGET} ${OBJS} ${LDADD}
+
+.cc.o:
+	${CXX} ${CXXFLAGS} ${CFLAGS} -c -o ${.TARGET} ${.IMPSRC}
 
 clean:
 	rm -f ${PROGRAM} ${OBJS}
-
-.include <bsd.obj.mk>
 .else
 SUBDIR+=
 .include <bsd.subdir.mk>
