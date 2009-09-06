@@ -1,4 +1,8 @@
 For 0.5.2:
+o) Implement devpoll for OpenSolaris.
+o) Implement epoll for Linux.
+
+For 0.5.3:
 o) Make UnixClient and UnixServer take the SocketType as an argument to make
    it possible to support both stream-orientation and datagram-orientation?
    Would need to update UnixServer's API to support both models.
@@ -26,7 +30,6 @@ o) Convert the SOCKS proxy server to a PipeEndpoint that merges the Pipeline
 o) Move to the getrusage-based Timer class and make it clear that that is what
    it is for.  Perhaps create a Timer base class and a UserTimer and WallTimer
    for real use?
-o) Implement devpoll for OpenSolaris.
 
 For 0.6.0:
 o) Remove the xor_ from XCodecHash and just use Adler64::operator+=.  The xor
