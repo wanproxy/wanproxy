@@ -1,6 +1,6 @@
 For 0.5.2:
 o) Implement devpoll for OpenSolaris.
-o) Implement epoll for Linux.
+o) Test error handling in epoll.
 
 For 0.5.3:
 o) Make UnixClient and UnixServer take the SocketType as an argument to make

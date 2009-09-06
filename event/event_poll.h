@@ -61,6 +61,8 @@ private:
 	int kq_;
 #elif defined(USE_POLL_POLL)
 #elif defined(USE_POLL_SELECT)
+#elif defined(USE_POLL_EPOLL)
+	int ep_;
 #else
 #error "Unsupported poll mechanism."
 #endif

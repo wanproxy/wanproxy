@@ -11,6 +11,8 @@ SRCS+=	timeout.cc
 .if !defined(USE_POLL)
 .if ${OSNAME} == "Darwin" || ${OSNAME} == "FreeBSD"
 USE_POLL=	kqueue
+.elif ${OSNAME} == "Linux"
+USE_POLL=	epoll
 .elif ${OSNAME} == "Interix"
 USE_POLL=	select
 .else
@@ -31,6 +33,8 @@ CFLAGS+=-DUSE_POLL_KQUEUE
 CFLAGS+=-DUSE_POLL_POLL
 .elif ${USE_POLL} == "select"
 CFLAGS+=-DUSE_POLL_SELECT
+.elif ${USE_POLL} == "epoll"
+CFLAGS+=-DUSE_POLL_EPOLL
 .else
 .error "Unsupported poll mechanism."
 .endif
