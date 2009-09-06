@@ -4,7 +4,6 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <stdarg.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -13,6 +12,7 @@
 
 #include <common/buffer.h>
 #include <common/endian.h>
+#include <common/limits.h>
 
 #include <xcodec/xcodec.h>
 
