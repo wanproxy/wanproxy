@@ -26,8 +26,7 @@ o) Convert the SOCKS proxy server to a PipeEndpoint that merges the Pipeline
 o) Move to the getrusage-based Timer class and make it clear that that is what
    it is for.  Perhaps create a Timer base class and a UserTimer and WallTimer
    for real use?
-o) Is it worth it to support Interix?  The patches are minor and mostly easy to
-   stomach if <os/*.h> headers are added.
+o) Figure out why Interix regression tests using the network hang.
 
 For 0.6.0:
 o) Remove the xor_ from XCodecHash and just use Adler64::operator+=.  The xor
