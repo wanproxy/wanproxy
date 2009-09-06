@@ -11,6 +11,8 @@ SRCS+=	timeout.cc
 .if !defined(USE_POLL)
 .if ${OSNAME} == "Darwin" || ${OSNAME} == "FreeBSD"
 USE_POLL=	kqueue
+.elif ${OSNAME} == "Interix"
+USE_POLL=	select
 .else
 USE_POLL=	poll
 .endif
