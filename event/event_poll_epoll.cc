@@ -34,22 +34,25 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 
 	EventPoll::PollHandler *poll_handler;
 	struct epoll_event eev;
+	bool unique = true;
 	eev.data.fd = fd;
 	switch (type) {
 	case EventPoll::Readable:
 		ASSERT(read_poll_.find(fd) == read_poll_.end());
+		unique = write_poll_.find(fd) == write_poll_.end();
 		poll_handler = &read_poll_[fd];
-		eev.events = EPOLLIN;
+		eev.events = EPOLLIN | (unique ? 0 : EPOLLOUT);
 		break;
 	case EventPoll::Writable:
 		ASSERT(write_poll_.find(fd) == write_poll_.end());
+		unique = read_poll_.find(fd) == read_poll_.end();
 		poll_handler = &write_poll_[fd];
-		eev.events = EPOLLOUT;
+		eev.events = EPOLLOUT | (unique ? 0 : EPOLLIN);
 		break;
 	default:
 		NOTREACHED();
 	}
-	int rv = ::epoll_ctl(ep_, EPOLL_CTL_ADD, fd, &eev);
+	int rv = ::epoll_ctl(ep_, unique ? EPOLL_CTL_ADD : EPOLL_CTL_MOD, fd, &eev);
 	if (rv == -1)
 		HALT(log_) << "Could not add event to epoll.";
 	ASSERT(rv == 0);
@@ -65,24 +68,27 @@ EventPoll::cancel(const Type& type, int fd)
 	EventPoll::PollHandler *poll_handler;
 
 	struct epoll_event eev;
+	bool unique = true;
 	eev.data.fd = fd;
 	switch (type) {
 	case EventPoll::Readable:
 		ASSERT(read_poll_.find(fd) != read_poll_.end());
+		unique = write_poll_.find(fd) == write_poll_.end();
 		poll_handler = &read_poll_[fd];
 		poll_handler->cancel();
 		read_poll_.erase(fd);
-		eev.events = EPOLLIN;
+		eev.events = unique ? 0 : EPOLLOUT;
 		break;
 	case EventPoll::Writable:
 		ASSERT(write_poll_.find(fd) != write_poll_.end());
+		unique = read_poll_.find(fd) == read_poll_.end();
 		poll_handler = &write_poll_[fd];
 		poll_handler->cancel();
 		write_poll_.erase(fd);
-		eev.events = EPOLLOUT;
+		eev.events = unique ? 0 : EPOLLIN;
 		break;
 	}
-	int rv = ::epoll_ctl(ep_, EPOLL_CTL_DEL, fd, &eev);
+	int rv = ::epoll_ctl(ep_, unique ? EPOLL_CTL_DEL : EPOLL_CTL_MOD, fd, &eev);
 	if (rv == -1)
 		HALT(log_) << "Could not delete event from epoll.";
 	ASSERT(rv == 0);
@@ -123,10 +129,16 @@ EventPoll::wait(int ms)
 		if ((ev->events & EPOLLIN) != 0) {
 			ASSERT(read_poll_.find(ev->data.fd) != read_poll_.end());
 			poll_handler = &read_poll_[ev->data.fd];
-		} else if ((ev->events & EPOLLOUT) != 0) {
+			poll_handler->callback(Event(Event::Done, 0));
+		}
+
+		if ((ev->events & EPOLLOUT) != 0) {
 			ASSERT(write_poll_.find(ev->data.fd) != write_poll_.end());
 			poll_handler = &write_poll_[ev->data.fd];
-		} else {
+			poll_handler->callback(Event(Event::Done, 0));
+		}
+		
+		if ((ev->events & EPOLLIN) == 0 && (ev->events & EPOLLOUT) == 0) {
 			if (read_poll_.find(ev->data.fd) != read_poll_.end()) {
 				poll_handler = &read_poll_[ev->data.fd];
 			} else if (write_poll_.find(ev->data.fd) != write_poll_.end()) {
@@ -135,15 +147,18 @@ EventPoll::wait(int ms)
 				HALT(log_) << "Unexpected poll fd.";
 				continue;
 			}
+
+			if ((ev->events & EPOLLERR) != 0) {
+				poll_handler->callback(Event(Event::Error, 0));
+				continue;
+			}
+
+			if ((ev->events & EPOLLHUP) != 0) {
+				poll_handler->callback(Event(Event::EOS, 0));
+				continue;
+			}
+
+			HALT(log_) << "Unexpected poll events: " << ev->events;
 		}
-		if ((ev->events & EPOLLERR) != 0) {
-			poll_handler->callback(Event(Event::Error, 0));
-			continue;
-		}
-		if ((ev->events & EPOLLHUP) != 0) {
-			poll_handler->callback(Event(Event::EOS, 0));
-			continue;
-		}
-		poll_handler->callback(Event(Event::Done, 0));
 	}
 }
