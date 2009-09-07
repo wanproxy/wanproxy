@@ -15,6 +15,8 @@ USE_POLL=	kqueue
 USE_POLL=	epoll
 .elif ${OSNAME} == "Interix"
 USE_POLL=	select
+.elif ${OSNAME} == "SunOS"
+USE_POLL=	port
 .else
 USE_POLL=	poll
 .endif
@@ -35,6 +37,8 @@ CFLAGS+=-DUSE_POLL_POLL
 CFLAGS+=-DUSE_POLL_SELECT
 .elif ${USE_POLL} == "epoll"
 CFLAGS+=-DUSE_POLL_EPOLL
+.elif ${USE_POLL} == "port"
+CFLAGS+=-DUSE_POLL_PORT
 .else
 .error "Unsupported poll mechanism."
 .endif

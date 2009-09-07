@@ -63,6 +63,8 @@ private:
 #elif defined(USE_POLL_SELECT)
 #elif defined(USE_POLL_EPOLL)
 	int ep_;
+#elif defined(USE_POLL_PORT)
+	int port_;
 #else
 #error "Unsupported poll mechanism."
 #endif
