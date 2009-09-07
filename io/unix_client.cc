@@ -12,7 +12,8 @@ UnixClient::connect(Socket **socketp, const std::string& name,
 		   EventCallback *cb)
 {
 	Socket *socket = Socket::create(SocketAddressFamilyUnix, SocketTypeStream);
-	ASSERT(socket != NULL);
 	*socketp = socket;
-	return (socket->connect(name, cb));
+	if (socket != NULL)
+		return (socket->connect(name, cb));
+	return (NULL);
 }

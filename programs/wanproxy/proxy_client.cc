@@ -30,6 +30,16 @@ ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
 {
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
 	remote_action_ = TCPClient::connect(&remote_socket_, family, remote_name, cb);
+	if (remote_action_ == NULL) {
+		ASSERT(remote_socket_ == NULL);
+
+		ERROR(log_) << "Could not connect to: " << remote_name;
+
+		EventCallback *lcb = callback(this, &ProxyClient::close_complete,
+					      (void *)local_socket_);
+		local_action_ = local_socket_->close(lcb);
+		return;
+	}
 
 	Callback *scb = callback(this, &ProxyClient::stop);
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);

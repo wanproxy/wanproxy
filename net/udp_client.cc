@@ -13,7 +13,8 @@ UDPClient::connect(Socket **socketp, SocketAddressFamily family,
 		   const std::string& name, EventCallback *cb)
 {
 	Socket *socket = Socket::create(family, SocketTypeDatagram, "udp", name);
-	ASSERT(socket != NULL);
 	*socketp = socket;
-	return (socket->connect(name, cb));
+	if (socket != NULL)
+		return (socket->connect(name, cb));
+	return (NULL);
 }
