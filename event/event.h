@@ -2,7 +2,23 @@
 #define	EVENT_H
 
 /*
- * XXX Use Event::Attribute chains?
+ * The general-purpose event type.  Never extended or anything like that.
+ * Tracking a user-specified pointer is handled by the callback, providers of
+ * Events can put extra data into the data_ pointer, which is perhaps a bit
+ * lacking.  (For example: the Socket::accept() codepath returns a pointer to
+ * the client Socket there.)
+ *
+ * Because we are primarily a data-movement/processing system, a Buffer is an
+ * integral part of every Event.  Plus, Buffers with no data are basically
+ * free to copy, etc.
+ *
+ * Event handlers/callbacks always take a copy of the Event, which is subpar
+ * but necessary since the first thing most of those callbacks do is to cancel
+ * the Action that called them, which in turn deletes the underlying Callback
+ * object, which would in turn delete the holder of the associated Event if a
+ * reference or pointer were passed.  One can argue that the right thing to do
+ * is process the event fully before cancelling the Action, but that is not
+ * how things are done at present.
  */
 struct Event {
 	enum Type {
