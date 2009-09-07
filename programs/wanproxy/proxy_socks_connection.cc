@@ -145,6 +145,7 @@ ProxySocksConnection::read_complete(Event e)
 			state_ = GetSOCKS5NameLength;
 			schedule_read(1);
 			break;
+		case 0x04: /* XXX IPv6 */
 		default:
 			schedule_close();
 			break;
@@ -207,11 +208,14 @@ ProxySocksConnection::write_complete(Event e)
 
 	std::ostringstream remote_name;
 
+	SocketAddressFamily family;
 	if (state_ == GetSOCKS5Port && socks5_remote_name_ != "") {
 		ASSERT(socks5_authenticated_);
 		ASSERT(network_address_ == 0);
 
 		remote_name << '[' << socks5_remote_name_ << ']' << ':' << network_port_;
+
+		family = SocketAddressFamilyIP;
 	} else {
 		remote_name << '[';
 		remote_name << ((network_address_ >> 24) & 0xff) << '.';
@@ -220,10 +224,11 @@ ProxySocksConnection::write_complete(Event e)
 		remote_name << ((network_address_ >>  0) & 0xff);
 		remote_name << ']';
 		remote_name << ':' << network_port_;
+
+		family = SocketAddressFamilyIPv4;
 	}
 
-	/* XXX IPv6 for SOCKS5?  */
-	new ProxyClient(NULL, NULL, client_, SocketAddressFamilyIPv4, remote_name.str());
+	new ProxyClient(NULL, NULL, client_, family, remote_name.str());
 
 	client_ = NULL;
 	delete this;
