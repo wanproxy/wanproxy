@@ -120,7 +120,37 @@ IOSystem::Handle::read_callback(Event e)
 			rlen = IO_READ_BUFFER_SIZE;
 	}
 
-	/* XXX Read into an iovec of BufferSegments?  */
+	/*
+	 * A bit of discussion is warranted on this:
+	 *
+	 * In tack, IOV_MAX BufferSegments are allocated and read in to with
+	 * readv(2), and then the lengths are adjusted and the ones that are
+	 * empty are freed.  It's also possible to set the expected lengths
+	 * first (and only allocate
+	 * 	roundup(rlen, BUFFER_SEGMENT_SIZE) / BUFFER_SEGMENT_SIZE
+	 * BufferSegments, though really IOV_MAX (or some chosen number) seems
+	 * a bit better since most of our reads right now are read_amount_==0)
+	 * and put them into a Buffer and trim the leftovers, which is a bit
+	 * nicer.
+	 *
+	 * Since our read_amount_ is usually 0, though, we're kind of at the
+	 * mercy chance (well, not really) as to how much data we will read,
+	 * which means a sizable amount of thrashing of memory; allocating and
+	 * freeing BufferSegments.
+	 *
+	 * By comparison, stack space is cheap in userland and allocating 64K
+	 * of it here is pretty painless.  Reading to it is fast and then
+	 * copying only what we need into BufferSegments isn't very costly.
+	 * Indeed, since readv can't sparsely-populate each data pointer, it
+	 * has to do some data shuffling, already.  Benchmarking would be a
+	 * good idea, but it seems like there are arguments both ways.  Of
+	 * course, tack is very fast and this code path hasn't been thrashed
+	 * half so much.  When tack is adjusted to use the IO system and Pipes
+	 * in the future, if performance degradation is noticeable, perhaps
+	 * it will worth it to switch.  For now, absence any idea of the real
+	 * read sizes in the wild, doing nothing and not thrashing memory is
+	 * decidedly more appealing.
+	 */
 	uint8_t data[IO_READ_BUFFER_SIZE];
 	ssize_t len = ::read(fd_, data, sizeof data);
 	if (len == -1) {
