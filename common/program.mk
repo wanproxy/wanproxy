@@ -64,6 +64,7 @@ __LIBRARIES!=echo ${USE_LIBS} | sort -u | xargs
 
 OBJS+=  ${SRCS:R:S/$/.o/g}
 
+.MAIN: ${PROGRAM}
 all: ${PROGRAM}
 
 ${PROGRAM}: ${OBJS}
