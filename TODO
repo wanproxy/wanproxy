@@ -73,6 +73,9 @@ o) Try to remove HALTs and NOTREACHEDs that aren't legitimate.
 o) Give better debug information from configuration system.
 
 Maybe:
+o) A resolver that's less fragile than the OS-supplied ones.  Mac OS X, at minimum,
+   neither keeps a pool of file descriptors nor errors out gracefully when the OS is
+   out of them, leading to hangs.
 o) Send definitions out-of-band, too, so that QoS and backpressure on one connection
    can't delay other connections.
 o) The ProxyPipe code uses an asynchronous callback to notify the ProxyClient
