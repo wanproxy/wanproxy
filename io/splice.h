@@ -13,6 +13,7 @@ class Splice {
 	EventCallback *callback_;
 	Action *callback_action_;
 
+	bool read_eos_;
 	Action *read_action_;
 	Action *input_action_;
 	Action *output_action_;

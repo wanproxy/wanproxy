@@ -19,6 +19,7 @@ Splice::Splice(Channel *source, Pipe *pipe, Channel *sink)
   sink_(sink),
   callback_(NULL),
   callback_action_(NULL),
+  read_eos_(false),
   read_action_(NULL),
   input_action_(NULL),
   output_action_(NULL),
@@ -123,6 +124,8 @@ Splice::read_complete(Event e)
 	read_action_->cancel();
 	read_action_ = NULL;
 
+	ASSERT(!read_eos_);
+
 	switch (e.type_) {
 	case Event::Done:
 	case Event::EOS:
@@ -131,6 +134,12 @@ Splice::read_complete(Event e)
 		ERROR(log_) << "Unexpected event: " << e;
 		complete(e);
 		return;
+	}
+
+	if (e.buffer_.empty()) {
+		ASSERT(e.type_ == Event::EOS);
+
+		read_eos_ = true;
 	}
 
 	ASSERT(input_action_ == NULL);
@@ -154,8 +163,10 @@ Splice::input_complete(Event e)
 	}
 
 	ASSERT(read_action_ == NULL);
-	EventCallback *cb = callback(this, &Splice::read_complete);
-	read_action_ = source_->read(0, cb);
+	if (!read_eos_) {
+		EventCallback *cb = callback(this, &Splice::read_complete);
+		read_action_ = source_->read(0, cb);
+	}
 }
 
 void
