@@ -5,6 +5,10 @@ class Action;
 class Buffer;
 class EventCallback;
 
+/*
+ * XXX
+ * Should Pipe::output take a length?
+ */
 class Pipe {
 protected:
 	Pipe(void)
