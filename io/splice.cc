@@ -92,6 +92,26 @@ Splice::complete(Event e)
 	ASSERT(callback_ != NULL);
 	ASSERT(callback_action_ == NULL);
 
+	if (read_action_ != NULL) {
+		read_action_->cancel();
+		read_action_ = NULL;
+	}
+
+	if (input_action_ != NULL) {
+		input_action_->cancel();
+		input_action_ = NULL;
+	}
+
+	if (output_action_ != NULL) {
+		output_action_->cancel();
+		output_action_ = NULL;
+	}
+
+	if (write_action_ != NULL) {
+		write_action_->cancel();
+		write_action_ = NULL;
+	}
+
 	callback_->event(e);
 	callback_action_ = EventSystem::instance()->schedule(callback_);
 	callback_ = NULL;
