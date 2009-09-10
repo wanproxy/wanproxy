@@ -29,16 +29,14 @@ Action *
 XCodecDecoderPipe::input(Buffer *buf, EventCallback *cb)
 {
 	if (output_callback_ != NULL) {
-		ASSERT(input_buffer_.empty());
 		ASSERT(output_action_ == NULL);
 
 		if (!buf->empty()) {
 			Buffer tmp;
 
-			if (decoder_.decode(&tmp, buf)) {
-				if (!buf->empty())
-					input_buffer_.append(buf);
-			} else {
+			input_buffer_.append(buf);
+
+			if (!decoder_.decode(&tmp, &input_buffer_)) {
 				output_callback_->event(Event(Event::Error, 0));
 				output_action_ = EventSystem::instance()->schedule(output_callback_);
 				output_callback_ = NULL;
