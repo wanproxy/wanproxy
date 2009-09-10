@@ -14,13 +14,13 @@ class XCodecPipePair : public PipePair {
 	XCodecDecoderPipe decoder_pipe_;
 	XCodecEncoderPipe encoder_pipe_;
 public:
-	PipePairEcho(XCodec *codec, XCodecPipePairType type)
+	XCodecPipePair(XCodec *codec, XCodecPipePairType type)
 	: type_(type),
 	  decoder_pipe_(codec),
 	  encoder_pipe_(codec)
 	{ }
 
-	~PipePairEcho()
+	~XCodecPipePair()
 	{ }
 
 	Pipe *get_incoming(void)
