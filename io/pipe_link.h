@@ -5,6 +5,9 @@
  * There are many ways to do this; perhaps should put a Buffer in-between
  * and have input() call incoming_pipe_->input() then incoming_pipe_->output()
  * and don't call outcoming_pipe_->input() until output() is called?
+ *
+ * In theory we may need to rework this so that any spontaneous data from either
+ * Pipe can be handled appropriately.
  */
 class PipeLink : public Pipe {
 	LogHandle log_;
