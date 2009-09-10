@@ -8,8 +8,6 @@ o) Make UnixClient and UnixServer take the SocketType as an argument to make
    Would need to update UnixServer's API to support both models.
 o) Something higher-level than Pipe which supports various disciplines and
    makes it easier to write stream processing modules.
-o) PipeEndpoint.
-o) Channel Endpoint.
 o) Add a flush token for Pipe::input() ?
 o) Add a flesh Event type for Pipe::output() ?
    XXX It's unclear, but I think a flush method or similar may be needed to
@@ -21,7 +19,6 @@ o) Add a flesh Event type for Pipe::output() ?
 o) Add XCodec Pipes.
 o) New look-ahead decoder that can handle yield hash requests and out-of-window
    definitions.
-o) Adapt ProxyPipe to use Pipes.
 o) Some decent way to configure Pipelines.
 o) Figure out a good name for a Pipeline, since Pipeline seems rubbish.
 o) Merge two Pipelines.
