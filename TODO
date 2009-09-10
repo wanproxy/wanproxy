@@ -1,13 +1,20 @@
 For 0.5.2:
 o) Test error handling in epoll.
 o) Test error handling with port(3C).
-
-For 0.5.3:
+o) Condition variables to suppport spontaneous output from XCodecEncoderPipe.
 o) Make UnixClient and UnixServer take the SocketType as an argument to make
    it possible to support both stream-orientation and datagram-orientation?
    Would need to update UnixServer's API to support both models.
 o) Something higher-level than Pipe which supports various disciplines and
    makes it easier to write stream processing modules.
+o) Add XCodec Pipes.
+o) New look-ahead decoder that can handle yield hash requests and out-of-window
+   definitions.
+
+For 0.5.3:
+o) Move to the getrusage-based Timer class and make it clear that that is what
+   it is for.  Perhaps create a Timer base class and a UserTimer and WallTimer
+   for real use?
 o) Add a flush token for Pipe::input() ?
 o) Add a flesh Event type for Pipe::output() ?
    XXX It's unclear, but I think a flush method or similar may be needed to
@@ -16,17 +23,7 @@ o) Add a flesh Event type for Pipe::output() ?
        flush complete, or error if data cannot be flushed because there is not
        enough to finish processing the data that is pending, at which point
        you at least know that everything else has been flushed?
-o) Add XCodec Pipes.
-o) New look-ahead decoder that can handle yield hash requests and out-of-window
-   definitions.
-o) Some decent way to configure Pipelines.
-o) Figure out a good name for a Pipeline, since Pipeline seems rubbish.
-o) Merge two Pipelines.
-o) Convert the SOCKS proxy server to a PipeEndpoint that merges the Pipeline
-   that it is connected to with a newly-created one.
-o) Move to the getrusage-based Timer class and make it clear that that is what
-   it is for.  Perhaps create a Timer base class and a UserTimer and WallTimer
-   for real use?
+o) Make Pipe::input take a parameter to send EOS along with data.
 
 For 0.6.0:
 o) Remove the xor_ from XCodecHash and just use Adler64::operator+=.  The xor
@@ -84,3 +81,8 @@ o) Run-length-encoding.
 o) Many compression algorithms.
 o) Allow chaining codecs.
 o) SOCKS IPv6 support.
+o) Some decent way to configure Pipelines.
+o) Figure out a good name for a Pipeline, since Pipeline seems rubbish.
+o) Merge two Pipelines.
+o) Convert the SOCKS proxy server to a PipeEndpoint that merges the Pipeline
+   that it is connected to with a newly-created one.
