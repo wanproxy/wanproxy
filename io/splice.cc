@@ -186,6 +186,8 @@ Splice::output_complete(Event e)
 	}
 
 	if (e.type_ == Event::EOS && e.buffer_.empty()) {
+		if (!sink_->shutdown(false, true))
+			ERROR(log_) << "Could not shut down write channel.";
 		complete(e);
 		return;
 	}

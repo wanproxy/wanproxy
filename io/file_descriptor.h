@@ -14,6 +14,11 @@ public:
 	virtual Action *close(EventCallback *);
 	virtual Action *read(size_t, EventCallback *);
 	virtual Action *write(Buffer *, EventCallback *);
+
+	virtual bool shutdown(bool, bool)
+	{
+		return (false);
+	}
 };
 
 #endif /* !FILE_DESCRIPTOR_H */

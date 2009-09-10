@@ -378,6 +378,28 @@ Socket::listen(int backlog)
 	return (true);
 }
 
+bool
+Socket::shutdown(bool shut_read, bool shut_write)
+{
+	int how;
+
+	if (shut_read && shut_write) 
+		how = SHUT_RDWR;
+	else if (shut_read)
+		how = SHUT_RD;
+	else if (shut_write)
+		how = SHUT_WR;
+	else {
+		NOTREACHED();
+		return (false);
+	}
+
+	int rv = ::shutdown(fd_, how);
+	if (rv == -1)
+		return (false);
+	return (true);
+}
+
 std::string
 Socket::getpeername(void) const
 {

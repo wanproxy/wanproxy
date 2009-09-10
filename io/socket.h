@@ -22,6 +22,7 @@ public:
 	bool bind(const std::string&);
 	Action *connect(const std::string&, EventCallback *);
 	bool listen(int=10);
+	bool shutdown(bool, bool);
 
 	std::string getpeername(void) const;
 	std::string getsockname(void) const;
