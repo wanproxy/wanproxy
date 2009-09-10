@@ -1,6 +1,9 @@
 #ifndef	PROXY_CLIENT_H
 #define	PROXY_CLIENT_H
 
+#include <set>
+
+class Pipe;
 class Splice;
 class SplicePair;
 class XCodec;
@@ -18,6 +21,7 @@ class ProxyClient {
 	XCodec *remote_codec_;
 	Socket *remote_socket_;
 
+	std::set<Pipe *> pipes_;
 	Splice *incoming_splice_;
 	Splice *outgoing_splice_;
 	SplicePair *splice_pair_;

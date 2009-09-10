@@ -6,6 +6,7 @@
 #include <event/event_system.h>
 
 #include <io/pipe.h>
+#include <io/pipe_link.h>
 #include <io/pipe_null.h>
 #include <io/socket.h>
 #include <io/splice.h>
@@ -26,6 +27,7 @@ ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
   remote_action_(NULL),
   remote_codec_(remote_codec),
   remote_socket_(NULL),
+  pipes_(),
   incoming_splice_(NULL),
   outgoing_splice_(NULL),
   splice_pair_(NULL),
@@ -59,6 +61,14 @@ ProxyClient::~ProxyClient()
 	ASSERT(outgoing_splice_ == NULL);
 	ASSERT(splice_pair_ == NULL);
 	ASSERT(splice_action_ == NULL);
+
+	std::set<Pipe *>::iterator it;
+	while ((it = pipes_.begin()) != pipes_.end()) {
+		Pipe *pipe = *it;
+		pipes_.erase(it);
+
+		delete pipe;
+	}
 }
 
 void
@@ -119,8 +129,28 @@ ProxyClient::connect_complete(Event e)
 		return;
 	}
 
-	outgoing_splice_ = new Splice(local_socket_, new PipeNull, remote_socket_);
-	incoming_splice_ = new Splice(remote_socket_, new PipeNull, local_socket_);
+	Pipe *incoming_left = new PipeNull();
+	pipes_.insert(incoming_left);
+
+	Pipe *incoming_right = new PipeNull();
+	pipes_.insert(incoming_right);
+
+	Pipe *incoming_link = new PipeLink(incoming_left, incoming_right);
+	pipes_.insert(incoming_link);
+
+	incoming_splice_ = new Splice(remote_socket_, incoming_link, local_socket_);
+
+	Pipe *outgoing_left = new PipeNull();
+	pipes_.insert(outgoing_left);
+
+	Pipe *outgoing_right = new PipeNull();
+	pipes_.insert(outgoing_right);
+
+	Pipe *outgoing_link = new PipeLink(outgoing_left, outgoing_right);
+	pipes_.insert(outgoing_link);
+
+	outgoing_splice_ = new Splice(local_socket_, outgoing_link, remote_socket_);
+
 	splice_pair_ = new SplicePair(outgoing_splice_, incoming_splice_);
 
 	EventCallback *cb = callback(this, &ProxyClient::splice_complete);
