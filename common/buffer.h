@@ -677,7 +677,7 @@ public:
 	 * Returns true if this Buffer's contents are identical to those of a
 	 * specified Buffer.
 	 */
-	bool equal(Buffer *buf) const
+	bool equal(const Buffer *buf) const
 	{
 		if (length() != buf->length())
 			return (false);
@@ -957,7 +957,6 @@ public:
 				return (false);
 			}
 			pfx++;
-			pfxseg = *pfx;
 		}
 		return (true);
 	}
