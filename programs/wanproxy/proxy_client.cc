@@ -8,11 +8,17 @@
 #include <io/pipe.h>
 #include <io/pipe_link.h>
 #include <io/pipe_null.h>
+#include <io/pipe_pair.h>
 #include <io/socket.h>
 #include <io/splice.h>
 #include <io/splice_pair.h>
 
 #include <net/tcp_client.h>
+
+#include <xcodec/xcodec.h>
+#include <xcodec/xcodec_decoder.h>
+#include <xcodec/xcodec_encoder.h>
+#include <xcodec/xcodec_pipe_pair.h>
 
 #include "proxy_client.h"
 
