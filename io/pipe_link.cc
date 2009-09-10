@@ -81,7 +81,7 @@ PipeLink::incoming_input_complete(Event e)
 	case Event::Done:
 		break;
 	default:
-		ERROR(log_) << "Unexpected event: " << e;
+		DEBUG(log_) << "Unexpected event: " << e;
 		input_complete(e);
 		return;
 	}
@@ -101,7 +101,7 @@ PipeLink::incoming_output_complete(Event e)
 	case Event::EOS:
 		break;
 	default:
-		ERROR(log_) << "Unexpected event: " << e;
+		DEBUG(log_) << "Unexpected event: " << e;
 		input_complete(e);
 		return;
 	}
@@ -122,7 +122,7 @@ PipeLink::outgoing_input_complete(Event e)
 	case Event::Done:
 		break;
 	default:
-		ERROR(log_) << "Unexpected event: " << e;
+		DEBUG(log_) << "Unexpected event: " << e;
 		input_complete(e);
 		return;
 	}

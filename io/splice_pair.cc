@@ -89,7 +89,7 @@ SplicePair::splice_complete(Event e, Splice *splice)
 	case Event::EOS:
 		break;
 	default:
-		ERROR(log_) << "Unexpected event: " << e;
+		DEBUG(log_) << "Unexpected event: " << e;
 		if (left_action_ != NULL) {
 			left_action_->cancel();
 			left_action_ = NULL;

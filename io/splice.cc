@@ -131,7 +131,7 @@ Splice::read_complete(Event e)
 	case Event::EOS:
 		break;
 	default:
-		ERROR(log_) << "Unexpected event: " << e;
+		DEBUG(log_) << "Unexpected event: " << e;
 		complete(e);
 		return;
 	}
@@ -157,7 +157,7 @@ Splice::input_complete(Event e)
 	case Event::Done:
 		break;
 	default:
-		ERROR(log_) << "Unexpected event: " << e;
+		DEBUG(log_) << "Unexpected event: " << e;
 		complete(e);
 		return;
 	}
@@ -180,14 +180,14 @@ Splice::output_complete(Event e)
 	case Event::EOS:
 		break;
 	default:
-		ERROR(log_) << "Unexpected event: " << e;
+		DEBUG(log_) << "Unexpected event: " << e;
 		complete(e);
 		return;
 	}
 
 	if (e.type_ == Event::EOS && e.buffer_.empty()) {
 		if (!sink_->shutdown(false, true))
-			ERROR(log_) << "Could not shut down write channel.";
+			DEBUG(log_) << "Could not shut down write channel.";
 		complete(e);
 		return;
 	}
@@ -207,7 +207,7 @@ Splice::write_complete(Event e)
 	case Event::Done:
 		break;
 	default:
-		ERROR(log_) << "Unexpected event: " << e;
+		DEBUG(log_) << "Unexpected event: " << e;
 		complete(e);
 		return;
 	}
