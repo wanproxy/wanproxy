@@ -305,7 +305,13 @@ Socket::bind(const std::string& name)
 		return (false);
 	}
 
-	int rv = ::bind(fd_, &addr.addr_.sockaddr_, addr.addrlen_);
+	int on = 1;
+	int rv = setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &on, sizeof on);
+	if (rv == -1) {
+		ERROR(log_) << "Could not setsockopt(SO_REUSEADDR): " << strerror(errno);
+	}
+
+	rv = ::bind(fd_, &addr.addr_.sockaddr_, addr.addrlen_);
 	if (rv == -1) {
 		ERROR(log_) << "Could not bind: " << strerror(errno);
 		return (false);
