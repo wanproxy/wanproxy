@@ -1,7 +1,8 @@
 #ifndef	PROXY_CLIENT_H
 #define	PROXY_CLIENT_H
 
-class ProxyPipe;
+class Splice;
+class SplicePair;
 class XCodec;
 
 class ProxyClient {
@@ -17,11 +18,10 @@ class ProxyClient {
 	XCodec *remote_codec_;
 	Socket *remote_socket_;
 
-	Action *incoming_action_;
-	ProxyPipe *incoming_pipe_;
-
-	Action *outgoing_action_;
-	ProxyPipe *outgoing_pipe_;
+	Splice *incoming_splice_;
+	Splice *outgoing_splice_;
+	SplicePair *splice_pair_;
+	Action *splice_action_;
 
 public:
 	ProxyClient(XCodec *, XCodec *, Socket *, SocketAddressFamily, const std::string&);
@@ -30,7 +30,7 @@ private:
 
 	void close_complete(Event, void *);
 	void connect_complete(Event);
-	void flow_complete(Event, void *);
+	void splice_complete(Event);
 	void stop(void);
 
 	void schedule_close(void);

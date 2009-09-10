@@ -2,7 +2,6 @@ PROGRAM=wanproxy
 
 SRCS+=	proxy_client.cc
 SRCS+=	proxy_listener.cc
-SRCS+=	proxy_pipe.cc
 
 SRCS+=	proxy_socks_connection.cc
 SRCS+=	proxy_socks_listener.cc

@@ -5,7 +5,11 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
+#include <io/pipe.h>
+#include <io/pipe_null.h>
 #include <io/socket.h>
+#include <io/splice.h>
+#include <io/splice_pair.h>
 
 #include <net/tcp_client.h>
 
@@ -23,10 +27,10 @@ ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
   remote_action_(NULL),
   remote_codec_(remote_codec),
   remote_socket_(NULL),
-  incoming_action_(NULL),
-  incoming_pipe_(NULL),
-  outgoing_action_(NULL),
-  outgoing_pipe_(NULL)
+  incoming_splice_(NULL),
+  outgoing_splice_(NULL),
+  splice_pair_(NULL),
+  splice_action_(NULL)
 {
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
 	remote_action_ = TCPClient::connect(&remote_socket_, family, remote_name, cb);
@@ -52,10 +56,10 @@ ProxyClient::~ProxyClient()
 	ASSERT(local_socket_ == NULL);
 	ASSERT(remote_action_ == NULL);
 	ASSERT(remote_socket_ == NULL);
-	ASSERT(incoming_action_ == NULL);
-	ASSERT(incoming_pipe_ == NULL);
-	ASSERT(outgoing_action_ == NULL);
-	ASSERT(outgoing_pipe_ == NULL);
+	ASSERT(incoming_splice_ == NULL);
+	ASSERT(outgoing_splice_ == NULL);
+	ASSERT(splice_pair_ == NULL);
+	ASSERT(splice_action_ == NULL);
 }
 
 void
@@ -116,67 +120,38 @@ ProxyClient::connect_complete(Event e)
 		return;
 	}
 
-	outgoing_pipe_ = new ProxyPipe(local_codec_, local_socket_,
-				       remote_socket_, remote_codec_);
+	outgoing_splice_ = new Splice(local_socket_, new PipeNull, remote_socket_);
+	incoming_splice_ = new Splice(remote_socket_, new PipeNull, local_socket_);
+	splice_pair_ = new SplicePair(outgoing_splice_, incoming_splice_);
 
-	incoming_pipe_ = new ProxyPipe(remote_codec_, remote_socket_,
-				       local_socket_, local_codec_);
-
-	EventCallback *ocb = callback(this, &ProxyClient::flow_complete,
-				      (void *)outgoing_pipe_);
-	outgoing_action_ = outgoing_pipe_->flow(ocb);
-
-	EventCallback *icb = callback(this, &ProxyClient::flow_complete,
-				      (void *)incoming_pipe_);
-	incoming_action_ = incoming_pipe_->flow(icb);
+	EventCallback *cb = callback(this, &ProxyClient::splice_complete);
+	splice_action_ = splice_pair_->start(cb);
 }
 
 void
-ProxyClient::flow_complete(Event e, void *pipe)
+ProxyClient::splice_complete(Event e)
 {
-	if (pipe == (void *)outgoing_pipe_) {
-		outgoing_action_->cancel();
-		outgoing_action_ = NULL;
+	splice_action_->cancel();
+	splice_action_ = NULL;
 
-		ASSERT(outgoing_pipe_ != NULL);
+	delete splice_pair_;
+	splice_pair_ = NULL;
 
-		delete outgoing_pipe_;
-		outgoing_pipe_ = NULL;
-	}
+	delete outgoing_splice_;
+	outgoing_splice_ = NULL;
 
-	if (pipe == (void *)incoming_pipe_) {
-		incoming_action_->cancel();
-		incoming_action_ = NULL;
-
-		ASSERT(incoming_pipe_ != NULL);
-
-		delete incoming_pipe_;
-		incoming_pipe_ = NULL;
-	}
+	delete incoming_splice_;
+	incoming_splice_ = NULL;
 
 	switch (e.type_) {
 	case Event::Done:
 		break;
-	case Event::Error:
-		schedule_close();
-		return;
 	default:
 		ERROR(log_) << "Unexpected event: " << e;
-		schedule_close();
-		return;
+		break;
 	}
 
-	if (outgoing_pipe_ == NULL && incoming_pipe_ == NULL) {
-		schedule_close();
-		return;
-	}
-
-	if (incoming_pipe_ != NULL) {
-		incoming_pipe_->drain();
-	}
-	if (outgoing_pipe_ != NULL) {
-		outgoing_pipe_->drain();
-	}
+	schedule_close();
 }
 
 void
@@ -189,7 +164,7 @@ ProxyClient::stop(void)
 	 * Connecting.
 	 */
 	if (local_action_ == NULL && remote_action_ != NULL &&
-	    outgoing_pipe_ == NULL) {
+	    splice_action_ == NULL) {
 		remote_action_->cancel();
 		remote_action_ = NULL;
 
@@ -216,22 +191,23 @@ ProxyClient::schedule_close(void)
 		stop_action_ = NULL;
 	}
 
-	if (outgoing_pipe_ != NULL) {
-		ASSERT(outgoing_action_ != NULL);
-		outgoing_action_->cancel();
-		outgoing_action_ = NULL;
+	if (splice_pair_ != NULL) {
+		if (splice_action_ != NULL) {
+			splice_action_->cancel();
+			splice_action_ = NULL;
+		}
 
-		delete outgoing_pipe_;
-		outgoing_pipe_ = NULL;
-	}
+		ASSERT(outgoing_splice_ != NULL);
+		ASSERT(incoming_splice_ != NULL);
 
-	if (incoming_pipe_ != NULL) {
-		ASSERT(incoming_action_ != NULL);
-		incoming_action_->cancel();
-		incoming_action_ = NULL;
+		delete splice_pair_;
+		splice_pair_ = NULL;
 
-		delete incoming_pipe_;
-		incoming_pipe_ = NULL;
+		delete outgoing_splice_;
+		outgoing_splice_ = NULL;
+
+		delete incoming_splice_;
+		incoming_splice_ = NULL;
 	}
 
 	ASSERT(local_action_ == NULL);
