@@ -34,8 +34,26 @@ XCodecDecoderPipe::input(Buffer *buf, EventCallback *cb)
 
 		if (!buf->empty()) {
 			Buffer tmp;
-			tmp.append(buf);
-			buf->clear();
+
+			if (decoder_.decode(&tmp, buf)) {
+				if (!buf->empty())
+					input_buffer_.append(buf);
+			} else {
+				output_callback_->event(Event(Event::Error, 0));
+				output_action_ = EventSystem::instance()->schedule(output_callback_);
+				output_callback_ = NULL;
+
+				cb->event(Event(Event::Error, 0));
+				return (EventSystem::instance()->schedule(cb));
+			}
+
+			/*
+			 * No output is ready yet.
+			 */
+			if (tmp.empty()) {
+				cb->event(Event(Event::Done, 0));
+				return (EventSystem::instance()->schedule(cb));
+			}
 
 			output_callback_->event(Event(Event::Done, 0, tmp));
 		} else {
@@ -64,13 +82,27 @@ XCodecDecoderPipe::output(EventCallback *cb)
 	ASSERT(output_callback_ == NULL);
 
 	if (!input_buffer_.empty() || input_eos_) {
-		if (input_eos_) {
-			cb->event(Event(Event::EOS, 0, input_buffer_));
-			if (!input_buffer_.empty())
-				input_buffer_.clear();
+		Buffer tmp;
+
+		if (!decoder_.decode(&tmp, &input_buffer_)) {
+			cb->event(Event(Event::Error, 0));
 		} else {
-			cb->event(Event(Event::Done, 0, input_buffer_));
-			input_buffer_.clear();
+			/*
+			 * No output is ready yet.
+			 */
+			if (tmp.empty()) {
+				output_callback_ = cb;
+				return (cancellation(this, &XCodecDecoderPipe::output_cancel));
+			}
+
+			if (input_eos_) {
+				cb->event(Event(Event::EOS, 0, tmp));
+				if (!input_buffer_.empty())
+					input_buffer_.clear();
+			} else {
+				cb->event(Event(Event::Done, 0, tmp));
+				input_buffer_.clear();
+			}
 		}
 
 		return (EventSystem::instance()->schedule(cb));
