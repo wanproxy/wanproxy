@@ -4,6 +4,7 @@
 #include <set>
 
 class Pipe;
+class PipePair;
 class Splice;
 class SplicePair;
 class XCodec;
@@ -22,6 +23,8 @@ class ProxyClient {
 	Socket *remote_socket_;
 
 	std::set<Pipe *> pipes_;
+	std::set<PipePair *> pipe_pairs_;
+
 	Splice *incoming_splice_;
 	Splice *outgoing_splice_;
 	SplicePair *splice_pair_;

@@ -34,6 +34,7 @@ ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
   remote_codec_(remote_codec),
   remote_socket_(NULL),
   pipes_(),
+  pipe_pairs_(),
   incoming_splice_(NULL),
   outgoing_splice_(NULL),
   splice_pair_(NULL),
@@ -68,12 +69,20 @@ ProxyClient::~ProxyClient()
 	ASSERT(splice_pair_ == NULL);
 	ASSERT(splice_action_ == NULL);
 
-	std::set<Pipe *>::iterator it;
-	while ((it = pipes_.begin()) != pipes_.end()) {
-		Pipe *pipe = *it;
-		pipes_.erase(it);
+	std::set<Pipe *>::iterator pit;
+	while ((pit = pipes_.begin()) != pipes_.end()) {
+		Pipe *pipe = *pit;
+		pipes_.erase(pit);
 
 		delete pipe;
+	}
+
+	std::set<PipePair *>::iterator ppit;
+	while ((ppit = pipe_pairs_.begin()) != pipe_pairs_.end()) {
+		PipePair *pipe_pair = *ppit;
+		pipe_pairs_.erase(ppit);
+
+		delete pipe_pair;
 	}
 }
 
@@ -135,27 +144,49 @@ ProxyClient::connect_complete(Event e)
 		return;
 	}
 
-	Pipe *incoming_left = new PipeNull();
-	pipes_.insert(incoming_left);
+	Pipe *incoming_pipe;
+	Pipe *outgoing_pipe;
 
-	Pipe *incoming_right = new PipeNull();
-	pipes_.insert(incoming_right);
+	if (local_codec_ == NULL && remote_codec_ == NULL) {
+		incoming_pipe = new PipeNull();
+		pipes_.insert(incoming_pipe);
 
-	Pipe *incoming_link = new PipeLink(incoming_left, incoming_right);
-	pipes_.insert(incoming_link);
+		outgoing_pipe = new PipeNull();
+		pipes_.insert(outgoing_pipe);
+	} else {
+		if (local_codec_ != NULL && remote_codec_ == NULL) {
+			PipePair *pair = new XCodecPipePair(local_codec_, XCodecPipePairTypeServer);
+			pipe_pairs_.insert(pair);
 
-	incoming_splice_ = new Splice(remote_socket_, incoming_link, local_socket_);
+			incoming_pipe = pair->get_incoming();
+			outgoing_pipe = pair->get_outgoing();
+		} else if (local_codec_ == NULL && remote_codec_ != NULL) {
+			PipePair *pair = new XCodecPipePair(remote_codec_, XCodecPipePairTypeClient);
+			pipe_pairs_.insert(pair);
 
-	Pipe *outgoing_left = new PipeNull();
-	pipes_.insert(outgoing_left);
+			incoming_pipe = pair->get_incoming();
+			outgoing_pipe = pair->get_outgoing();
+		} else {
+			ASSERT(local_codec_ != NULL && remote_codec_ != NULL);
 
-	Pipe *outgoing_right = new PipeNull();
-	pipes_.insert(outgoing_right);
+			PipePair *pair[2];
 
-	Pipe *outgoing_link = new PipeLink(outgoing_left, outgoing_right);
-	pipes_.insert(outgoing_link);
+			pair[0] = new XCodecPipePair(local_codec_, XCodecPipePairTypeClient);
+			pipe_pairs_.insert(pair[0]);
 
-	outgoing_splice_ = new Splice(local_socket_, outgoing_link, remote_socket_);
+			pair[1] = new XCodecPipePair(local_codec_, XCodecPipePairTypeServer);
+			pipe_pairs_.insert(pair[1]);
+
+			incoming_pipe = new PipeLink(pair[0]->get_incoming(), pair[1]->get_incoming());
+			pipes_.insert(incoming_pipe);
+
+			outgoing_pipe = new PipeLink(pair[0]->get_outgoing(), pair[1]->get_outgoing());
+			pipes_.insert(outgoing_pipe);
+		}
+	}
+
+	incoming_splice_ = new Splice(remote_socket_, incoming_pipe, local_socket_);
+	outgoing_splice_ = new Splice(local_socket_, outgoing_pipe, remote_socket_);
 
 	splice_pair_ = new SplicePair(outgoing_splice_, incoming_splice_);
 
