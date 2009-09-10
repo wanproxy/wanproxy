@@ -14,7 +14,6 @@
 #include <net/tcp_client.h>
 
 #include "proxy_client.h"
-#include "proxy_pipe.h"
 
 ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
 			 Socket *local_socket, SocketAddressFamily family,
