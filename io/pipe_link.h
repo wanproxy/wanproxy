@@ -8,6 +8,9 @@
  *
  * In theory we may need to rework this so that any spontaneous data from either
  * Pipe can be handled appropriately.
+ *
+ * Would be enough to make input pass-through and output go through both output
+ * routines, which would handle spontaneous output just fine.
  */
 class PipeLink : public Pipe {
 	LogHandle log_;
