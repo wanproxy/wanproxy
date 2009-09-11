@@ -2,6 +2,7 @@
 #include <sys/uio.h>
 #include <errno.h>
 #include <limits.h>
+#include <signal.h>
 #include <unistd.h>
 
 #include <common/buffer.h>
@@ -297,7 +298,23 @@ IOSystem::Handle::write_schedule(void)
 IOSystem::IOSystem(void)
 : log_("/io/system"),
   handle_map_()
-{ }
+{
+	/*
+	 * Prepare system to handle IO.
+	 */
+	INFO(log_) << "Starting IO system.";
+
+	/*
+	 * Disable SIGPIPE.
+	 *
+	 * Because errors are returned asynchronously and may occur at any time,
+	 * there may be a pending write to a file descriptor which has
+	 * previously thrown an error.  There are changes that could be made to
+	 * the scheduler to work around this, but they are not desirable.
+	 */
+	if (::signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		HALT(log_) << "Could not disable SIGPIPE.";
+}
 
 IOSystem::~IOSystem()
 {

@@ -72,10 +72,6 @@ o) A resolver that's less fragile than the OS-supplied ones.  Mac OS X, at minim
    out of them, leading to hangs.
 o) Send definitions out-of-band, too, so that QoS and backpressure on one connection
    can't delay other connections.
-o) The ProxyPipe code uses an asynchronous callback to notify the ProxyClient
-   of an error, but this could result delayed cancellation of a write to a
-   channel which has given us an error.  As a result, we may get a SIGPIPE.
-   There has to be a good way to solve this.
 o) In-path forwarding using BPF and a tiny network stack.
 o) Run-length-encoding.
 o) Many compression algorithms.
