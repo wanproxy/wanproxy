@@ -14,14 +14,15 @@ FileDescriptor::FileDescriptor(int fd)
   fd_(fd)
 {
 	int flags = ::fcntl(fd_, F_GETFL, 0);
-	if (flags == -1)
-		HALT(log_) << "Could not get flags for file descriptor.";
+	if (flags == -1) {
+		ERROR(log_) << "Could not get flags for file descriptor.";
+	} else {
+		flags |= O_NONBLOCK;
 
-	flags |= O_NONBLOCK;
-
-	flags = ::fcntl(fd_, F_SETFL, flags);
-	if (flags == -1)
-		HALT(log_) << "Could not set flags for file descriptor.";
+		flags = ::fcntl(fd_, F_SETFL, flags);
+		if (flags == -1)
+			ERROR(log_) << "Could not set flags for file descriptor, some operations may block.";
+	}
 
 	IOSystem::instance()->attach(fd_, this);
 }
