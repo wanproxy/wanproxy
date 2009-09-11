@@ -1,4 +1,6 @@
 #include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/uio.h>
 #include <errno.h>
 #include <limits.h>
@@ -314,6 +316,28 @@ IOSystem::IOSystem(void)
 	 */
 	if (::signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		HALT(log_) << "Could not disable SIGPIPE.";
+
+	/*
+	 * Up the file descriptor limit.
+	 *
+	 * Probably this should be configurable, but there's no harm on modern
+	 * systems and for the performance-critical applications using the IO
+	 * system, more file descriptors is better.
+	 */
+	struct rlimit rlim;
+	int rv = ::getrlimit(RLIMIT_NOFILE, &rlim);
+	if (rv == 0) {
+		if (rlim.rlim_cur < rlim.rlim_max) {
+			rlim.rlim_cur = rlim.rlim_max;
+
+			rv = ::setrlimit(RLIMIT_NOFILE, &rlim);
+			if (rv == -1) {
+				INFO(log_) << "Unable to increase file descriptor limit.";
+			}
+		}
+	} else {
+		INFO(log_) << "Unable to get file descriptor limit.";
+	}
 }
 
 IOSystem::~IOSystem()
