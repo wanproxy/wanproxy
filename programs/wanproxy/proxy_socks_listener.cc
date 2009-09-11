@@ -22,12 +22,6 @@ ProxySocksListener::ProxySocksListener(SocketAddressFamily family, const std::st
 {
 	server_ = TCPServer::listen(family, interface);
 	if (server_ == NULL) {
-		/* XXX
-		 * Should retry with a delay in case of a restart?  Or just use
-		 * SO_REUSEADDR.  Of course, if it isn't a matter of
-		 * SO_REUSEADDR we want to signal an error somehow.  HALT is
-		 * probably fine.
-		 */
 		HALT(log_) << "Unable to create listener.";
 	}
 
