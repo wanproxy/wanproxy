@@ -10,6 +10,8 @@ o) Something higher-level than Pipe which supports various disciplines and
 o) Add XCodec Pipes.
 o) New look-ahead decoder that can handle yield hash requests and out-of-window
    definitions.
+o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
+   other things can handle spontaneous output.
 
 For 0.5.3:
 o) Move to the getrusage-based Timer class and make it clear that that is what
