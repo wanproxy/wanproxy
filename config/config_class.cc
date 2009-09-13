@@ -12,7 +12,7 @@ ConfigClass::~ConfigClass()
 }
 
 bool
-ConfigClass::set(ConfigObject *co, const std::string& mname, ConfigValue *cv)
+ConfigClass::set(ConfigObject *co, const std::string& mname, ConfigType *ct, const std::string& vstr)
 {
 	ASSERT(co->class_ == this);
 
@@ -21,16 +21,26 @@ ConfigClass::set(ConfigObject *co, const std::string& mname, ConfigValue *cv)
 		ERROR("/config/class") << "Object member (" << mname << ") does not exist.";
 		return (false);
 	}
-	if (type != cv->type_) {
+	if (type != ct) {
 		ERROR("/config/class") << "Object member (" << mname << ") has wrong type.";
 		return (false);
 	}
 
 	if (co->members_.find(mname) != co->members_.end()) {
-		ERROR("/config/class") << "Object member (" << mname << ") already set.";
-		return (false);
+		ConfigValue *cv = co->members_[mname];
+		if (!ct->set(cv, vstr)) {
+			ERROR("/config/class") << "Member (" << mname << ") could not be set again.";
+			return (false);
+		}
+	} else {
+		ConfigValue *cv = new ConfigValue(co->config_, ct, vstr);
+		if (!ct->set(cv, vstr)) {
+			delete cv;
+			ERROR("/config/class") << "Member (" << mname << ") could not be set.";
+			return (false);
+		}
+		co->members_[mname] = cv;
 	}
-	co->members_[mname] = cv;
 
 	return (true);
 }

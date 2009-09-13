@@ -34,7 +34,7 @@ private:
 		return (true);
 	}
 
-	bool set(ConfigObject *, const std::string&, ConfigValue *);
+	bool set(ConfigObject *, const std::string&, ConfigType *, const std::string&);
 
 	ConfigType *member(const std::string& mname) const
 	{
