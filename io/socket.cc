@@ -171,8 +171,8 @@ struct socket_address {
 			if (pos < 3 || str[0] != '[' || str[pos + 1] != ':')
 				return (false);
 
-			std::string name(str, 1, pos - 1);
-			std::string service(str, pos + 2);
+			std::string name = str.substr(1, pos - 1);
+			std::string service = str.substr(pos + 2);
 
 			struct addrinfo hints;
 
