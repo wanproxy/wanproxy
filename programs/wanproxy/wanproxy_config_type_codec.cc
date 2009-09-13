@@ -1,6 +1,6 @@
 #include "wanproxy_config_type_codec.h"
 
-struct WANProxyConfigTypeCodec::Mapping wanproxy_config_type_codec_map[] = {
+static struct WANProxyConfigTypeCodec::Mapping wanproxy_config_type_codec_map[] = {
 	{ "XCodec",	WANProxyConfigCodecXCodec },
 	{ "None",	WANProxyConfigCodecNone },
 	{ NULL,		WANProxyConfigCodecNone }
