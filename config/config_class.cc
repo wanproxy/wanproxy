@@ -14,15 +14,22 @@ ConfigClass::~ConfigClass()
 bool
 ConfigClass::set(ConfigObject *co, const std::string& mname, ConfigValue *cv)
 {
-	if (co->class_ != this)
-		return (false);
+	ASSERT(co->class_ == this);
 
 	ConfigType *type = member(mname);
-	if (type == NULL || type != cv->type_)
+	if (type == NULL) {
+		ERROR("/config/class") << "Object member (" << mname << ") does not exist.";
 		return (false);
+	}
+	if (type != cv->type_) {
+		ERROR("/config/class") << "Object member (" << mname << ") has wrong type.";
+		return (false);
+	}
 
-	if (co->members_.find(mname) != co->members_.end())
+	if (co->members_.find(mname) != co->members_.end()) {
+		ERROR("/config/class") << "Object member (" << mname << ") already set.";
 		return (false);
+	}
 	co->members_[mname] = cv;
 
 	return (true);

@@ -10,8 +10,10 @@ ConfigTypeInt config_type_int;
 bool
 ConfigTypeInt::set(ConfigValue *cv, const std::string& vstr)
 {
-	if (ints_.find(cv) != ints_.end())
+	if (ints_.find(cv) != ints_.end()) {
+		ERROR("/config/type/int") << "Value already set.";
 		return (false);
+	}
 
 	const char *str = vstr.c_str();
 	char *endp;
@@ -22,8 +24,10 @@ ConfigTypeInt::set(ConfigValue *cv, const std::string& vstr)
 #else
 	imax = strtoll(str, &endp, 0);
 #endif
-	if (*endp != '\0')
+	if (*endp != '\0') {
+		ERROR("/config/type/int") << "Invalid numeric format.";
 		return (false);
+	}
 
 	ints_[cv] = imax;
 

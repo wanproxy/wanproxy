@@ -10,21 +10,34 @@ ConfigClassLogMask::activate(ConfigObject *co)
 {
 	ConfigTypeString *regexct;
 	ConfigValue *regexcv = co->get("regex", &regexct);
-	if (regexcv == NULL)
+	if (regexcv == NULL) {
+		ERROR("/config/class/logmask") << "Could not get regex.";
 		return (false);
+	}
 
 	std::string regex;
-	if (!regexct->get(regexcv, &regex))
+	if (!regexct->get(regexcv, &regex)) {
+		ERROR("/config/class/logmask") << "Could not get regex.";
 		return (false);
+	}
 
 	ConfigTypeLogLevel *maskct;
 	ConfigValue *maskcv = co->get("mask", &maskct);
-	if (maskcv == NULL)
+	if (maskcv == NULL) {
+		ERROR("/config/class/logmask") << "Could not get log level mask.";
 		return (false);
+	}
 
 	Log::Priority priority;
-	if (!maskct->get(maskcv, &priority))
+	if (!maskct->get(maskcv, &priority)) {
+		ERROR("/config/class/logmask") << "Could not get log level mask.";
 		return (false);
+	}
 
-	return (Log::mask(regex, priority));
+	if (!Log::mask(regex, priority)) {
+		ERROR("/config/class/logmask") << "Could not set log mask.";
+		return (false);
+	}
+
+	return (true);
 }

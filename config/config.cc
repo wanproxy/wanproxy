@@ -109,6 +109,7 @@ Config::set(const std::string& oname, const std::string& mname,
 	ConfigValue *cv = new ConfigValue(this, ct, vstr);
 	if (!ct->set(cv, vstr)) {
 		delete cv;
+		ERROR(log_) << "Member (" << mname << ") in object (" << oname << ") could not be set.";
 		return (false);
 	}
 	cc->set(co, mname, cv);

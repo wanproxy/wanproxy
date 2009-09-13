@@ -22,25 +22,35 @@ public:
 
 	bool get(ConfigValue *cv, std::string *strp)
 	{
-		if (strings_.find(cv) == strings_.end())
+		if (strings_.find(cv) == strings_.end()) {
+			ERROR("/config/type/string") << "Value not set.";
 			return (false);
+		}
 		*strp = strings_[cv];
 		return (true);
 	}
 
 	bool set(ConfigValue *cv, const std::string& vstr)
 	{
-		if (strings_.find(cv) != strings_.end())
+		if (strings_.find(cv) != strings_.end()) {
+			ERROR("/config/type/string") << "Value already set.";
 			return (false);
+		}
 
-		if (*vstr.begin() != '"')
+		if (*vstr.begin() != '"') {
+			ERROR("/config/type/string") << "String does not begin with '\"'.";
 			return (false);
-		if (*vstr.rbegin() != '"')
+		}
+		if (*vstr.rbegin() != '"') {
+			ERROR("/config/type/string") << "String does not end with '\"'.";
 			return (false);
+		}
 
 		std::string str(vstr.begin() + 1, vstr.end() - 1);
-		if (std::find(str.begin(), str.end(), '"') != str.end())
+		if (std::find(str.begin(), str.end(), '"') != str.end()) {
+			ERROR("/config/type/string") << "String has '\"' other than at beginning or end.";
 			return (false);
+		}
 
 		strings_[cv] = str;
 		return (true);

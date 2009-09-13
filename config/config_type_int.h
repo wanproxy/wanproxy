@@ -22,8 +22,10 @@ public:
 
 	bool get(ConfigValue *cv, intmax_t *intp)
 	{
-		if (ints_.find(cv) == ints_.end())
+		if (ints_.find(cv) == ints_.end()) {
+			ERROR("/config/type/int") << "Value not set.";
 			return (false);
+		}
 		*intp = ints_[cv];
 		return (true);
 	}

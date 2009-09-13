@@ -27,8 +27,10 @@ public:
 		std::map<ConfigValue *, ConfigObject *>::const_iterator it;
 
 		it = pointers_.find(cv);
-		if (it == pointers_.end())
+		if (it == pointers_.end()) {
+			ERROR("/config/type/pointer") << "Value not set.";
 			return (false);
+		}
 
 		ConfigObject *co = it->second;
 		if (co == NULL) {
@@ -38,8 +40,10 @@ public:
 		}
 
 		T *cc = co->coerce<T>();
-		if (cc == NULL)
+		if (cc == NULL) {
+			ERROR("/config/type/pointer") << "Pointer to object of wrong type.";
 			return (false);
+		}
 
 		*cop = co;
 		*ccp = cc;
