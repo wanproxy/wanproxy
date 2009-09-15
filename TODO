@@ -26,6 +26,8 @@ o) Add a flesh Event type for Pipe::output() ?
        enough to finish processing the data that is pending, at which point
        you at least know that everything else has been flushed?
 o) Make Pipe::input take a parameter to send EOS along with data.
+o) How do we find out if remote has shut down read channel so we can stop
+   writing and shut down a Splice?
 
 For 0.6.0:
 o) Remove the xor_ from XCodecHash and just use Adler64::operator+=.  The xor
