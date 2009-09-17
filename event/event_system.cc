@@ -87,6 +87,14 @@ EventSystem::start(void)
 		/*
 		 * And if there are more pending callbacks, then do a quick
 		 * poll and let them run.
+		 *
+		 * XXX
+		 * There is actually no point in polling here.  If there are
+		 * more queued Callbacks, any events fired by polling will be
+		 * put after them.  We should take everything off the queue,
+		 * drain that (with an eye on the clock) and then poll.  We can
+		 * not just wait for the queue to be empty since it might never
+		 * be.
 		 */
 		if (!queue_.empty()) {
 			poll_.poll();
