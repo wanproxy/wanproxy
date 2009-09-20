@@ -12,6 +12,11 @@ o) New look-ahead decoder that can handle yield hash requests and out-of-window
    definitions.
 o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
    other things can handle spontaneous output.
+o) No half-measures on synchronous vs. asyncrhonous.  Make *Client::connect()
+   never tell the user the Socket pointer until the callback, so that we can
+   wait for a socket to become available behind the scenes or error out in a
+   graceful way.  All we have to handle then is adding a cancel mechanism to
+   close the socket if it was opened before connect completed.  Easy.
 
 For 0.5.3:
 o) Move to the getrusage-based Timer class and make it clear that that is what
