@@ -17,7 +17,7 @@ public:
 
 	virtual bool shutdown(bool, bool)
 	{
-		return (false);
+		return (true);
 	}
 };
 
