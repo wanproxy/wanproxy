@@ -91,3 +91,10 @@ o) Figure out a good name for a Pipeline, since Pipeline seems rubbish.
 o) Merge two Pipelines.
 o) Convert the SOCKS proxy server to a PipeEndpoint that merges the Pipeline
    that it is connected to with a newly-created one.
+o) Be less protocol-ignorant; add protocol-aware framing to WANProxy.  For
+   example, HTTP response headers are likely to include some amount of changing
+   data (timestamps, etc.) so perhaps it's better to take a clean shot at the
+   start of the content.  And perhaps it's better to convert to large chunks in
+   chunked encoding mode to get bigger windows of data to encode.  No need to
+   remember the last 3 bytes of a chunk, the chunk header, and the next N bytes,
+   if the chunks won't be laid out the same every time.  Right?
