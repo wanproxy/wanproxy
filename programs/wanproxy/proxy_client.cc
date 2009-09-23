@@ -41,17 +41,7 @@ ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
   splice_action_(NULL)
 {
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
-	remote_action_ = TCPClient::connect(&remote_socket_, family, remote_name, cb);
-	if (remote_action_ == NULL) {
-		ASSERT(remote_socket_ == NULL);
-
-		ERROR(log_) << "Could not connect to: " << remote_name;
-
-		EventCallback *lcb = callback(this, &ProxyClient::close_complete,
-					      (void *)local_socket_);
-		local_action_ = local_socket_->close(lcb);
-		return;
-	}
+	remote_action_ = TCPClient::connect(family, remote_name, cb);
 
 	Callback *scb = callback(this, &ProxyClient::stop);
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
@@ -143,6 +133,9 @@ ProxyClient::connect_complete(Event e)
 		schedule_close();
 		return;
 	}
+
+	remote_socket_ = (Socket *)e.data_;
+	ASSERT(remote_socket_ != NULL);
 
 	Pipe *incoming_pipe;
 	Pipe *outgoing_pipe;
@@ -283,8 +276,9 @@ ProxyClient::schedule_close(void)
 	local_action_ = local_socket_->close(lcb);
 
 	ASSERT(remote_action_ == NULL);
-	ASSERT(remote_socket_ != NULL);
-	EventCallback *rcb = callback(this, &ProxyClient::close_complete,
-				      (void *)remote_socket_);
-	remote_action_ = remote_socket_->close(rcb);
+	if (remote_socket_ != NULL) {
+		EventCallback *rcb = callback(this, &ProxyClient::close_complete,
+					      (void *)remote_socket_);
+		remote_action_ = remote_socket_->close(rcb);
+	}
 }

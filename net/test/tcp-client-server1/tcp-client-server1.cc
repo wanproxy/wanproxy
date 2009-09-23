@@ -28,10 +28,7 @@ public:
 		test_ = new Test(group_, "TCPClient::connect");
 		EventCallback *cb =
 			callback(this, &Connector::connect_complete);
-		action_ = TCPClient::connect(&socket_, family, remote, cb);
-		Test _(group_, "TCPClient::connect set Socket pointer");
-		if (socket_ != NULL)
-			_.pass();
+		action_ = TCPClient::connect(family, remote, cb);
 	}
 
 	~Connector()
@@ -90,10 +87,17 @@ public:
 			break;
 		default:
 			ERROR(log_) << "Unexpected event: " << e;
-			break;
+			delete test_;
+			test_ = NULL;
+			return;
 		}
 		delete test_;
 		test_ = NULL;
+
+		Test _(group_, "TCPClient::connect set Socket pointer.");
+		socket_ = (Socket *)e.data_;
+		if (socket_ != NULL)
+			_.pass();
 
 		EventCallback *cb = callback(this, &Connector::write_complete);
 		Buffer buf(data, sizeof data);
