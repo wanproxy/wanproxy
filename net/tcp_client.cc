@@ -68,12 +68,14 @@ TCPClient::connect_cancel(void)
 	} else {
 		/* Caller consumed Socket.  */
 		socket_ = NULL;
+
+		delete this;
+		return;
 	}
 
-	if (socket_ != NULL) {
-		EventCallback *cb = callback(this, &TCPClient::close_complete);
-		close_action_ = socket_->close(cb);
-	}
+	ASSERT(socket_ != NULL);
+	EventCallback *cb = callback(this, &TCPClient::close_complete);
+	close_action_ = socket_->close(cb);
 }
 
 void
