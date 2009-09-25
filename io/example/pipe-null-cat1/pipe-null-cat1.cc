@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include <common/buffer.h>
 
 #include <event/action.h>
