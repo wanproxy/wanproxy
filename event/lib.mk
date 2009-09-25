@@ -9,7 +9,7 @@ SRCS+=	event_system.cc
 SRCS+=	timeout.cc
 
 .if !defined(USE_POLL)
-.if ${OSNAME} == "Darwin" || ${OSNAME} == "FreeBSD"
+.if ${OSNAME} == "Darwin" || ${OSNAME} == "FreeBSD" || ${OSNAME} == "OpenBSD"
 USE_POLL=	kqueue
 .elif ${OSNAME} == "Linux"
 USE_POLL=	epoll
