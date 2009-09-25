@@ -25,6 +25,7 @@ public:
 
 	~ConfigObject();
 
+#if !defined(__OpenBSD__)
 	template<typename T>
 	T *coerce(void)
 	{
@@ -33,6 +34,13 @@ public:
 			return (NULL);
 		return (cc);
 	}
+#else
+	template<typename T>
+	void coerce(T **ccp)
+	{
+		*ccp = dynamic_cast<T *>(class_);
+	}
+#endif
 
 	template<typename T>
 	ConfigValue *get(const std::string& name, T **ctp) const
