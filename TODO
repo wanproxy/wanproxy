@@ -7,7 +7,6 @@ o) Make UnixClient and UnixServer take the SocketType as an argument to make
    Would need to update UnixServer's API to support both models.
 o) Something higher-level than Pipe which supports various disciplines and
    makes it easier to write stream processing modules.
-o) Add XCodec Pipes.
 o) New look-ahead decoder that can handle yield hash requests and out-of-window
    definitions.
 o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
