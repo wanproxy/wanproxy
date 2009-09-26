@@ -1,4 +1,4 @@
-For 0.5.2:
+For 0.5.3:
 o) Test error handling in epoll.
 o) Test error handling with port(3C).
 o) Condition variables to suppport spontaneous output from XCodecEncoderPipe.
@@ -13,7 +13,7 @@ o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
    other things can handle spontaneous output.
 o) Make *Client::connect() work like TCPClient::connect().
 
-For 0.5.3:
+For 0.5.4:
 o) Move to the getrusage-based Timer class and make it clear that that is what
    it is for.  Perhaps create a Timer base class and a UserTimer and WallTimer
    for real use?
