@@ -1,5 +1,5 @@
-#ifndef LOG_H
-#define LOG_H
+#ifndef	LOG_H
+#define	LOG_H
 
 #include <stdlib.h> /* For abort(3).  */
 
