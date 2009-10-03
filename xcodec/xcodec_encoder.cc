@@ -18,11 +18,15 @@ struct xcodec_special_p {
 XCodecEncoder::XCodecEncoder(XCodec *codec)
 : log_("/xcodec/encoder"),
   cache_(codec->cache_),
-  window_()
+  window_(),
+  input_bytes_(0),
+  output_bytes_(0)
 { }
 
 XCodecEncoder::~XCodecEncoder()
-{ }
+{
+	DEBUG(log_) << "Input bytes: " << input_bytes_ << "; Output bytes: " << output_bytes_;
+}
 
 /*
  * This takes a view of a data stream and turns it into a series of references
@@ -32,10 +36,16 @@ XCodecEncoder::~XCodecEncoder()
 void
 XCodecEncoder::encode(Buffer *output, Buffer *input)
 {
+	uint64_t output_initial_size = output->length();
+
+	input_bytes_ += input->length();
+
 	if (input->length() < XCODEC_SEGMENT_LENGTH) {
 		input->escape(XCODEC_ESCAPE_CHAR, xcodec_special_p());
 		output->append(input);
 		input->clear();
+
+		output_bytes_ += output->length() - output_initial_size;
 		return;
 	}
 
@@ -230,6 +240,8 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	ASSERT(!have_candidate);
 	ASSERT(outq.empty());
 	ASSERT(input->empty());
+
+	output_bytes_ += output->length() - output_initial_size;
 }
 
 void

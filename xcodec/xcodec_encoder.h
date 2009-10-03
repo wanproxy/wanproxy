@@ -9,6 +9,8 @@ class XCodecEncoder {
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
+	uint64_t input_bytes_;
+	uint64_t output_bytes_;
 
 public:
 	XCodecEncoder(XCodec *);

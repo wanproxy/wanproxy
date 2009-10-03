@@ -9,11 +9,15 @@
 XCodecDecoder::XCodecDecoder(XCodec *codec)
 : log_("/xcodec/decoder"),
   cache_(codec->cache_),
-  window_()
+  window_(),
+  input_bytes_(0),
+  output_bytes_(0)
 { }
 
 XCodecDecoder::~XCodecDecoder()
-{ }
+{
+	DEBUG(log_) << "Input bytes: " << input_bytes_ << "; Output bytes: " << output_bytes_;
+}
 
 /*
  * Decode an XCodec-encoded stream.  Returns false if there was an
@@ -35,9 +39,11 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 		ch = input->peek();
 
 		while (!XCODEC_CHAR_SPECIAL(ch)) {
+			input_bytes_++;
 			inlen--;
 			input->skip(1);
 			output->append(ch);
+			output_bytes_++;
 
 			if (inlen == 0)
 				break;
@@ -70,8 +76,10 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			window_.declare(hash, seg);
 
 			output->append(seg);
+			output_bytes_ += seg->length();
 			seg->unref();
 			inlen -= 9;
+			input_bytes_ += 9;
 			break;
 
 			/*
@@ -84,8 +92,10 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			input->copyout(&ch, 1, sizeof ch);
 			if (XCODEC_CHAR_SPECIAL(ch)) {
 				output->append(ch);
+				output_bytes_++;
 				input->skip(2);
 				inlen -= 2;
+				input_bytes_ += 2;
 				break;
 			}
 
@@ -149,6 +159,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			}
 
 			inlen -= 9 + XCODEC_SEGMENT_LENGTH;
+			input_bytes_ += 9 + XCODEC_SEGMENT_LENGTH;
 			break;
 
 			/*
@@ -171,8 +182,10 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			}
 
 			output->append(seg);
+			output_bytes_ += seg->length();
 			seg->unref();
 			inlen -= 2;
+			input_bytes_ += 2;
 			break;
 
 		default:
