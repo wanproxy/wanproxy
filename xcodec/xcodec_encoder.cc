@@ -4,6 +4,9 @@
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_cache.h>
 #include <xcodec/xcodec_encoder.h>
+#ifdef XCODEC_STATS
+#include <xcodec/xcodec_encoder_stats.h>
+#endif
 #include <xcodec/xcodec_hash.h>
 
 typedef	std::pair<unsigned, uint64_t> offset_hash_pair_t;
@@ -25,7 +28,9 @@ XCodecEncoder::XCodecEncoder(XCodec *codec)
 
 XCodecEncoder::~XCodecEncoder()
 {
-	DEBUG(log_) << "Input bytes: " << input_bytes_ << "; Output bytes: " << output_bytes_;
+#ifdef XCODEC_STATS
+	XCodecEncoderStats::record(input_bytes_, output_bytes_);
+#endif
 }
 
 /*
