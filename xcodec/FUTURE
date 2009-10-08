@@ -17,3 +17,8 @@ Possibly-bad future ideas:
 (o) Incorporate occasional (figure out frequency) CRCs or such of the next N
     bytes of decoded data to make it possible to detect any hash mismatches,
     using a different hash function to any that go into the hash.
+(o) If the encoded version of a stream is larger than the source would be
+    escaped, it'd be nice to just transmit it escaped and to have some way to
+    tell the remote side how to pick out chunks to be taken as known to both
+    parties in the future.  One approach would be to send a list of offsets
+    at which hashes were declared.
