@@ -50,6 +50,9 @@ For 0.8.0:
 o) Cache hierarchy, including persistent storage.
 o) TLS.
 
+For 0.9.0:
+o) Handle OOB data.
+
 After 1.0.0:
 o) A CLI program for management.  Remember to USE_POLL=select since Mac OS X can
    only use select(2) for stdin and stdout.
