@@ -4,17 +4,25 @@
 #include <xcodec/xcodec_window.h>
 
 class XCodecCache;
+#if defined(XCODEC_PIPES)
 class XCodecEncoderPipe;
+#endif
 
 class XCodecEncoder {
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
+#if defined(XCODEC_PIPES)
 	XCodecEncoderPipe *pipe_;
+#endif
 	Buffer queued_;
 
 public:
+#if defined(XCODEC_PIPES)
 	XCodecEncoder(XCodec *, XCodecEncoderPipe *);
+#else
+	XCodecEncoder(XCodec *);
+#endif
 	~XCodecEncoder();
 
 	void encode(Buffer *, Buffer *);

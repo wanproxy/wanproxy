@@ -1,26 +1,38 @@
 #include <common/buffer.h>
 #include <common/endian.h>
 
+#if defined(XCODEC_PIPES)
 #include <io/pipe.h>
+#endif
 
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_cache.h>
 #include <xcodec/xcodec_encoder.h>
+#if defined(XCODEC_PIPES)
 #include <xcodec/xcodec_encoder_pipe.h>
+#endif
 #include <xcodec/xcodec_hash.h>
 
 typedef	std::pair<unsigned, uint64_t> offset_hash_pair_t;
 
+#if defined(XCODEC_PIPES)
 XCodecEncoder::XCodecEncoder(XCodec *codec, XCodecEncoderPipe *pipe)
+#else
+XCodecEncoder::XCodecEncoder(XCodec *codec)
+#endif
 : log_("/xcodec/encoder"),
   cache_(codec->cache_),
   window_(),
+#if defined(XCODEC_PIPES)
   pipe_(pipe),
+#endif
   queued_()
 {
 	queued_.append(codec->hello());
+#if defined(XCODEC_PIPES)
 	if (pipe_ != NULL)
 		pipe_->output_ready();
+#endif
 }
 
 XCodecEncoder::~XCodecEncoder()
@@ -244,8 +256,10 @@ XCodecEncoder::encode_ask(uint64_t hash)
 	queued_.append(XCODEC_OP_ASK);
 	queued_.append((const uint8_t *)&behash, sizeof behash);
 
+#if defined(XCODEC_PIPES)
 	if (pipe_ != NULL)
 		pipe_->output_ready();
+#endif
 }
 
 /*
@@ -258,8 +272,10 @@ XCodecEncoder::encode_learn(BufferSegment *seg)
 	queued_.append(XCODEC_OP_LEARN);
 	queued_.append(seg);
 
+#if defined(XCODEC_PIPES)
 	if (pipe_ != NULL)
 		pipe_->output_ready();
+#endif
 }
 
 
