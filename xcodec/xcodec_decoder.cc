@@ -226,6 +226,8 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + XCODEC_SEGMENT_LENGTH)
 				return (true);
 			else {
+				input->skip(sizeof XCODEC_MAGIC + sizeof op);
+
 				BufferSegment *seg;
 				input->copyout(&seg, XCODEC_SEGMENT_LENGTH);
 				input->skip(XCODEC_SEGMENT_LENGTH);
