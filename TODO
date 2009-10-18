@@ -2,6 +2,10 @@ For 0.6.0:
 o) Fix xcdump for the new world order.
 o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
    other things can handle spontaneous output.
+o) Batch ASKs and LEARNs.  Don't trigger output from the pipe if we're just
+   going to send more.  This is easy enough -- call a encode_push() function on
+   exit if we have sent ASKs or LEARNs, and have that notify the Pipe instead
+   of having encode_ask and encode_learn do it.
 
 For 0.6.1:
 o) A better look-ahead parser.
