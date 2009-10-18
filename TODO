@@ -2,7 +2,9 @@ For 0.6.0:
 o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
    other things can handle spontaneous output.
 o) Find a way to handle the problem of getting an ASK or a LEARN after the
-   encoder already thinks it is done.  Just queue data per each XCodec?
+   encoder already thinks it is done.  Just queue data per each XCodec?  Well,
+   until I snap and decide that one XCodec per peer is appropriate, mayhaps a
+   quick stab at UUIDs is in order.
 
 For 0.6.1:
 o) A better look-ahead parser.
