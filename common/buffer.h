@@ -970,23 +970,6 @@ public:
 	}
 
 	/*
-	 * Apply to a function each byte in this Buffer.
-	 */
-	template<typename T>
-	void foreach_byte(T& f) const
-	{
-		segment_list_t::const_iterator it;
-
-		for (it = data_.begin(); it != data_.end(); ++it) {
-			const BufferSegment *seg = *it;
-			const uint8_t *p;
-
-			for (p = seg->data(); p < seg->end(); p++)
-				f(*p);
-		}
-	}
-
-	/*
 	 * Apply to a function each BufferSegment in this Buffer.
 	 */
 	template<typename T>
