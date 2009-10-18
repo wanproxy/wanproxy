@@ -90,16 +90,16 @@ XCodecEncoderPipe::output_ready(void)
 		return;
 	}
 
+	Buffer empty;
+
+	encoder_.encode(&input_buffer_, &empty);
+	ASSERT(!input_buffer_.empty());
+
 	if (output_callback_ != NULL) {
 		ASSERT(output_action_ == NULL);
 
-		Buffer empty;
-		Buffer tmp;
-
-		encoder_.encode(&tmp, &empty);
-		ASSERT(!tmp.empty());
-
-		output_callback_->event(Event(Event::Done, 0, tmp));
+		output_callback_->event(Event(Event::Done, 0, input_buffer_));
+		input_buffer_.clear();
 		output_action_ = EventSystem::instance()->schedule(output_callback_);
 		output_callback_ = NULL;
 	}

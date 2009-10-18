@@ -48,6 +48,8 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 {
 	/* Process any queued HELLOs, ASKs or LEARNs.  */
 	if (!queued_.empty()) {
+		DEBUG(log_) << "Pushing queued data.";
+
 		output->append(&queued_);
 		queued_.clear();
 

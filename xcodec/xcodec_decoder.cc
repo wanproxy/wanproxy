@@ -86,7 +86,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 		 * Need the following byte at least.
 		 */
 		if (input->length() == 1)
-			break;
+			return (true);
 
 		uint8_t op;
 		input->copyout(&op, sizeof XCODEC_MAGIC, sizeof op);
@@ -248,6 +248,8 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 					cache_->enter(hash, seg);
 				}
 				asked_.erase(hash);
+				if (asked_.empty())
+					DEBUG(log_) << "No outstanding <ASK>s after <LEARN>.";
 				seg->unref();
 			}
 			break;
