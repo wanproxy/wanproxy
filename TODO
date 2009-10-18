@@ -1,5 +1,7 @@
 For 0.6.0:
 o) Fix xcdump for the new world order.
+o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
+   other things can handle spontaneous output.
 
 For 0.6.1:
 o) A better look-ahead parser.
@@ -11,8 +13,6 @@ o) Make UnixClient and UnixServer take the SocketType as an argument to make
    Would need to update UnixServer's API to support both models.
 o) Something higher-level than Pipe which supports various disciplines and
    makes it easier to write stream processing modules.
-o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
-   other things can handle spontaneous output.
 o) Make *Client::connect() work like TCPClient::connect().
 o) Move to the getrusage-based Timer class and make it clear that that is what
    it is for.  Perhaps create a Timer base class and a UserTimer and WallTimer
