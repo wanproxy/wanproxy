@@ -106,7 +106,7 @@ main(int argc, char *argv[])
 static void
 compress(int ifd, int ofd, XCodec *codec)
 {
-	XCodecEncoder encoder(codec);
+	XCodecEncoder encoder(codec, NULL);
 	Buffer input, output;
 
 	while (fill(ifd, &input)) {
