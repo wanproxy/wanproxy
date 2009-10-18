@@ -3,6 +3,7 @@
 
 class Action;
 class EventCallback;
+class XCodecEncoder;
 
 class XCodecDecoderPipe : public Pipe {
 	XCodecDecoder decoder_;
@@ -13,7 +14,7 @@ class XCodecDecoderPipe : public Pipe {
 	Action *output_action_;
 	EventCallback *output_callback_;
 public:
-	XCodecDecoderPipe(XCodec *);
+	XCodecDecoderPipe(XCodec *, XCodecEncoder *);
 	~XCodecDecoderPipe();
 
 	Action *input(Buffer *, EventCallback *);

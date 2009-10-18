@@ -6,192 +6,158 @@
 #include <xcodec/xcodec_decoder.h>
 #include <xcodec/xcodec_hash.h>
 
-XCodecDecoder::XCodecDecoder(XCodec *codec)
+XCodecDecoder::XCodecDecoder(XCodec *codec, XCodecEncoder *encoder)
 : log_("/xcodec/decoder"),
   cache_(codec->cache_),
   window_(),
-  input_bytes_(0),
-  output_bytes_(0)
+  encoder_(encoder)
 { }
 
 XCodecDecoder::~XCodecDecoder()
-{
-	DEBUG(log_) << "Input bytes: " << input_bytes_ << "; Output bytes: " << output_bytes_;
-}
+{ }
 
 /*
  * Decode an XCodec-encoded stream.  Returns false if there was an
- * inconsistency in the stream or something malformed.  Returns true
- * if we were able to process the stream or expect to be able to
- * once more data arrives.  The input buffer is cleared of anything
- * we can process right now.
+ * inconsistency, error or unrecoverable condition in the stream.
+ * Returns true if we were able to process the stream entirely or
+ * expect to be able to finish processing it once more data arrives.
+ * The input buffer is cleared of anything we can parse right now.
+ *
+ * Since some events later in the stream (i.e. ASK or LEARN) may need
+ * to be processed before some earlier in the stream (i.e. REF), we
+ * parse the stream into a list of actions to take, performing them
+ * as we go if possible, otherwise queueing them to occur until the
+ * action that is blocking the stream has been satisfied or the stream
+ * has been closed.
+ *
+ * XXX For now we will ASK in every stream where an unknown hash has
+ * occurred and expect a LEARN in all of them.  In the future, it is
+ * desirable to optimize this.  Especially once we start putting an
+ * instance UUID in the HELLO message and can tell which streams
+ * share an originator.
  */
 bool
 XCodecDecoder::decode(Buffer *output, Buffer *input)
 {
-	BufferSegment *seg, *oseg;
-	uint64_t hash;
-	size_t inlen;
-	uint8_t ch;
-
-	inlen = input->length();
-	while (inlen != 0) {
-		ch = input->peek();
-
-		while (!XCODEC_CHAR_SPECIAL(ch)) {
-			input_bytes_++;
-			inlen--;
-			input->skip(1);
-			output->append(ch);
-			output_bytes_++;
-
-			if (inlen == 0)
-				break;
-
-			ch = input->peek();
+	while (!input->empty()) {
+		unsigned off;
+		if (!input->find(XCODEC_MAGIC, &off)) {
+			output->append(input);
+			input->clear();
+			return (true);
 		}
 
-		ASSERT(inlen == input->length());
+		if (off != 0) {
+			output->append(input, off);
+			input->skip(off);
+		}
+		
+		/*
+		 * Need the following byte at least.
+		 */
+		if (input->length() == 1)
+			return (true);
 
-		if (inlen == 0)
-			break;
-
-		switch (ch) {
-			/*
-			 * A reference to a hash we are expected to have
-			 * in our database.
-			 */
-		case XCODEC_HASHREF_CHAR:
-			if (inlen < 9)
+		uint8_t op;
+		input->copyout(&op, sizeof XCODEC_MAGIC, sizeof op);
+		switch (op) {
+		case XCODEC_OP_HELLO:
+			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
 				return (true);
-
-			input->moveout((uint8_t *)&hash, 1, sizeof hash);
-			hash = LittleEndian::decode(hash);
-
-			seg = cache_->lookup(hash);
-			if (seg == NULL) {
-				ERROR(log_) << "Stream referenced unseen hash: " << hash;
-				return (false);
-			}
-			window_.declare(hash, seg);
-
-			output->append(seg);
-			output_bytes_ += seg->length();
-			seg->unref();
-			inlen -= 9;
-			input_bytes_ += 9;
-			break;
-
-			/*
-			 * A literal character will follow that would
-			 * otherwise have seemed magic.
-			 */
-		case XCODEC_ESCAPE_CHAR:
-			if (inlen < 2)
-				return (true);
-			input->copyout(&ch, 1, sizeof ch);
-			if (XCODEC_CHAR_SPECIAL(ch)) {
-				output->append(ch);
-				output_bytes_++;
-				input->skip(2);
-				inlen -= 2;
-				input_bytes_ += 2;
-				break;
-			}
-
-			ERROR(log_) << "Extended functions not implemented yet.";
-			return (false);
-
-			/*
-			 * A learning opportunity -- a hash we should put
-			 * into our database for future use and the data
-			 * it will be used in reference to next time.
-			 */
-		case XCODEC_DECLARE_CHAR:
-			if (inlen < 9 + XCODEC_SEGMENT_LENGTH)
-				return (true);
-
-			input->moveout((uint8_t *)&hash, 1, sizeof hash);
-			hash = LittleEndian::decode(hash);
-
-			input->copyout(&seg, XCODEC_SEGMENT_LENGTH);
-			input->skip(XCODEC_SEGMENT_LENGTH);
-
-			if (XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data()) != hash) {
-				seg->unref();
-				ERROR(log_) << "Data in stream does not have expected hash.";
-				return (false);
-			}
-
-			/*
-			 * Chech whether we already know a hash by this name.
-			 */
-			oseg = cache_->lookup(hash);
-			if (oseg != NULL) {
-				/*
-				 * We already know a hash by this name.  Check
-				 * whether it is for the same data.  That would
-				 * be nice.  In that case all we need to do is
-				 * update the backreference window.
-				 */
-				if (seg->match(oseg)) {
-					seg->unref();
-					/*
-					 * NB: Use the existing segment since
-					 * it's nice to share.
-					 */
-					window_.declare(hash, oseg);
-					oseg->unref();
-				} else {
-					seg->unref();
-					oseg->unref();
-					ERROR(log_) << "Stream includes hash with different local data.";
+			else {
+				uint8_t len;
+				input->copyout(&len, sizeof XCODEC_MAGIC + sizeof op, sizeof len);
+				if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof len + len)
+					return (true);
+				switch (len) {
+				case 0:
+					break;
+				default:
+					ERROR(log_) << "Unsupported <HELLO> length: " << (unsigned)len;
 					return (false);
 				}
-			} else {
-				/*
-				 * This is a brand new hash.  Enter it into the
-				 * database and the backref window.
-				 */
-				cache_->enter(hash, seg);
+				input->skip(sizeof XCODEC_MAGIC + sizeof op + sizeof len + len);
+			}
+			break;
+		case XCODEC_OP_ESCAPE:
+			output->append(XCODEC_MAGIC);
+			input->skip(sizeof XCODEC_MAGIC + sizeof op);
+			break;
+		case XCODEC_OP_EXTRACT:
+			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + XCODEC_SEGMENT_LENGTH)
+				return (true);
+			else {
+				input->skip(sizeof XCODEC_MAGIC + sizeof op);
+
+				BufferSegment *seg;
+				input->copyout(&seg, XCODEC_SEGMENT_LENGTH);
+				input->skip(XCODEC_SEGMENT_LENGTH);
+
+				uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
+				BufferSegment *oseg = cache_->lookup(hash);
+				if (oseg != NULL) {
+					if (oseg->match(seg)) {
+						seg->unref();
+						seg = oseg;
+					} else {
+						ERROR(log_) << "Collision in <EXTRACT>.";
+						seg->unref();
+						return (false);
+					}
+				} else {
+					cache_->enter(hash, seg);
+				}
+
 				window_.declare(hash, seg);
+				output->append(seg);
 				seg->unref();
 			}
-
-			inlen -= 9 + XCODEC_SEGMENT_LENGTH;
-			input_bytes_ += 9 + XCODEC_SEGMENT_LENGTH;
 			break;
-
-			/*
-			 * A reference to a recently-used hash.  We expect
-			 * to see a lot of these whenever we see declarations
-			 * since the declarations are desorted in the stream
-			 * and are not literally inserted.
-			 */
-		case XCODEC_BACKREF_CHAR:
-			if (inlen < 2)
+		case XCODEC_OP_REF:
+			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint64_t))
 				return (true);
-			input->skip(1);
-			ch = input->peek();
-			input->skip(1);
+			else {
+				uint64_t behash;
+				input->moveout((uint8_t *)&behash, sizeof XCODEC_MAGIC + sizeof op, sizeof behash);
+				uint64_t hash = BigEndian::decode(behash);
 
-			seg = window_.dereference(ch);
-			if (seg == NULL) {
-				ERROR(log_) << "Stream included invalid backref.";
-				return (false);
+				BufferSegment *oseg = cache_->lookup(hash);
+				if (oseg == NULL) {
+					/* XXX ASK */
+					ERROR(log_) << "Unknown hash in <REF>: " << hash;
+					return (false);
+				}
+
+				window_.declare(hash, oseg);
+				output->append(oseg);
+				oseg->unref();
 			}
-
-			output->append(seg);
-			output_bytes_ += seg->length();
-			seg->unref();
-			inlen -= 2;
-			input_bytes_ += 2;
 			break;
+		case XCODEC_OP_BACKREF:
+			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
+				return (true);
+			else {
+				uint8_t idx;
+				input->moveout(&idx, sizeof XCODEC_MAGIC + sizeof op, sizeof idx);
 
+				BufferSegment *oseg = window_.dereference(idx);
+				if (oseg == NULL) {
+					ERROR(log_) << "Index not present in <BACKREF> window: " << (unsigned)idx;
+					return (false);
+				}
+
+				output->append(oseg);
+				oseg->unref();
+			}
+			break;
+		case XCODEC_OP_LEARN:
+			/* NOTYET */
+		case XCODEC_OP_ASK:
+			/* NOTYET */
 		default:
-			NOTREACHED();
+			ERROR(log_) << "Unsupported XCodec opcode " << (unsigned)op << ".";
+			return (false);
 		}
 	}
-
 	return (true);
 }

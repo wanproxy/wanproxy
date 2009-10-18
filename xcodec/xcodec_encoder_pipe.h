@@ -5,6 +5,8 @@ class Action;
 class EventCallback;
 
 class XCodecEncoderPipe : public Pipe {
+	friend class XCodecPipePair;
+
 	XCodecEncoder encoder_;
 
 	Buffer input_buffer_;

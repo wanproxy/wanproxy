@@ -4,9 +4,6 @@
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_cache.h>
 #include <xcodec/xcodec_encoder.h>
-#ifdef XCODEC_STATS
-#include <xcodec/xcodec_encoder_stats.h>
-#endif
 #include <xcodec/xcodec_hash.h>
 
 typedef	std::pair<unsigned, uint64_t> offset_hash_pair_t;
@@ -14,24 +11,18 @@ typedef	std::pair<unsigned, uint64_t> offset_hash_pair_t;
 struct xcodec_special_p {
 	bool operator() (uint8_t ch) const
 	{
-		return (XCODEC_CHAR_SPECIAL(ch));
+		return (ch == XCODEC_MAGIC);
 	}
 };
 
 XCodecEncoder::XCodecEncoder(XCodec *codec)
 : log_("/xcodec/encoder"),
   cache_(codec->cache_),
-  window_(),
-  input_bytes_(0),
-  output_bytes_(0)
+  window_()
 { }
 
 XCodecEncoder::~XCodecEncoder()
-{
-#ifdef XCODEC_STATS
-	XCodecEncoderStats::record(input_bytes_, output_bytes_);
-#endif
-}
+{ }
 
 /*
  * This takes a view of a data stream and turns it into a series of references
@@ -41,16 +32,8 @@ XCodecEncoder::~XCodecEncoder()
 void
 XCodecEncoder::encode(Buffer *output, Buffer *input)
 {
-	uint64_t output_initial_size = output->length();
-
-	input_bytes_ += input->length();
-
 	if (input->length() < XCODEC_SEGMENT_LENGTH) {
-		input->escape(XCODEC_ESCAPE_CHAR, xcodec_special_p());
-		output->append(input);
-		input->clear();
-
-		output_bytes_ += output->length() - output_initial_size;
+		encode_escape(output, input, input->length());
 		return;
 	}
 
@@ -233,32 +216,19 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	 * just escape it.
 	 */
 	if (!outq.empty()) {
-		Buffer suffix(outq);
-		outq.clear();
-
-		suffix.escape(XCODEC_ESCAPE_CHAR, xcodec_special_p());
-
-		output->append(suffix);
-		outq.clear();
+		encode_escape(output, &outq, outq.length());
 	}
 
 	ASSERT(!have_candidate);
 	ASSERT(outq.empty());
 	ASSERT(input->empty());
-
-	output_bytes_ += output->length() - output_initial_size;
 }
 
 void
 XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, BufferSegment **segp)
 {
 	if (offset != 0) {
-		Buffer prefix;
-		input->moveout(&prefix, 0, offset);
-
-		prefix.escape(XCODEC_ESCAPE_CHAR, xcodec_special_p());
-		output->append(prefix);
-		prefix.clear();
+		encode_escape(output, input, offset);
 	}
 
 	BufferSegment *nseg;
@@ -266,9 +236,8 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 
 	cache_->enter(hash, nseg);
 
-	output->append(XCODEC_DECLARE_CHAR);
-	uint64_t lehash = LittleEndian::encode(hash);
-	output->append((const uint8_t *)&lehash, sizeof lehash);
+	output->append(XCODEC_MAGIC);
+	output->append(XCODEC_OP_EXTRACT);
 	output->append(nseg);
 
 	window_.declare(hash, nseg);
@@ -280,19 +249,33 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 	 */
 	input->skip(XCODEC_SEGMENT_LENGTH); 
 
-	/*
-	 * And output a reference.
-	 */
-	uint8_t b;
-	if (window_.present(hash, &b)) {
-		output->append(XCODEC_BACKREF_CHAR);
-		output->append(b);
-	} else {
-		NOTREACHED();
-	}
-
 	if (segp != NULL)
 		*segp = nseg;
+}
+
+void
+XCodecEncoder::encode_escape(Buffer *output, Buffer *input, unsigned length)
+{
+	do {
+		unsigned offset;
+		if (!input->find(XCODEC_MAGIC, &offset, length)) {
+			output->append(input, length);
+			input->skip(length);
+			return;
+		}
+
+		if (offset != 0) {
+			output->append(input, offset);
+			length -= offset;
+			input->skip(offset);
+		}
+
+		output->append(XCODEC_MAGIC);
+		output->append(XCODEC_OP_ESCAPE);
+
+		length -= sizeof XCODEC_MAGIC;
+		input->skip(sizeof XCODEC_MAGIC);
+	} while (length != 0);
 }
 
 bool
@@ -305,12 +288,7 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 		return (false);
 
 	if (offset != 0) {
-		Buffer prefix;
-		input->moveout(&prefix, 0, offset);
-
-		prefix.escape(XCODEC_ESCAPE_CHAR, xcodec_special_p());
-		output->append(prefix);
-		prefix.clear();
+		encode_escape(output, input, offset);
 	}
 
 	/*
@@ -323,12 +301,14 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 	 */
 	uint8_t b;
 	if (window_.present(hash, &b)) {
-		output->append(XCODEC_BACKREF_CHAR);
+		output->append(XCODEC_MAGIC);
+		output->append(XCODEC_OP_BACKREF);
 		output->append(b);
 	} else {
-		output->append(XCODEC_HASHREF_CHAR);
-		uint64_t lehash = LittleEndian::encode(hash);
-		output->append((const uint8_t *)&lehash, sizeof lehash);
+		output->append(XCODEC_MAGIC);
+		output->append(XCODEC_OP_REF);
+		uint64_t behash = BigEndian::encode(hash);
+		output->append((const uint8_t *)&behash, sizeof behash);
 
 		window_.declare(hash, oseg);
 	}

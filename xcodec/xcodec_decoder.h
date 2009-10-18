@@ -4,16 +4,16 @@
 #include <xcodec/xcodec_window.h>
 
 class XCodecCache;
+class XCodecEncoder;
 
 class XCodecDecoder {
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
-	uint64_t input_bytes_;
-	uint64_t output_bytes_;
+	XCodecEncoder *encoder_;
 
 public:
-	XCodecDecoder(XCodec *);
+	XCodecDecoder(XCodec *, XCodecEncoder *);
 	~XCodecDecoder();
 
 	bool decode(Buffer *, Buffer *);

@@ -706,69 +706,6 @@ public:
 	}
 
 	/*
-	 * Escapes every character in this Buffer for which the supplied
-	 * predicate is true with the supplied escape character esc.
-	 */
-	template<typename T>
-	void escape(uint8_t esc, T predicate)
-	{
-		segment_list_t escaped_data;
-		segment_list_t::iterator it;
-		bool any_escapes;
-
-		any_escapes = false;
-
-		for (it = data_.begin(); it != data_.end(); ++it) {
-			BufferSegment *seg = *it;
-			const uint8_t *p;
-			bool escaped;
-
-			escaped = false;
-
-			for (p = seg->data(); p < seg->end(); p++) {
-				if (!predicate(*p))
-					continue;
-				BufferSegment *nseg;
-
-				nseg = new BufferSegment();
-				if (p != seg->data())
-					nseg->append(seg->data(),
-						     (p - seg->data()));
-				while (p < seg->end()) {
-					uint8_t ch = *p;
-					if (predicate(ch)) {
-						if (nseg->avail() == 0) {
-							escaped_data.push_back(nseg);
-							nseg = new BufferSegment();
-						}
-						nseg->append(esc);
-						length_++;
-					}
-					if (nseg->avail() == 0) {
-						escaped_data.push_back(nseg);
-						nseg = new BufferSegment();
-					}
-					nseg->append(ch);
-					p++;
-				}
-				escaped_data.push_back(nseg);
-				escaped = true;
-				break;
-			}
-			if (!escaped)
-				escaped_data.push_back(seg);
-			else {
-				seg->unref();
-				any_escapes = true;
-			}
-		}
-		if (any_escapes) {
-			data_.clear();
-			data_ = escaped_data;
-		}
-	}
-
-	/*
 	 * Finds the first occurance of character ch in this Buffer's data and
 	 * sets offsetp to the offset it was found at.  If a limit is given, at
 	 * most that many characters will be searched.
@@ -786,44 +723,20 @@ public:
 		for (it = data_.begin(); it != data_.end(); ++it) {
 			const BufferSegment *seg = *it;
 			const uint8_t *p;
+			size_t len = limit < seg->length() ? limit : seg->length();
 
-			/* XXX memchr */
-			for (p = seg->data(); p < seg->end(); p++) {
-				if (*p != ch) {
-					if (offset++ == limit)
-						return (false);
-					continue;
-				}
-				*offsetp = offset;
-				return (true);
+			p = (const uint8_t *)memchr(seg->data(), ch, len);
+			if (p == NULL) {
+				offset += len;
+				limit -= len;
+
+				if (limit == 0)
+					break;
+				continue;
 			}
-		}
-		return (false);
-	}
 
-	/*
-	 * Finds the offset of the first character in this Buffer for
-	 * which the supplied predicate is true.
-	 */
-	template<typename T>
-	bool find_if(T predicate, unsigned *offsetp) const
-	{
-		segment_list_t::const_iterator it;
-		unsigned offset;
-
-		offset = 0;
-
-		for (it = data_.begin(); it != data_.end(); ++it) {
-			const BufferSegment *seg = *it;
-			const uint8_t *p;
-
-			for (p = seg->data(); p < seg->end(); p++) {
-				if (predicate(*p)) {
-					*offsetp = offset;
-					return (true);
-				}
-				offset++;
-			}
+			*offsetp = offset + (p - seg->data());
+			return (true);
 		}
 		return (false);
 	}

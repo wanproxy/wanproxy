@@ -1,5 +1,6 @@
 SUBDIR+=tack
 SUBDIR+=wanproxy
-SUBDIR+=xcdump
+# XXX Broken with the new encoder.
+#SUBDIR+=xcdump
 
 .include <bsd.subdir.mk>

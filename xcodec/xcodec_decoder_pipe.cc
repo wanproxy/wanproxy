@@ -10,8 +10,8 @@
 #include <xcodec/xcodec_decoder.h>
 #include <xcodec/xcodec_decoder_pipe.h>
 
-XCodecDecoderPipe::XCodecDecoderPipe(XCodec *codec)
-: decoder_(codec),
+XCodecDecoderPipe::XCodecDecoderPipe(XCodec *codec, XCodecEncoder *encoder)
+: decoder_(codec, encoder),
   input_buffer_(),
   input_eos_(false),
   output_action_(NULL),

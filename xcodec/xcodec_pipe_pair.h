@@ -11,13 +11,13 @@ enum XCodecPipePairType {
 
 class XCodecPipePair : public PipePair {
 	XCodecPipePairType type_;
-	XCodecDecoderPipe decoder_pipe_;
 	XCodecEncoderPipe encoder_pipe_;
+	XCodecDecoderPipe decoder_pipe_;
 public:
 	XCodecPipePair(XCodec *codec, XCodecPipePairType type)
 	: type_(type),
-	  decoder_pipe_(codec),
-	  encoder_pipe_(codec)
+	  encoder_pipe_(codec),
+	  decoder_pipe_(codec, &encoder_pipe_.encoder_)
 	{ }
 
 	~XCodecPipePair()

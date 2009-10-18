@@ -68,6 +68,8 @@ public:
 
 	BufferSegment *dereference(unsigned c) const
 	{
+		if (window_[c] == 0)
+			return (NULL);
 		std::map<uint64_t, BufferSegment *>::const_iterator it;
 		it = segments_.find(window_[c]);
 		ASSERT(it != segments_.end());

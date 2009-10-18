@@ -1,4 +1,16 @@
-For 0.5.3:
+For 0.6.0:
+o) Fix xcdump for the new world order.
+o) Add the look-ahead parsing to the new decoder.
+o) Add ASK and LEARN support.
+o) Remove the xor_ from XCodecHash and just use Adler64::operator+=.  The xor
+   doesn't overwhelmingly change the collision characteristics and costs quite
+   a bit.  Just make the lower 32-bits of the hash the Adler64 values mixed
+   and the upper 32-bits the mixed UUID associated with this XCodecCache.
+   (See xcodec/FUTURE for more on UUIDs.)  UUIDs are probably for 0.6.1.
+   Alternately, keep separate caches for each peer and use HELLO messages to
+   tell peers apart.
+
+For 0.6.1:
 o) Test error handling in epoll.
 o) Test error handling with port(3C).
 o) Condition variables to suppport spontaneous output from XCodecEncoderPipe.
@@ -7,13 +19,9 @@ o) Make UnixClient and UnixServer take the SocketType as an argument to make
    Would need to update UnixServer's API to support both models.
 o) Something higher-level than Pipe which supports various disciplines and
    makes it easier to write stream processing modules.
-o) New look-ahead decoder that can handle yield hash requests and out-of-window
-   definitions.
 o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
    other things can handle spontaneous output.
 o) Make *Client::connect() work like TCPClient::connect().
-
-For 0.5.4:
 o) Move to the getrusage-based Timer class and make it clear that that is what
    it is for.  Perhaps create a Timer base class and a UserTimer and WallTimer
    for real use?
@@ -28,13 +36,6 @@ o) Add a flesh Event type for Pipe::output() ?
 o) Make Pipe::input take a parameter to send EOS along with data.
 o) How do we find out if remote has shut down read channel so we can stop
    writing and shut down a Splice?
-
-For 0.6.0:
-o) Remove the xor_ from XCodecHash and just use Adler64::operator+=.  The xor
-   doesn't overwhelmingly change the collision characteristics and costs quite
-   a bit.  Just make the lower 32-bits of the hash the Adler64 values mixed
-   and the upper 32-bits the mixed UUID associated with this XCodecCache.
-   (See xcodec/FUTURE for more on UUIDs.)
 o) Make interface/listener objects automatically start listening.
 o) Clean up address configuration objects to be more sensible, being either
    specific components of addresses (e.g. to specify an IP address) or socket
@@ -42,9 +43,7 @@ o) Clean up address configuration objects to be more sensible, being either
 o) Connector abstraction: connection pooling / connecting via a SOCKS server.
 
 For 0.7.0:
-o) Do some information exchange out-of-band when setting up connections between
-   WANProxy instances so we know what Channel to send requests for declarations
-   on.
+o) Working UUIDs and rich HELLO messages and so on.
 
 For 0.8.0:
 o) Cache hierarchy, including persistent storage.

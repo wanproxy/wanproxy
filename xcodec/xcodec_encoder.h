@@ -9,8 +9,6 @@ class XCodecEncoder {
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
-	uint64_t input_bytes_;
-	uint64_t output_bytes_;
 
 public:
 	XCodecEncoder(XCodec *);
@@ -19,6 +17,7 @@ public:
 	void encode(Buffer *, Buffer *);
 private:
 	void encode_declaration(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment **);
+	void encode_escape(Buffer *, Buffer *, unsigned);
 	bool encode_reference(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment *);
 };
 
