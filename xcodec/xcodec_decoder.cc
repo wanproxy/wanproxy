@@ -19,6 +19,8 @@ XCodecDecoder::XCodecDecoder(XCodec *codec)
 XCodecDecoder::~XCodecDecoder()
 {
 	ASSERT(encoder_ == NULL);
+	if (!asked_.empty())
+		DEBUG(log_) << asked_.size() << " outstanding <ASK>s when destroyed.";
 }
 
 /*
