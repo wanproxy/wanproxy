@@ -787,6 +787,7 @@ public:
 			const BufferSegment *seg = *it;
 			const uint8_t *p;
 
+			/* XXX memchr */
 			for (p = seg->data(); p < seg->end(); p++) {
 				if (*p != ch) {
 					if (offset++ == limit)
