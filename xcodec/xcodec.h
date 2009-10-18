@@ -129,22 +129,6 @@ public:
 	{
 		return (&hello_);
 	}
-
-	/*
-	 * These operations can always be completed immediately and will not
-	 * change the semantics of any operations before them in a stream.
-	 */
-	static bool side_effects(uint8_t op)
-	{
-		switch (op) {
-		case XCODEC_OP_ESCAPE:
-		case XCODEC_OP_LEARN:
-		case XCODEC_OP_ASK:
-			return (false);
-		default:
-			return (true);
-		}
-	}
 };
 
 #endif /* !XCODEC_H */

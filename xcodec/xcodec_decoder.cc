@@ -11,7 +11,9 @@ XCodecDecoder::XCodecDecoder(XCodec *codec, XCodecEncoder *encoder)
 : log_("/xcodec/decoder"),
   cache_(codec->cache_),
   window_(),
-  encoder_(encoder)
+  encoder_(encoder),
+  parsing_queued_(false),
+  queued_()
 { }
 
 XCodecDecoder::~XCodecDecoder()
@@ -43,21 +45,30 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 	while (!input->empty()) {
 		unsigned off;
 		if (!input->find(XCODEC_MAGIC, &off)) {
-			output->append(input);
+			if (queued_.empty()) {
+				output->append(input);
+			} else {
+				queued_.append(input);
+			}
 			input->clear();
-			return (true);
+			break;
 		}
 
 		if (off != 0) {
-			output->append(input, off);
-			input->skip(off);
+			if (queued_.empty()) {
+				output->append(input, off);
+				input->skip(off);
+			} else {
+				queued_.append(input, off);
+				input->skip(off);
+			}
 		}
 		
 		/*
 		 * Need the following byte at least.
 		 */
 		if (input->length() == 1)
-			return (true);
+			break;
 
 		uint8_t op;
 		input->copyout(&op, sizeof XCODEC_MAGIC, sizeof op);
@@ -66,6 +77,11 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
 				return (true);
 			else {
+				if (!queued_.empty()) {
+					ERROR(log_) << "Got <HELLO> with data queued.";
+					return (false);
+				}
+
 				uint8_t len;
 				input->copyout(&len, sizeof XCODEC_MAGIC + sizeof op, sizeof len);
 				if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof len + len)
@@ -81,7 +97,12 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			}
 			break;
 		case XCODEC_OP_ESCAPE:
-			output->append(XCODEC_MAGIC);
+			if (queued_.empty()) {
+				output->append(XCODEC_MAGIC);
+			} else {
+				queued_.append(XCODEC_MAGIC);
+				queued_.append(XCODEC_OP_ESCAPE);
+			}
 			input->skip(sizeof XCODEC_MAGIC + sizeof op);
 			break;
 		case XCODEC_OP_EXTRACT:
@@ -109,8 +130,14 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 					cache_->enter(hash, seg);
 				}
 
-				window_.declare(hash, seg);
-				output->append(seg);
+				if (queued_.empty()) {
+					window_.declare(hash, seg);
+					output->append(seg);
+				} else {
+					queued_.append(XCODEC_MAGIC);
+					queued_.append(XCODEC_OP_EXTRACT);
+					queued_.append(seg);
+				}
 				seg->unref();
 			}
 			break;
@@ -128,31 +155,39 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 						ERROR(log_) << "Unknown hash in <REF>: " << hash;
 						return (false);
 					}
-					encoder_->encode_ask(hash);
-					ERROR(log_) << "Waiting for <LEARN> not yet implemented.";
-					return (false);
-				}
 
-				window_.declare(hash, oseg);
-				output->append(oseg);
-				oseg->unref();
+					DEBUG(log_) << "Sending <ASK>, waiting for <LEARN>.";
+					encoder_->encode_ask(hash);
+
+					queued_.append(XCODEC_MAGIC);
+					queued_.append(XCODEC_OP_REF);
+					queued_.append((const uint8_t *)&behash, sizeof behash);
+				} else {
+					window_.declare(hash, oseg);
+					output->append(oseg);
+					oseg->unref();
+				}
 			}
 			break;
 		case XCODEC_OP_BACKREF:
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
 				return (true);
 			else {
-				uint8_t idx;
-				input->moveout(&idx, sizeof XCODEC_MAGIC + sizeof op, sizeof idx);
+				if (queued_.empty()) {
+					uint8_t idx;
+					input->moveout(&idx, sizeof XCODEC_MAGIC + sizeof op, sizeof idx);
 
-				BufferSegment *oseg = window_.dereference(idx);
-				if (oseg == NULL) {
-					ERROR(log_) << "Index not present in <BACKREF> window: " << (unsigned)idx;
-					return (false);
+					BufferSegment *oseg = window_.dereference(idx);
+					if (oseg == NULL) {
+						ERROR(log_) << "Index not present in <BACKREF> window: " << (unsigned)idx;
+						return (false);
+					}
+
+					output->append(oseg);
+					oseg->unref();
+				} else {
+					input->moveout(&queued_, sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t));
 				}
-
-				output->append(oseg);
-				oseg->unref();
 			}
 			break;
 		case XCODEC_OP_LEARN:
@@ -208,5 +243,30 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			return (false);
 		}
 	}
+
+	ASSERT(input->empty());
+
+	/*
+	 * We have finished parsing the available data.  If it wasn't the queued data
+	 * that we were parsing, try parsing the queued data now.
+	 */
+	if (!parsing_queued_ && !queued_.empty()) {
+		Buffer queued(queued_);
+		queued_.clear();
+
+		parsing_queued_ = true;
+		if (!decode(output, &queued)) {
+			ERROR(log_) << "Error while parsing queued data.";
+			return (false);
+		}
+		parsing_queued_ = false;
+
+		if (queued_.empty()) {
+			DEBUG(log_) << "Successfully parsed queued data.";
+		} else {
+			DEBUG(log_) << "Not yet able to parse queued data.";
+		}
+	}
+
 	return (true);
 }

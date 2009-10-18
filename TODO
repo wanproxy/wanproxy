@@ -1,9 +1,8 @@
 For 0.6.0:
 o) Fix xcdump for the new world order.
-o) Add the look-ahead parsing to the new decoder.
-o) Add ASK and LEARN support.
 
 For 0.6.1:
+o) A better look-ahead parser.
 o) Test error handling in epoll.
 o) Test error handling with port(3C).
 o) Condition variables to suppport spontaneous output from XCodecEncoderPipe.
