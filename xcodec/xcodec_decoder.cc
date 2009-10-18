@@ -12,8 +12,8 @@ XCodecDecoder::XCodecDecoder(XCodec *codec, XCodecEncoder *encoder)
   cache_(codec->cache_),
   window_(),
   encoder_(encoder),
-  parsing_queued_(false),
-  queued_()
+  queued_(),
+  asked_()
 { }
 
 XCodecDecoder::~XCodecDecoder()

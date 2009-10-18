@@ -13,7 +13,6 @@ class XCodecDecoder {
 	XCodecCache *cache_;
 	XCodecWindow window_;
 	XCodecEncoder *encoder_;
-	bool parsing_queued_;
 	Buffer queued_;
 	std::set<uint64_t> asked_;
 
