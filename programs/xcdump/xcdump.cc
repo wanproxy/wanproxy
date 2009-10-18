@@ -15,6 +15,7 @@
 #include <common/limits.h>
 
 #include <xcodec/xcodec.h>
+#include <xcodec/xcodec_hash.h>
 
 #define	XCDUMP_IOVEC_SIZE	(IOV_MAX)
 
@@ -77,106 +78,124 @@ dump(int ifd, int ofd)
 	Buffer input, output;
 
 	while (fill(ifd, &input)) {
-		BufferSegment *seg;
-		uint64_t hash;
-		size_t inlen;
-		uint8_t ch;
-
-		inlen = input.length();
-		while (inlen != 0) {
-			ch = input.peek();
-
-			while (!XCODEC_CHAR_SPECIAL(ch)) {
-				inlen--;
-				input.skip(1);
-				bprintf(&output, "<literal");
-				if (dump_verbosity > 0)
-					bprintf(&output, " character=\"0x%02x\"", ch);
-				bprintf(&output, "/>\n");
-
-				if (inlen == 0)
-					break;
-
-				ch = input.peek();
-			}
-
-			ASSERT(inlen == input.length());
-
-			if (inlen == 0)
+		while (!input.empty()) {
+			if (input.empty())
 				break;
 
-			switch (ch) {
-			case XCODEC_HASHREF_CHAR:
-				if (inlen < 9)
-					break;
+			unsigned off;
+			if (!input.find(XCODEC_MAGIC, &off)) {
+				bprintf(&output, "<data");
+				if (dump_verbosity > 1) {
+					uint8_t data[input.length()];
+					input.copyout(data, sizeof data);
 
-				input.moveout((uint8_t *)&hash, 1, sizeof hash);
-				hash = LittleEndian::decode(hash);
-
-				bprintf(&output, "<hash-reference");
-				if (dump_verbosity > 0)
-					bprintf(&output, " hash=\"0x%016jx\"", (uintmax_t)hash);
-				bprintf(&output, "/>\n");
-				inlen -= 9;
-				continue;
-
-			case XCODEC_ESCAPE_CHAR:
-				if (inlen < 2)
-					break;
-				input.skip(1);
-				ch = input.peek();
-				bprintf(&output, "<escape");
-				if (dump_verbosity > 0)
-					bprintf(&output, " character=\"0x%02x\"", ch);
-				bprintf(&output, "/>\n");
-				input.skip(1);
-				inlen -= 2;
-				continue;
-
-			case XCODEC_DECLARE_CHAR:
-				if (inlen < 9 + XCODEC_SEGMENT_LENGTH)
-					break;
-
-				input.moveout((uint8_t *)&hash, 1, sizeof hash);
-				hash = LittleEndian::decode(hash);
-
-				input.copyout(&seg, XCODEC_SEGMENT_LENGTH);
-				input.skip(XCODEC_SEGMENT_LENGTH);
-
-				bprintf(&output, "<hash-declare");
-				if (dump_verbosity > 0) {
-					bprintf(&output, " hash=\"0x%016jx\"", (uintmax_t)hash);
-					if (dump_verbosity > 1) {
-						bprintf(&output, " data=\"");
-						bhexdump(&output, seg->data(), seg->length());
-						bprintf(&output, "\"");
-					}
+					bprintf(&output, " data=\"");
+					bhexdump(&output, data, sizeof data);
+					bprintf(&output, "\"");
 				}
+				input.clear();
 				bprintf(&output, "/>\n");
-
-				seg->unref();
-				inlen -= 9 + XCODEC_SEGMENT_LENGTH;
-				continue;
-
-			case XCODEC_BACKREF_CHAR:
-				if (inlen < 2)
-					break;
-				input.skip(1);
-				ch = input.peek();
-				input.skip(1);
-
-				bprintf(&output, "<back-reference");
-				if (dump_verbosity > 0)
-					bprintf(&output, " offset=\"%u\"", ch);
-				bprintf(&output, "/>\n");
-
-				inlen -= 2;
-				continue;
-
-			default:
-				NOTREACHED();
+				break;
 			}
-			break;
+
+			if (off != 0) {
+				bprintf(&output, "<data");
+				if (dump_verbosity > 1) {
+					uint8_t data[off];
+					input.copyout(data, sizeof data);
+
+					bprintf(&output, " data=\"");
+					bhexdump(&output, data, sizeof data);
+					bprintf(&output, "\"");
+				}
+				input.clear();
+				bprintf(&output, "/>\n");
+			}
+		
+			/*
+			 * Need the following byte at least.
+			 */
+			if (input.length() == 1)
+				break;
+
+			uint8_t op;
+			input.copyout(&op, sizeof XCODEC_MAGIC, sizeof op);
+			switch (op) {
+			case XCODEC_OP_HELLO:
+				if (input.length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
+					break;
+				else {
+					uint8_t len;
+					input.copyout(&len, sizeof XCODEC_MAGIC + sizeof op, sizeof len);
+					if (input.length() < sizeof XCODEC_MAGIC + sizeof op + sizeof len + len)
+						break;
+					bprintf(&output, "<hello length=\"%u\"/>\n", (unsigned)len);
+					input.skip(sizeof XCODEC_MAGIC + sizeof op + sizeof len + len);
+				}
+				break;
+			case XCODEC_OP_ESCAPE:
+				bprintf(&output, "<escape />");
+				input.skip(sizeof XCODEC_MAGIC + sizeof op);
+				break;
+			case XCODEC_OP_LEARN:
+			case XCODEC_OP_EXTRACT:
+				if (input.length() < sizeof XCODEC_MAGIC + sizeof op + XCODEC_SEGMENT_LENGTH)
+					break;
+				else {
+					input.skip(sizeof XCODEC_MAGIC + sizeof op);
+
+					BufferSegment *seg;
+					input.copyout(&seg, XCODEC_SEGMENT_LENGTH);
+					input.skip(XCODEC_SEGMENT_LENGTH);
+
+					uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
+
+					bprintf(&output, "<hash-%s", op == XCODEC_OP_LEARN ? "learn" : "declare");
+					if (dump_verbosity > 0) {
+						bprintf(&output, " hash=\"0x%016jx\"", (uintmax_t)hash);
+						if (dump_verbosity > 1) {
+							bprintf(&output, " data=\"");
+							bhexdump(&output, seg->data(), seg->length());
+							bprintf(&output, "\"");
+						}
+					}
+					bprintf(&output, "/>\n");
+
+					seg->unref();
+				}
+				break;
+			case XCODEC_OP_ASK:
+			case XCODEC_OP_REF:
+				if (input.length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint64_t))
+					break;
+				else {
+					uint64_t behash;
+					input.moveout((uint8_t *)&behash, sizeof XCODEC_MAGIC + sizeof op, sizeof behash);
+					uint64_t hash = BigEndian::decode(behash);
+
+					bprintf(&output, "<hash-%s", op == XCODEC_OP_ASK ? "ask" : "reference");
+					if (dump_verbosity > 0)
+						bprintf(&output, " hash=\"0x%016jx\"", (uintmax_t)hash);
+					bprintf(&output, "/>\n");
+				}
+				break;
+			case XCODEC_OP_BACKREF:
+				if (input.length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
+					break;
+				else {
+					uint8_t idx;
+					input.moveout(&idx, sizeof XCODEC_MAGIC + sizeof op, sizeof idx);
+
+					bprintf(&output, "<back-reference");
+					if (dump_verbosity > 0)
+						bprintf(&output, " offset=\"%u\"", (unsigned)idx);
+					bprintf(&output, "/>\n");
+				}
+				break;
+			default:
+				ERROR("/dump") << "Unsupported XCodec opcode " << (unsigned)op << ".";
+				return;
+			}
 		}
 
 		flush(ofd, &output);

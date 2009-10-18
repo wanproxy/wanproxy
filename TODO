@@ -1,5 +1,4 @@
 For 0.6.0:
-o) Fix xcdump for the new world order.
 o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
    other things can handle spontaneous output.
 o) Batch ASKs and LEARNs.  Don't trigger output from the pipe if we're just
