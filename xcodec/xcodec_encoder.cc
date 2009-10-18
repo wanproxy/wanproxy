@@ -50,7 +50,12 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	if (!queued_.empty()) {
 		output->append(&queued_);
 		queued_.clear();
+
+		if (input->empty())
+			return;
 	}
+
+	ASSERT(!input->empty());
 
 	if (input->length() < XCODEC_SEGMENT_LENGTH) {
 		encode_escape(output, input, input->length());
