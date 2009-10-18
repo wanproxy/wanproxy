@@ -9,12 +9,16 @@ class XCodecEncoder {
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
+	Buffer queued_;
 
 public:
 	XCodecEncoder(XCodec *);
 	~XCodecEncoder();
 
 	void encode(Buffer *, Buffer *);
+
+	void encode_ask(uint64_t);
+	void encode_learn(BufferSegment *);
 private:
 	void encode_declaration(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment **);
 	void encode_escape(Buffer *, Buffer *, unsigned);

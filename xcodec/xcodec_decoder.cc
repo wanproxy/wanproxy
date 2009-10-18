@@ -4,6 +4,7 @@
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_cache.h>
 #include <xcodec/xcodec_decoder.h>
+#include <xcodec/xcodec_encoder.h>
 #include <xcodec/xcodec_hash.h>
 
 XCodecDecoder::XCodecDecoder(XCodec *codec, XCodecEncoder *encoder)
@@ -123,8 +124,12 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 
 				BufferSegment *oseg = cache_->lookup(hash);
 				if (oseg == NULL) {
-					/* XXX ASK */
-					ERROR(log_) << "Unknown hash in <REF>: " << hash;
+					if (encoder_ == NULL) {
+						ERROR(log_) << "Unknown hash in <REF>: " << hash;
+						return (false);
+					}
+					encoder_->encode_ask(hash);
+					ERROR(log_) << "Waiting for <LEARN> not yet implemented.";
 					return (false);
 				}
 
@@ -151,9 +156,53 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			}
 			break;
 		case XCODEC_OP_LEARN:
-			/* NOTYET */
+			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + XCODEC_SEGMENT_LENGTH)
+				return (true);
+			else {
+				BufferSegment *seg;
+				input->copyout(&seg, XCODEC_SEGMENT_LENGTH);
+				input->skip(XCODEC_SEGMENT_LENGTH);
+
+				uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
+				BufferSegment *oseg = cache_->lookup(hash);
+				if (oseg != NULL) {
+					if (!oseg->match(seg)) {
+						oseg->unref();
+						ERROR(log_) << "Collision in <LEARN>.";
+						seg->unref();
+						return (false);
+					}
+					oseg->unref();
+					DEBUG(log_) << "Redundant <LEARN>.";
+				} else {
+					cache_->enter(hash, seg);
+				}
+				seg->unref();
+			}
+			break;
 		case XCODEC_OP_ASK:
-			/* NOTYET */
+			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint64_t))
+				return (true);
+			else {
+				if (encoder_ == NULL) {
+					ERROR(log_) << "Cannot handle <ASK> without associated encoder.";
+					return (false);
+				}
+
+				uint64_t behash;
+				input->moveout((uint8_t *)&behash, sizeof XCODEC_MAGIC + sizeof op, sizeof behash);
+				uint64_t hash = BigEndian::decode(behash);
+
+				BufferSegment *oseg = cache_->lookup(hash);
+				if (oseg == NULL) {
+					ERROR(log_) << "Unknown hash in <ASK>: " << hash;
+					return (false);
+				}
+
+				encoder_->encode_learn(oseg);
+				oseg->unref();
+			}
+			break;
 		default:
 			ERROR(log_) << "Unsupported XCodec opcode " << (unsigned)op << ".";
 			return (false);

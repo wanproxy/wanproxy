@@ -8,18 +8,14 @@
 
 typedef	std::pair<unsigned, uint64_t> offset_hash_pair_t;
 
-struct xcodec_special_p {
-	bool operator() (uint8_t ch) const
-	{
-		return (ch == XCODEC_MAGIC);
-	}
-};
-
 XCodecEncoder::XCodecEncoder(XCodec *codec)
 : log_("/xcodec/encoder"),
   cache_(codec->cache_),
-  window_()
-{ }
+  window_(),
+  queued_()
+{
+	queued_.append(codec->hello());
+}
 
 XCodecEncoder::~XCodecEncoder()
 { }
@@ -32,6 +28,12 @@ XCodecEncoder::~XCodecEncoder()
 void
 XCodecEncoder::encode(Buffer *output, Buffer *input)
 {
+	/* Process any queued HELLOs, ASKs or LEARNs.  */
+	if (!queued_.empty()) {
+		output->append(&queued_);
+		queued_.clear();
+	}
+
 	if (input->length() < XCODEC_SEGMENT_LENGTH) {
 		encode_escape(output, input, input->length());
 		return;
@@ -223,6 +225,31 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	ASSERT(outq.empty());
 	ASSERT(input->empty());
 }
+
+/*
+ * Encode an ASK of the remote XCodec.
+ */
+void
+XCodecEncoder::encode_ask(uint64_t hash)
+{
+	uint64_t behash = BigEndian::encode(hash);
+
+	queued_.append(XCODEC_MAGIC);
+	queued_.append(XCODEC_OP_ASK);
+	queued_.append((const uint8_t *)&behash, sizeof behash);
+}
+
+/*
+ * Encode a LEARN for the remote XCodec.
+ */
+void
+XCodecEncoder::encode_learn(BufferSegment *seg)
+{
+	queued_.append(XCODEC_MAGIC);
+	queued_.append(XCODEC_OP_LEARN);
+	queued_.append(seg);
+}
+
 
 void
 XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, BufferSegment **segp)

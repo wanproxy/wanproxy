@@ -110,14 +110,25 @@ class XCodec {
 
 	LogHandle log_;
 	XCodecCache *cache_;
+	Buffer hello_;
 public:
 	XCodec(XCodecCache *database)
 	: log_("/xcodec"),
 	  cache_(database)
-	{ }
+	{
+		uint8_t len = 0;
+		hello_.append(XCODEC_MAGIC);
+		hello_.append(XCODEC_OP_HELLO);
+		hello_.append(len);
+	}
 
 	~XCodec()
 	{ }
+
+	const Buffer *hello(void) const
+	{
+		return (&hello_);
+	}
 
 	/*
 	 * These operations can always be completed immediately and will not
