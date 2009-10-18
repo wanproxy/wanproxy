@@ -17,11 +17,15 @@ public:
 	XCodecPipePair(XCodec *codec, XCodecPipePairType type)
 	: type_(type),
 	  encoder_pipe_(codec),
-	  decoder_pipe_(codec, &encoder_pipe_.encoder_)
-	{ }
+	  decoder_pipe_(codec)
+	{
+		decoder_pipe_.decoder_.set_encoder(&encoder_pipe_.encoder_);
+	}
 
 	~XCodecPipePair()
-	{ }
+	{
+		decoder_pipe_.decoder_.set_encoder(NULL);
+	}
 
 	Pipe *get_incoming(void)
 	{

@@ -17,10 +17,12 @@ class XCodecDecoder {
 	std::set<uint64_t> asked_;
 
 public:
-	XCodecDecoder(XCodec *, XCodecEncoder *);
+	XCodecDecoder(XCodec *);
 	~XCodecDecoder();
 
 	bool decode(Buffer *, Buffer *);
+
+	void set_encoder(XCodecEncoder *);
 };
 
 #endif /* !XCODEC_DECODER_H */

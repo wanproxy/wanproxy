@@ -4,6 +4,7 @@
 #include <xcodec/xcodec_window.h>
 
 class XCodecCache;
+class XCodecDecoder;
 #if defined(XCODEC_PIPES)
 class XCodecEncoderPipe;
 #endif

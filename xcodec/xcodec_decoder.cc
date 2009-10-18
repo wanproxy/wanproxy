@@ -7,17 +7,19 @@
 #include <xcodec/xcodec_encoder.h>
 #include <xcodec/xcodec_hash.h>
 
-XCodecDecoder::XCodecDecoder(XCodec *codec, XCodecEncoder *encoder)
+XCodecDecoder::XCodecDecoder(XCodec *codec)
 : log_("/xcodec/decoder"),
   cache_(codec->cache_),
   window_(),
-  encoder_(encoder),
+  encoder_(NULL),
   queued_(),
   asked_()
 { }
 
 XCodecDecoder::~XCodecDecoder()
-{ }
+{
+	ASSERT(encoder_ == NULL);
+}
 
 /*
  * Decode an XCodec-encoded stream.  Returns false if there was an
@@ -286,4 +288,13 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 	ASSERT(input->empty());
 
 	return (true);
+}
+
+void
+XCodecDecoder::set_encoder(XCodecEncoder *encoder)
+{
+	ASSERT(encoder != NULL || encoder_ != NULL);
+	ASSERT(encoder_ == NULL || encoder == NULL);
+
+	encoder_ = encoder;
 }
