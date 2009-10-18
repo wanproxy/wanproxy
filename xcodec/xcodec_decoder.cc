@@ -158,14 +158,19 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 
 					DEBUG(log_) << "Sending <ASK>, waiting for <LEARN>.";
 					encoder_->encode_ask(hash);
+				} else if (queued_.empty()) {
+					window_.declare(hash, oseg);
+					output->append(oseg);
+					oseg->unref();
+				}
+
+				if (!queued_.empty()) {
+					if (oseg != NULL)
+						oseg->unref();
 
 					queued_.append(XCODEC_MAGIC);
 					queued_.append(XCODEC_OP_REF);
 					queued_.append((const uint8_t *)&behash, sizeof behash);
-				} else {
-					window_.declare(hash, oseg);
-					output->append(oseg);
-					oseg->unref();
 				}
 			}
 			break;
