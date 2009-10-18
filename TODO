@@ -2,13 +2,6 @@ For 0.6.0:
 o) Fix xcdump for the new world order.
 o) Add the look-ahead parsing to the new decoder.
 o) Add ASK and LEARN support.
-o) Remove the xor_ from XCodecHash and just use Adler64::operator+=.  The xor
-   doesn't overwhelmingly change the collision characteristics and costs quite
-   a bit.  Just make the lower 32-bits of the hash the Adler64 values mixed
-   and the upper 32-bits the mixed UUID associated with this XCodecCache.
-   (See xcodec/FUTURE for more on UUIDs.)  UUIDs are probably for 0.6.1.
-   Alternately, keep separate caches for each peer and use HELLO messages to
-   tell peers apart.
 
 For 0.6.1:
 o) Test error handling in epoll.
