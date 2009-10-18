@@ -17,8 +17,6 @@ XCodecEncoderPipe::XCodecEncoderPipe(XCodec *codec)
   output_action_(NULL),
   output_callback_(NULL)
 {
-	ASSERT(output_callback_ == NULL || output_action_ == NULL);
-
 	encoder_.set_pipe(this);
 }
 
@@ -33,7 +31,6 @@ XCodecEncoderPipe::~XCodecEncoderPipe()
 Action *
 XCodecEncoderPipe::input(Buffer *buf, EventCallback *cb)
 {
-	ASSERT(output_callback_ == NULL || output_action_ == NULL);
 	if (output_callback_ != NULL) {
 		ASSERT(input_buffer_.empty());
 		ASSERT(output_action_ == NULL);
@@ -51,7 +48,6 @@ XCodecEncoderPipe::input(Buffer *buf, EventCallback *cb)
 		}
 		output_action_ = EventSystem::instance()->schedule(output_callback_);
 		output_callback_ = NULL;
-		ASSERT(output_callback_ == NULL || output_action_ == NULL);
 	} else {
 		if (!buf->empty()) {
 			encoder_.encode(&input_buffer_, buf);
@@ -60,7 +56,6 @@ XCodecEncoderPipe::input(Buffer *buf, EventCallback *cb)
 			input_eos_ = true;
 		}
 	}
-	ASSERT(output_callback_ == NULL || output_action_ == NULL);
 
 	cb->event(Event(Event::Done, 0));
 	return (EventSystem::instance()->schedule(cb));
@@ -71,8 +66,6 @@ XCodecEncoderPipe::output(EventCallback *cb)
 {
 	ASSERT(output_action_ == NULL);
 	ASSERT(output_callback_ == NULL);
-
-	ASSERT(output_callback_ == NULL || output_action_ == NULL);
 
 	if (!input_buffer_.empty() || input_eos_) {
 		if (input_eos_) {
@@ -87,9 +80,7 @@ XCodecEncoderPipe::output(EventCallback *cb)
 		return (EventSystem::instance()->schedule(cb));
 	}
 
-	ASSERT(output_callback_ == NULL || output_action_ == NULL);
 	output_callback_ = cb;
-	ASSERT(output_callback_ == NULL || output_action_ == NULL);
 
 	return (cancellation(this, &XCodecEncoderPipe::output_cancel));
 }
@@ -118,22 +109,18 @@ XCodecEncoderPipe::output_ready(void)
 		 */
 		ASSERT(!input_eos_);
 
-		ASSERT(output_callback_ == NULL || output_action_ == NULL);
 		ASSERT(output_action_ == NULL);
-		ASSERT(output_callback_ == NULL || output_action_ == NULL);
 
 		output_callback_->event(Event(Event::Done, 0, input_buffer_));
 		input_buffer_.clear();
 		output_action_ = EventSystem::instance()->schedule(output_callback_);
 		output_callback_ = NULL;
-		ASSERT(output_callback_ == NULL || output_action_ == NULL);
 	}
 }
 
 void
 XCodecEncoderPipe::output_cancel(void)
 {
-	ASSERT(output_callback_ == NULL || output_action_ == NULL);
 	if (output_action_ != NULL) {
 		ASSERT(output_callback_ == NULL);
 
@@ -141,10 +128,8 @@ XCodecEncoderPipe::output_cancel(void)
 		output_action_ = NULL;
 	}
 
-	ASSERT(output_callback_ == NULL || output_action_ == NULL);
 	if (output_callback_ != NULL) {
 		delete output_callback_;
 		output_callback_ = NULL;
 	}
-	ASSERT(output_callback_ == NULL || output_action_ == NULL);
 }
