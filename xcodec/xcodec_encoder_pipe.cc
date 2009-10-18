@@ -11,19 +11,23 @@
 #include <xcodec/xcodec_encoder_pipe.h>
 
 XCodecEncoderPipe::XCodecEncoderPipe(XCodec *codec)
-: encoder_(codec, this),
+: encoder_(codec),
   input_buffer_(),
   input_eos_(false),
   output_action_(NULL),
   output_callback_(NULL)
 {
 	ASSERT(output_callback_ == NULL || output_action_ == NULL);
+
+	encoder_.set_pipe(this);
 }
 
 XCodecEncoderPipe::~XCodecEncoderPipe()
 {
 	ASSERT(output_action_ == NULL);
 	ASSERT(output_callback_ == NULL);
+
+	encoder_.set_pipe(NULL);
 }
 
 Action *

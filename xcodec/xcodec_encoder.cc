@@ -15,16 +15,12 @@
 
 typedef	std::pair<unsigned, uint64_t> offset_hash_pair_t;
 
-#if defined(XCODEC_PIPES)
-XCodecEncoder::XCodecEncoder(XCodec *codec, XCodecEncoderPipe *pipe)
-#else
 XCodecEncoder::XCodecEncoder(XCodec *codec)
-#endif
 : log_("/xcodec/encoder"),
   cache_(codec->cache_),
   window_(),
 #if defined(XCODEC_PIPES)
-  pipe_(pipe),
+  pipe_(NULL),
 #endif
   queued_()
 {
@@ -36,7 +32,9 @@ XCodecEncoder::XCodecEncoder(XCodec *codec)
 }
 
 XCodecEncoder::~XCodecEncoder()
-{ }
+{
+	ASSERT(pipe_ == NULL);
+}
 
 /*
  * This takes a view of a data stream and turns it into a series of references
@@ -285,6 +283,22 @@ XCodecEncoder::encode_learn(BufferSegment *seg)
 #endif
 }
 
+#if defined(XCODEC_PIPES)
+/*
+ * Set or clear the association with an XCodecPipe.
+ */
+void
+XCodecEncoder::set_pipe(XCodecEncoderPipe *pipe)
+{
+	ASSERT(pipe != NULL || pipe_ != NULL);
+	ASSERT(pipe_ == NULL || pipe == NULL);
+
+	pipe_ = pipe;
+
+	if (pipe_ != NULL && !queued_.empty())
+		pipe_->output_ready();
+}
+#endif
 
 void
 XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, BufferSegment **segp)

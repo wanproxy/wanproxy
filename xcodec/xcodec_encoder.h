@@ -18,17 +18,17 @@ class XCodecEncoder {
 	Buffer queued_;
 
 public:
-#if defined(XCODEC_PIPES)
-	XCodecEncoder(XCodec *, XCodecEncoderPipe *);
-#else
 	XCodecEncoder(XCodec *);
-#endif
 	~XCodecEncoder();
 
 	void encode(Buffer *, Buffer *);
 
 	void encode_ask(uint64_t);
 	void encode_learn(BufferSegment *);
+
+#if defined(XCODEC_PIPES)
+	void set_pipe(XCodecEncoderPipe *);
+#endif
 private:
 	void encode_declaration(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment **);
 	void encode_escape(Buffer *, Buffer *, unsigned);
