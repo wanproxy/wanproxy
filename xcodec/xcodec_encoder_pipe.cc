@@ -86,8 +86,11 @@ void
 XCodecEncoderPipe::output_ready(void)
 {
 	if (input_eos_) {
-		ERROR("/xcodec/encoder/pipe") << "Ignoring spontaneous output after EOS.";
-		return;
+		if (input_buffer_.empty()) {
+			ERROR("/xcodec/encoder/pipe") << "Ignoring spontaneous output after EOS.";
+			return;
+		}
+		DEBUG("/xcodec/encoder/pipe") << "Retrieving spontaneous data along with buffered data at EOS.";
 	}
 
 	Buffer empty;
@@ -96,6 +99,13 @@ XCodecEncoderPipe::output_ready(void)
 	ASSERT(!input_buffer_.empty());
 
 	if (output_callback_ != NULL) {
+		/*
+		 * If EOS has come, we can only get here if it is being serviced
+		 * and there is data pending to be pushed before EOS.  Make sure
+		 * that's the case.
+		 */
+		ASSERT(!input_eos_);
+
 		ASSERT(output_action_ == NULL);
 
 		output_callback_->event(Event(Event::Done, 0, input_buffer_));
