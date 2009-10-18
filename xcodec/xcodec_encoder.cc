@@ -25,10 +25,6 @@ XCodecEncoder::XCodecEncoder(XCodec *codec)
   queued_()
 {
 	queued_.append(codec->hello());
-#if defined(XCODEC_PIPES)
-	if (pipe_ != NULL)
-		pipe_->output_ready();
-#endif
 }
 
 XCodecEncoder::~XCodecEncoder()
@@ -262,11 +258,6 @@ XCodecEncoder::encode_ask(uint64_t hash)
 	queued_.append(XCODEC_MAGIC);
 	queued_.append(XCODEC_OP_ASK);
 	queued_.append((const uint8_t *)&behash, sizeof behash);
-
-#if defined(XCODEC_PIPES)
-	if (pipe_ != NULL)
-		pipe_->output_ready();
-#endif
 }
 
 /*
@@ -278,9 +269,16 @@ XCodecEncoder::encode_learn(BufferSegment *seg)
 	queued_.append(XCODEC_MAGIC);
 	queued_.append(XCODEC_OP_LEARN);
 	queued_.append(seg);
+}
 
+/*
+ * Signal that output is ready if there is some that has been queued.
+ */
+void
+XCodecEncoder::encode_push(void)
+{
 #if defined(XCODEC_PIPES)
-	if (pipe_ != NULL)
+	if (!queued_.empty() && pipe_ != NULL)
 		pipe_->output_ready();
 #endif
 }

@@ -1,10 +1,8 @@
 For 0.6.0:
 o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
    other things can handle spontaneous output.
-o) Batch ASKs and LEARNs.  Don't trigger output from the pipe if we're just
-   going to send more.  This is easy enough -- call a encode_push() function on
-   exit if we have sent ASKs or LEARNs, and have that notify the Pipe instead
-   of having encode_ask and encode_learn do it.
+o) Find a way to handle the problem of getting an ASK or a LEARN after the
+   encoder already thinks it is done.  Just queue data per each XCodec?
 
 For 0.6.1:
 o) A better look-ahead parser.

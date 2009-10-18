@@ -90,14 +90,14 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 		 * Need the following byte at least.
 		 */
 		if (input->length() == 1)
-			return (true);
+			break;
 
 		uint8_t op;
 		input->copyout(&op, sizeof XCODEC_MAGIC, sizeof op);
 		switch (op) {
 		case XCODEC_OP_HELLO:
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
-				return (true);
+				goto done;
 			else {
 				if (!queued_.empty()) {
 					ERROR(log_) << "Got <HELLO> with data queued.";
@@ -107,7 +107,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 				uint8_t len;
 				input->copyout(&len, sizeof XCODEC_MAGIC + sizeof op, sizeof len);
 				if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof len + len)
-					return (true);
+					goto done;
 				switch (len) {
 				case 0:
 					break;
@@ -129,7 +129,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			break;
 		case XCODEC_OP_EXTRACT:
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + XCODEC_SEGMENT_LENGTH)
-				return (true);
+				goto done;
 			else {
 				input->skip(sizeof XCODEC_MAGIC + sizeof op);
 
@@ -168,7 +168,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			break;
 		case XCODEC_OP_REF:
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint64_t))
-				return (true);
+				goto done;
 			else {
 				uint64_t behash;
 				input->moveout((uint8_t *)&behash, sizeof XCODEC_MAGIC + sizeof op, sizeof behash);
@@ -207,7 +207,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			break;
 		case XCODEC_OP_BACKREF:
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
-				return (true);
+				goto done;
 			else {
 				if (queued_.empty()) {
 					uint8_t idx;
@@ -228,7 +228,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			break;
 		case XCODEC_OP_LEARN:
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + XCODEC_SEGMENT_LENGTH)
-				return (true);
+				goto done;
 			else {
 				input->skip(sizeof XCODEC_MAGIC + sizeof op);
 
@@ -259,7 +259,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			break;
 		case XCODEC_OP_ASK:
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint64_t))
-				return (true);
+				goto done;
 			else {
 				if (encoder_ == NULL) {
 					ERROR(log_) << "Cannot handle <ASK> without associated encoder.";
@@ -286,9 +286,9 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			return (false);
 		}
 	}
-
-	ASSERT(input->empty());
-
+done:	if (encoder_ != NULL) {
+		encoder_->encode_push();
+	}
 	return (true);
 }
 

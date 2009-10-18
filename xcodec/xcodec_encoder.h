@@ -26,6 +26,7 @@ public:
 
 	void encode_ask(uint64_t);
 	void encode_learn(BufferSegment *);
+	void encode_push(void);
 
 #if defined(XCODEC_PIPES)
 	void set_pipe(XCodecEncoderPipe *);
