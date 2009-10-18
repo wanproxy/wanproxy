@@ -33,7 +33,9 @@ XCodecEncoder::XCodecEncoder(XCodec *codec)
 
 XCodecEncoder::~XCodecEncoder()
 {
+#if defined(XCODEC_PIPES)
 	ASSERT(pipe_ == NULL);
+#endif
 }
 
 /*
