@@ -1,6 +1,8 @@
 #ifndef	XCODEC_DECODER_H
 #define	XCODEC_DECODER_H
 
+#include <set>
+
 #include <xcodec/xcodec_window.h>
 
 class XCodecCache;
@@ -13,6 +15,7 @@ class XCodecDecoder {
 	XCodecEncoder *encoder_;
 	bool parsing_queued_;
 	Buffer queued_;
+	std::set<uint64_t> asked_;
 
 public:
 	XCodecDecoder(XCodec *, XCodecEncoder *);

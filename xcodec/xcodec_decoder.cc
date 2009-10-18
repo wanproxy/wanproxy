@@ -42,7 +42,25 @@ XCodecDecoder::~XCodecDecoder()
 bool
 XCodecDecoder::decode(Buffer *output, Buffer *input)
 {
-	while (!input->empty()) {
+	for (;;) {
+		/*
+		 * If there is queued data and no more outstanding hashes,
+		 * handle the queued data.
+		 */
+		if (!queued_.empty() && asked_.empty()) {
+			DEBUG(log_) << "Handling queued data.";
+			/* XXX input->prepend(queued_);  */
+
+			Buffer tmp(queued_);
+			queued_.clear();
+			tmp.append(input);
+			input->clear();
+			input->append(tmp);
+		}
+
+		if (input->empty())
+			break;
+
 		unsigned off;
 		if (!input->find(XCODEC_MAGIC, &off)) {
 			if (queued_.empty()) {
@@ -130,6 +148,9 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 					cache_->enter(hash, seg);
 				}
 
+				/* Just in case.  */
+				asked_.erase(hash);
+
 				if (queued_.empty()) {
 					window_.declare(hash, seg);
 					output->append(seg);
@@ -156,21 +177,27 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 						return (false);
 					}
 
-					DEBUG(log_) << "Sending <ASK>, waiting for <LEARN>.";
-					encoder_->encode_ask(hash);
-				} else if (queued_.empty()) {
-					window_.declare(hash, oseg);
-					output->append(oseg);
-					oseg->unref();
-				}
-
-				if (!queued_.empty()) {
-					if (oseg != NULL)
-						oseg->unref();
+					if (asked_.find(hash) == asked_.end()) {
+						DEBUG(log_) << "Sending <ASK>, waiting for <LEARN>.";
+						encoder_->encode_ask(hash);
+						asked_.insert(hash);
+					} else {
+						DEBUG(log_) << "Already sent <ASK>, waiting for <LEARN>.";
+					}
 
 					queued_.append(XCODEC_MAGIC);
 					queued_.append(XCODEC_OP_REF);
 					queued_.append((const uint8_t *)&behash, sizeof behash);
+				} else {
+					if (queued_.empty()) {
+						window_.declare(hash, oseg);
+						output->append(oseg);
+					} else {
+						queued_.append(XCODEC_MAGIC);
+						queued_.append(XCODEC_OP_REF);
+						queued_.append((const uint8_t *)&behash, sizeof behash);
+					}
+					oseg->unref();
 				}
 			}
 			break;
@@ -218,6 +245,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 					DEBUG(log_) << "Successful <LEARN>.";
 					cache_->enter(hash, seg);
 				}
+				asked_.erase(hash);
 				seg->unref();
 			}
 			break;
@@ -252,28 +280,6 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 	}
 
 	ASSERT(input->empty());
-
-	/*
-	 * We have finished parsing the available data.  If it wasn't the queued data
-	 * that we were parsing, try parsing the queued data now.
-	 */
-	if (!parsing_queued_ && !queued_.empty()) {
-		Buffer queued(queued_);
-		queued_.clear();
-
-		parsing_queued_ = true;
-		if (!decode(output, &queued)) {
-			ERROR(log_) << "Error while parsing queued data.";
-			return (false);
-		}
-		parsing_queued_ = false;
-
-		if (queued_.empty()) {
-			DEBUG(log_) << "Successfully parsed queued data.";
-		} else {
-			DEBUG(log_) << "Not yet able to parse queued data.";
-		}
-	}
 
 	return (true);
 }
