@@ -215,6 +215,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 					oseg->unref();
 					DEBUG(log_) << "Redundant <LEARN>.";
 				} else {
+					DEBUG(log_) << "Successful <LEARN>.";
 					cache_->enter(hash, seg);
 				}
 				seg->unref();
@@ -239,6 +240,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 					return (false);
 				}
 
+				DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
 				encoder_->encode_learn(oseg);
 				oseg->unref();
 			}
