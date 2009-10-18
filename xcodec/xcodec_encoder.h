@@ -4,15 +4,17 @@
 #include <xcodec/xcodec_window.h>
 
 class XCodecCache;
+class XCodecEncoderPipe;
 
 class XCodecEncoder {
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
+	XCodecEncoderPipe *pipe_;
 	Buffer queued_;
 
 public:
-	XCodecEncoder(XCodec *);
+	XCodecEncoder(XCodec *, XCodecEncoderPipe *);
 	~XCodecEncoder();
 
 	void encode(Buffer *, Buffer *);

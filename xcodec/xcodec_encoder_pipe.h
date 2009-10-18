@@ -21,6 +21,9 @@ public:
 	Action *input(Buffer *, EventCallback *);
 	Action *output(EventCallback *);
 
+	/* Only call from XCodecEncoder.  */
+	void output_ready(void);
+
 private:
 	void output_cancel(void);
 };

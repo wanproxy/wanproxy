@@ -11,7 +11,7 @@
 #include <xcodec/xcodec_encoder_pipe.h>
 
 XCodecEncoderPipe::XCodecEncoderPipe(XCodec *codec)
-: encoder_(codec),
+: encoder_(codec, this),
   input_buffer_(),
   input_eos_(false),
   output_action_(NULL),
@@ -80,6 +80,29 @@ XCodecEncoderPipe::output(EventCallback *cb)
 	output_callback_ = cb;
 
 	return (cancellation(this, &XCodecEncoderPipe::output_cancel));
+}
+
+void
+XCodecEncoderPipe::output_ready(void)
+{
+	if (input_eos_) {
+		ERROR("/xcodec/encoder/pipe") << "Ignoring spontaneous output after EOS.";
+		return;
+	}
+
+	if (output_callback_ != NULL) {
+		ASSERT(output_action_ == NULL);
+
+		Buffer empty;
+		Buffer tmp;
+
+		encoder_.encode(&tmp, &empty);
+		ASSERT(!tmp.empty());
+
+		output_callback_->event(Event(Event::Done, 0, tmp));
+		output_action_ = EventSystem::instance()->schedule(output_callback_);
+		output_callback_ = NULL;
+	}
 }
 
 void
