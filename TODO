@@ -5,6 +5,8 @@ o) Find a way to handle the problem of getting an ASK or a LEARN after the
    encoder already thinks it is done.  Just queue data per each XCodec?  Well,
    until I snap and decide that one XCodec per peer is appropriate, mayhaps a
    quick stab at UUIDs is in order.
+   -) Perhaps try sending a message at EOS and waiting for acknowledgment
+      before outputting EOS from the encoder pipe.
 
 For 0.6.1:
 o) A better look-ahead parser.
