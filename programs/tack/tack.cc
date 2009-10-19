@@ -122,7 +122,7 @@ compress(int ifd, int ofd, XCodec *codec)
 static void
 decompress(int ifd, int ofd, XCodec *codec)
 {
-	XCodecDecoder decoder(codec, NULL);
+	XCodecDecoder decoder(codec);
 	Buffer input, output;
 
 	while (fill(ifd, &input)) {
