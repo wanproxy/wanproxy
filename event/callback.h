@@ -25,10 +25,10 @@ public:
 template<class C>
 class ObjectCallback : public Callback {
 public:
-	typedef void (C::*method_t)(void);
+	typedef void (C::*const method_t)(void);
 
 private:
-	C *obj_;
+	C *const obj_;
 	method_t method_;
 public:
 	template<typename T>
@@ -50,7 +50,7 @@ private:
 class CallbackQueue {
 	class CallbackAction : public Cancellable {
 	public:
-		CallbackQueue *queue_;
+		CallbackQueue *const queue_;
 		Callback *callback_;
 
 		CallbackAction(CallbackQueue *queue, Callback *callback)

@@ -46,9 +46,9 @@ private:
 
 template<class C>
 class Cancellation : public Cancellable {
-	typedef void (C::*method_t)(void);
+	typedef void (C::*const method_t)(void);
 
-	C *obj_;
+	C *const obj_;
 	method_t method_;
 public:
 	template<typename T>

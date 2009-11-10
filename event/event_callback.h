@@ -30,10 +30,10 @@ public:
 template<class C>
 class ObjectEventCallback : public EventCallback {
 public:
-	typedef void (C::*method_t)(Event);
+	typedef void (C::*const method_t)(Event);
 
 private:
-	C *obj_;
+	C *const obj_;
 	method_t method_;
 public:
 	template<typename T>
@@ -57,10 +57,10 @@ private:
 template<class C, typename A>
 class ObjectEventArgCallback : public EventCallback {
 public:
-	typedef void (C::*method_t)(Event, A);
+	typedef void (C::*const method_t)(Event, A);
 
 private:
-	C *obj_;
+	C *const obj_;
 	method_t method_;
 	A arg_;
 public:
