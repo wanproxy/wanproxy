@@ -1,4 +1,8 @@
 For 0.6.0:
+o) Add an ActionCache which classes can use to dole out Actions and which at
+   destruction time will assert that there are no outstanding actions.  This
+   will make debugging code involving Actions easier and give better Action
+   allocation performance, done properly.
 o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
    other things can handle spontaneous output.
 o) Find a way to handle the problem of getting an ASK or a LEARN after the
