@@ -53,13 +53,15 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 		}
 		ASSERT(buf->empty());
 
-		if (tmp.empty()) {
-			output_callback_->event(Event(Event::EOS, 0));
-		} else {
-			output_callback_->event(Event(Event::Done, 0, tmp));
+		if (!tmp.empty() || input_eos_) {
+			if (input_eos_ && tmp.empty()) {
+				output_callback_->event(Event(Event::EOS, 0));
+			} else {
+				output_callback_->event(Event(Event::Done, 0, tmp));
+			}
+			output_action_ = EventSystem::instance()->schedule(output_callback_);
+			output_callback_ = NULL;
 		}
-		output_action_ = EventSystem::instance()->schedule(output_callback_);
-		output_callback_ = NULL;
 	} else {
 		if (!buf->empty()) {
 			input_buffer_.append(buf);
@@ -133,6 +135,14 @@ PipeSimple::output_spontaneous(void)
 		return;
 	}
 	ASSERT(input_buffer_.empty());
+
+	/*
+	 * XXX
+	 * Would prefer for this to never happen!
+	 */
+	if (tmp.empty() && !input_eos_) {
+		return;
+	}
 
 	if (tmp.empty()) {
 		output_callback_->event(Event(Event::EOS, 0));
