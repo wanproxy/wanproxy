@@ -5,7 +5,7 @@
 
 #include <config/config_type.h>
 
-class ConfigValue;
+struct ConfigValue;
 
 template<typename T>
 class ConfigTypeFlags : public ConfigType {

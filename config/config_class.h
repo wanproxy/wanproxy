@@ -6,7 +6,7 @@
 class Config;
 class ConfigObject;
 class ConfigType;
-class ConfigValue;
+struct ConfigValue;
 
 class ConfigClass {
 	friend class Config;

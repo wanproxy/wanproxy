@@ -5,7 +5,7 @@
 
 #include <config/config_type.h>
 
-class ConfigValue;
+struct ConfigValue;
 
 class ConfigTypeString : public ConfigType {
 	std::map<ConfigValue *, std::string> strings_;

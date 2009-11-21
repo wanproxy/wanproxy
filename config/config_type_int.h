@@ -5,7 +5,7 @@
 
 #include <config/config_type.h>
 
-class ConfigValue;
+struct ConfigValue;
 
 class ConfigTypeInt : public ConfigType {
 	std::map<ConfigValue *, intmax_t> ints_;

@@ -6,7 +6,7 @@
 #include <config/config_object.h>
 #include <config/config_type.h>
 
-class ConfigValue;
+struct ConfigValue;
 
 class ConfigTypePointer : public ConfigType {
 	std::map<ConfigValue *, ConfigObject *> pointers_;

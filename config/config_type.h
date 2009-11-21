@@ -1,7 +1,7 @@
 #ifndef	CONFIG_TYPE_H
 #define	CONFIG_TYPE_H
 
-class ConfigValue;
+struct ConfigValue;
 
 class ConfigType {
 	std::string name_;
