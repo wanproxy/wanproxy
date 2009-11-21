@@ -98,6 +98,19 @@
  */
 #define	XCODEC_OP_ASK	((uint8_t)0x06)
 
+/*
+ * Usage:
+ * 	<MAGIC> <OP_EOS>
+ *
+ * Effects:
+ * 	Alert the other party that we have no intention of sending more data.
+ *
+ * Side-effects:
+ * 	When both parties have sent EOS with no other data in-between, they may
+ * 	shut down their connection.
+ */
+#define	XCODEC_OP_EOS	((uint8_t)0x07)
+
 #define	XCODEC_SEGMENT_LENGTH	(BUFFER_SEGMENT_SIZE)
 
 class XCodecDecoder;
