@@ -23,7 +23,7 @@ private:
 protected:
 	void output_spontaneous(void);
 
-	virtual void process(Buffer *, Buffer *) = 0;
+	virtual bool process(Buffer *, Buffer *) = 0;
 };
 
 #endif /* !IO_PIPE_SIMPLE_H */

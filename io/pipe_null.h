@@ -9,7 +9,7 @@ public:
 	~PipeNull();
 
 private:
-	void process(Buffer *, Buffer *);
+	bool process(Buffer *, Buffer *);
 };
 
 #endif /* !IO_PIPE_NULL_H */

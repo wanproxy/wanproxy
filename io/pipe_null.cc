@@ -21,10 +21,11 @@ PipeNull::PipeNull(void)
 PipeNull::~PipeNull()
 { }
 
-void
+bool
 PipeNull::process(Buffer *out, Buffer *in)
 {
 	if (!in->empty()) {
 		in->moveout(out, in->length());
 	}
+	return (true);
 }

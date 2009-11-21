@@ -13,6 +13,8 @@
  * ready to process more data.
  *
  * TODO: Asynchronous processing function.
+ *
+ * XXX Should flag error and ensure all subsequent input() and output() fail.
  */
 
 PipeSimple::PipeSimple(void)
@@ -41,7 +43,14 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 		ASSERT(output_action_ == NULL);
 
 		Buffer tmp;
-		process(&tmp, buf);
+		if (!process(&tmp, buf)) {
+			output_callback_->event(Event(Event::Error, 0));
+			output_action_ = EventSystem::instance()->schedule(output_callback_);
+			output_callback_ = NULL;
+
+			cb->event(Event(Event::Error, 0));
+			return (EventSystem::instance()->schedule(cb));
+		}
 		ASSERT(buf->empty());
 
 		if (tmp.empty()) {
@@ -70,7 +79,10 @@ PipeSimple::output(EventCallback *cb)
 
 	if (!input_buffer_.empty() || input_eos_) {
 		Buffer tmp;
-		process(&tmp, &input_buffer_);
+		if (!process(&tmp, &input_buffer_)) {
+			cb->event(Event(Event::Error, 0));
+			return (EventSystem::instance()->schedule(cb));
+		}
 		ASSERT(input_buffer_.empty());
 
 		if (!tmp.empty() || input_eos_) {
@@ -113,7 +125,13 @@ PipeSimple::output_spontaneous(void)
 		return;
 
 	Buffer tmp;
-	process(&tmp, &input_buffer_);
+	if (!process(&tmp, &input_buffer_)) {
+		output_callback_->event(Event(Event::Error, 0));
+		output_action_ = EventSystem::instance()->schedule(output_callback_);
+		output_callback_ = NULL;
+
+		return;
+	}
 	ASSERT(input_buffer_.empty());
 
 	if (tmp.empty()) {
