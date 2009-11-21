@@ -46,6 +46,8 @@ XCodecDecoder::~XCodecDecoder()
 bool
 XCodecDecoder::decode(Buffer *output, Buffer *input)
 {
+	bool queued_data = false;
+
 	for (;;) {
 		/*
 		 * If there is queued data and no more outstanding hashes,
@@ -185,6 +187,8 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 						DEBUG(log_) << "Sending <ASK>, waiting for <LEARN>.";
 						encoder_->encode_ask(hash);
 						asked_.insert(hash);
+
+						queued_data = true;
 					} else {
 						DEBUG(log_) << "Already sent <ASK>, waiting for <LEARN>.";
 					}
@@ -279,6 +283,8 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 				DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
 				encoder_->encode_learn(oseg);
 				oseg->unref();
+
+				queued_data = true;
 			}
 			break;
 		default:
@@ -286,7 +292,8 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			return (false);
 		}
 	}
-done:	if (encoder_ != NULL) {
+done:	if (queued_data) {
+		ASSERT(encoder_ != NULL);
 		encoder_->encode_push();
 	}
 	return (true);
