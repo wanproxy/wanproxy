@@ -8,6 +8,7 @@ o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
    other things can handle spontaneous output.
 o) Make XCodecEncoder and XCodecDecoder pipes outright so as to avoid all of
    the weird interactions between each and its Pipe variant.
+o) Reluctantly move to a GNU Make build system?  :(
 
 For 0.6.2:
 o) A better look-ahead parser.
