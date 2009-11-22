@@ -1,29 +1,18 @@
 #ifndef	XCODEC_DECODER_PIPE_H
 #define	XCODEC_DECODER_PIPE_H
 
-class Action;
-class EventCallback;
-class XCodecEncoder;
+#include <io/pipe_simple.h>
 
-class XCodecDecoderPipe : public Pipe {
+class XCodecDecoderPipe : public PipeSimple {
 	friend class XCodecPipePair;
 
 	XCodecDecoder decoder_;
-
-	Buffer input_buffer_;
-	bool input_eos_;
-
-	Action *output_action_;
-	EventCallback *output_callback_;
 public:
 	XCodecDecoderPipe(XCodec *);
 	~XCodecDecoderPipe();
 
-	Action *input(Buffer *, EventCallback *);
-	Action *output(EventCallback *);
-
 private:
-	void output_cancel(void);
+	bool process(Buffer *, Buffer *);
 };
 
 #endif /* !XCODEC_DECODER_PIPE_H */

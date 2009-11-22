@@ -14,7 +14,7 @@
  */
 
 PipeNull::PipeNull(void)
-: PipeSimple()
+: PipeSimple("/io/pipe_null")
 {
 }
 

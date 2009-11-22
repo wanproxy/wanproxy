@@ -5,13 +5,15 @@ class Action;
 class EventCallback;
 
 class PipeSimple : public Pipe {
+	LogHandle log_;
+
 	Buffer input_buffer_;
 	bool input_eos_;
 
 	Action *output_action_;
 	EventCallback *output_callback_;
-public:
-	PipeSimple(void);
+protected:
+	PipeSimple(const LogHandle&);
 	~PipeSimple();
 
 	Action *input(Buffer *, EventCallback *);

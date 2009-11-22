@@ -17,8 +17,9 @@
  * XXX Should flag error and ensure all subsequent input() and output() fail.
  */
 
-PipeSimple::PipeSimple(void)
-: input_buffer_(),
+PipeSimple::PipeSimple(const LogHandle& log)
+: log_(log),
+  input_buffer_(),
   input_eos_(false),
   output_action_(NULL),
   output_callback_(NULL)
@@ -141,6 +142,7 @@ PipeSimple::output_spontaneous(void)
 	 * Would prefer for this to never happen!
 	 */
 	if (tmp.empty() && !input_eos_) {
+		DEBUG(log_) << "Spontaneous output generated no output despite EOS being unset.";
 		return;
 	}
 
