@@ -10,6 +10,10 @@ class XCodecEncoderPipe;
 #endif
 
 class XCodecEncoder {
+#if defined(XCODEC_PIPES)
+	friend class XCodecEncoderPipe;
+#endif
+
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
@@ -18,6 +22,7 @@ class XCodecEncoder {
 #endif
 	Buffer queued_;
 	bool sent_eos_;
+	bool received_eos_; /* XXX So wrong!  */
 
 public:
 	XCodecEncoder(XCodec *);
@@ -28,6 +33,8 @@ public:
 	void encode_ask(uint64_t);
 	void encode_learn(BufferSegment *);
 	void encode_push(void);
+
+	void received_eos(void);
 
 #if defined(XCODEC_PIPES)
 	void set_pipe(XCodecEncoderPipe *);

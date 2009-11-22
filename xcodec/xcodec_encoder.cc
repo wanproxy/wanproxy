@@ -23,7 +23,8 @@ XCodecEncoder::XCodecEncoder(XCodec *codec)
   pipe_(NULL),
 #endif
   queued_(),
-  sent_eos_(false)
+  sent_eos_(false),
+  received_eos_(false)
 {
 	queued_.append(codec->hello());
 }
@@ -289,6 +290,15 @@ XCodecEncoder::encode_push(void)
 	if (!queued_.empty() && pipe_ != NULL)
 		pipe_->output_ready();
 #endif
+}
+
+void
+XCodecEncoder::received_eos(void)
+{
+	if (received_eos_) {
+		DEBUG(log_) << "Received duplicate <EOS> from decoder.";
+	}
+	received_eos_ = true;
 }
 
 #if defined(XCODEC_PIPES)

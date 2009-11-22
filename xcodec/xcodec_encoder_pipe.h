@@ -16,6 +16,7 @@ public:
 
 private:
 	bool process(Buffer *, Buffer *);
+	bool process_eos(void) const;
 };
 
 #endif /* !XCODEC_ENCODER_PIPE_H */

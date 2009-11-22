@@ -34,3 +34,18 @@ XCodecEncoderPipe::process(Buffer *out, Buffer *in)
 	encoder_.encode(out, in);
 	return (true);
 }
+
+/*
+ * If there is no queued data, we have sent EOS and
+ * we have received EOS, we can return EOS.
+ */
+bool
+XCodecEncoderPipe::process_eos(void) const
+{
+	if (encoder_.sent_eos_ && encoder_.received_eos_ &&
+	    encoder_.queued_.empty()) {
+		return (true);
+	}
+
+	return (false);
+}

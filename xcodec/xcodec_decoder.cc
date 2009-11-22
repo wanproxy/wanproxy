@@ -295,6 +295,10 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			else {
 				input->skip(sizeof XCODEC_MAGIC + sizeof op);
 				DEBUG(log_) << "Received <EOS>.  Bytes remaining: " << input->length();
+
+				if (encoder_ != NULL) {
+					encoder_->received_eos();
+				}
 			}
 			break;
 		default:
