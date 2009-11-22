@@ -6,11 +6,13 @@
 class XCodecCache;
 class XCodecDecoder;
 #if defined(XCODEC_PIPES)
+class XCodecDecoderPipe;
 class XCodecEncoderPipe;
 #endif
 
 class XCodecEncoder {
 #if defined(XCODEC_PIPES)
+	friend class XCodecDecoderPipe;
 	friend class XCodecEncoderPipe;
 #endif
 

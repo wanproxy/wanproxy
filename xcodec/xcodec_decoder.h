@@ -6,9 +6,16 @@
 #include <xcodec/xcodec_window.h>
 
 class XCodecCache;
+#if defined(XCODEC_PIPES)
+class XCodecDecoderPipe;
+#endif
 class XCodecEncoder;
 
 class XCodecDecoder {
+#if defined(XCODEC_PIPES)
+	friend class XCodecDecoderPipe;
+#endif
+
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
