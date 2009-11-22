@@ -26,6 +26,7 @@ XCodecEncoderPipe::~XCodecEncoderPipe()
 void
 XCodecEncoderPipe::received_eos(bool eos)
 {
+	DEBUG(log_) << "Changing EOS state from " << received_eos_ << " to " << eos;
 	received_eos_ = eos;
 }
 
@@ -42,14 +43,21 @@ XCodecEncoderPipe::process(Buffer *out, Buffer *in)
 	if (out->empty() && in->empty()) {
 		if (input_eos_) {
 			if (sent_eos_ && received_eos_) {
+				DEBUG(log_) << "EOS handshake completed.  Returning EOS.";
 				return (true);
 			}
-			out->append(XCODEC_MAGIC);
-			out->append(XCODEC_OP_EOS);
-			sent_eos_ = true;
+			if (sent_eos_) {
+				DEBUG(log_) << "Sent EOS once.  Giving up.";
+			} else {
+				DEBUG(log_) << "Sending EOS.";
+				out->append(XCODEC_MAGIC);
+				out->append(XCODEC_OP_EOS);
+				sent_eos_ = true;
+			}
 		}
 	} else {
 		sent_eos_ = false;
+		DEBUG(log_) << "Processing data, resetting EOS state.";
 	}
 	return (true);
 }
