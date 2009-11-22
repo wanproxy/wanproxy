@@ -22,7 +22,8 @@ XCodecEncoder::XCodecEncoder(XCodec *codec)
 #if defined(XCODEC_PIPES)
   pipe_(NULL),
 #endif
-  queued_()
+  queued_(),
+  sent_eos_(false)
 {
 	queued_.append(codec->hello());
 }
@@ -48,10 +49,19 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 
 		output->append(&queued_);
 		queued_.clear();
+	} else {
+		if (!sent_eos_ && input->empty()) {
+			DEBUG(log_) << "Sending <EOS>.";
+			output->append(XCODEC_MAGIC);
+			output->append(XCODEC_OP_EOS);
+			sent_eos_ = true;
+		}
 	}
 
 	if (input->empty())
 		return;
+
+	ASSERT(!sent_eos_);
 
 	if (input->length() < XCODEC_SEGMENT_LENGTH) {
 		encode_escape(output, input, input->length());

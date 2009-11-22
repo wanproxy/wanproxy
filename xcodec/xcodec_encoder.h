@@ -17,6 +17,7 @@ class XCodecEncoder {
 	XCodecEncoderPipe *pipe_;
 #endif
 	Buffer queued_;
+	bool sent_eos_;
 
 public:
 	XCodecEncoder(XCodec *);
