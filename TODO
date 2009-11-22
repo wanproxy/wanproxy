@@ -9,6 +9,8 @@ o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
 o) Make XCodecEncoder and XCodecDecoder pipes outright so as to avoid all of
    the weird interactions between each and its Pipe variant.
 o) Reluctantly move to a GNU Make build system?  :(
+o) I think the DecoderPipe needs a process_eos() that returns true if and only
+   if we have received EOS, sent EOS and have no outstanding ASKs.
 
 For 0.6.2:
 o) A better look-ahead parser.
