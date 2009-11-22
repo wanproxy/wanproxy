@@ -1,4 +1,5 @@
-For 0.6.0:
+For 0.6.1:
+o) Fix any bugs with XCodec EOS support.
 o) Add an ActionCache which classes can use to dole out Actions and which at
    destruction time will assert that there are no outstanding actions.  This
    will make debugging code involving Actions easier and give better Action
@@ -8,7 +9,7 @@ o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
 o) Make XCodecEncoder and XCodecDecoder pipes outright so as to avoid all of
    the weird interactions between each and its Pipe variant.
 
-For 0.6.1:
+For 0.6.2:
 o) A better look-ahead parser.
 o) Test error handling in epoll.
 o) Test error handling with port(3C).
