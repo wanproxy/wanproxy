@@ -40,7 +40,6 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 	}
 
 	if (output_callback_ != NULL) {
-		ASSERT(input_buffer_.empty());
 		ASSERT(output_action_ == NULL);
 
 		Buffer tmp;
@@ -52,7 +51,6 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 			cb->event(Event(Event::Error, 0));
 			return (EventSystem::instance()->schedule(cb));
 		}
-		ASSERT(buf->empty());
 
 		if (!tmp.empty() || input_eos_) {
 			if (input_eos_ && tmp.empty()) {
@@ -63,11 +61,11 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 			output_action_ = EventSystem::instance()->schedule(output_callback_);
 			output_callback_ = NULL;
 		}
-	} else {
-		if (!buf->empty()) {
-			input_buffer_.append(buf);
-			buf->clear();
-		}
+	}
+
+	if (!buf->empty()) {
+		input_buffer_.append(buf);
+		buf->clear();
 	}
 
 	cb->event(Event(Event::Done, 0));
@@ -86,10 +84,10 @@ PipeSimple::output(EventCallback *cb)
 			cb->event(Event(Event::Error, 0));
 			return (EventSystem::instance()->schedule(cb));
 		}
-		ASSERT(input_buffer_.empty());
 
 		if (!tmp.empty() || input_eos_) {
 			if (input_eos_ && tmp.empty()) {
+				ASSERT(input_buffer_.empty());
 				cb->event(Event(Event::EOS, 0));
 			} else {
 				ASSERT(!tmp.empty());
