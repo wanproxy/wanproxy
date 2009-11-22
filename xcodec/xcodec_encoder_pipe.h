@@ -7,15 +7,11 @@ class XCodecEncoderPipe : public PipeSimple {
 	friend class XCodecPipePair;
 
 	XCodecEncoder encoder_;
-
-	bool sent_eos_;
-	bool received_eos_;
 public:
 	XCodecEncoderPipe(XCodec *);
 	~XCodecEncoderPipe();
 
 	/* Only call from XCodecEncoder.  */
-	void received_eos(bool);
 	void output_ready(void);
 
 private:

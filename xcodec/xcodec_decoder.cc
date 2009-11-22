@@ -1,17 +1,10 @@
 #include <common/buffer.h>
 #include <common/endian.h>
 
-#if defined(XCODEC_PIPES)
-#include <io/pipe.h>
-#endif
-
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_cache.h>
 #include <xcodec/xcodec_decoder.h>
 #include <xcodec/xcodec_encoder.h>
-#if defined(XCODEC_PIPES)
-#include <xcodec/xcodec_encoder_pipe.h>
-#endif
 #include <xcodec/xcodec_hash.h>
 
 XCodecDecoder::XCodecDecoder(XCodec *codec)
@@ -19,10 +12,6 @@ XCodecDecoder::XCodecDecoder(XCodec *codec)
   cache_(codec->cache_),
   window_(),
   encoder_(NULL),
-#if defined(XCODEC_PIPES)
-  encoder_pipe_(NULL),
-  received_eos_(false),
-#endif
   queued_(),
   asked_()
 { }
@@ -30,7 +19,6 @@ XCodecDecoder::XCodecDecoder(XCodec *codec)
 XCodecDecoder::~XCodecDecoder()
 {
 	ASSERT(encoder_ == NULL);
-	ASSERT(encoder_pipe_ == NULL);
 	if (!asked_.empty())
 		DEBUG(log_) << asked_.size() << " outstanding <ASK>s when destroyed.";
 }
@@ -74,12 +62,6 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			tmp.append(input);
 			input->clear();
 			input->append(tmp);
-#if defined(XCODEC_PIPES)
-			if (received_eos_) {
-				received_eos_ = false;
-				encoder_pipe_->received_eos(false);
-			}
-#endif
 		}
 
 		if (input->empty())
@@ -95,12 +77,6 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 
 			input->clear();
 
-#if defined(XCODEC_PIPES)
-			if (received_eos_) {
-				received_eos_ = false;
-				encoder_pipe_->received_eos(false);
-			}
-#endif
 			break;
 		}
 
@@ -112,12 +88,6 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 				queued_.append(input, off);
 				input->skip(off);
 			}
-#if defined(XCODEC_PIPES)
-			if (received_eos_) {
-				received_eos_ = false;
-				encoder_pipe_->received_eos(false);
-			}
-#endif
 		}
 		
 		/*
@@ -128,14 +98,6 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 
 		uint8_t op;
 		input->copyout(&op, sizeof XCODEC_MAGIC, sizeof op);
-
-#if defined(XCODEC_PIPES)
-		if (op != XCODEC_OP_EOS && received_eos_) {
-			received_eos_ = false;
-			encoder_pipe_->received_eos(false);
-		}
-#endif
-
 		switch (op) {
 		case XCODEC_OP_HELLO:
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
@@ -333,12 +295,6 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			else {
 				input->skip(sizeof XCODEC_MAGIC + sizeof op);
 				DEBUG(log_) << "Received <EOS>.  Bytes remaining: " << input->length();
-#if defined(XCODEC_PIPES)
-				if (input->empty() && !received_eos_) {
-					received_eos_ = true;
-					encoder_pipe_->received_eos(true);
-				}
-#endif
 			}
 			break;
 		default:
@@ -361,14 +317,3 @@ XCodecDecoder::set_encoder(XCodecEncoder *encoder)
 
 	encoder_ = encoder;
 }
-
-#if defined(XCODEC_PIPES)
-void
-XCodecDecoder::set_encoder_pipe(XCodecEncoderPipe *encoder_pipe)
-{
-	ASSERT(encoder_pipe != NULL || encoder_pipe_ != NULL);
-	ASSERT(encoder_pipe_ == NULL || encoder_pipe == NULL);
-
-	encoder_pipe_ = encoder_pipe;
-}
-#endif
