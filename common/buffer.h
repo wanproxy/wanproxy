@@ -36,8 +36,7 @@ public:
 	  offset_(0),
 	  length_(0),
 	  ref_(1)
-	{
-	}
+	{ }
 
 	/*
 	 * Should almost always only be called from unref().
@@ -389,8 +388,7 @@ public:
 	Buffer(void)
 	: length_(0),
 	  data_()
-	{
-	}
+	{ }
 
 	/*
 	 * Create a Buffer and append byte data to it from an external source.

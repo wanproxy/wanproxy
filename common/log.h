@@ -85,8 +85,7 @@ public:
 	  str_(),
 	  pending_(false),
 	  halted_(false)
-	{
-	}
+	{ }
 
 	~Log()
 	{

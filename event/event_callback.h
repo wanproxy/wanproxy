@@ -44,8 +44,7 @@ public:
 	{ }
 
 	~ObjectEventCallback()
-	{
-	}
+	{ }
 
 private:
 	void operator() (Event e)
@@ -73,8 +72,7 @@ public:
 	{ }
 
 	~ObjectEventArgCallback()
-	{
-	}
+	{ }
 
 private:
 	void operator() (Event e)
