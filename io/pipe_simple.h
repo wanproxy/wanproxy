@@ -30,6 +30,7 @@ protected:
 	void output_spontaneous(void);
 
 	virtual bool process(Buffer *, Buffer *) = 0;
+	virtual bool process_eos(void) const;
 };
 
 #endif /* !IO_PIPE_SIMPLE_H */

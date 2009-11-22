@@ -52,7 +52,7 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 			return (EventSystem::instance()->schedule(cb));
 		}
 
-		if (!tmp.empty() || input_eos_) {
+		if (!tmp.empty() || (input_eos_ && process_eos())) {
 			if (input_eos_ && tmp.empty()) {
 				output_callback_->event(Event(Event::EOS, 0));
 			} else {
@@ -85,7 +85,7 @@ PipeSimple::output(EventCallback *cb)
 			return (EventSystem::instance()->schedule(cb));
 		}
 
-		if (!tmp.empty() || input_eos_) {
+		if (!tmp.empty() || (input_eos_ && process_eos())) {
 			if (input_eos_ && tmp.empty()) {
 				ASSERT(input_buffer_.empty());
 				cb->event(Event(Event::EOS, 0));
@@ -139,7 +139,7 @@ PipeSimple::output_spontaneous(void)
 	 * XXX
 	 * Would prefer for this to never happen!
 	 */
-	if (tmp.empty() && !input_eos_) {
+	if (tmp.empty() && (!input_eos_ || !process_eos())) {
 		DEBUG(log_) << "Spontaneous output generated no output despite EOS being unset.";
 		return;
 	}
@@ -151,4 +151,10 @@ PipeSimple::output_spontaneous(void)
 	}
 	output_action_ = EventSystem::instance()->schedule(output_callback_);
 	output_callback_ = NULL;
+}
+
+bool
+PipeSimple::process_eos(void) const
+{
+	return (input_eos_);
 }
