@@ -37,13 +37,16 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 {
 	if (buf->empty()) {
 		input_eos_ = true;
+	} else {
+		input_buffer_.append(buf);
+		buf->clear();
 	}
 
 	if (output_callback_ != NULL) {
 		ASSERT(output_action_ == NULL);
 
 		Buffer tmp;
-		if (!process(&tmp, buf)) {
+		if (!process(&tmp, &input_buffer_)) {
 			output_callback_->event(Event(Event::Error, 0));
 			output_action_ = EventSystem::instance()->schedule(output_callback_);
 			output_callback_ = NULL;
@@ -61,11 +64,6 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 			output_action_ = EventSystem::instance()->schedule(output_callback_);
 			output_callback_ = NULL;
 		}
-	}
-
-	if (!buf->empty()) {
-		input_buffer_.append(buf);
-		buf->clear();
 	}
 
 	cb->event(Event(Event::Done, 0));
