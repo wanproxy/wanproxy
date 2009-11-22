@@ -20,10 +20,12 @@ public:
 	  decoder_pipe_(codec)
 	{
 		decoder_pipe_.decoder_.set_encoder(&encoder_pipe_.encoder_);
+		decoder_pipe_.decoder_.set_encoder_pipe(&encoder_pipe_);
 	}
 
 	~XCodecPipePair()
 	{
+		decoder_pipe_.decoder_.set_encoder_pipe(NULL);
 		decoder_pipe_.decoder_.set_encoder(NULL);
 	}
 

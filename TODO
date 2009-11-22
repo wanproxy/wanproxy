@@ -5,7 +5,8 @@ o) Add an ActionCache which classes can use to dole out Actions and which at
    allocation performance, done properly.
 o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
    other things can handle spontaneous output.
-o) Implement EOS support in the XCodec.
+o) Make XCodecEncoder and XCodecDecoder pipes outright so as to avoid all of
+   the weird interactions between each and its Pipe variant.
 
 For 0.6.1:
 o) A better look-ahead parser.

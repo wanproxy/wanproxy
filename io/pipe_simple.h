@@ -5,11 +5,15 @@ class Action;
 class EventCallback;
 
 class PipeSimple : public Pipe {
+protected:
 	LogHandle log_;
 
+private:
 	Buffer input_buffer_;
+protected:
 	bool input_eos_;
 
+private:
 	Action *output_action_;
 	EventCallback *output_callback_;
 protected:

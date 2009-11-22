@@ -7,12 +7,19 @@
 
 class XCodecCache;
 class XCodecEncoder;
+#if defined(XCODEC_PIPES)
+class XCodecEncoderPipe;
+#endif
 
 class XCodecDecoder {
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
 	XCodecEncoder *encoder_;
+#if defined(XCODEC_PIPES)
+	XCodecEncoderPipe *encoder_pipe_;
+	bool received_eos_;
+#endif
 	Buffer queued_;
 	std::set<uint64_t> asked_;
 
@@ -23,6 +30,9 @@ public:
 	bool decode(Buffer *, Buffer *);
 
 	void set_encoder(XCodecEncoder *);
+#if defined(XCODEC_PIPES)
+	void set_encoder_pipe(XCodecEncoderPipe *);
+#endif
 };
 
 #endif /* !XCODEC_DECODER_H */
