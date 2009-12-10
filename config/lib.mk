@@ -1,8 +1,4 @@
-.if !defined(TOPDIR)
-.error "TOPDIR must be defined."
-.endif
-
-.PATH: ${TOPDIR}/config
+VPATH+=${TOPDIR}/config
 
 SRCS+=	config.cc
 SRCS+=	config_class.cc
@@ -13,7 +9,12 @@ SRCS+=	config_type_log_level.cc
 SRCS+=	config_type_pointer.cc
 SRCS+=	config_type_string.cc
 
-.if ${USE_LIBS:Mio}
+define __per_library
+_lib:=$(1)
+ifeq "${_lib}" "io"
 SRCS+=	config_class_address.cc
 SRCS+=	config_type_address_family.cc
-.endif
+endif
+endef
+
+$(foreach _lib, ${USE_LIBS}, $(eval $(call __per_library, ${_lib})))

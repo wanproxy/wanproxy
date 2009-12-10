@@ -2,4 +2,4 @@ SUBDIR+=tack
 SUBDIR+=wanproxy
 SUBDIR+=xcdump
 
-.include <bsd.subdir.mk>
+include ../common/subdir.mk

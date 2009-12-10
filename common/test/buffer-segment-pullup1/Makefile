@@ -1,5 +1,5 @@
 TEST=buffer-segment-pullup1
 
-TOPDIR=${.CURDIR}/../../..
+TOPDIR=../../..
 USE_LIBS=common
-.include "${TOPDIR}/common/program.mk"
+include ${TOPDIR}/common/program.mk

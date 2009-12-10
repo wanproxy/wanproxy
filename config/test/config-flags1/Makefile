@@ -1,5 +1,5 @@
 TEST=config-flags1
 
-TOPDIR=${.CURDIR}/../../..
+TOPDIR=../../..
 USE_LIBS=common config
-.include "${TOPDIR}/common/program.mk"
+include ${TOPDIR}/common/program.mk

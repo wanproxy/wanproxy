@@ -1,81 +1,109 @@
-.if !defined(TOPDIR)
-.error "TOPDIR must be defined."
-.endif
+ifndef TOPDIR
+$(error "TOPDIR must be defined")
+endif
 
-.if defined(NETWORK_TEST)
-.if !defined(SKIP_NETWORK_TESTS)
+ifdef NETWORK_TEST
 TEST=${NETWORK_TEST}
-.endif
-.endif
+endif
 
-.if defined(TEST)
-.if !defined(SKIP_TESTS)
+ifdef SKIP_NETWORK_TESTS
+SKIP_TESTS=${SKIP_NETWORK_TESTS}
+endif
+
+ifdef TEST
+ifndef SKIP_TESTS
 PROGRAM=${TEST}
 SRCS+=${TEST}.cc
 
-.if !target(regress)
+# Build and run regression tests.
 regress: ${PROGRAM}
-	${.OBJDIR}/${PROGRAM}
-.endif
-.endif
-.endif
-
-.if !target(regress)
+	${PWD}/${PROGRAM}
+else
+# Build but don't run regression tests.
 regress: ${PROGRAM}
-.endif
+endif
+else
+# Not a regression test, do nothing.
+regress:
+	@true
+endif
 
 .PHONY: regress
 
-OSNAME!=uname -s
+OSNAME:=$(shell uname -s)
 
 CFLAGS+=-I${TOPDIR}
-.if defined(NDEBUG)
+ifdef NDEBUG
 CFLAGS+=-DNDEBUG=1
-.else
-.if ${OSNAME} != "SunOS"
+else
+ifneq "${OSNAME}" "SunOS"
 CFLAGS+=-g
-.endif
-.endif
+endif
+endif
 
 #CFLAGS+=--std gnu++0x
 #CFLAGS+=-pedantic
 CFLAGS+=-Wno-deprecated
 CFLAGS+=-W -Wall
-.if ${OSNAME} != "OpenBSD"
+ifneq "${OSNAME}" "OpenBSD"
 CFLAGS+=-Werror
-.endif
+endif
 CFLAGS+=-Wno-system-headers
 #CFLAGS+=-Wno-unused-parameter
 CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts
 #CFLAGS+=-Winline
 
-.if defined(PROGRAM)
-__LIBRARIES!=echo ${USE_LIBS} | sort -u | xargs
-.for _lib in ${__LIBRARIES}
-.include "${TOPDIR}/${_lib}/lib.mk"
-.if defined(${_lib:U}_REQUIRES)
-.for _lib2 in ${${_lib:U}_REQUIRES}
-.if empty(__LIBRARIES:M${_lib2})
-.error "Inclusion of library ${_lib} requires library ${_lib2}."
-.endif
-.endfor
-.endif
-.endfor
+ifndef PROGRAM
+$(error "Must have a program to build.")
+endif
 
-OBJS+=  ${SRCS:R:S/$/.o/g}
+__LIBRARIES=$(shell echo ${USE_LIBS} | sort -u | xargs)
+
+#
+# XXX
+# We completely ignore dependencies for now since this seems dodgy.
+#
+# define __library_check_dependency
+# _lib:=$(1)
+# _lib2:=$(2)
+# ifeq ${lib} ${lib2}
+# _library_found:=1
+# endif
+# endef
+# 
+# define __library_dependency
+# _lib:=$(1)
+# _lib2:=$(2)
+# _library_found:=0
+# $(foreach _lib3, ${__LIBRARIES}, $(eval $(call __library_check_dependency, ${_lib2}, ${_lib3})))
+# ifneq ${_library_found} 1
+# $(error "Inclusion of library ${_lib} requires library ${_lib2}")
+# endif
+# endef
+
+define __library_include
+_lib:=$(1)
+# _LIB:=$(shell echo ${_lib} | tr a-z A-Z)
+ 
+include ${TOPDIR}/${_lib}/lib.mk
+ 
+# ifdef ${_LIB}_REQUIRES
+# $(foreach _lib2, ${${_LIB}_REQUIRES}, $(eval $(call __library_dependency, ${_lib}, ${_lib2})))
+# endif
+endef
+
+$(foreach _lib, ${__LIBRARIES}, $(eval $(call __library_include, ${_lib})))
+
+OBJS+=  ${SRCS:.cc=.o}
 
 .MAIN: ${PROGRAM}
 all: ${PROGRAM}
 
 ${PROGRAM}: ${OBJS}
-	${CXX} ${CXXFLAGS} ${CFLAGS} ${LDFLAGS} -o ${.TARGET} ${OBJS} ${LDADD}
+	${CXX} ${CXXFLAGS} ${CFLAGS} ${LDFLAGS} -o $@ ${OBJS} ${LDADD}
 
 .cc.o:
-	${CXX} ${CXXFLAGS} ${CFLAGS} -c -o ${.TARGET} ${.IMPSRC}
+	${CXX} ${CXXFLAGS} ${CFLAGS} -c -o $@ $<
 
 clean:
 	rm -f ${PROGRAM} ${OBJS}
-.else
-SUBDIR+=
-.include <bsd.subdir.mk>
-.endif

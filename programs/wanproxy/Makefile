@@ -15,6 +15,6 @@ SRCS+=	wanproxy_config_class_proxy.cc
 SRCS+=	wanproxy_config_class_proxy_socks.cc
 SRCS+=	wanproxy_config_type_codec.cc
 
-TOPDIR=${.CURDIR}/../..
+TOPDIR=../..
 USE_LIBS=common config event io net xcodec
-.include "${TOPDIR}/common/program.mk"
+include ${TOPDIR}/common/program.mk

@@ -1,3 +1,3 @@
 SUBDIR+=hash
 
-.include <bsd.subdir.mk>
+include ../common/subdir.mk

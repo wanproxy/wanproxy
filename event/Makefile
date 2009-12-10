@@ -1,4 +1,4 @@
 SUBDIR+=example
 SUBDIR+=test
 
-.include <bsd.subdir.mk>
+include ../common/subdir.mk

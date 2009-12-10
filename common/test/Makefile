@@ -3,4 +3,4 @@ SUBDIR+=buffer-prefix1
 SUBDIR+=buffer-segment-pullup1
 SUBDIR+=buffer-segment-pullup2
 
-.include <bsd.subdir.mk>
+include ../../common/subdir.mk

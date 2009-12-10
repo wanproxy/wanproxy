@@ -2,6 +2,6 @@ PROGRAM=timeout-test1
 
 SRCS+=	timeout-test1.cc
 
-TOPDIR=${.CURDIR}/../../..
+TOPDIR=../../..
 USE_LIBS=common event
-.include "${TOPDIR}/common/program.mk"
+include ${TOPDIR}/common/program.mk

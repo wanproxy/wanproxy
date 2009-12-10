@@ -1,44 +1,45 @@
-.if !defined(TOPDIR)
-.error "TOPDIR must be defined."
-.endif
-
-.PATH: ${TOPDIR}/event
+VPATH+=${TOPDIR}/event
 
 SRCS+=	event_poll.cc
 SRCS+=	event_system.cc
 SRCS+=	timeout.cc
 
-.if !defined(USE_POLL)
-.if ${OSNAME} == "Darwin" || ${OSNAME} == "FreeBSD" || ${OSNAME} == "OpenBSD"
+ifndef USE_POLL
+ifeq "${OSNAME}" "Darwin"
 USE_POLL=	kqueue
-.elif ${OSNAME} == "Linux"
-USE_POLL=	epoll
-.elif ${OSNAME} == "Interix"
-USE_POLL=	select
-.elif ${OSNAME} == "SunOS"
-USE_POLL=	port
-.else
-USE_POLL=	poll
-.endif
-.endif
+endif
 
-.if ${OSNAME} == "Linux"
+ifeq "${OSNAME}" "FreeBSD"
+USE_POLL=	kqueue
+endif
+
+ifeq "${OSNAME}" "OpenBSD"
+USE_POLL=	kqueue
+endif
+
+ifeq "${OSNAME}" "Linux"
+USE_POLL=	epoll
+endif
+
+ifeq "${OSNAME}" "Interix"
+USE_POLL=	select
+endif
+
+ifeq "${OSNAME}" "SunOS"
+USE_POLL=	port
+endif
+
+ifndef USE_POLL
+USE_POLL=	poll
+endif
+endif
+
+ifeq "${OSNAME}" "Linux"
 # Required for clock_gettime(3).
 LDADD+=		-lrt
-.endif
+endif
 
 SRCS+=	event_poll_${USE_POLL}.cc
 
-.if ${USE_POLL} == "kqueue"
-CFLAGS+=-DUSE_POLL_KQUEUE
-.elif ${USE_POLL} == "poll"
-CFLAGS+=-DUSE_POLL_POLL
-.elif ${USE_POLL} == "select"
-CFLAGS+=-DUSE_POLL_SELECT
-.elif ${USE_POLL} == "epoll"
-CFLAGS+=-DUSE_POLL_EPOLL
-.elif ${USE_POLL} == "port"
-CFLAGS+=-DUSE_POLL_PORT
-.else
-.error "Unsupported poll mechanism."
-.endif
+__USE_POLL:=$(shell echo ${USE_POLL} | tr a-z A-Z)
+CFLAGS+=-DUSE_POLL_${__USE_POLL}

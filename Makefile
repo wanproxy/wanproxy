@@ -7,4 +7,4 @@ SUBDIR+=net
 SUBDIR+=programs
 SUBDIR+=xcodec
 
-.include <bsd.subdir.mk>
+include common/subdir.mk

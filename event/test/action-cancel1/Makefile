@@ -1,5 +1,5 @@
 TEST=action-cancel1
 
-TOPDIR=${.CURDIR}/../../..
+TOPDIR=../../..
 USE_LIBS=common event
-.include "${TOPDIR}/common/program.mk"
+include ${TOPDIR}/common/program.mk

@@ -2,6 +2,6 @@ PROGRAM=tack
 
 SRCS+=	tack.cc
 
-TOPDIR=${.CURDIR}/../..
+TOPDIR=../..
 USE_LIBS=common xcodec
-.include "${TOPDIR}/common/program.mk"
+include ${TOPDIR}/common/program.mk

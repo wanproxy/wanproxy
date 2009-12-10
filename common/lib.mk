@@ -1,8 +1,4 @@
-.if !defined(TOPDIR)
-.error "TOPDIR must be defined."
-.endif
-
-.PATH: ${TOPDIR}/common
+VPATH+=${TOPDIR}/common
 
 SRCS+=	buffer.cc
 SRCS+=	log.cc

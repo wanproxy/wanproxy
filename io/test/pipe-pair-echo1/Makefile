@@ -1,5 +1,5 @@
 TEST=pipe-pair-echo1
 
-TOPDIR=${.CURDIR}/../../..
+TOPDIR=../../..
 USE_LIBS=common event io
-.include "${TOPDIR}/common/program.mk"
+include ${TOPDIR}/common/program.mk
