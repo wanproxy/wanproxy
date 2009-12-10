@@ -1,4 +1,4 @@
-VPATH+=${TOPDIR}/config
+VPATH+=	${TOPDIR}/config
 
 SRCS+=	config.cc
 SRCS+=	config_class.cc

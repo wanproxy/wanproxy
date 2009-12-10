@@ -1,4 +1,4 @@
-VPATH+=${TOPDIR}/net
+VPATH+=	${TOPDIR}/net
 
 SRCS+=	tcp_client.cc
 SRCS+=	tcp_server.cc

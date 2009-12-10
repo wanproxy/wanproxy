@@ -1,4 +1,4 @@
-VPATH+=${TOPDIR}/xcodec
+VPATH+=	${TOPDIR}/xcodec
 
 SRCS+=	xcodec_decoder.cc
 SRCS+=	xcodec_encoder.cc

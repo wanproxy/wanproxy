@@ -1,4 +1,4 @@
-VPATH+=${TOPDIR}/io
+VPATH+=	${TOPDIR}/io
 
 SRCS+=	file_descriptor.cc
 SRCS+=	io_system.cc

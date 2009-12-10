@@ -1,4 +1,4 @@
-VPATH+=${TOPDIR}/event
+VPATH+=	${TOPDIR}/event
 
 SRCS+=	event_poll.cc
 SRCS+=	event_system.cc
