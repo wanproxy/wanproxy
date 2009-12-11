@@ -15,6 +15,8 @@ ifndef SKIP_TESTS
 PROGRAM=${TEST}
 SRCS+=${TEST}.cc
 
+all: ${PROGRAM}
+
 # Build and run regression tests.
 regress: ${PROGRAM}
 	${PWD}/${PROGRAM}
@@ -23,6 +25,12 @@ else
 regress: ${PROGRAM}
 endif
 else
+ifndef PROGRAM
+$(error "Must have a program to build.")
+endif
+
+all: ${PROGRAM}
+
 # Not a regression test, do nothing.
 regress:
 	@true
@@ -52,10 +60,6 @@ CFLAGS+=-Wno-system-headers
 #CFLAGS+=-Wno-unused-parameter
 CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts
 #CFLAGS+=-Winline
-
-ifndef PROGRAM
-$(error "Must have a program to build.")
-endif
 
 __LIBRARIES=$(shell echo ${USE_LIBS} | sort -u | xargs)
 
@@ -95,9 +99,6 @@ endef
 $(foreach _lib, ${__LIBRARIES}, $(eval $(call __library_include, ${_lib})))
 
 OBJS+=  ${SRCS:.cc=.o}
-
-.MAIN: ${PROGRAM}
-all: ${PROGRAM}
 
 ${PROGRAM}: ${OBJS}
 	${CXX} ${CXXFLAGS} ${CFLAGS} ${LDFLAGS} -o $@ ${OBJS} ${LDADD}
