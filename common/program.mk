@@ -61,8 +61,6 @@ CFLAGS+=-Wno-system-headers
 CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts
 #CFLAGS+=-Winline
 
-__LIBRARIES=$(shell echo ${USE_LIBS} | sort -u | xargs)
-
 #
 # XXX
 # We completely ignore dependencies for now since this seems dodgy.
@@ -79,7 +77,7 @@ __LIBRARIES=$(shell echo ${USE_LIBS} | sort -u | xargs)
 # _lib:=$(1)
 # _lib2:=$(2)
 # _library_found:=0
-# $(foreach _lib3, ${__LIBRARIES}, $(eval $(call __library_check_dependency, ${_lib2}, ${_lib3})))
+# $(foreach _lib3, ${USE_LIBS}, $(eval $(call __library_check_dependency, ${_lib2}, ${_lib3})))
 # ifneq ${_library_found} 1
 # $(error "Inclusion of library ${_lib} requires library ${_lib2}")
 # endif
@@ -96,7 +94,7 @@ include ${TOPDIR}/${_lib}/lib.mk
 # endif
 endef
 
-$(foreach _lib, ${__LIBRARIES}, $(eval $(call __library_include, ${_lib})))
+$(foreach _lib, ${USE_LIBS}, $(eval $(call __library_include, ${_lib})))
 
 OBJS+=  ${SRCS:.cc=.o}
 
