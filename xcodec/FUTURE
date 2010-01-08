@@ -1,24 +1,33 @@
+To-do:
+
+o) Generate a UUID per-encoder at startup.
+   NB: This may not be a "UUID" per se.
+o) Exchange UUIDs in HELLO.
+o) Make dictionaries per-UUID and look up hashes based on the implicit UUID in
+   them.  Figure out whether to have a global hash map with hash-maps of UUID
+   to BufferSegment as the value which can be used to send references to hashes
+   that aren't in "our" dictionary -- maybe just check the peer's as well?
+o) Add a 'count' field to the hash and allow incrementing it to do collision
+   overflow.  For this it'd be nice to have an interface that would return a
+   range of matches in the dictionary.  Put the count at the end to make this
+   possible.  Would need to change the encoding logic to use a different OP
+   for these that took, say, a count or even just the full hash/identifier.
+o) Only have N bytes outstanding at any given time (say 128k?) and add some
+   type of ACK, perhaps?  This is necessary to:
+o) Write a garbage-collector for the dictionary.  LRU?
+
 Possibly-bad future ideas:
 
-(o) Add an out-of-window prefix e.g. ESCAPE 00 [declaration or reference] that
-    is processed ahead of over stuff in the stream, to make it possible to
-    handle querying the remote side for data.
-(o) Incorporate run-length encoding.
-(o) Make declarations actually insert data, not just add to the backref table?
-(o) Make a uuid or similar part of the hash name so that collisions caused by
-    restart don't confuse remote side.
-(o) Add a 'generation' field to the hash as sent on wire and handle collisions
-    that way?  Then first form of hash is fastest, followed by second, etc., as
-    they are search -- can also put their data in a map.
-(o) Possibly use two hash functions -- even just mixing crc in with the Adler
-    stuff might help increase our hash entropy?  Been a while since I really
-    read up on the subject and would do well to do so again.  Currently the
-    entropy is not great.
-(o) Incorporate occasional (figure out frequency) CRCs or such of the next N
-    bytes of decoded data to make it possible to detect any hash mismatches,
-    using a different hash function to any that go into the hash.
-(o) If the encoded version of a stream is larger than the source would be
-    escaped, it'd be nice to just transmit it escaped and to have some way to
-    tell the remote side how to pick out chunks to be taken as known to both
-    parties in the future.  One approach would be to send a list of offsets
-    at which hashes were declared.
+o) Incorporate run-length encoding.
+o) Possibly use two hash functions -- even just mixing crc in with the Adler
+   stuff might help increase our hash entropy?  Been a while since I really
+   read up on the subject and would do well to do so again.  Currently the
+   entropy is not great.
+o) Incorporate occasional (figure out frequency) CRCs or such of the next N
+   bytes of decoded data to make it possible to detect any hash mismatches,
+   using a different hash function to any that go into the hash.
+o) If the encoded version of a stream is larger than the source would be
+   escaped, it'd be nice to just transmit it escaped and to have some way to
+   tell the remote side how to pick out chunks to be taken as known to both
+   parties in the future.  One approach would be to send a list of offsets
+   at which hashes were declared.
