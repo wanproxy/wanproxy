@@ -61,22 +61,22 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	if (!interface_portct->get(interface_portcv, &interface_portstr))
 		return (false);
 
-	/* Extract decoder.  */
-	ConfigTypePointer *decoderct;
-	ConfigValue *decodercv = co->get("decoder", &decoderct);
-	if (decodercv == NULL)
+	/* Extract interface_codec.  */
+	ConfigTypePointer *interface_codecct;
+	ConfigValue *interface_codeccv = co->get("interface_codec", &interface_codecct);
+	if (interface_codeccv == NULL)
 		return (false);
 
-	WANProxyConfigClassCodec *decodercc;
-	ConfigObject *decoderco;
-	if (!decoderct->get(decodercv, &decoderco, &decodercc))
+	WANProxyConfigClassCodec *interface_codeccc;
+	ConfigObject *interface_codecco;
+	if (!interface_codecct->get(interface_codeccv, &interface_codecco, &interface_codeccc))
 		return (false);
 
-	XCodec *decodercodec;
-	if (decoderco != NULL) {
-		decodercodec = decodercc->get(decoderco);
+	XCodec *interface_codeccodec;
+	if (interface_codecco != NULL) {
+		interface_codeccodec = interface_codeccc->get(interface_codecco);
 	} else {
-		decodercodec = NULL;
+		interface_codeccodec = NULL;
 	}
 
 	/* Extract peer.  */
@@ -117,28 +117,28 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	if (!peer_portct->get(peer_portcv, &peer_portstr))
 		return (false);
 
-	/* Extract encoder.  */
-	ConfigTypePointer *encoderct;
-	ConfigValue *encodercv = co->get("encoder", &encoderct);
-	if (encodercv == NULL)
+	/* Extract peer_codec.  */
+	ConfigTypePointer *peer_codecct;
+	ConfigValue *peer_codeccv = co->get("peer_codec", &peer_codecct);
+	if (peer_codeccv == NULL)
 		return (false);
 
-	WANProxyConfigClassCodec *encodercc;
-	ConfigObject *encoderco;
-	if (!encoderct->get(encodercv, &encoderco, &encodercc))
+	WANProxyConfigClassCodec *peer_codeccc;
+	ConfigObject *peer_codecco;
+	if (!peer_codecct->get(peer_codeccv, &peer_codecco, &peer_codeccc))
 		return (false);
 
-	XCodec *encodercodec;
-	if (encoderco != NULL) {
-		encodercodec = encodercc->get(encoderco);
+	XCodec *peer_codeccodec;
+	if (peer_codecco != NULL) {
+		peer_codeccodec = peer_codeccc->get(peer_codecco);
 	} else {
-		encodercodec = NULL;
+		peer_codeccodec = NULL;
 	}
 
 	std::string interface_address = '[' + interface_hoststr + ']' + ':' + interface_portstr;
 	std::string peer_address = '[' + peer_hoststr + ']' + ':' + peer_portstr;
 
-	ProxyListener *listener = new ProxyListener(decodercodec, encodercodec, interface_family, interface_address, peer_family, peer_address);
+	ProxyListener *listener = new ProxyListener(interface_codeccodec, peer_codeccodec, interface_family, interface_address, peer_family, peer_address);
 	object_listener_map_[co] = listener;
 
 	return (true);

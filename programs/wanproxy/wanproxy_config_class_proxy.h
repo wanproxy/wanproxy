@@ -13,9 +13,9 @@ public:
 	  object_listener_map_()
 	{
 		add_member("interface", &config_type_pointer);
-		add_member("decoder", &config_type_pointer);
+		add_member("interface_codec", &config_type_pointer);
 		add_member("peer", &config_type_pointer);
-		add_member("encoder", &config_type_pointer);
+		add_member("peer_codec", &config_type_pointer);
 	}
 
 	/* XXX So wrong.  */
