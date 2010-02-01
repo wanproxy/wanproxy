@@ -108,7 +108,7 @@ dump(int ifd, int ofd)
 					bhexdump(&output, data, sizeof data);
 					bprintf(&output, "\"");
 				}
-				input.clear();
+				input.skip(off);
 				bprintf(&output, "/>\n");
 			}
 		
@@ -204,7 +204,6 @@ dump(int ifd, int ofd)
 				ERROR("/dump") << "Unsupported XCodec opcode " << (unsigned)op << ".";
 				return;
 			}
-			DEBUG("/dump") << "Truncated message.";
 			break;
 		}
 
