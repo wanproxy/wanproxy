@@ -132,11 +132,11 @@ dump(int ifd, int ofd)
 					bprintf(&output, "<hello length=\"%u\"/>\n", (unsigned)len);
 					input.skip(sizeof XCODEC_MAGIC + sizeof op + sizeof len + len);
 				}
-				break;
+				continue;
 			case XCODEC_OP_ESCAPE:
 				bprintf(&output, "<escape />");
 				input.skip(sizeof XCODEC_MAGIC + sizeof op);
-				break;
+				continue;
 			case XCODEC_OP_LEARN:
 			case XCODEC_OP_EXTRACT:
 				if (input.length() < sizeof XCODEC_MAGIC + sizeof op + XCODEC_SEGMENT_LENGTH)
@@ -163,7 +163,7 @@ dump(int ifd, int ofd)
 
 					seg->unref();
 				}
-				break;
+				continue;
 			case XCODEC_OP_ASK:
 			case XCODEC_OP_REF:
 				if (input.length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint64_t))
@@ -178,7 +178,7 @@ dump(int ifd, int ofd)
 						bprintf(&output, " hash=\"0x%016jx\"", (uintmax_t)hash);
 					bprintf(&output, "/>\n");
 				}
-				break;
+				continue;
 			case XCODEC_OP_BACKREF:
 				if (input.length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
 					break;
@@ -191,11 +191,21 @@ dump(int ifd, int ofd)
 						bprintf(&output, " offset=\"%u\"", (unsigned)idx);
 					bprintf(&output, "/>\n");
 				}
-				break;
+				continue;
+			case XCODEC_OP_EOS:
+				if (input.length() < sizeof XCODEC_MAGIC + sizeof op)
+					break;
+				else {
+					input.skip(sizeof XCODEC_MAGIC + sizeof op);
+					bprintf(&output, "<end-of-stream/>\n");
+				}
+				continue;
 			default:
 				ERROR("/dump") << "Unsupported XCodec opcode " << (unsigned)op << ".";
 				return;
 			}
+			DEBUG("/dump") << "Truncated message.";
+			break;
 		}
 
 		flush(ofd, &output);
