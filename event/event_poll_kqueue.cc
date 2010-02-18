@@ -135,6 +135,7 @@ EventPoll::wait(int ms)
 			continue;
 		}
 		if ((ev->flags & EV_EOF) != 0) {
+			ASSERT(ev->filter == EVFILT_READ);
 			poll_handler->callback(Event(Event::EOS, ev->fflags));
 			continue;
 		}
