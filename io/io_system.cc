@@ -108,6 +108,14 @@ IOSystem::Handle::read_callback(Event e)
 	case Event::EOS:
 	case Event::Done:
 		break;
+	case Event::Error: {
+		DEBUG(log_) << "Poll returned error: " << e;
+		read_callback_->event(e);
+		Action *a = EventSystem::instance()->schedule(read_callback_);
+		read_action_ = a;
+		read_callback_ = NULL;
+		return;
+	}
 	default:
 		HALT(log_) << "Unexpected event: " << e;
 	}
@@ -236,14 +244,22 @@ IOSystem::Handle::write_callback(Event e)
 	write_action_ = NULL;
 
 	switch (e.type_) {
-	case Event::EOS:
 	case Event::Done:
 		break;
+	case Event::Error: {
+		DEBUG(log_) << "Poll returned error: " << e;
+		write_callback_->event(e);
+		Action *a = EventSystem::instance()->schedule(write_callback_);
+		write_action_ = a;
+		write_callback_ = NULL;
+		return;
+	}
 	default:
 		HALT(log_) << "Unexpected event: " << e;
 	}
 
 	/* XXX This doesn't handle UDP nicely.  Right?  */
+	/* XXX If a UDP packet is > IOV_MAX segments, this will break it.  */
 	struct iovec iov[IOV_MAX];
 	size_t iovcnt = write_buffer_.fill_iovec(iov, IOV_MAX);
 
