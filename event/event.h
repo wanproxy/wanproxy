@@ -47,6 +47,13 @@ struct Event {
 	  data_(NULL)
 	{ }
 
+	Event(Type type, int error, const Buffer& buffer, void *data)
+	: type_(type),
+	  error_(error),
+	  buffer_(buffer),
+	  data_(data)
+	{ }
+
 	Event(Type type, int error)
 	: type_(type),
 	  error_(error),
