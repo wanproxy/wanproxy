@@ -183,11 +183,12 @@ IOSystem::Handle::read_callback(Event e)
 
 	/*
 	 * XXX
-	 * If we get an EOS from EventPoll, should we just terminate after that
-	 * one read?  How can we tell how much data is still available to be
-	 * read?  Will we get it all in one read?  Eventually, one would expect
-	 * to get a read with a length of 0, or an error, but will kevent even
-	 * continue to fire off read events?
+	 * If we get a short read from readv and detected EOS from EventPoll is
+	 * that good enough, instead?  We can keep reading until we get a 0, sure,
+	 * but if things other than network conditions influence whether reads
+	 * would block (and whether non-blocking reads return), there could be
+	 * more data waiting, and so we shouldn't just use a short read as an
+	 * indicator?
 	 */
 	if (len == 0) {
 		read_callback_->event(Event(Event::EOS, 0, read_buffer_));
