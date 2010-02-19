@@ -7,18 +7,20 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
+static void signal_reload(int);
 static void signal_stop(int);
 
 EventSystem::EventSystem(void)
 : log_("/event/system"),
   queue_(),
   stop_(),
-  stop_queue_(),
+  interest_queue_(),
   timeout_queue_(),
   poll_()
 {
 	INFO(log_) << "Starting event system.";
 
+	signal(SIGHUP, signal_reload);
 	signal(SIGINT, signal_stop);
 }
 
@@ -36,14 +38,8 @@ EventSystem::poll(const EventPoll::Type& type, int fd, EventCallback *cb)
 Action *
 EventSystem::register_interest(const EventInterest& interest, Callback *cb)
 {
-	switch (interest) {
-	case EventInterestStop: {
-		Action *a = stop_queue_.append(cb);
-		return (a);
-	}
-	default:
-		NOTREACHED();
-	}
+	Action *a = interest_queue_[interest].append(cb);
+	return (a);
 }
 
 Action *
@@ -67,10 +63,10 @@ EventSystem::start(void)
 		/*
 		 * If we have been told to stop, fire all shutdown events.
 		 */
-		if (stop_ && !stop_queue_.empty()) {
+		if (stop_ && !interest_queue_[EventInterestStop].empty()) {
 			INFO(log_) << "Running stop handlers.";
-			while (!stop_queue_.empty())
-				stop_queue_.perform();
+			while (!interest_queue_[EventInterestStop].empty())
+				interest_queue_[EventInterestStop].perform();
 			INFO(log_) << "Stop handlers have been run.";
 		}
 
@@ -135,9 +131,24 @@ EventSystem::stop(void)
 	stop_ = true;
 }
 
-static void
-signal_stop(int signo)
+void
+EventSystem::reload(void)
 {
-	ASSERT(signo == SIGINT);
+	/* XXX Need a way to perform all that allows new handlers to be installed.  */
+	INFO(log_) << "Running reload handlers.";
+	while (!interest_queue_[EventInterestReload].empty())
+		interest_queue_[EventInterestReload].perform();
+	INFO(log_) << "Reload handlers have been run.";
+}
+
+static void
+signal_reload(int)
+{
+	EventSystem::instance()->reload();
+}
+
+static void
+signal_stop(int)
+{
 	EventSystem::instance()->stop();
 }

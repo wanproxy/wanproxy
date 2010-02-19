@@ -7,6 +7,7 @@
 #include <event/timeout.h>
 
 enum EventInterest {
+	EventInterestReload,
 	EventInterestStop
 };
 
@@ -14,7 +15,7 @@ class EventSystem {
 	LogHandle log_;
 	CallbackQueue queue_;
 	bool stop_;
-	CallbackQueue stop_queue_;
+	std::map<EventInterest, CallbackQueue> interest_queue_;
 	TimeoutQueue timeout_queue_;
 	EventPoll poll_;
 protected:
@@ -28,6 +29,8 @@ public:
 	Action *timeout(unsigned, Callback *);
 	void start(void);
 	void stop(void);
+
+	void reload(void);
 
 	static EventSystem *instance(void)
 	{
