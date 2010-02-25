@@ -167,13 +167,13 @@ EventPoll::wait(int ms)
 		if ((ev->portev_events & POLLIN) != 0) {
 			ASSERT(read_poll_.find(fd) != read_poll_.end());
 			poll_handler = &read_poll_[fd];
-			poll_handler->callback(Event(Event::Done, 0));
+			poll_handler->callback(Event::Done);
 		}
 
 		if ((ev->portev_events & POLLOUT) != 0) {
 			ASSERT(write_poll_.find(fd) != write_poll_.end());
 			poll_handler = &write_poll_[fd];
-			poll_handler->callback(Event(Event::Done, 0));
+			poll_handler->callback(Event::Done);
 		}
 
 		if ((ev->portev_events & POLLIN) == 0 && (ev->portev_events & POLLOUT) == 0) {
@@ -187,13 +187,13 @@ EventPoll::wait(int ms)
 			}
 
 			if ((ev->portev_events & POLLERR) != 0) {
-				poll_handler->callback(Event(Event::Error, 0));
+				poll_handler->callback(Event::Error);
 				continue;
 			}
 
 			if ((ev->portev_events & POLLHUP) != 0) {
 				/* XXX Read only!  */
-				poll_handler->callback(Event(Event::EOS, 0));
+				poll_handler->callback(Event::EOS);
 				continue;
 			}
 

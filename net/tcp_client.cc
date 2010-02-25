@@ -38,7 +38,7 @@ TCPClient::connect(const std::string& name, EventCallback *ccb)
 
 	socket_ = Socket::create(family_, SocketTypeStream, "tcp", name);
 	if (socket_ == NULL) {
-		ccb->event(Event(Event::Error, 0));
+		ccb->event(Event::Error);
 		Action *a = EventSystem::instance()->schedule(ccb);
 
 		delete this;

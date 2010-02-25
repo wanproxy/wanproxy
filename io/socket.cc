@@ -354,7 +354,7 @@ Socket::connect(const std::string& name, EventCallback *cb)
 	int rv = ::connect(fd_, &addr.addr_.sockaddr_, addr.addrlen_);
 	switch (rv) {
 	case 0:
-		cb->event(Event(Event::Done, 0));
+		cb->event(Event::Done);
 		connect_action_ = EventSystem::instance()->schedule(cb);
 		break;
 	case -1:
@@ -472,7 +472,7 @@ Socket::accept_callback(Event e)
 	}
 
 	Socket *child = new Socket(s, domain_, socktype_, protocol_);
-	accept_callback_->event(Event(Event::Done, 0, (void *)child));
+	accept_callback_->event(Event(Event::Done, (void *)child));
 	Action *a = EventSystem::instance()->schedule(accept_callback_);
 	accept_action_ = a;
 	accept_callback_ = NULL;
@@ -507,7 +507,7 @@ Socket::connect_callback(Event e)
 
 	switch (e.type_) {
 	case Event::Done:
-		connect_callback_->event(Event(Event::Done, 0));
+		connect_callback_->event(Event::Done);
 		break;
 	case Event::EOS:
 	case Event::Error:

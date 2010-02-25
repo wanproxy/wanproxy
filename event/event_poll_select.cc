@@ -131,7 +131,7 @@ EventPoll::wait(int ms)
 	for (fd = 0; fdcnt != 0 && fd <= maxfd; fd++) {
 		if (FD_ISSET(fd, &read_set)) {
 			ASSERT(read_poll_.find(fd) != read_poll_.end());
-			read_poll_[fd].callback(Event(Event::Done, 0));
+			read_poll_[fd].callback(Event::Done);
 
 			ASSERT(fdcnt != 0);
 			fdcnt--;
@@ -139,7 +139,7 @@ EventPoll::wait(int ms)
 
 		if (FD_ISSET(fd, &write_set)) {
 			ASSERT(write_poll_.find(fd) != write_poll_.end());
-			write_poll_[fd].callback(Event(Event::Done, 0));
+			write_poll_[fd].callback(Event::Done);
 
 			ASSERT(fdcnt != 0);
 			fdcnt--;

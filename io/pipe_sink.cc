@@ -32,14 +32,14 @@ PipeSink::input(Buffer *buf, EventCallback *cb)
 		if (output_callback_ != NULL) {
 			ASSERT(output_action_ == NULL);
 
-			output_callback_->event(Event(Event::EOS, 0));
+			output_callback_->event(Event::EOS);
 
 			output_action_ = EventSystem::instance()->schedule(output_callback_);
 			output_callback_ = NULL;
 		}
 	}
 
-	cb->event(Event(Event::Done, 0));
+	cb->event(Event::Done);
 	return (EventSystem::instance()->schedule(cb));
 }
 
@@ -50,7 +50,7 @@ PipeSink::output(EventCallback *cb)
 	ASSERT(output_callback_ == NULL);
 
 	if (input_eos_) {
-		cb->event(Event(Event::EOS, 0));
+		cb->event(Event::EOS);
 
 		return (EventSystem::instance()->schedule(cb));
 	}

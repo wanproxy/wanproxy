@@ -145,13 +145,13 @@ EventPoll::wait(int ms)
 		}
 		if ((fd->revents & POLLERR) != 0 ||
 		    (fd->revents & POLLNVAL) != 0) {
-			poll_handler->callback(Event(Event::Error, 0));
+			poll_handler->callback(Event::Error);
 			continue;
 		}
 		if ((fd->revents & POLLHUP) != 0) {
-			poll_handler->callback(Event(Event::EOS, 0));
+			poll_handler->callback(Event::EOS);
 			continue;
 		}
-		poll_handler->callback(Event(Event::Done, 0));
+		poll_handler->callback(Event::Done);
 	}
 }

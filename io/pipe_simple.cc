@@ -47,26 +47,26 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 
 		Buffer tmp;
 		if (!process(&tmp, &input_buffer_)) {
-			output_callback_->event(Event(Event::Error, 0));
+			output_callback_->event(Event::Error);
 			output_action_ = EventSystem::instance()->schedule(output_callback_);
 			output_callback_ = NULL;
 
-			cb->event(Event(Event::Error, 0));
+			cb->event(Event::Error);
 			return (EventSystem::instance()->schedule(cb));
 		}
 
 		if (!tmp.empty() || (input_eos_ && process_eos())) {
 			if (input_eos_ && tmp.empty()) {
-				output_callback_->event(Event(Event::EOS, 0));
+				output_callback_->event(Event::EOS);
 			} else {
-				output_callback_->event(Event(Event::Done, 0, tmp));
+				output_callback_->event(Event(Event::Done, tmp));
 			}
 			output_action_ = EventSystem::instance()->schedule(output_callback_);
 			output_callback_ = NULL;
 		}
 	}
 
-	cb->event(Event(Event::Done, 0));
+	cb->event(Event::Done);
 	return (EventSystem::instance()->schedule(cb));
 }
 
@@ -79,17 +79,17 @@ PipeSimple::output(EventCallback *cb)
 	if (!input_buffer_.empty() || input_eos_) {
 		Buffer tmp;
 		if (!process(&tmp, &input_buffer_)) {
-			cb->event(Event(Event::Error, 0));
+			cb->event(Event::Error);
 			return (EventSystem::instance()->schedule(cb));
 		}
 
 		if (!tmp.empty() || (input_eos_ && process_eos())) {
 			if (input_eos_ && tmp.empty()) {
 				ASSERT(input_buffer_.empty());
-				cb->event(Event(Event::EOS, 0));
+				cb->event(Event::EOS);
 			} else {
 				ASSERT(!tmp.empty());
-				cb->event(Event(Event::Done, 0, tmp));
+				cb->event(Event(Event::Done, tmp));
 			}
 
 			return (EventSystem::instance()->schedule(cb));
@@ -125,7 +125,7 @@ PipeSimple::output_spontaneous(void)
 
 	Buffer tmp;
 	if (!process(&tmp, &input_buffer_)) {
-		output_callback_->event(Event(Event::Error, 0));
+		output_callback_->event(Event::Error);
 		output_action_ = EventSystem::instance()->schedule(output_callback_);
 		output_callback_ = NULL;
 
@@ -143,9 +143,9 @@ PipeSimple::output_spontaneous(void)
 	}
 
 	if (tmp.empty()) {
-		output_callback_->event(Event(Event::EOS, 0));
+		output_callback_->event(Event::EOS);
 	} else {
-		output_callback_->event(Event(Event::Done, 0, tmp));
+		output_callback_->event(Event(Event::Done, tmp));
 	}
 	output_action_ = EventSystem::instance()->schedule(output_callback_);
 	output_callback_ = NULL;

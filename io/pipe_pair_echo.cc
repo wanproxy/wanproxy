@@ -41,10 +41,10 @@ PipePairEcho::Half::input(Buffer *buf, EventCallback *cb)
 			tmp.append(buf);
 			buf->clear();
 
-			response_pipe_->output_callback_->event(Event(Event::Done, 0, tmp));
+			response_pipe_->output_callback_->event(Event(Event::Done, tmp));
 		} else {
 			response_pipe_->source_eos_ = true;
-			response_pipe_->output_callback_->event(Event(Event::EOS, 0));
+			response_pipe_->output_callback_->event(Event::EOS);
 		}
 		response_pipe_->output_action_ = EventSystem::instance()->schedule(response_pipe_->output_callback_);
 		response_pipe_->output_callback_ = NULL;
@@ -57,7 +57,7 @@ PipePairEcho::Half::input(Buffer *buf, EventCallback *cb)
 		}
 	}
 
-	cb->event(Event(Event::Done, 0));
+	cb->event(Event::Done);
 	return (EventSystem::instance()->schedule(cb));
 }
 
@@ -69,11 +69,11 @@ PipePairEcho::Half::output(EventCallback *cb)
 
 	if (!output_buffer_.empty() || source_eos_) {
 		if (source_eos_) {
-			cb->event(Event(Event::EOS, 0, output_buffer_));
+			cb->event(Event(Event::EOS, output_buffer_));
 			if (!output_buffer_.empty())
 				output_buffer_.clear();
 		} else {
-			cb->event(Event(Event::Done, 0, output_buffer_));
+			cb->event(Event(Event::Done, output_buffer_));
 			output_buffer_.clear();
 		}
 

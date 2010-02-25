@@ -33,9 +33,31 @@ struct Event {
 	Buffer buffer_;
 	void *data_;
 
-	Event(Type type, int error, void *data)
+	Event(Type type)
+	: type_(type),
+	  error_(0),
+	  buffer_(),
+	  data_(NULL)
+	{ }
+
+	Event(Type type, int error)
 	: type_(type),
 	  error_(error),
+	  buffer_(),
+	  data_(NULL)
+	{ }
+
+
+	Event(Type type, const Buffer& buffer)
+	: type_(type),
+	  error_(0),
+	  buffer_(buffer),
+	  data_(NULL)
+	{ }
+
+	Event(Type type, void *data)
+	: type_(type),
+	  error_(0),
 	  buffer_(),
 	  data_(data)
 	{ }
@@ -47,6 +69,13 @@ struct Event {
 	  data_(NULL)
 	{ }
 
+	Event(Type type, int error, void *data)
+	: type_(type),
+	  error_(error),
+	  buffer_(),
+	  data_(data)
+	{ }
+
 	Event(Type type, int error, const Buffer& buffer, void *data)
 	: type_(type),
 	  error_(error),
@@ -54,11 +83,11 @@ struct Event {
 	  data_(data)
 	{ }
 
-	Event(Type type, int error)
+	Event(Type type, const Buffer& buffer, void *data)
 	: type_(type),
-	  error_(error),
-	  buffer_(),
-	  data_(NULL)
+	  error_(0),
+	  buffer_(buffer),
+	  data_(data)
 	{ }
 
 	Event(const Event& e)

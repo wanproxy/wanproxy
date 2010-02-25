@@ -129,13 +129,13 @@ EventPoll::wait(int ms)
 		if ((ev->events & EPOLLIN) != 0) {
 			ASSERT(read_poll_.find(ev->data.fd) != read_poll_.end());
 			poll_handler = &read_poll_[ev->data.fd];
-			poll_handler->callback(Event(Event::Done, 0));
+			poll_handler->callback(Event::Done);
 		}
 
 		if ((ev->events & EPOLLOUT) != 0) {
 			ASSERT(write_poll_.find(ev->data.fd) != write_poll_.end());
 			poll_handler = &write_poll_[ev->data.fd];
-			poll_handler->callback(Event(Event::Done, 0));
+			poll_handler->callback(Event::Done);
 		}
 		
 		if ((ev->events & EPOLLIN) == 0 && (ev->events & EPOLLOUT) == 0) {
@@ -149,12 +149,12 @@ EventPoll::wait(int ms)
 			}
 
 			if ((ev->events & EPOLLERR) != 0) {
-				poll_handler->callback(Event(Event::Error, 0));
+				poll_handler->callback(Event::Error);
 				continue;
 			}
 
 			if ((ev->events & EPOLLHUP) != 0) {
-				poll_handler->callback(Event(Event::EOS, 0));
+				poll_handler->callback(Event::EOS);
 				continue;
 			}
 
