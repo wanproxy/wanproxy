@@ -2,6 +2,9 @@
 #define	XCODEC_CACHE_H
 
 #include <ext/hash_map>
+#include <map>
+
+#include <common/uuid.h>
 
 /*
  * XXX
@@ -39,15 +42,15 @@ namespace __gnu_cxx {
 }
 
 class XCodecCache {
-public:
 	typedef __gnu_cxx::hash_map<Hash64, BufferSegment *> segment_hash_map_t;
 
-private:
 	LogHandle log_;
+	UUID uuid_;
 	segment_hash_map_t segment_hash_map_;
-public:
-	XCodecCache(void)
+
+	XCodecCache(const UUID& uuid)
 	: log_("/xcodec/cache"),
+	  uuid_(uuid),
 	  segment_hash_map_()
 	{ }
 
@@ -60,6 +63,7 @@ public:
 		segment_hash_map_.clear();
 	}
 
+public:
 	void enter(const uint64_t& hash, BufferSegment *seg)
 	{
 		ASSERT(segment_hash_map_.find(hash) == segment_hash_map_.end());
@@ -79,6 +83,29 @@ public:
 		seg = it->second;
 		seg->ref();
 		return (seg);
+	}
+
+	bool uuid_encode(Buffer *buf) const
+	{
+		return (uuid_.encode(buf));
+	}
+
+	static XCodecCache *lookup(const UUID& uuid)
+	{
+		static std::map<UUID, XCodecCache *> cache_map;
+
+		std::map<UUID, XCodecCache *>::const_iterator it;
+		it = cache_map.find(uuid);
+		if (it == cache_map.end()) {
+			XCodecCache *cache = new XCodecCache(uuid);
+			cache_map[uuid] = cache;
+
+			/* XXX Associate with a permanent storage unit / cache hierarchy.  */
+
+			return (cache);
+		}
+
+		return (it->second);
 	}
 };
 

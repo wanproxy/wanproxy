@@ -39,8 +39,12 @@ static void usage(void);
 int
 main(int argc, char *argv[])
 {
-	XCodecCache cache;
-	XCodec codec(&cache);
+	UUID uuid;
+	uuid.generate();
+
+	XCodecCache *cache = XCodecCache::lookup(uuid);
+	XCodec codec(cache);
+
 	bool timers, quiet_output, samples, verbose;
 	FileAction action;
 	int ch;

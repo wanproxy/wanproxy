@@ -10,8 +10,13 @@ struct UUID {
 	std::string string_;
 
 	bool decode(Buffer *);
-	bool encode(Buffer *);
+	bool encode(Buffer *) const;
 	void generate(void);
+
+	bool operator< (const UUID& b) const
+	{
+		return (string_ < b.string_);
+	}
 };
 
 #endif /* !COMMON_UUID_H */

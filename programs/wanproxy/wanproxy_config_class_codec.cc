@@ -28,7 +28,14 @@ WANProxyConfigClassCodec::activate(ConfigObject *co)
 
 	switch (codec) {
 	case WANProxyConfigCodecXCodec: {
-		XCodecCache *cache = new XCodecCache(); /* XXX other cache methods?  */
+		/*
+		 * XXX
+		 * Fetch UUID from permanent storage if there is any.
+		 */
+		UUID uuid;
+		uuid.generate();
+
+		XCodecCache *cache = XCodecCache::lookup(uuid);
 		XCodec *xcodec = new XCodec(cache);
 		object_codec_map_[co] = xcodec;
 		break;

@@ -43,7 +43,7 @@ UUID::decode(Buffer *buf)
 }
 
 bool
-UUID::encode(Buffer *buf)
+UUID::encode(Buffer *buf) const
 {
 	ASSERT(string_.length() == 36);
 	buf->append(string_);
