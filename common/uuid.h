@@ -5,6 +5,7 @@
  * We use strings rather than the binary form to hide the fact that libuuid
  * lacks endian-aware encoding/decoding.
  */
+#define	UUID_SIZE	36
 
 struct UUID {
 	std::string string_;

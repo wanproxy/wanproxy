@@ -19,10 +19,10 @@
 bool
 UUID::decode(Buffer *buf)
 {
-	if (buf->length() < 36)
+	if (buf->length() < UUID_SIZE)
 		return (false);
 
-	uint8_t str[36];
+	uint8_t str[UUID_SIZE];
 	buf->moveout(str, sizeof str);
 	string_ = std::string((const char *)str, sizeof str);
 
@@ -45,7 +45,7 @@ UUID::decode(Buffer *buf)
 bool
 UUID::encode(Buffer *buf) const
 {
-	ASSERT(string_.length() == 36);
+	ASSERT(string_.length() == UUID_SIZE);
 	buf->append(string_);
 
 	return (true);
@@ -57,7 +57,7 @@ UUID::generate(void)
 	uuid_t uuid;
 
 #ifdef USE_LIBUUID
-	char str[37];
+	char str[UUID_SIZE + 1];
 
 	uuid_generate(uuid);
 	uuid_unparse(uuid, str);
@@ -71,5 +71,5 @@ UUID::generate(void)
 	string_ = p;
 	free(p);
 #endif
-	ASSERT(string_.length() == 36);
+	ASSERT(string_.length() == UUID_SIZE);
 }
