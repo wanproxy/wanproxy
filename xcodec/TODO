@@ -1,4 +1,3 @@
-o) Look up the XCodecCache associated with the peer's UUID.
 o) Don't let a peer claim to have our UUID?
 o) Permanent storage.
 o) Decide whether to do lookup based on what data the UUID has claimed to have.

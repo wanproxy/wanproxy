@@ -1,12 +1,5 @@
 To-do:
 
-o) Generate a UUID per-encoder at startup.
-   NB: This may not be a "UUID" per se.
-o) Exchange UUIDs in HELLO.
-o) Make dictionaries per-UUID and look up hashes based on the implicit UUID in
-   them.  Figure out whether to have a global hash map with hash-maps of UUID
-   to BufferSegment as the value which can be used to send references to hashes
-   that aren't in "our" dictionary -- maybe just check the peer's as well?
 o) Add a 'count' field to the hash and allow incrementing it to do collision
    overflow.  For this it'd be nice to have an interface that would return a
    range of matches in the dictionary.  Put the count at the end to make this
