@@ -1,4 +1,4 @@
-For 0.6.1:
+For 0.7.1:
 o) Fix any bugs with XCodec EOS support.
 o) Add an ActionCache which classes can use to dole out Actions and which at
    destruction time will assert that there are no outstanding actions.  This
@@ -8,9 +8,8 @@ o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
    other things can handle spontaneous output.
 o) Make XCodecEncoder and XCodecDecoder pipes outright so as to avoid all of
    the weird interactions between each and its Pipe variant.
-o) Reluctantly move to a GNU Make build system?  :(
 
-For 0.6.2:
+For 0.7.2:
 o) A better look-ahead parser.
 o) Test error handling in epoll.
 o) Test error handling with port(3C).
@@ -40,9 +39,6 @@ o) Clean up address configuration objects to be more sensible, being either
    specific components of addresses (e.g. to specify an IP address) or socket
    addresses (e.g. AF_UNIX paths, IP+port pairs for TCP or UDP or SCTP.)
 o) Connector abstraction: connection pooling / connecting via a SOCKS server.
-
-For 0.7.0:
-o) Working UUIDs and rich HELLO messages and so on.
 
 For 0.8.0:
 o) Cache hierarchy, including persistent storage.
