@@ -13,8 +13,10 @@
 
 XCodecDecoderPipe::XCodecDecoderPipe(XCodec *codec)
 : PipeSimple("/xcodec/decoder/pipe"),
-  decoder_(codec)
-{ }
+  decoder_()
+{
+	(void)codec;
+}
 
 XCodecDecoderPipe::~XCodecDecoderPipe()
 { }

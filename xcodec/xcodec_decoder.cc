@@ -7,9 +7,9 @@
 #include <xcodec/xcodec_encoder.h>
 #include <xcodec/xcodec_hash.h>
 
-XCodecDecoder::XCodecDecoder(XCodec *codec)
+XCodecDecoder::XCodecDecoder(void)
 : log_("/xcodec/decoder"),
-  cache_(codec->cache_),
+  cache_(NULL),
   window_(),
   encoder_(NULL),
   queued_(),
@@ -89,7 +89,8 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 				input->skip(off);
 			}
 		}
-		
+		ASSERT(!input->empty());
+
 		/*
 		 * Need the following byte at least.
 		 */
@@ -98,9 +99,20 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 
 		uint8_t op;
 		input->copyout(&op, sizeof XCODEC_MAGIC, sizeof op);
+
+		if (cache_ == NULL && op != XCODEC_OP_HELLO) {
+			ERROR(log_) << "No cache selected before <HELLO>.";
+			return (false);
+		}
+
 		switch (op) {
 		case XCODEC_OP_HELLO:
-			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
+			if (cache_ != NULL) {
+				ERROR(log_) << "Got <HELLO> twice.";
+				return (false);
+			}
+
+			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t) + UUID_SIZE)
 				goto done;
 			else {
 				if (!queued_.empty()) {
@@ -112,14 +124,34 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 				input->copyout(&len, sizeof XCODEC_MAGIC + sizeof op, sizeof len);
 				if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof len + len)
 					goto done;
+				UUID uuid;
 				switch (len) {
 				case 0:
+					/* XXX Compatability?  */
+					uuid.generate();
 					break;
+				case UUID_SIZE: {
+					Buffer uubuf;
+					uubuf.append(input, sizeof XCODEC_MAGIC + sizeof op + sizeof len + len);
+					uubuf.skip(sizeof XCODEC_MAGIC + sizeof op + sizeof len);
+					ASSERT(uubuf.length() == UUID_SIZE);
+					if (!uuid.decode(&uubuf)) {
+						ERROR(log_) << "Invalid UUID in <HELLO>.";
+						return (false);
+					}
+
+					break;
+				}
 				default:
 					ERROR(log_) << "Unsupported <HELLO> length: " << (unsigned)len;
 					return (false);
 				}
 				input->skip(sizeof XCODEC_MAGIC + sizeof op + sizeof len + len);
+
+				cache_ = XCodecCache::lookup(uuid);
+				ASSERT(cache_ != NULL);
+
+				INFO(log_) << "Peer connected with UUID: " << uuid.string_;
 			}
 			break;
 		case XCODEC_OP_ESCAPE:

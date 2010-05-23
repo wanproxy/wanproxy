@@ -24,7 +24,7 @@ class XCodecDecoder {
 	std::set<uint64_t> asked_;
 
 public:
-	XCodecDecoder(XCodec *);
+	XCodecDecoder(void);
 	~XCodecDecoder();
 
 	bool decode(Buffer *, Buffer *);

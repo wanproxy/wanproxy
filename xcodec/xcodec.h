@@ -115,7 +115,8 @@
 
 class XCodecDecoder;
 class XCodecEncoder;
-class XCodecCache;
+
+#include <xcodec/xcodec_cache.h>
 
 class XCodec {
 	friend class XCodecDecoder;
@@ -129,10 +130,20 @@ public:
 	: log_("/xcodec"),
 	  cache_(database)
 	{
-		uint8_t len = 0;
+		Buffer extra;
+
+		if (!cache_->uuid_encode(&extra))
+			NOTREACHED();
+
+		uint8_t len = extra.length();
+		ASSERT(len == UUID_SIZE);
+
 		hello_.append(XCODEC_MAGIC);
 		hello_.append(XCODEC_OP_HELLO);
 		hello_.append(len);
+		hello_.append(extra);
+
+		ASSERT(hello_.length() == 3 + UUID_SIZE);
 	}
 
 	~XCodec()

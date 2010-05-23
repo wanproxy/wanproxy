@@ -126,8 +126,10 @@ compress(int ifd, int ofd, XCodec *codec)
 static void
 decompress(int ifd, int ofd, XCodec *codec)
 {
-	XCodecDecoder decoder(codec);
+	XCodecDecoder decoder;
 	Buffer input, output;
+
+	(void)codec;
 
 	while (fill(ifd, &input)) {
 		codec_timer.start();
