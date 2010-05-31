@@ -66,7 +66,7 @@ PipeLink::input_complete(Event e)
 	ASSERT(input_action_ == NULL);
 	ASSERT(input_callback_ != NULL);
 
-	input_callback_->event(e);
+	input_callback_->param(e);
 	input_action_ = EventSystem::instance()->schedule(input_callback_);
 	input_callback_ = NULL;
 }

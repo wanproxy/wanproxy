@@ -106,10 +106,10 @@ SplicePair::splice_complete(Event e, Splice *splice)
 
 	ASSERT(e.buffer_.empty());
 	if (e.type_ == Event::EOS) {
-		callback_->event(Event::Done);
+		callback_->param(Event::Done);
 	} else {
 		ASSERT(e.type_ != Event::Done);
-		callback_->event(e);
+		callback_->param(e);
 	}
 	callback_action_ = EventSystem::instance()->schedule(callback_);
 	callback_ = NULL;

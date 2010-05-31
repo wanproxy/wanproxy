@@ -16,7 +16,7 @@ EventPoll::PollHandler::callback(Event e)
 		return;
 	ASSERT(action_ == NULL);
 	ASSERT(callback_ != NULL);
-	callback_->event(e);
+	callback_->param(e);
 	Action *a = EventSystem::instance()->schedule(callback_);
 	callback_ = NULL;
 	action_ = a;

@@ -33,6 +33,13 @@ struct Event {
 	Buffer buffer_;
 	void *data_;
 
+	Event(void)
+	: type_(Event::Invalid),
+	  error_(0),
+	  buffer_(),
+	  data_(NULL)
+	{ }
+
 	Event(Type type)
 	: type_(type),
 	  error_(0),

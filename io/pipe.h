@@ -3,7 +3,6 @@
 
 class Action;
 class Buffer;
-class EventCallback;
 
 /*
  * XXX

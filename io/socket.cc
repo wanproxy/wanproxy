@@ -330,7 +330,7 @@ Socket::connect(const std::string& name, EventCallback *cb)
 
 	if (!addr(domain_, socktype_, protocol_, name)) {
 		ERROR(log_) << "Invalid name for connect: " << name;
-		cb->event(Event(Event::Error, EINVAL));
+		cb->param(Event(Event::Error, EINVAL));
 		return (EventSystem::instance()->schedule(cb));
 	}
 
@@ -354,7 +354,7 @@ Socket::connect(const std::string& name, EventCallback *cb)
 	int rv = ::connect(fd_, &addr.addr_.sockaddr_, addr.addrlen_);
 	switch (rv) {
 	case 0:
-		cb->event(Event::Done);
+		cb->param(Event::Done);
 		connect_action_ = EventSystem::instance()->schedule(cb);
 		break;
 	case -1:
@@ -364,7 +364,7 @@ Socket::connect(const std::string& name, EventCallback *cb)
 			connect_action_ = connect_schedule();
 			break;
 		default:
-			cb->event(Event(Event::Error, errno));
+			cb->param(Event(Event::Error, errno));
 			connect_action_ = EventSystem::instance()->schedule(cb);
 			break;
 		}
@@ -449,7 +449,7 @@ Socket::accept_callback(Event e)
 		break;
 	case Event::EOS:
 	case Event::Error:
-		accept_callback_->event(Event(Event::Error, e.error_));
+		accept_callback_->param(Event(Event::Error, e.error_));
 		accept_action_ = EventSystem::instance()->schedule(accept_callback_);
 		accept_callback_ = NULL;
 		return;
@@ -464,7 +464,7 @@ Socket::accept_callback(Event e)
 			accept_action_ = accept_schedule();
 			return;
 		default:
-			accept_callback_->event(Event(Event::Error, errno));
+			accept_callback_->param(Event(Event::Error, errno));
 			accept_action_ = EventSystem::instance()->schedule(accept_callback_);
 			accept_callback_ = NULL;
 			return;
@@ -472,7 +472,7 @@ Socket::accept_callback(Event e)
 	}
 
 	Socket *child = new Socket(s, domain_, socktype_, protocol_);
-	accept_callback_->event(Event(Event::Done, (void *)child));
+	accept_callback_->param(Event(Event::Done, (void *)child));
 	Action *a = EventSystem::instance()->schedule(accept_callback_);
 	accept_action_ = a;
 	accept_callback_ = NULL;
@@ -507,11 +507,11 @@ Socket::connect_callback(Event e)
 
 	switch (e.type_) {
 	case Event::Done:
-		connect_callback_->event(Event::Done);
+		connect_callback_->param(Event::Done);
 		break;
 	case Event::EOS:
 	case Event::Error:
-		connect_callback_->event(Event(Event::Error, e.error_));
+		connect_callback_->param(Event(Event::Error, e.error_));
 		break;
 	default:
 		HALT(log_) << "Unexpected event: " << e;

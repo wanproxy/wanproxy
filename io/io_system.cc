@@ -61,7 +61,7 @@ IOSystem::Handle::close_callback(void)
 			close_action_ = close_schedule();
 			break;
 		default:
-			close_callback_->event(Event(Event::Error, errno));
+			close_callback_->param(Event(Event::Error, errno));
 			Action *a = EventSystem::instance()->schedule(close_callback_);
 			close_action_ = a;
 			close_callback_ = NULL;
@@ -70,7 +70,7 @@ IOSystem::Handle::close_callback(void)
 		return;
 	}
 	fd_ = -1;
-	close_callback_->event(Event::Done);
+	close_callback_->param(Event::Done);
 	Action *a = EventSystem::instance()->schedule(close_callback_);
 	close_action_ = a;
 	close_callback_ = NULL;
@@ -110,7 +110,7 @@ IOSystem::Handle::read_callback(Event e)
 		break;
 	case Event::Error: {
 		DEBUG(log_) << "Poll returned error: " << e;
-		read_callback_->event(e);
+		read_callback_->param(e);
 		Action *a = EventSystem::instance()->schedule(read_callback_);
 		read_action_ = a;
 		read_callback_ = NULL;
@@ -170,7 +170,7 @@ IOSystem::Handle::read_callback(Event e)
 			read_action_ = read_schedule();
 			break;
 		default:
-			read_callback_->event(Event(Event::Error, errno, read_buffer_));
+			read_callback_->param(Event(Event::Error, errno, read_buffer_));
 			Action *a = EventSystem::instance()->schedule(read_callback_);
 			read_action_ = a;
 			read_callback_ = NULL;
@@ -191,7 +191,7 @@ IOSystem::Handle::read_callback(Event e)
 	 * indicator?
 	 */
 	if (len == 0) {
-		read_callback_->event(Event(Event::EOS, read_buffer_));
+		read_callback_->param(Event(Event::EOS, read_buffer_));
 		Action *a = EventSystem::instance()->schedule(read_callback_);
 		read_action_ = a;
 		read_callback_ = NULL;
@@ -225,7 +225,7 @@ IOSystem::Handle::read_schedule(void)
 	if (!read_buffer_.empty() && read_buffer_.length() >= read_amount_) {
 		if (read_amount_ == 0)
 			read_amount_ = read_buffer_.length();
-		read_callback_->event(Event(Event::Done, Buffer(read_buffer_, read_amount_)));
+		read_callback_->param(Event(Event::Done, Buffer(read_buffer_, read_amount_)));
 		Action *a = EventSystem::instance()->schedule(read_callback_);
 		read_callback_ = NULL;
 		read_buffer_.skip(read_amount_);
@@ -249,7 +249,7 @@ IOSystem::Handle::write_callback(Event e)
 		break;
 	case Event::Error: {
 		DEBUG(log_) << "Poll returned error: " << e;
-		write_callback_->event(e);
+		write_callback_->param(e);
 		Action *a = EventSystem::instance()->schedule(write_callback_);
 		write_action_ = a;
 		write_callback_ = NULL;
@@ -271,7 +271,7 @@ IOSystem::Handle::write_callback(Event e)
 			write_action_ = write_schedule();
 			break;
 		default:
-			write_callback_->event(Event(Event::Error, errno));
+			write_callback_->param(Event(Event::Error, errno));
 			Action *a = EventSystem::instance()->schedule(write_callback_);
 			write_action_ = a;
 			write_callback_ = NULL;
@@ -283,7 +283,7 @@ IOSystem::Handle::write_callback(Event e)
 	write_buffer_.skip(len);
 
 	if (write_buffer_.empty()) {
-		write_callback_->event(Event::Done);
+		write_callback_->param(Event::Done);
 		Action *a = EventSystem::instance()->schedule(write_callback_);
 		write_action_ = a;
 		write_callback_ = NULL;

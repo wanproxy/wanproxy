@@ -2,7 +2,6 @@
 #define	IO_PIPE_SINK_H
 
 class Action;
-class EventCallback;
 
 class PipeSink : public Pipe {
 	bool input_eos_;

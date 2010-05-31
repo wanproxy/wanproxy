@@ -113,7 +113,7 @@ Splice::complete(Event e)
 		write_action_ = NULL;
 	}
 
-	callback_->event(e);
+	callback_->param(e);
 	callback_action_ = EventSystem::instance()->schedule(callback_);
 	callback_ = NULL;
 }

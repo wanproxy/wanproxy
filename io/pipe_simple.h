@@ -2,7 +2,6 @@
 #define	IO_PIPE_SIMPLE_H
 
 class Action;
-class EventCallback;
 
 class PipeSimple : public Pipe {
 protected:
