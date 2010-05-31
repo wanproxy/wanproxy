@@ -51,11 +51,13 @@ class CallbackQueue {
 	class CallbackAction : public Cancellable {
 	public:
 		CallbackQueue *const queue_;
+		const uint64_t generation_;
 		Callback *callback_;
 
-		CallbackAction(CallbackQueue *queue, Callback *callback)
+		CallbackAction(CallbackQueue *queue, uint64_t generation, Callback *callback)
 		: Cancellable(),
 		  queue_(queue),
+		  generation_(generation),
 		  callback_(callback)
 		{ }
 
@@ -74,9 +76,11 @@ class CallbackQueue {
 	friend class CallbackAction;
 
 	std::deque<CallbackAction *> queue_;
+	uint64_t generation_;
 public:
 	CallbackQueue(void)
-	: queue_()
+	: queue_(),
+	  generation_(0)
 	{ }
 
 	~CallbackQueue()
@@ -86,9 +90,31 @@ public:
 
 	Action *append(Callback *cb)
 	{
-		CallbackAction *a = new CallbackAction(this, cb);
+		CallbackAction *a = new CallbackAction(this, generation_, cb);
 		queue_.push_back(a);
 		return (a);
+	}
+
+	/*
+	 * Runs all callbacks that have already been queued, but none that
+	 * are added by callbacks that are called as part of the drain
+	 * operation.  Returns true if there are queued callbacks that were
+	 * added during drain.
+	 */
+	bool drain(void)
+	{
+		if (queue_.empty())
+			return (false);
+
+		generation_++;
+		while (!queue_.empty()) {
+			CallbackAction *a = queue_.front();
+			ASSERT(a->queue_ == this);
+			if (a->generation_ >= generation_)
+				return (true);
+			a->callback_->execute();
+		}
+		return (false);
 	}
 
 	bool empty(void) const
@@ -101,6 +127,7 @@ public:
 		if (queue_.empty())
 			return;
 		CallbackAction *a = queue_.front();
+		ASSERT(a->queue_ == this);
 		a->callback_->execute();
 	}
 

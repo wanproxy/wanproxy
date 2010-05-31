@@ -13,6 +13,7 @@ static void signal_stop(int);
 EventSystem::EventSystem(void)
 : log_("/event/system"),
   queue_(),
+  reload_(),
   stop_(),
   interest_queue_(),
   timeout_queue_(),
@@ -65,9 +66,21 @@ EventSystem::start(void)
 		 */
 		if (stop_ && !interest_queue_[EventInterestStop].empty()) {
 			INFO(log_) << "Running stop handlers.";
-			while (!interest_queue_[EventInterestStop].empty())
-				interest_queue_[EventInterestStop].perform();
+			if (interest_queue_[EventInterestStop].drain())
+				ERROR(log_) << "Stop handlers added other stop handlers.";
 			INFO(log_) << "Stop handlers have been run.";
+		}
+
+		/*
+		 * If we have been told to reload, fire all shutdown events.
+		 */
+		if (reload_ && !interest_queue_[EventInterestReload].empty()) {
+			INFO(log_) << "Running reload handlers.";
+			interest_queue_[EventInterestReload].drain();
+			INFO(log_) << "Reload handlers have been run.";
+
+			reload_ = false;
+			signal(SIGHUP, signal_reload);
 		}
 
 		/*
@@ -134,11 +147,9 @@ EventSystem::stop(void)
 void
 EventSystem::reload(void)
 {
-	/* XXX Need a way to perform all that allows new handlers to be installed.  */
-	INFO(log_) << "Running reload handlers.";
-	while (!interest_queue_[EventInterestReload].empty())
-		interest_queue_[EventInterestReload].perform();
-	INFO(log_) << "Reload handlers have been run.";
+	signal(SIGHUP, SIG_IGN);
+	INFO(log_) << "Running reload events.";
+	reload_ = true;
 }
 
 static void

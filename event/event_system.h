@@ -14,6 +14,7 @@ enum EventInterest {
 class EventSystem {
 	LogHandle log_;
 	CallbackQueue queue_;
+	bool reload_;
 	bool stop_;
 	std::map<EventInterest, CallbackQueue> interest_queue_;
 	TimeoutQueue timeout_queue_;
