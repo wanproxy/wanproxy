@@ -41,11 +41,11 @@ FileDescriptor::close(EventCallback *cb)
 Action *
 FileDescriptor::read(size_t amount, EventCallback *cb)
 {
-	return (IOSystem::instance()->read(fd_, this, amount, cb));
+	return (IOSystem::instance()->read(fd_, this, -1, amount, cb));
 }
 
 Action *
 FileDescriptor::write(Buffer *buffer, EventCallback *cb)
 {
-	return (IOSystem::instance()->write(fd_, this, buffer, cb));
+	return (IOSystem::instance()->write(fd_, this, -1, buffer, cb));
 }

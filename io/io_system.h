@@ -15,11 +15,13 @@ class IOSystem {
 		EventCallback *close_callback_;
 		Action *close_action_;
 
+		off_t read_offset_;
 		size_t read_amount_;
 		Buffer read_buffer_;
 		EventCallback *read_callback_;
 		Action *read_action_;
 
+		off_t write_offset_;
 		Buffer write_buffer_;
 		EventCallback *write_callback_;
 		Action *write_action_;
@@ -60,8 +62,8 @@ public:
 	void detach(int, Channel *);
 
 	Action *close(int, Channel *, EventCallback *);
-	Action *read(int, Channel *, size_t, EventCallback *);
-	Action *write(int, Channel *, Buffer *, EventCallback *);
+	Action *read(int, Channel *, off_t, size_t, EventCallback *);
+	Action *write(int, Channel *, off_t, Buffer *, EventCallback *);
 
 	static IOSystem *instance(void)
 	{

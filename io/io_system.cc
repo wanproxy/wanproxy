@@ -24,10 +24,12 @@ IOSystem::Handle::Handle(int fd, Channel *owner)
   owner_(owner),
   close_callback_(NULL),
   close_action_(NULL),
+  read_offset_(-1),
   read_amount_(0),
   read_buffer_(),
   read_callback_(NULL),
   read_action_(NULL),
+  write_offset_(-1),
   write_buffer_(),
   write_callback_(NULL),
   write_action_(NULL)
@@ -163,7 +165,23 @@ IOSystem::Handle::read_callback(Event e)
 	 * decidedly more appealing.
 	 */
 	uint8_t data[IO_READ_BUFFER_SIZE];
-	ssize_t len = ::read(fd_, data, sizeof data);
+	ssize_t len;
+	if (read_offset_ == -1) {
+		len = ::read(fd_, data, sizeof data);
+	} else {
+		/*
+		 * For offset reads, we do not read extra data since we do
+		 * not know whether the next read will be to the subsequent
+		 * location.
+		 *
+		 * This makes even more sense since we don't allow 0-length
+		 * offset reads.
+		 */
+		size_t size = std::min(sizeof data, read_amount_);
+		len = ::pread(fd_, data, size, read_offset_);
+		if (len > 0)
+			read_offset_ += len;
+	}
 	if (len == -1) {
 		switch (errno) {
 		case EAGAIN:
@@ -264,7 +282,14 @@ IOSystem::Handle::write_callback(Event e)
 	struct iovec iov[IOV_MAX];
 	size_t iovcnt = write_buffer_.fill_iovec(iov, IOV_MAX);
 
-	ssize_t len = ::writev(fd_, iov, iovcnt);
+	ssize_t len;
+	if (write_offset_ == -1) {
+		len = ::writev(fd_, iov, iovcnt);
+	} else {
+		len = ::pwritev(fd_, iov, iovcnt, write_offset_);
+		if (len > 0)
+			write_offset_ += len;
+	}
 	if (len == -1) {
 		switch (errno) {
 		case EAGAIN:
@@ -411,7 +436,7 @@ IOSystem::close(int fd, Channel *owner, EventCallback *cb)
 }
 
 Action *
-IOSystem::read(int fd, Channel *owner, size_t amount, EventCallback *cb)
+IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, EventCallback *cb)
 {
 	IOSystem::Handle *h;
 
@@ -421,6 +446,22 @@ IOSystem::read(int fd, Channel *owner, size_t amount, EventCallback *cb)
 	ASSERT(h->read_callback_ == NULL);
 	ASSERT(h->read_action_ == NULL);
 
+	/*
+	 * Reads without an offset may be 0 length, but reads with
+	 * an offset must have a specified length.
+	 */
+	ASSERT(offset == -1 || amount != 0);
+
+	/*
+	 * If we have an offset, we must invalidate any outstanding
+	 * buffers, since they are for data that may not be relevant
+	 * to us.
+	 */
+	if (offset != -1) {
+		h->read_buffer_.clear();
+	}
+
+	h->read_offset_ = offset;
 	h->read_amount_ = amount;
 	h->read_callback_ = cb;
 	h->read_action_ = h->read_schedule();
@@ -428,7 +469,7 @@ IOSystem::read(int fd, Channel *owner, size_t amount, EventCallback *cb)
 }
 
 Action *
-IOSystem::write(int fd, Channel *owner, Buffer *buffer, EventCallback *cb)
+IOSystem::write(int fd, Channel *owner, off_t offset, Buffer *buffer, EventCallback *cb)
 {
 	IOSystem::Handle *h;
 
@@ -443,6 +484,7 @@ IOSystem::write(int fd, Channel *owner, Buffer *buffer, EventCallback *cb)
 	h->write_buffer_.append(buffer);
 	buffer->clear();
 
+	h->write_offset_ = offset;
 	h->write_callback_ = cb;
 	h->write_action_ = h->write_schedule();
 	return (cancellation(h, &IOSystem::Handle::write_cancel));
