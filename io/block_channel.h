@@ -6,7 +6,10 @@ class Buffer;
 
 class BlockChannel {
 protected:
-	BlockChannel(void)
+	size_t bsize_;
+
+	BlockChannel(size_t bsize)
+	: bsize_(bsize)
 	{ }
 
 public:
