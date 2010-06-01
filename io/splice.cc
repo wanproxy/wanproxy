@@ -9,10 +9,10 @@
 #include <io/splice.h>
 
 /*
- * A Splice passes data unidirectionall between Channels across a Pipe.
+ * A Splice passes data unidirectionall between StreamChannels across a Pipe.
  */
 
-Splice::Splice(Channel *source, Pipe *pipe, Channel *sink)
+Splice::Splice(StreamChannel *source, Pipe *pipe, StreamChannel *sink)
 : log_("/splice"),
   source_(source),
   pipe_(pipe),

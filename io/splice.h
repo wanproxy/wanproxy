@@ -1,14 +1,14 @@
 #ifndef	SPLICE_H
 #define	SPLICE_H
 
-class Channel;
+class StreamChannel;
 class Pipe;
 
 class Splice {
 	LogHandle log_;
-	Channel *source_;
+	StreamChannel *source_;
 	Pipe *pipe_;
-	Channel *sink_;
+	StreamChannel *sink_;
 
 	EventCallback *callback_;
 	Action *callback_action_;
@@ -20,7 +20,7 @@ class Splice {
 	Action *write_action_;
 
 public:
-	Splice(Channel *, Pipe *, Channel *);
+	Splice(StreamChannel *, Pipe *, StreamChannel *);
 	~Splice();
 
 	Action *start(EventCallback *);
@@ -35,7 +35,7 @@ private:
 	void output_complete(Event);
 	void write_complete(Event);
 public:
-	static Action *create(Splice **, Channel *, Pipe *, Channel *);
+	static Action *create(Splice **, StreamChannel *, Pipe *, StreamChannel *);
 };
 
 #endif /* !SPLICE_H */

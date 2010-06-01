@@ -3,7 +3,7 @@
 
 #include <io/channel.h>
 
-class FileDescriptor : public Channel {
+class FileDescriptor : public StreamChannel {
 	LogHandle log_;
 protected:
 	int fd_;
