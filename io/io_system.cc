@@ -286,9 +286,36 @@ IOSystem::Handle::write_callback(Event e)
 	if (write_offset_ == -1) {
 		len = ::writev(fd_, iov, iovcnt);
 	} else {
+#if defined(__FreeBSD__)
 		len = ::pwritev(fd_, iov, iovcnt, write_offset_);
 		if (len > 0)
 			write_offset_ += len;
+#else
+		unsigned i;
+
+		len = -1;
+		errno = EINVAL;
+
+		for (i = 0; i < IOV_MAX; i++) {
+			struct iovec *iovp = &iov[i];
+
+			if (iovp->iov_len == 0)
+				break;
+
+			len = ::pwrite(fd_, iovp->iov_base, iovp->iov_len,
+				       write_offset_);
+			if (len <= 0)
+				break;
+
+			write_offset_ += len;
+
+			/*
+			 * Partial write.
+			 */
+			if ((size_t)len != iovp->iov_len)
+				break;
+		}
+#endif
 	}
 	if (len == -1) {
 		switch (errno) {
