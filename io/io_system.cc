@@ -281,6 +281,7 @@ IOSystem::Handle::write_callback(Event e)
 	/* XXX If a UDP packet is > IOV_MAX segments, this will break it.  */
 	struct iovec iov[IOV_MAX];
 	size_t iovcnt = write_buffer_.fill_iovec(iov, IOV_MAX);
+	ASSERT(iovcnt != 0);
 
 	ssize_t len;
 	if (write_offset_ == -1) {
@@ -293,14 +294,15 @@ IOSystem::Handle::write_callback(Event e)
 #else
 		unsigned i;
 
-		len = -1;
-		errno = EINVAL;
+		if (iovcnt == 0) {
+			len = -1;
+			errno = EINVAL;
+		}
 
-		for (i = 0; i < IOV_MAX; i++) {
+		for (i = 0; i < iovcnt; i++) {
 			struct iovec *iovp = &iov[i];
 
-			if (iovp->iov_len == 0)
-				break;
+			ASSERT(iovp->iov_len != 0);
 
 			len = ::pwrite(fd_, iovp->iov_base, iovp->iov_len,
 				       write_offset_);
