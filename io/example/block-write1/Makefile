@@ -1,0 +1,7 @@
+PROGRAM=block-write1
+
+SRCS+=	block-write1.cc
+
+TOPDIR=../../..
+USE_LIBS=common event io
+include ${TOPDIR}/common/program.mk
