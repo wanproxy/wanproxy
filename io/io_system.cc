@@ -292,6 +292,24 @@ IOSystem::Handle::write_callback(Event e)
 		if (len > 0)
 			write_offset_ += len;
 #else
+		/*
+		 * XXX
+		 * Thread unsafe.
+		 */
+		off_t off = lseek(fd_, write_offset_, SEEK_SET);
+		if (off == -1) {
+			len = -1;
+		} else {
+			len = ::writev(fd_, iov, iovcnt);
+			if (len > 0)
+				write_offset_ += len;
+		}
+
+		/*
+		 * XXX
+		 * Slow!
+		 */
+#if 0
 		unsigned i;
 
 		if (iovcnt == 0) {
@@ -317,6 +335,7 @@ IOSystem::Handle::write_callback(Event e)
 			if ((size_t)len != iovp->iov_len)
 				break;
 		}
+#endif
 #endif
 	}
 	if (len == -1) {
