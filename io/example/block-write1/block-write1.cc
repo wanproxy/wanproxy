@@ -55,7 +55,7 @@ public:
 			return;
 		}
 
-		INFO(log_) << "Finished block #" << block_number_ << "/" << block_count_;
+		DEBUG(log_) << "Finished block #" << block_number_ << "/" << block_count_;
 
 		if (++block_number_ == block_count_) {
 			EventCallback *cb = callback(this, &BlockWriter::close_complete);
