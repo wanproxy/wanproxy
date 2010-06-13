@@ -42,7 +42,7 @@ BlockDevice::close(EventCallback *cb)
 Action *
 BlockDevice::read(off_t offset, EventCallback *cb)
 {
-	return (IOSystem::instance()->read(fd_, this, offset, bsize_, cb));
+	return (IOSystem::instance()->read(fd_, this, offset * bsize_, bsize_, cb));
 }
 
 Action *
@@ -52,5 +52,5 @@ BlockDevice::write(off_t offset, Buffer *buffer, EventCallback *cb)
 		cb->param(Event::Error);
 		return (EventSystem::instance()->schedule(cb));
 	}
-	return (IOSystem::instance()->write(fd_, this, offset, buffer, cb));
+	return (IOSystem::instance()->write(fd_, this, offset * bsize_, buffer, cb));
 }
