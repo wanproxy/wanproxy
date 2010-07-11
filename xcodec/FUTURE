@@ -1,3 +1,27 @@
+o) Truncate the Adler hashing to exactly some number of bits that is the
+   most that are needed to overflow once (or maybe twice?) with 128-byte
+   blocks.
+o) Create a new XCodecTag that incorporates a hash and a counter and
+   perhaps other things...
+o) The counter will increment for each collision (or perhaps just be a
+   random number after the first collision and bail out if there's a
+   collision on the random number) and add new variants of extract, etc.,
+   that give a counter to append to the hash to get the Tag.
+o) Allow either powers of two above 128 or multiples of 128 to be usable
+   chunk sizes instead of just 128.  Include any time we define a tag a
+   bitmap of 128-byte blocks (or blocks of each size down to 128) within
+   the chunk that are to be learned, too, so that we still deal well with
+   changes.  Eventually allow defining new e.g. 4K blocks based on old 4K
+   blocks with a single 128-byte block difference?
+o) Add a pass number to the Tag so we can do recursive encoding.  Use a
+   limited number of bits and put this above the opcode so that we can have
+   separate back-reference windows, etc., for each pass and so that we can
+   avoid escaping for subsequent passes, perhaps?
+o) Deflate after recursive encoding.
+o) A new encoder that can exploit all of those features, possibly keeping
+   the old encoder around for applications that need low latency and high
+   throughput.
+
 To-do:
 
 o) Add a 'count' field to the hash and allow incrementing it to do collision
