@@ -122,17 +122,6 @@ IOSystem::Handle::read_callback(Event e)
 		HALT(log_) << "Unexpected event: " << e;
 	}
 
-	size_t rlen;
-
-	if (read_amount_ == 0)
-		rlen = IO_READ_BUFFER_SIZE;
-	else {
-		rlen = read_amount_ - read_buffer_.length();
-		ASSERT(rlen != 0);
-		if (rlen > IO_READ_BUFFER_SIZE)
-			rlen = IO_READ_BUFFER_SIZE;
-	}
-
 	/*
 	 * A bit of discussion is warranted on this:
 	 *
