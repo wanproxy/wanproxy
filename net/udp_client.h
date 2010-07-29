@@ -14,7 +14,7 @@ class UDPClient {
 	UDPClient(SocketAddressFamily);
 	~UDPClient();
 
-	Action *connect(const std::string&, EventCallback *);
+	Action *connect(const std::string&, const std::string&, EventCallback *);
 	void connect_cancel(void);
 	void connect_complete(Event);
 
@@ -22,6 +22,7 @@ class UDPClient {
 
 public:
 	static Action *connect(SocketAddressFamily, const std::string&, EventCallback *);
+	static Action *connect(SocketAddressFamily, const std::string&, const std::string&, EventCallback *);
 };
 
 #endif /* !UDP_CLIENT_H */

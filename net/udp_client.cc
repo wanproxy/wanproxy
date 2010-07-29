@@ -30,7 +30,7 @@ UDPClient::~UDPClient()
 }
 
 Action *
-UDPClient::connect(const std::string& name, EventCallback *ccb)
+UDPClient::connect(const std::string& iface, const std::string& name, EventCallback *ccb)
 {
 	ASSERT(connect_action_ == NULL);
 	ASSERT(connect_callback_ == NULL);
@@ -42,6 +42,23 @@ UDPClient::connect(const std::string& name, EventCallback *ccb)
 		Action *a = EventSystem::instance()->schedule(ccb);
 
 		delete this;
+
+		return (a);
+	}
+
+	if (iface != "" && !socket_->bind(iface)) {
+		ccb->param(Event::Error);
+		Action *a = EventSystem::instance()->schedule(ccb);
+
+#if 0
+		/*
+		 * XXX
+		 * Need to schedule close and then delete ourselves.
+		 */
+		delete this;
+#else
+		HALT(log_) << "Socket bind failed.";
+#endif
 
 		return (a);
 	}
@@ -112,5 +129,12 @@ Action *
 UDPClient::connect(SocketAddressFamily family, const std::string& name, EventCallback *cb)
 {
 	UDPClient *udp = new UDPClient(family);
-	return (udp->connect(name, cb));
+	return (udp->connect("", name, cb));
+}
+
+Action *
+UDPClient::connect(SocketAddressFamily family, const std::string& iface, const std::string& name, EventCallback *cb)
+{
+	UDPClient *udp = new UDPClient(family);
+	return (udp->connect(iface, name, cb));
 }
