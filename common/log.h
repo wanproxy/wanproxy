@@ -79,13 +79,30 @@ private:
 	bool pending_;
 	bool halted_;
 public:
-	Log(const LogHandle& handle, const Priority& priority)
+	Log(const LogHandle& handle, const Priority& priority, const std::string function)
 	: handle_(handle),
 	  priority_(priority),
 	  str_(),
 	  pending_(false),
 	  halted_(false)
-	{ }
+	{
+		/*
+		 * Print the function name for non-routine messages.
+		 */
+		switch (priority_) {
+		case Emergency:
+		case Alert:
+		case Critical:
+		case Error:
+#if !defined(NDEBUG)
+		case Debug:
+#endif
+			str_ << function << ": ";
+			break;
+		default:
+			break;
+		}
+	}
 
 	~Log()
 	{
@@ -124,22 +141,22 @@ public:
 };
 
 	/* A panic condition.  */
-#define	EMERGENCY(log)	Log(log, Log::Emergency)
+#define	EMERGENCY(log)	Log(log, Log::Emergency, __PRETTY_FUNCTION__)
 	/* A condition that should be corrected immediately.  */
-#define	ALERT(log)	Log(log, Log::Alert)
+#define	ALERT(log)	Log(log, Log::Alert, __PRETTY_FUNCTION__)
 	/* Critical condition.  */
-#define	CRITICAL(log)	Log(log, Log::Critical)
+#define	CRITICAL(log)	Log(log, Log::Critical, __PRETTY_FUNCTION__)
 	/* Errors.  */
-#define	ERROR(log)	Log(log, Log::Error)
+#define	ERROR(log)	Log(log, Log::Error, __PRETTY_FUNCTION__)
 	/* Warnings.  */
-#define	WARNING(log)	Log(log, Log::Warning)
+#define	WARNING(log)	Log(log, Log::Warning, __PRETTY_FUNCTION__)
 	/* Conditions that are not error conditions, but may need handled.  */
-#define	NOTICE(log)	Log(log, Log::Notice)
+#define	NOTICE(log)	Log(log, Log::Notice, __PRETTY_FUNCTION__)
 	/* Informational.  */
-#define	INFO(log)	Log(log, Log::Info)
+#define	INFO(log)	Log(log, Log::Info, __PRETTY_FUNCTION__)
 	/* Debugging information.  */
 #if !defined(NDEBUG)
-#define	DEBUG(log)	Log(log, Log::Debug)
+#define	DEBUG(log)	Log(log, Log::Debug, __PRETTY_FUNCTION__)
 #else
 #define	DEBUG(log)	LogNull()
 #endif
