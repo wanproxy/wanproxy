@@ -49,3 +49,10 @@ FileDescriptor::write(Buffer *buffer, EventCallback *cb)
 {
 	return (IOSystem::instance()->write(fd_, this, -1, buffer, cb));
 }
+
+Action *
+FileDescriptor::shutdown(bool, bool, EventCallback *cb)
+{
+	cb->param(Event::Error);
+	return (EventSystem::instance()->schedule(cb));
+}

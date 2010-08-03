@@ -23,7 +23,8 @@ Splice::Splice(StreamChannel *source, Pipe *pipe, StreamChannel *sink)
   read_action_(NULL),
   input_action_(NULL),
   output_action_(NULL),
-  write_action_(NULL)
+  write_action_(NULL),
+  shutdown_action_(NULL)
 {
 }
 
@@ -35,6 +36,7 @@ Splice::~Splice()
 	ASSERT(input_action_ == NULL);
 	ASSERT(output_action_ == NULL);
 	ASSERT(write_action_ == NULL);
+	ASSERT(shutdown_action_ == NULL);
 }
 
 Action *
@@ -186,9 +188,8 @@ Splice::output_complete(Event e)
 	}
 
 	if (e.type_ == Event::EOS && e.buffer_.empty()) {
-		if (!sink_->shutdown(false, true))
-			DEBUG(log_) << "Could not shut down write channel.";
-		complete(e);
+		EventCallback *cb = callback(this, &Splice::shutdown_complete);
+		shutdown_action_ = sink_->shutdown(false, true, cb);
 		return;
 	}
 
@@ -215,4 +216,24 @@ Splice::write_complete(Event e)
 	ASSERT(output_action_ == NULL);
 	EventCallback *cb = callback(this, &Splice::output_complete);
 	output_action_ = pipe_->output(cb);
+}
+
+void
+Splice::shutdown_complete(Event e)
+{
+	shutdown_action_->cancel();
+	shutdown_action_ = NULL;
+
+	switch (e.type_) {
+	case Event::Done:
+	case Event::Error:
+		break;
+	default:
+		HALT(log_) << "Unexpected event: " << e;
+		return;
+	}
+
+	if (e.type_ == Event::Error)
+		DEBUG(log_) << "Could not shut down write channel.";
+	complete(Event::EOS);
 }

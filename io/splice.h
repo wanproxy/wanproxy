@@ -18,6 +18,7 @@ class Splice {
 	Action *input_action_;
 	Action *output_action_;
 	Action *write_action_;
+	Action *shutdown_action_;
 
 public:
 	Splice(StreamChannel *, Pipe *, StreamChannel *);
@@ -34,6 +35,8 @@ private:
 
 	void output_complete(Event);
 	void write_complete(Event);
+
+	void shutdown_complete(Event);
 public:
 	static Action *create(Splice **, StreamChannel *, Pipe *, StreamChannel *);
 };

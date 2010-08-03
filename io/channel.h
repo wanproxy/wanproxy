@@ -44,7 +44,7 @@ public:
 	virtual Action *read(size_t, EventCallback *) = 0;
 	virtual Action *write(Buffer *, EventCallback *) = 0;
 
-	virtual bool shutdown(bool, bool) = 0;
+	virtual Action *shutdown(bool, bool, EventCallback *) = 0;
 };
 
 #endif /* !CHANNEL_H */

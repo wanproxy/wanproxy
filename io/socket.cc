@@ -384,8 +384,8 @@ Socket::listen(int backlog)
 	return (true);
 }
 
-bool
-Socket::shutdown(bool shut_read, bool shut_write)
+Action *
+Socket::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 {
 	int how;
 
@@ -401,9 +401,12 @@ Socket::shutdown(bool shut_read, bool shut_write)
 	}
 
 	int rv = ::shutdown(fd_, how);
-	if (rv == -1)
-		return (false);
-	return (true);
+	if (rv == -1) {
+		cb->param(Event(Event::Error, errno));
+		return (EventSystem::instance()->schedule(cb));
+	}
+	cb->param(Event::Done);
+	return (EventSystem::instance()->schedule(cb));
 }
 
 std::string
