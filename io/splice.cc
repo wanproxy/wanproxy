@@ -82,6 +82,11 @@ Splice::cancel(void)
 			write_action_->cancel();
 			write_action_ = NULL;
 		}
+
+		if (shutdown_action_ != NULL) {
+			shutdown_action_->cancel();
+			shutdown_action_ = NULL;
+		}
 	} else {
 		ASSERT(callback_action_ != NULL);
 		callback_action_->cancel();
