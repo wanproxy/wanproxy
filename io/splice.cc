@@ -26,6 +26,9 @@ Splice::Splice(StreamChannel *source, Pipe *pipe, StreamChannel *sink)
   write_action_(NULL),
   shutdown_action_(NULL)
 {
+	ASSERT(source_ != NULL);
+	ASSERT(pipe_ != NULL);
+	ASSERT(sink_ != NULL);
 }
 
 Splice::~Splice()

@@ -20,6 +20,8 @@ SplicePair::SplicePair(Splice *left, Splice *right)
   left_action_(NULL),
   right_action_(NULL)
 {
+	ASSERT(left_ != NULL);
+	ASSERT(right_ != NULL);
 }
 
 SplicePair::~SplicePair()
