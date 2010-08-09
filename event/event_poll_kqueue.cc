@@ -134,11 +134,16 @@ EventPoll::wait(int ms)
 			poll_handler->callback(Event(Event::Error, ev->fflags));
 			continue;
 		}
-		if ((ev->flags & EV_EOF) != 0) {
-			ASSERT(ev->filter == EVFILT_READ);
+		if ((ev->flags & EV_EOF) != 0 && ev->filter == EVFILT_READ) {
 			poll_handler->callback(Event(Event::EOS, ev->fflags));
 			continue;
 		}
+		/*
+		 * XXX
+		 * We do not currently have a way to indicate that the reader
+		 * has called shutdown and will no longer read data.  We just
+		 * indicate Done and let the next write fail.
+		 */
 		poll_handler->callback(Event(Event::Done, ev->fflags));
 	}
 }
