@@ -1,3 +1,7 @@
+For 0.7.0:
+o) Decide once and for all how to manage Pipe and PipePair destruction,
+   especially Pipes that are children of PipePairs.
+
 For 0.7.1:
 o) Fix any bugs with XCodec EOS support.
 o) Add an ActionCache which classes can use to dole out Actions and which at
