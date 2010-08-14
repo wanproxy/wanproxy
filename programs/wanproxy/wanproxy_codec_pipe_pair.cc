@@ -85,6 +85,9 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 		incoming_pipe_ = new PipeLink(incoming_pipe_, pipe_list.front().first);
 		outgoing_pipe_ = new PipeLink(outgoing_pipe_, pipe_list.front().second);
 
+		pipes_.insert(incoming_pipe_);
+		pipes_.insert(outgoing_pipe_);
+
 		pipe_list.pop_front();
 	}
 }
