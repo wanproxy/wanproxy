@@ -8,6 +8,12 @@ protected:
 	PipePair(void)
 	{ }
 public:
+	/*
+	 * NB
+	 * It is assumed that a PipePair will handle freeing any memory
+	 * associated with the Pipes returned by get_incoming() and
+	 * get_outgoing().
+	 */
 	virtual ~PipePair()
 	{ }
 
