@@ -10,6 +10,7 @@
 #include <io/socket_types.h>
 
 #include "proxy_listener.h"
+#include "wanproxy_codec_pipe_pair.h"
 #include "wanproxy_config_class_codec.h"
 #include "wanproxy_config_class_interface.h"
 #include "wanproxy_config_class_peer.h"
@@ -72,7 +73,7 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	if (!interface_codecct->get(interface_codeccv, &interface_codecco, &interface_codeccc))
 		return (false);
 
-	XCodec *interface_codeccodec;
+	WANProxyCodec *interface_codeccodec;
 	if (interface_codecco != NULL) {
 		interface_codeccodec = interface_codeccc->get(interface_codecco);
 	} else {
@@ -128,7 +129,7 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	if (!peer_codecct->get(peer_codeccv, &peer_codecco, &peer_codeccc))
 		return (false);
 
-	XCodec *peer_codeccodec;
+	WANProxyCodec *peer_codeccodec;
 	if (peer_codecco != NULL) {
 		peer_codeccodec = peer_codeccc->get(peer_codecco);
 	} else {
@@ -138,7 +139,8 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	std::string interface_address = '[' + interface_hoststr + ']' + ':' + interface_portstr;
 	std::string peer_address = '[' + peer_hoststr + ']' + ':' + peer_portstr;
 
-	ProxyListener *listener = new ProxyListener(interface_codeccodec, peer_codeccodec, interface_family, interface_address, peer_family, peer_address);
+	WANProxyCodecPipePair *pipe_pair = new WANProxyCodecPipePair(interface_codeccodec, peer_codeccodec);
+	ProxyListener *listener = new ProxyListener(pipe_pair, interface_family, interface_address, peer_family, peer_address);
 	object_listener_map_[co] = listener;
 
 	return (true);

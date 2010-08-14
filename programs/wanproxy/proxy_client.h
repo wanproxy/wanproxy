@@ -7,7 +7,6 @@ class Pipe;
 class PipePair;
 class Splice;
 class SplicePair;
-class XCodec;
 
 class ProxyClient {
 	LogHandle log_;
@@ -15,23 +14,24 @@ class ProxyClient {
 	Action *stop_action_;
 
 	Action *local_action_;
-	XCodec *local_codec_;
 	Socket *local_socket_;
 
 	Action *remote_action_;
-	XCodec *remote_codec_;
 	Socket *remote_socket_;
 
-	std::set<Pipe *> pipes_;
-	std::set<PipePair *> pipe_pairs_;
+	PipePair *pipe_pair_;
 
+	Pipe *incoming_pipe_;
 	Splice *incoming_splice_;
+
+	Pipe *outgoing_pipe_;
 	Splice *outgoing_splice_;
+
 	SplicePair *splice_pair_;
 	Action *splice_action_;
 
 public:
-	ProxyClient(XCodec *, XCodec *, Socket *, SocketAddressFamily, const std::string&);
+	ProxyClient(PipePair *, Socket *, SocketAddressFamily, const std::string&);
 private:
 	~ProxyClient();
 

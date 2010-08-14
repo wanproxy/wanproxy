@@ -7,6 +7,7 @@ SRCS+=	proxy_socks_connection.cc
 SRCS+=	proxy_socks_listener.cc
 
 SRCS+=	wanproxy.cc
+SRCS+=	wanproxy_codec_pipe_pair.cc
 SRCS+=	wanproxy_config.cc
 SRCS+=	wanproxy_config_class_codec.cc
 SRCS+=	wanproxy_config_class_interface.cc

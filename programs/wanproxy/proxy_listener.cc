@@ -12,7 +12,7 @@
 #include "proxy_client.h"
 #include "proxy_listener.h"
 
-ProxyListener::ProxyListener(XCodec *local_codec, XCodec *remote_codec,
+ProxyListener::ProxyListener(PipePair *pipe_pair,
 			     SocketAddressFamily interface_family,
 			     const std::string& interface,
 			     SocketAddressFamily remote_family,
@@ -22,8 +22,7 @@ ProxyListener::ProxyListener(XCodec *local_codec, XCodec *remote_codec,
   accept_action_(NULL),
   close_action_(NULL),
   stop_action_(NULL),
-  local_codec_(local_codec),
-  remote_codec_(remote_codec),
+  pipe_pair_(pipe_pair),
   interface_(interface),
   remote_family_(remote_family),
   remote_name_(remote_name)
@@ -67,8 +66,8 @@ ProxyListener::accept_complete(Event e)
 
 	if (e.type_ == Event::Done) {
 		Socket *client = (Socket *)e.data_;
-		new ProxyClient(local_codec_, remote_codec_, client,
-				remote_family_, remote_name_);
+		new ProxyClient(pipe_pair_, client, remote_family_,
+				remote_name_);
 	}
 
 	EventCallback *cb = callback(this, &ProxyListener::accept_complete);

@@ -1,8 +1,8 @@
 #ifndef	PROXY_LISTENER_H
 #define	PROXY_LISTENER_H
 
+class PipePair;
 class TCPServer;
-class XCodec;
 
 class ProxyListener {
 	LogHandle log_;
@@ -10,14 +10,13 @@ class ProxyListener {
 	Action *accept_action_;
 	Action *close_action_;
 	Action *stop_action_;
-	XCodec *local_codec_;
-	XCodec *remote_codec_;
+	PipePair *pipe_pair_;
 	std::string interface_;
 	SocketAddressFamily remote_family_;
 	std::string remote_name_;
 
 public:
-	ProxyListener(XCodec *, XCodec *, SocketAddressFamily,
+	ProxyListener(PipePair *, SocketAddressFamily,
 		      const std::string&, SocketAddressFamily,
 		      const std::string&);
 	~ProxyListener();

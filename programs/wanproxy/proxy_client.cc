@@ -6,7 +6,6 @@
 #include <event/event_system.h>
 
 #include <io/pipe.h>
-#include <io/pipe_link.h>
 #include <io/pipe_null.h>
 #include <io/pipe_pair.h>
 #include <io/socket.h>
@@ -15,31 +14,33 @@
 
 #include <net/tcp_client.h>
 
-#include <xcodec/xcodec.h>
-#include <xcodec/xcodec_decoder.h>
-#include <xcodec/xcodec_encoder.h>
-#include <xcodec/xcodec_pipe_pair.h>
-
 #include "proxy_client.h"
 
-ProxyClient::ProxyClient(XCodec *local_codec, XCodec *remote_codec,
-			 Socket *local_socket, SocketAddressFamily family,
+ProxyClient::ProxyClient(PipePair *pipe_pair, Socket *local_socket,
+			 SocketAddressFamily family,
 			 const std::string& remote_name)
 : log_("/wanproxy/proxy/client"),
   stop_action_(NULL),
   local_action_(NULL),
-  local_codec_(local_codec),
   local_socket_(local_socket),
   remote_action_(NULL),
-  remote_codec_(remote_codec),
   remote_socket_(NULL),
-  pipes_(),
-  pipe_pairs_(),
+  pipe_pair_(pipe_pair),
+  incoming_pipe_(NULL),
   incoming_splice_(NULL),
+  outgoing_pipe_(NULL),
   outgoing_splice_(NULL),
   splice_pair_(NULL),
   splice_action_(NULL)
 {
+	if (pipe_pair_ != NULL) {
+		incoming_pipe_ = pipe_pair_->get_incoming();
+		outgoing_pipe_ = pipe_pair_->get_outgoing();
+	} else {
+		incoming_pipe_ = new PipeNull();
+		outgoing_pipe_ = new PipeNull();
+	}
+
 	EventCallback *cb = callback(this, &ProxyClient::connect_complete);
 	remote_action_ = TCPClient::connect(family, remote_name, cb);
 
@@ -59,20 +60,19 @@ ProxyClient::~ProxyClient()
 	ASSERT(splice_pair_ == NULL);
 	ASSERT(splice_action_ == NULL);
 
-	std::set<Pipe *>::iterator pit;
-	while ((pit = pipes_.begin()) != pipes_.end()) {
-		Pipe *pipe = *pit;
-		pipes_.erase(pit);
-
-		delete pipe;
+	if (incoming_pipe_ != NULL) {
+		delete incoming_pipe_;
+		incoming_pipe_ = NULL;
 	}
 
-	std::set<PipePair *>::iterator ppit;
-	while ((ppit = pipe_pairs_.begin()) != pipe_pairs_.end()) {
-		PipePair *pipe_pair = *ppit;
-		pipe_pairs_.erase(ppit);
+	if (outgoing_pipe_ != NULL) {
+		delete outgoing_pipe_;
+		outgoing_pipe_ = NULL;
+	}
 
-		delete pipe_pair;
+	if (pipe_pair_ != NULL) {
+		delete pipe_pair_;
+		pipe_pair_ = NULL;
 	}
 }
 
@@ -137,49 +137,8 @@ ProxyClient::connect_complete(Event e)
 	remote_socket_ = (Socket *)e.data_;
 	ASSERT(remote_socket_ != NULL);
 
-	Pipe *incoming_pipe;
-	Pipe *outgoing_pipe;
-
-	if (local_codec_ == NULL && remote_codec_ == NULL) {
-		incoming_pipe = new PipeNull();
-		pipes_.insert(incoming_pipe);
-
-		outgoing_pipe = new PipeNull();
-		pipes_.insert(outgoing_pipe);
-	} else {
-		if (local_codec_ != NULL && remote_codec_ == NULL) {
-			PipePair *pair = new XCodecPipePair(local_codec_, XCodecPipePairTypeServer);
-			pipe_pairs_.insert(pair);
-
-			incoming_pipe = pair->get_incoming();
-			outgoing_pipe = pair->get_outgoing();
-		} else if (local_codec_ == NULL && remote_codec_ != NULL) {
-			PipePair *pair = new XCodecPipePair(remote_codec_, XCodecPipePairTypeClient);
-			pipe_pairs_.insert(pair);
-
-			incoming_pipe = pair->get_incoming();
-			outgoing_pipe = pair->get_outgoing();
-		} else {
-			ASSERT(local_codec_ != NULL && remote_codec_ != NULL);
-
-			PipePair *pair[2];
-
-			pair[0] = new XCodecPipePair(local_codec_, XCodecPipePairTypeClient);
-			pipe_pairs_.insert(pair[0]);
-
-			pair[1] = new XCodecPipePair(local_codec_, XCodecPipePairTypeServer);
-			pipe_pairs_.insert(pair[1]);
-
-			incoming_pipe = new PipeLink(pair[0]->get_incoming(), pair[1]->get_incoming());
-			pipes_.insert(incoming_pipe);
-
-			outgoing_pipe = new PipeLink(pair[0]->get_outgoing(), pair[1]->get_outgoing());
-			pipes_.insert(outgoing_pipe);
-		}
-	}
-
-	incoming_splice_ = new Splice(remote_socket_, incoming_pipe, local_socket_);
-	outgoing_splice_ = new Splice(local_socket_, outgoing_pipe, remote_socket_);
+	incoming_splice_ = new Splice(remote_socket_, incoming_pipe_, local_socket_);
+	outgoing_splice_ = new Splice(local_socket_, outgoing_pipe_, remote_socket_);
 
 	splice_pair_ = new SplicePair(outgoing_splice_, incoming_splice_);
 

@@ -1,13 +1,12 @@
 #ifndef	WANPROXY_CONFIG_CLASS_CODEC_H
 #define	WANPROXY_CONFIG_CLASS_CODEC_H
 
+#include "wanproxy_codec.h"
 #include "wanproxy_config_type_codec.h"
 #include "wanproxy_config_type_compressor.h"
 
-class XCodec;
-
 class WANProxyConfigClassCodec : public ConfigClass {
-	std::map<ConfigObject *, XCodec *> object_codec_map_;
+	std::map<ConfigObject *, WANProxyCodec *> object_codec_map_;
 public:
 	WANProxyConfigClassCodec(void)
 	: ConfigClass("codec"),
@@ -22,9 +21,9 @@ public:
 
 	bool activate(ConfigObject *);
 
-	XCodec *get(ConfigObject *co) const
+	WANProxyCodec *get(ConfigObject *co) const
 	{
-		std::map<ConfigObject *, XCodec *>::const_iterator it;
+		std::map<ConfigObject *, WANProxyCodec *>::const_iterator it;
 		it = object_codec_map_.find(co);
 		if (it == object_codec_map_.end())
 			return (NULL);
