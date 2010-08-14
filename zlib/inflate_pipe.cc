@@ -77,6 +77,10 @@ InflatePipe::process(Buffer *out, Buffer *in)
 			    error == Z_MEM_ERROR)
 				return (false);
 
+			if (flush == Z_SYNC_FLUSH && error == Z_BUF_ERROR &&
+			    stream_.avail_out == sizeof outbuf)
+				error = Z_OK;
+
 			out->append(outbuf, sizeof outbuf - stream_.avail_out);
 			stream_.avail_out = sizeof outbuf;
 			stream_.next_out = outbuf;
