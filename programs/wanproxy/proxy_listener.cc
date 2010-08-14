@@ -12,7 +12,10 @@
 #include "proxy_client.h"
 #include "proxy_listener.h"
 
-ProxyListener::ProxyListener(PipePair *pipe_pair,
+#include "wanproxy_codec_pipe_pair.h"
+
+ProxyListener::ProxyListener(WANProxyCodec *interface_codec,
+			     WANProxyCodec *remote_codec,
 			     SocketAddressFamily interface_family,
 			     const std::string& interface,
 			     SocketAddressFamily remote_family,
@@ -22,8 +25,9 @@ ProxyListener::ProxyListener(PipePair *pipe_pair,
   accept_action_(NULL),
   close_action_(NULL),
   stop_action_(NULL),
-  pipe_pair_(pipe_pair),
+  interface_codec_(interface_codec),
   interface_(interface),
+  remote_codec_(remote_codec),
   remote_family_(remote_family),
   remote_name_(remote_name)
 {
@@ -66,8 +70,8 @@ ProxyListener::accept_complete(Event e)
 
 	if (e.type_ == Event::Done) {
 		Socket *client = (Socket *)e.data_;
-		new ProxyClient(pipe_pair_, client, remote_family_,
-				remote_name_);
+		PipePair *pipe_pair = new WANProxyCodecPipePair(interface_codec_, remote_codec_);
+		new ProxyClient(pipe_pair, client, remote_family_, remote_name_);
 	}
 
 	EventCallback *cb = callback(this, &ProxyListener::accept_complete);

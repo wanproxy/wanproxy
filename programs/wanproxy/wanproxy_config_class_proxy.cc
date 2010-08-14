@@ -10,7 +10,6 @@
 #include <io/socket_types.h>
 
 #include "proxy_listener.h"
-#include "wanproxy_codec_pipe_pair.h"
 #include "wanproxy_config_class_codec.h"
 #include "wanproxy_config_class_interface.h"
 #include "wanproxy_config_class_peer.h"
@@ -139,8 +138,7 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	std::string interface_address = '[' + interface_hoststr + ']' + ':' + interface_portstr;
 	std::string peer_address = '[' + peer_hoststr + ']' + ':' + peer_portstr;
 
-	WANProxyCodecPipePair *pipe_pair = new WANProxyCodecPipePair(interface_codeccodec, peer_codeccodec);
-	ProxyListener *listener = new ProxyListener(pipe_pair, interface_family, interface_address, peer_family, peer_address);
+	ProxyListener *listener = new ProxyListener(interface_codeccodec, peer_codeccodec, interface_family, interface_address, peer_family, peer_address);
 	object_listener_map_[co] = listener;
 
 	return (true);

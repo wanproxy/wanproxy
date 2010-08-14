@@ -60,19 +60,19 @@ ProxyClient::~ProxyClient()
 	ASSERT(splice_pair_ == NULL);
 	ASSERT(splice_action_ == NULL);
 
-	if (incoming_pipe_ != NULL) {
-		delete incoming_pipe_;
-		incoming_pipe_ = NULL;
-	}
-
-	if (outgoing_pipe_ != NULL) {
-		delete outgoing_pipe_;
-		outgoing_pipe_ = NULL;
-	}
-
 	if (pipe_pair_ != NULL) {
 		delete pipe_pair_;
 		pipe_pair_ = NULL;
+	} else {
+		if (incoming_pipe_ != NULL) {
+			delete incoming_pipe_;
+			incoming_pipe_ = NULL;
+		}
+
+		if (outgoing_pipe_ != NULL) {
+			delete outgoing_pipe_;
+			outgoing_pipe_ = NULL;
+		}
 	}
 }
 

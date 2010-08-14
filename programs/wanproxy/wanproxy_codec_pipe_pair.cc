@@ -32,6 +32,10 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 	if (incoming != NULL) {
 		if (incoming->compressor_) {
 			std::pair<Pipe *, Pipe *> pipe_pair(new InflatePipe(), new DeflatePipe(9));
+
+			pipes_.insert(pipe_pair.first);
+			pipes_.insert(pipe_pair.second);
+
 			pipe_list.push_back(pipe_pair);
 		}
 
@@ -55,6 +59,10 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 
 		if (outgoing->compressor_) {
 			std::pair<Pipe *, Pipe *> pipe_pair(new DeflatePipe(9), new InflatePipe());
+
+			pipes_.insert(pipe_pair.first);
+			pipes_.insert(pipe_pair.second);
+
 			pipe_list.push_back(pipe_pair);
 		}
 	}
@@ -62,6 +70,10 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 	if (pipe_list.empty()) {
 		incoming_pipe_ = new PipeNull();
 		outgoing_pipe_ = new PipeNull();
+
+		pipes_.insert(incoming_pipe_);
+		pipes_.insert(outgoing_pipe_);
+
 		return;
 	}
 
@@ -70,9 +82,6 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 	pipe_list.pop_front();
 
 	while (!pipe_list.empty()) {
-		pipes_.insert(incoming_pipe_);
-		pipes_.insert(outgoing_pipe_);
-
 		incoming_pipe_ = new PipeLink(incoming_pipe_, pipe_list.front().first);
 		outgoing_pipe_ = new PipeLink(outgoing_pipe_, pipe_list.front().second);
 

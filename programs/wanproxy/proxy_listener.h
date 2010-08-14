@@ -1,8 +1,8 @@
 #ifndef	PROXY_LISTENER_H
 #define	PROXY_LISTENER_H
 
-class PipePair;
 class TCPServer;
+class WANProxyCodec;
 
 class ProxyListener {
 	LogHandle log_;
@@ -10,13 +10,14 @@ class ProxyListener {
 	Action *accept_action_;
 	Action *close_action_;
 	Action *stop_action_;
-	PipePair *pipe_pair_;
+	WANProxyCodec *interface_codec_;
 	std::string interface_;
+	WANProxyCodec *remote_codec_;
 	SocketAddressFamily remote_family_;
 	std::string remote_name_;
 
 public:
-	ProxyListener(PipePair *, SocketAddressFamily,
+	ProxyListener(WANProxyCodec *, WANProxyCodec *, SocketAddressFamily,
 		      const std::string&, SocketAddressFamily,
 		      const std::string&);
 	~ProxyListener();
