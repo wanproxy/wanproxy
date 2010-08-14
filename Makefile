@@ -6,5 +6,6 @@ SUBDIR+=io
 SUBDIR+=net
 SUBDIR+=programs
 SUBDIR+=xcodec
+SUBDIR+=zlib
 
 include common/subdir.mk
