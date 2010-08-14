@@ -2,6 +2,7 @@
 #define	WANPROXY_CONFIG_CLASS_CODEC_H
 
 #include "wanproxy_config_type_codec.h"
+#include "wanproxy_config_type_compressor.h"
 
 class XCodec;
 
@@ -13,6 +14,7 @@ public:
 	  object_codec_map_()
 	{
 		add_member("codec", &wanproxy_config_type_codec);
+		add_member("compressor", &wanproxy_config_type_compressor);
 	}
 
 	~WANProxyConfigClassCodec()
