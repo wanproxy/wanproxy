@@ -30,7 +30,7 @@ InflatePipe::~InflatePipe()
 {
 	int error = inflateEnd(&stream_);
 	if (error != Z_OK)
-		HALT(log_) << "Could not end inflate stream.";
+		ERROR(log_) << "Inflate stream did not end cleanly.";
 }
 
 bool

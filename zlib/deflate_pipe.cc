@@ -28,7 +28,7 @@ DeflatePipe::~DeflatePipe()
 {
 	int error = deflateEnd(&stream_);
 	if (error != Z_OK)
-		HALT(log_) << "Could not end deflate stream.";
+		ERROR(log_) << "Deflate stream did not end cleanly.";
 }
 
 bool
