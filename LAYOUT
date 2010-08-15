@@ -1,30 +1,33 @@
 Top-level directory layout:
 
 Directory	Description
-=============	==============================================================
+=============	=============================================================
 alg		Portable implementations of simple, standard algorithms.
-		Organized into sub-directories based on type, i.e. alg/hash is
-		hashing algorithms.
-common		Non-specific functionality that is of general interest, i.e. the
-		logging system, test infrastructure and Buffer class.
+		Organized into sub-directories based on type, i.e. alg/hash
+		is hashing algorithms.
+common		Non-specific functionality that is of general interest, i.e.
+		the logging system, test infrastructure and Buffer class.
 config		General-purpose configuration system infrastructure and some
 		essential types and classes.
-event		The event system and infrastructure to support it, such as the
-		various implementations of the poll interface.
-io		Interface to IO subsystems, namely file descriptors and sockets,
-		as well as abstract classes for such things (e.g. Channel,
-		Pipe, Splice.)
+event		The event system and infrastructure to support it, such as
+		the various implementations of the poll interface.
+io		Interface to IO subsystems, namely file descriptors and
+		sockets, as well as abstract classes for such things (e.g.
+		Channel, Pipe, Splice.)
 net		Networking utility functions and protocols.
 programs	Stand-alone programs.
 		Organized into sub-directories named by program, i.e.
 		programs/wanproxy is WANProxy.
-xcodec		The XCodec codec, which performs deduplication, and its internal
-		interfaces.
+xcodec		The XCodec codec, which performs deduplication, and its
+		internal interfaces.
+zlib		Wrappers around zlib, providing Pipes that do inflate and
+		deflate.
 
 Standard sub-directories:
 
 Directory	Description
-=============	==============================================================
+=============	=============================================================
 test		Unit tests.
-example		Example programs which may test functionality in a non-automated
-		fashion or merely provide example usage of a complex interface.
+example		Example programs which may test functionality in a
+		non-automated fashion or merely provide example usage of a
+		complex interface.
