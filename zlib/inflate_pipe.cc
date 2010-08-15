@@ -71,7 +71,7 @@ InflatePipe::process(Buffer *out, Buffer *in)
 			    error == Z_MEM_ERROR)
 				return (false);
 
-			if (flush == Z_SYNC_FLUSH && error == Z_BUF_ERROR &&
+			if (flush != Z_NO_FLUSH && error == Z_BUF_ERROR &&
 			    stream_.avail_out == sizeof outbuf)
 				error = Z_OK;
 
@@ -81,9 +81,7 @@ InflatePipe::process(Buffer *out, Buffer *in)
 
 			if (flush == Z_NO_FLUSH)
 				break;
-			if (flush != Z_NO_FLUSH && error == Z_OK)
-				return (true);
-			if (error == Z_STREAM_END)
+			if (error == Z_OK || error == Z_STREAM_END)
 				return (true);
 			/* More data to output.  */
 		}
