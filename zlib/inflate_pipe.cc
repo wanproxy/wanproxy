@@ -12,8 +12,7 @@
 
 InflatePipe::InflatePipe(void)
 : PipeSimple("/zlib/inflate_pipe"),
-  stream_(),
-  finished_(false)
+  stream_()
 {
 	stream_.zalloc = Z_NULL;
 	stream_.zfree = Z_NULL;
@@ -39,11 +38,6 @@ InflatePipe::process(Buffer *out, Buffer *in)
 {
 	uint8_t outbuf[INFLATE_CHUNK_SIZE];
 	bool first = true;
-
-	if (finished_) {
-		ASSERT(in->empty());
-		return (true);
-	}
 
 	stream_.avail_out = sizeof outbuf;
 	stream_.next_out = outbuf;
@@ -89,10 +83,8 @@ InflatePipe::process(Buffer *out, Buffer *in)
 				break;
 			if (flush != Z_NO_FLUSH && error == Z_OK)
 				return (true);
-			if (error == Z_STREAM_END) {
-				finished_ = true;
+			if (error == Z_STREAM_END)
 				return (true);
-			}
 			/* More data to output.  */
 		}
 
@@ -100,10 +92,4 @@ InflatePipe::process(Buffer *out, Buffer *in)
 			in->skip(seg->length() - stream_.avail_in);
 	}
 	NOTREACHED();
-}
-
-bool
-InflatePipe::process_eos(void) const
-{
-	return (finished_);
 }
