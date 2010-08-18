@@ -37,7 +37,7 @@ ConfigClassAddress::activate(ConfigObject *co)
 			return (false);
 		}
 		return (true);
-	
+
 	default:
 		ERROR("/config/class/address") << "Unsupported address family.";
 		return (false);

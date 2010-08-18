@@ -111,7 +111,7 @@ dump(int ifd, int ofd)
 				input.skip(off);
 				bprintf(&output, "/>\n");
 			}
-		
+
 			/*
 			 * Need the following byte at least.
 			 */
@@ -289,7 +289,7 @@ process_files(int argc, char *argv[])
 	} else {
 		while (argc--) {
 			const char *file = *argv++;
-			
+
 			ifd = open(file, O_RDONLY);
 			ASSERT(ifd != -1);
 			ofd = STDOUT_FILENO;

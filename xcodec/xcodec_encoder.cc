@@ -345,7 +345,7 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 	/*
 	 * Skip to the end.
 	 */
-	input->skip(XCODEC_SEGMENT_LENGTH); 
+	input->skip(XCODEC_SEGMENT_LENGTH);
 
 	if (segp != NULL)
 		*segp = nseg;
@@ -392,7 +392,7 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 	/*
 	 * Skip to the end.
 	 */
-	input->skip(XCODEC_SEGMENT_LENGTH); 
+	input->skip(XCODEC_SEGMENT_LENGTH);
 
 	/*
 	 * And output a reference.

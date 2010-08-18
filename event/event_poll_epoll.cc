@@ -137,7 +137,7 @@ EventPoll::wait(int ms)
 			poll_handler = &write_poll_[ev->data.fd];
 			poll_handler->callback(Event::Done);
 		}
-		
+
 		if ((ev->events & EPOLLIN) == 0 && (ev->events & EPOLLOUT) == 0) {
 			if (read_poll_.find(ev->data.fd) != read_poll_.end()) {
 				poll_handler = &read_poll_[ev->data.fd];

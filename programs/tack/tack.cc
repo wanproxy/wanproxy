@@ -237,7 +237,7 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, bool qui
 	} else {
 		while (argc--) {
 			const char *file = *argv++;
-			
+
 			ifd = open(file, O_RDONLY);
 			ASSERT(ifd != -1);
 			if (quiet)

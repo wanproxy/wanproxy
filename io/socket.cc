@@ -389,7 +389,7 @@ Socket::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 {
 	int how;
 
-	if (shut_read && shut_write) 
+	if (shut_read && shut_write)
 		how = SHUT_RDWR;
 	else if (shut_read)
 		how = SHUT_RD;
@@ -592,7 +592,7 @@ Socket::create(SocketAddressFamily family, SocketType type, const std::string& p
 				ERROR("/socket") << "Invalid hint: " << hint;
 				return (NULL);
 			}
-			
+
 			/* XXX Just make socket_address::operator() smarter about AF_UNSPEC?  */
 			switch (addr.addr_.sockaddr_.sa_family) {
 			case AF_INET:
@@ -624,11 +624,11 @@ Socket::create(SocketAddressFamily family, SocketType type, const std::string& p
 		domainnum = AF_INET6;
 		break;
 #endif
-	
+
 	case SocketAddressFamilyUnix:
 		domainnum = AF_UNIX;
 		break;
-	
+
 	default:
 		ERROR("/socket") << "Unsupported address family.";
 		return (NULL);

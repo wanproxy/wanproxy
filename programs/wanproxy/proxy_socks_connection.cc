@@ -291,7 +291,7 @@ ProxySocksConnection::schedule_write(void)
 	};
 
 	Buffer response;
-	
+
 	switch (state_) {
 	case GetSOCKS4User:
 		response.append(socks4_connected, sizeof socks4_connected);
