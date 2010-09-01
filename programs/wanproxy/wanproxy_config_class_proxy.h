@@ -3,6 +3,8 @@
 
 #include <config/config_type_pointer.h>
 
+#include "wanproxy_config_type_proxy_type.h"
+
 class ProxyListener;
 
 class WANProxyConfigClassProxy : public ConfigClass {
@@ -12,6 +14,7 @@ public:
 	: ConfigClass("proxy"),
 	  object_listener_map_()
 	{
+		add_member("type", &wanproxy_config_type_proxy_type);
 		add_member("interface", &config_type_pointer);
 		add_member("interface_codec", &config_type_pointer);
 		add_member("peer", &config_type_pointer);
