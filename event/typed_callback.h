@@ -1,6 +1,8 @@
 #ifndef	TYPED_CALLBACK_H
 #define	TYPED_CALLBACK_H
 
+#include <event/callback.h>
+
 template<typename T>
 class TypedCallback : public Callback {
 	T param_;

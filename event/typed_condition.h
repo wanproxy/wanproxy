@@ -1,6 +1,8 @@
 #ifndef	TYPED_CONDITION_H
 #define	TYPED_CONDITION_H
 
+#include <event/condition.h>
+
 template<typename T>
 class TypedCondition {
 protected:
