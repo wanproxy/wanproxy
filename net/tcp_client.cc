@@ -83,6 +83,7 @@ TCPClient::connect_cancel(void)
 		delete connect_callback_;
 		connect_callback_ = NULL;
 	} else {
+		/* XXX This has a race; caller could cancel after we schedule, but before callback occurs.  */
 		/* Caller consumed Socket.  */
 		socket_ = NULL;
 
