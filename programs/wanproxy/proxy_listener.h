@@ -2,7 +2,7 @@
 #define	PROXY_LISTENER_H
 
 class TCPServer;
-class WANProxyCodec;
+struct WANProxyCodec;
 
 class ProxyListener {
 	LogHandle log_;

@@ -5,7 +5,7 @@
 
 #include <io/pipe_pair.h>
 
-class WANProxyCodec;
+struct WANProxyCodec;
 class XCodec;
 
 class WANProxyCodecPipePair : public PipePair {
