@@ -79,14 +79,14 @@ ProxySocksConnection::read_complete(Event e)
 		schedule_read(2);
 		break;
 	case GetSOCKS4Port:
-		e.buffer_.copyout((uint8_t *)&network_port_, 2);
+		e.buffer_.extract(&network_port_);
 		network_port_ = BigEndian::decode(network_port_);
 
 		state_ = GetSOCKS4Address;
 		schedule_read(4);
 		break;
 	case GetSOCKS4Address:
-		e.buffer_.copyout((uint8_t *)&network_address_, 4);
+		e.buffer_.extract(&network_address_);
 		network_address_ = BigEndian::decode(network_address_);
 
 		state_ = GetSOCKS4User;
@@ -152,7 +152,7 @@ ProxySocksConnection::read_complete(Event e)
 		}
 		break;
 	case GetSOCKS5Address:
-		e.buffer_.copyout((uint8_t *)&network_address_, 4);
+		e.buffer_.extract(&network_address_);
 		network_address_ = BigEndian::decode(network_address_);
 
 		state_ = GetSOCKS5Port;
@@ -171,7 +171,7 @@ ProxySocksConnection::read_complete(Event e)
 		schedule_read(2);
 		break;
 	case GetSOCKS5Port:
-		e.buffer_.copyout((uint8_t *)&network_port_, 2);
+		e.buffer_.extract(&network_port_);
 		network_port_ = BigEndian::decode(network_port_);
 
 		schedule_write();
