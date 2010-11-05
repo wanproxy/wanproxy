@@ -656,6 +656,25 @@ public:
 	}
 
 	/*
+	 * Extract an 8-bit quantity out of this Buffer starting at offset.
+	 * No endianness is assumed.
+	 */
+	void extract(uint8_t *p, unsigned offset) const
+	{
+		size_t copied = copyout(p, offset, sizeof *p);
+		ASSERT(copied == sizeof *p);
+	}
+
+	/*
+	 * Extract an 8-bit quantity out of the beginning of this Buffer.  No
+	 * endianness is assumed.
+	 */
+	void extract(uint8_t *p) const
+	{
+		extract(p, 0);
+	}
+
+	/*
 	 * Extract a 16-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
