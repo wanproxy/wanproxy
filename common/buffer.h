@@ -17,10 +17,11 @@ typedef	uint8_t	buffer_segment_size_t;
  * non-zero offset within the BufferSegment and may end prematurely.  This
  * allows for skip()/trim() semantics.
  *
- * BufferSegments are reference counted and mutable operations copy before doing
- * a write.  You must provide your own locking or use only a single thread.  One
- * normally does not use BufferSegments directly unless one is importing or
- * exporting data in a performance-critical path.  Normal usage uses a Buffer.
+ * BufferSegments are reference counted and mutable operations copy before
+ * doing a write.  You must provide your own locking or use only a single
+ * thread.  One normally does not use BufferSegments directly unless one is
+ * importing or exporting data in a performance-critical path.  Normal usage
+ * uses a Buffer.
  */
 class BufferSegment {
 	uint8_t data_[BUFFER_SEGMENT_SIZE];
@@ -615,8 +616,8 @@ public:
 	}
 
 	/*
-	 * Copy up to dstsize bytes out the beginning of this Buffer starting to
-	 * a byte buffer.
+	 * Copy up to dstsize bytes out of the beginning of this Buffer to a
+	 * byte buffer.
 	 */
 	size_t copyout(uint8_t *dst, size_t dstsize) const
 	{
