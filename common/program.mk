@@ -19,7 +19,11 @@ all: ${PROGRAM}
 
 # Build and run regression tests.
 regress: ${PROGRAM}
+ifdef TEST_WRAPPER
+	${TEST_WRAPPER} ${PWD}/${PROGRAM}
+else
 	${PWD}/${PROGRAM}
+endif
 else
 # Build but don't run regression tests.
 regress: ${PROGRAM}
