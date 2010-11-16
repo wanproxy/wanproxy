@@ -3,19 +3,13 @@
 
 template<typename T>
 class Ref {
-public:
-	typedef	unsigned	id_t;
-
-private:
 	class RefObj {
 		T *ptr_;
 		unsigned count_;
-		id_t id_;
 	public:
 		RefObj(T *ptr)
 		: ptr_(ptr),
-		  count_(1),
-		  id_(get_id())
+		  count_(1)
 		{ }
 
 	private:
@@ -40,18 +34,6 @@ private:
 		T *get(void) const
 		{
 			return (ptr_);
-		}
-
-		id_t id(void) const
-		{
-			return (id_);
-		}
-
-	private:
-		static id_t get_id(void)
-		{
-			static id_t last_id;
-			return (++last_id);
 		}
 	};
 
@@ -117,16 +99,9 @@ public:
 		return (obj_ == NULL);
 	}
 
-	id_t id(void) const
-	{
-		if (obj_ == NULL)
-			return (id_t(0));
-		return (obj_->id());
-	}
-
 	bool operator< (const Ref& b) const
 	{
-		return (id() < b.id());
+		return (obj_ < b.obj_);
 	}
 };
 
