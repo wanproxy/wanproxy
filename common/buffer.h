@@ -1068,6 +1068,12 @@ public:
 	 * populated.
 	 */
 	size_t fill_iovec(struct iovec *, size_t) const;
+
+	/*
+	 * Create a string with a canonical hexdump of the contents of this
+	 * Buffer.
+	 */
+	std::string hexdump(unsigned = 0) const;
 };
 
 std::ostream& operator<< (std::ostream&, const Buffer *);
