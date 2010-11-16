@@ -94,7 +94,7 @@ public:
 		return (*this);
 	}
 
-	const T *operator-> (void) const
+	T *operator-> (void) const
 	{
 		return (obj_->get());
 	}
