@@ -1066,6 +1066,88 @@ public:
 	}
 
 	/*
+	 * Remove internal bytes from this Buffer.
+	 */
+	void cut(unsigned offset, size_t bytes)
+	{
+		segment_list_t::iterator it;
+
+		ASSERT(offset <= length_);
+		ASSERT(bytes != 0);
+		ASSERT(offset + bytes <= length_);
+
+		/* Remove from start.  */
+		if (offset == 0) {
+			skip(bytes);
+			return;
+		}
+
+		/* Remove from end.  */
+		if (offset + bytes == length_) {
+			trim(bytes);
+			return;
+		}
+
+		/* Preemptively adjust length.  */
+		length_ -= bytes;
+
+		it = data_.begin();
+		while (it != data_.end()) {
+			BufferSegment *seg = *it;
+
+			ASSERT(bytes != 0);
+
+			if (offset >= seg->length()) {
+				++it;
+				offset -= seg->length();
+				continue;
+			}
+
+			/* Remove this element, point iterator at the next one.  */
+			it = data_.erase(it);
+			if (offset + bytes >= seg->length()) {
+				if (offset == 0) {
+					/* We do not need this segment at all.  */
+					bytes -= seg->length();
+					seg->unref();
+					offset = 0;
+
+					if (bytes == 0)
+						break;
+					continue;
+				}
+				/* We need only the first offset bytes of this segment.  */
+				bytes -= seg->length() - offset;
+				seg = seg->trim(seg->length() - offset);
+				ASSERT(seg->length() == offset);
+				offset = 0;
+
+				data_.insert(it, seg);
+
+				if (bytes == 0)
+					break;
+				continue;
+			}
+
+			/* This is the final segment.  */
+			if (offset != 0) {
+				/* Get any leading data.  */
+				seg->ref();
+				data_.insert(it, seg->trim(seg->length() - offset));
+				offset = 0;
+			}
+
+			seg = seg->skip(offset + bytes);
+			data_.insert(it, seg);
+
+			bytes -= bytes;
+			break;
+		}
+		ASSERT(offset == 0);
+		ASSERT(bytes == 0);
+	}
+
+	/*
 	 * Apply to a function each BufferSegment in this Buffer.
 	 */
 	template<typename T>
