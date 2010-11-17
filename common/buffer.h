@@ -268,6 +268,17 @@ public:
 	}
 
 	/*
+	 * Adjusts the length to ignore bytes at the end of a BufferSegment.
+	 * Like trim() but takes the desired resulting length rather than the
+	 * number of bytes to trim.  Creates a copy if there are live
+	 * references.
+	 */
+	BufferSegment *truncate(size_t len)
+	{
+		return (trim(length() - len));
+	}
+
+	/*
 	 * Checks if the BufferSegment's contents are identical to the byte
 	 * buffer passed in.
 	 */
@@ -1118,7 +1129,7 @@ public:
 				}
 				/* We need only the first offset bytes of this segment.  */
 				bytes -= seg->length() - offset;
-				seg = seg->trim(seg->length() - offset);
+				seg = seg->truncate(offset);
 				ASSERT(seg->length() == offset);
 				offset = 0;
 
@@ -1133,7 +1144,7 @@ public:
 			if (offset != 0) {
 				/* Get any leading data.  */
 				seg->ref();
-				data_.insert(it, seg->trim(seg->length() - offset));
+				data_.insert(it, seg->truncate(offset));
 				offset = 0;
 			}
 
@@ -1145,6 +1156,17 @@ public:
 		}
 		ASSERT(offset == 0);
 		ASSERT(bytes == 0);
+	}
+
+	/*
+	 * Truncate this Buffer to the specified length.
+	 */
+	void truncate(size_t len)
+	{
+		if (length_ == len)
+			return;
+		ASSERT(length_ > len);
+		trim(length_ - len);
 	}
 
 	/*
