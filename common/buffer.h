@@ -738,6 +738,21 @@ public:
 	}
 
 	/*
+	 * Extract a string in std::string format out of the beginning of this
+	 * Buffer.
+	 */
+	void extract(std::string& str) const
+	{
+		segment_list_t::const_iterator it;
+
+		for (it = data_.begin(); it != data_.end(); ++it) {
+			const BufferSegment *seg = *it;
+
+			str += std::string((const char *)seg->data(), seg->length());
+		}
+	}
+
+	/*
 	 * Get a SegmentIterator that can be used to enumerate BufferSegments
 	 * in this Buffer.
 	 */

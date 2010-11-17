@@ -8,20 +8,6 @@
 
 #include <common/buffer.h>
 
-struct string_builder {
-	std::string string_;
-
-	string_builder(void)
-	: string_()
-	{ }
-
-	void operator() (const BufferSegment *seg)
-	{
-		std::string str((const char *)seg->data(), seg->length());
-		string_ += str;
-	}
-};
-
 size_t
 Buffer::fill_iovec(struct iovec *iov, size_t niov) const
 {
@@ -133,9 +119,9 @@ Buffer::hexdump(unsigned start) const
 std::ostream&
 operator<< (std::ostream& os, const Buffer *buf)
 {
-	string_builder sb;
-	buf->foreach_segment(sb);
-	return (os << sb.string_);
+	std::string str;
+	buf->extract(str);
+	return (os << str);
 }
 
 std::ostream&
