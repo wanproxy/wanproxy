@@ -122,6 +122,25 @@ IOSystem::Handle::read_callback(Event e)
 		HALT(log_) << "Unexpected event: " << e;
 	}
 
+	read_do();
+}
+
+void
+IOSystem::Handle::read_cancel(void)
+{
+	ASSERT(read_action_ != NULL);
+	read_action_->cancel();
+	read_action_ = NULL;
+
+	if (read_callback_ != NULL) {
+		delete read_callback_;
+		read_callback_ = NULL;
+	}
+}
+
+bool
+IOSystem::Handle::read_do(void)
+{
 	/*
 	 * A bit of discussion is warranted on this:
 	 *
@@ -175,7 +194,7 @@ IOSystem::Handle::read_callback(Event e)
 		switch (errno) {
 		case EAGAIN:
 			read_action_ = read_schedule();
-			break;
+			return (false);
 		default:
 			read_callback_->param(Event(Event::Error, errno, read_buffer_));
 			Action *a = EventSystem::instance()->schedule(read_callback_);
@@ -183,9 +202,9 @@ IOSystem::Handle::read_callback(Event e)
 			read_callback_ = NULL;
 			read_buffer_.clear();
 			read_amount_ = 0;
-			break;
+			return (true);
 		}
-		return;
+		NOTREACHED();
 	}
 
 	/*
@@ -204,24 +223,14 @@ IOSystem::Handle::read_callback(Event e)
 		read_callback_ = NULL;
 		read_buffer_.clear();
 		read_amount_ = 0;
-		return;
+		return (true);
 	}
 
 	read_buffer_.append(data, len);
 	read_action_ = read_schedule();
-}
-
-void
-IOSystem::Handle::read_cancel(void)
-{
-	ASSERT(read_action_ != NULL);
-	read_action_->cancel();
-	read_action_ = NULL;
-
-	if (read_callback_ != NULL) {
-		delete read_callback_;
-		read_callback_ = NULL;
-	}
+	if (read_callback_ != NULL)
+		return (false);
+	return (true);
 }
 
 Action *
@@ -501,8 +510,16 @@ IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, EventCallbac
 	h->read_offset_ = offset;
 	h->read_amount_ = amount;
 	h->read_callback_ = cb;
-	h->read_action_ = h->read_schedule();
-	return (cancellation(h, &IOSystem::Handle::read_cancel));
+	bool complete = h->read_do();
+	if (!complete) {
+		ASSERT(h->read_callback_ != NULL);
+		return (cancellation(h, &IOSystem::Handle::read_cancel));
+	}
+	ASSERT(h->read_action_ != NULL);
+	ASSERT(h->read_callback_ == NULL);
+	Action *a = h->read_action_;
+	h->read_action_ = NULL;
+	return (a);
 }
 
 Action *
