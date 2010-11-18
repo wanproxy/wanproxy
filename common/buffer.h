@@ -1078,6 +1078,11 @@ public:
 
 	/*
 	 * Remove internal bytes from this Buffer.
+	 *
+	 * NB: skip() and trim() could be implemented in terms of cut(), but
+	 * it is a marked pessimization to do so.  It would, however, make
+	 * sense to merge skip and trim and to just pick the iterator based on
+	 * the end it's being done at.
 	 */
 	void cut(unsigned offset, size_t bytes)
 	{
