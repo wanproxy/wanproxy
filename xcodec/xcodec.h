@@ -111,7 +111,7 @@
  */
 #define	XCODEC_OP_EOS	((uint8_t)0x07)
 
-#define	XCODEC_SEGMENT_LENGTH	(BUFFER_SEGMENT_SIZE)
+#define	XCODEC_SEGMENT_LENGTH	(128)
 
 class XCodecDecoder;
 class XCodecEncoder;
