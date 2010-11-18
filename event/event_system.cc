@@ -87,28 +87,29 @@ EventSystem::start(void)
 		 * If there are time-triggered events whose time has come,
 		 * run them.
 		 */
-		while (timeout_queue_.ready())
-			timeout_queue_.perform();
+		if (!timeout_queue_.empty()) {
+			while (timeout_queue_.ready())
+				timeout_queue_.perform();
+		}
+
 		/*
 		 * And then run a pending callback.
 		 */
-		queue_.perform();
+		while (!queue_.empty() && !timeout_queue_.ready()) {
+			queue_.perform();
+			if (stop_ || reload_)
+				break;
+		}
+
 		/*
-		 * And if there are more pending callbacks, then do a quick
-		 * poll and let them run.
-		 *
-		 * XXX
-		 * There is actually no point in polling here.  If there are
-		 * more queued Callbacks, any events fired by polling will be
-		 * put after them.  We should take everything off the queue,
-		 * drain that (with an eye on the clock) and then poll.  We can
-		 * not just wait for the queue to be empty since it might never
-		 * be.
+		 * Do a quick poll if necessary.
 		 */
-		if (!queue_.empty()) {
-			poll_.poll();
+		if (!queue_.empty() || timeout_queue_.ready()) {
+			if (!poll_.idle())
+				poll_.poll();
 			continue;
 		}
+
 		/*
 		 * But if there are no pending callbacks, and no timers or
 		 * file descriptors being polled, stop.
