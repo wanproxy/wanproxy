@@ -122,7 +122,10 @@ IOSystem::Handle::read_callback(Event e)
 		HALT(log_) << "Unexpected event: " << e;
 	}
 
-	read_do();
+	read_action_ = read_do();
+	if (read_action_ == NULL)
+		read_action_ = read_schedule();
+	ASSERT(read_action_ != NULL);
 }
 
 void
@@ -138,9 +141,22 @@ IOSystem::Handle::read_cancel(void)
 	}
 }
 
-bool
+Action *
 IOSystem::Handle::read_do(void)
 {
+	ASSERT(read_action_ == NULL);
+
+	if (!read_buffer_.empty() && read_buffer_.length() >= read_amount_) {
+		if (read_amount_ == 0)
+			read_amount_ = read_buffer_.length();
+		read_callback_->param(Event(Event::Done, Buffer(read_buffer_, read_amount_)));
+		Action *a = EventSystem::instance()->schedule(read_callback_);
+		read_callback_ = NULL;
+		read_buffer_.skip(read_amount_);
+		read_amount_ = 0;
+		return (a);
+	}
+
 	/*
 	 * A bit of discussion is warranted on this:
 	 *
@@ -193,16 +209,14 @@ IOSystem::Handle::read_do(void)
 	if (len == -1) {
 		switch (errno) {
 		case EAGAIN:
-			read_action_ = read_schedule();
-			return (false);
+			return (NULL);
 		default:
 			read_callback_->param(Event(Event::Error, errno, read_buffer_));
 			Action *a = EventSystem::instance()->schedule(read_callback_);
-			read_action_ = a;
 			read_callback_ = NULL;
 			read_buffer_.clear();
 			read_amount_ = 0;
-			return (true);
+			return (a);
 		}
 		NOTREACHED();
 	}
@@ -219,24 +233,13 @@ IOSystem::Handle::read_do(void)
 	if (len == 0) {
 		read_callback_->param(Event(Event::EOS, read_buffer_));
 		Action *a = EventSystem::instance()->schedule(read_callback_);
-		read_action_ = a;
 		read_callback_ = NULL;
 		read_buffer_.clear();
 		read_amount_ = 0;
-		return (true);
+		return (a);
 	}
 
 	read_buffer_.append(data, len);
-	read_action_ = read_schedule();
-	if (read_callback_ != NULL)
-		return (false);
-	return (true);
-}
-
-Action *
-IOSystem::Handle::read_schedule(void)
-{
-	ASSERT(read_action_ == NULL);
 
 	if (!read_buffer_.empty() && read_buffer_.length() >= read_amount_) {
 		if (read_amount_ == 0)
@@ -248,6 +251,14 @@ IOSystem::Handle::read_schedule(void)
 		read_amount_ = 0;
 		return (a);
 	}
+
+	return (NULL);
+}
+
+Action *
+IOSystem::Handle::read_schedule(void)
+{
+	ASSERT(read_action_ == NULL);
 
 	EventCallback *cb = callback(this, &IOSystem::Handle::read_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Readable, fd_, cb);
@@ -510,15 +521,15 @@ IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, EventCallbac
 	h->read_offset_ = offset;
 	h->read_amount_ = amount;
 	h->read_callback_ = cb;
-	bool complete = h->read_do();
-	if (!complete) {
+	Action *a = h->read_do();
+	ASSERT(h->read_action_ == NULL);
+	if (a == NULL) {
 		ASSERT(h->read_callback_ != NULL);
+		h->read_action_ = h->read_schedule();
+		ASSERT(h->read_action_ != NULL);
 		return (cancellation(h, &IOSystem::Handle::read_cancel));
 	}
-	ASSERT(h->read_action_ != NULL);
 	ASSERT(h->read_callback_ == NULL);
-	Action *a = h->read_action_;
-	h->read_action_ = NULL;
 	return (a);
 }
 

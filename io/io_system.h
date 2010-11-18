@@ -35,7 +35,7 @@ class IOSystem {
 
 		void read_callback(Event);
 		void read_cancel(void);
-		bool read_do(void);
+		Action *read_do(void);
 		Action *read_schedule(void);
 
 		void write_callback(Event);
