@@ -176,7 +176,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 				uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
 				BufferSegment *oseg = cache_->lookup(hash);
 				if (oseg != NULL) {
-					if (oseg->match(seg)) {
+					if (oseg->equal(seg)) {
 						seg->unref();
 						seg = oseg;
 					} else {
@@ -277,7 +277,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 				uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
 				BufferSegment *oseg = cache_->lookup(hash);
 				if (oseg != NULL) {
-					if (!oseg->match(seg)) {
+					if (!oseg->equal(seg)) {
 						oseg->unref();
 						ERROR(log_) << "Collision in <LEARN>.";
 						seg->unref();

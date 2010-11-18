@@ -382,7 +382,7 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 	uint8_t data[XCODEC_SEGMENT_LENGTH];
 	input->copyout(data, offset, sizeof data);
 
-	if (!oseg->match(data, sizeof data))
+	if (!oseg->equal(data, sizeof data))
 		return (false);
 
 	if (offset != 0) {

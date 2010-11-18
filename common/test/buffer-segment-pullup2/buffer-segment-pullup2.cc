@@ -4,7 +4,7 @@
 int
 main(void)
 {
-	TestGroup g("/test/buffer/prefix1", "BufferSegment::pullup #2");
+	TestGroup g("/test/buffer/pullup2", "BufferSegment::pullup #2");
 
 	uint8_t data[BUFFER_SEGMENT_SIZE / 2];
 	unsigned i;
@@ -42,7 +42,7 @@ main(void)
 				check[i + sizeof data] = data[i];
 
 			Test _(g, "Check data contents");
-			if (seg->match(check, sizeof check))
+			if (seg->equal(check, sizeof check))
 				_.pass();
 		}
 		seg->unref();

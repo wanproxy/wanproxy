@@ -7,6 +7,12 @@
 
 struct iovec;
 
+/*
+ * XXX
+ * Increase to 2048 to match FreeBSD mbuf clusters; this results in a rise
+ * from ~150MB/s to ~1GB/s for the read-sink1 test.  But it seems to expose
+ * some damage in Buffer::cut(unsigned, size_t).
+ */
 #define	BUFFER_SEGMENT_SIZE	(128)
 
 typedef	uint8_t	buffer_segment_size_t;
@@ -62,6 +68,7 @@ public:
 	 */
 	void unref(void)
 	{
+		ASSERT(ref_ != 0);
 		if (--ref_ == 0)
 			delete this;
 	}
@@ -71,6 +78,7 @@ public:
 	 */
 	unsigned refs(void) const
 	{
+		ASSERT(ref_ != 0);
 		return (ref_);
 	}
 
@@ -109,7 +117,7 @@ public:
 		}
 		if (avail() - offset_ < len)
 			pullup();
-		memmove(tail(), buf, len);
+		memcpy(tail(), buf, len);
 		length_ += len;
 		return (this);
 	}
@@ -140,17 +148,12 @@ public:
 	}
 
 	/*
-	 * Clone a BufferSegment.  Does a fixed-size copy to allow for more
-	 * efficient code generation, but it is not strictly necessary.  Some
-	 * reasons to believe that it would be better to start copied data
-	 * with offset_ = 0, and to copy only length_ characters instead, but
-	 * diverse microbenchmarking is essential.
+	 * Clone a BufferSegment.
 	 */
 	BufferSegment *copy(void) const
 	{
 		BufferSegment *seg = new BufferSegment();
-		memcpy(seg->data_, data_, BUFFER_SEGMENT_SIZE);
-		seg->offset_ = offset_;
+		memcpy(seg->tail(), data(), length_);
 		seg->length_ = length_;
 		return (seg);
 	}
@@ -167,7 +170,7 @@ public:
 			copied = dstsize;
 		else
 			copied = length() - offset;
-		memmove(dst, data() + offset, copied);
+		memcpy(dst, data() + offset, copied);
 		return (copied);
 	}
 
@@ -229,6 +232,9 @@ public:
 	 */
 	BufferSegment *skip(unsigned bytes)
 	{
+		if (bytes == 0)
+			return (this);
+
 		ASSERT(bytes < length());
 
 		if (ref_ != 1) {
@@ -252,6 +258,9 @@ public:
 	 */
 	BufferSegment *trim(unsigned bytes)
 	{
+		if (bytes == 0)
+			return (this);
+
 		ASSERT(bytes < length());
 
 		if (ref_ != 1) {
@@ -282,49 +291,28 @@ public:
 	 * Checks if the BufferSegment's contents are identical to the byte
 	 * buffer passed in.
 	 */
-	bool match(const uint8_t *buf, size_t len) const
+	bool equal(const uint8_t *buf, size_t len) const
 	{
 		if (len != length())
-			return (false);
-		return (prefix(buf, len));
-	}
-
-	/*
-	 * Checks if the contents of two BufferSegments are identical.
-	 */
-	bool match(const BufferSegment *seg) const
-	{
-		return (match(seg->data(), seg->length()));
-	}
-
-	/*
-	 * Checks if the BufferSegment's contents are identical to the C++
-	 * string passed in.
-	 */
-	bool match(const std::string& str) const
-	{
-		return (match((const uint8_t *)str.c_str(), str.length()));
-	}
-
-	/*
-	 * Checks if the byte buffer occurs at the beginning of the
-	 * BufferSegment in question.
-	 */
-	bool prefix(const uint8_t *buf, size_t len) const
-	{
-		/* Can't be a prefix if it's longer than the BufferSegment.  */
-		if (len > length())
 			return (false);
 		return (memcmp(data(), buf, len) == 0);
 	}
 
 	/*
-	 * Checks if the C++ string occurs at the beginning of the BufferSegment
-	 * in question.
+	 * Checks if the BufferSegment's contents are identical to the given
+	 * C++ string.
 	 */
-	bool prefix(const std::string& str) const
+	bool equal(const std::string& str) const
 	{
-		return (prefix((const uint8_t *)str.c_str(), str.length()));
+		return (equal((const uint8_t *)str.c_str(), str.length()));
+	}
+
+	/*
+	 * Checks if the contents of two BufferSegments are identical.
+	 */
+	bool equal(const BufferSegment *seg) const
+	{
+		return (equal(seg->data(), seg->length()));
 	}
 };
 
@@ -592,6 +580,7 @@ public:
 		for (it = data_.begin(); it != data_.end(); ++it) {
 			BufferSegment *seg = *it;
 
+			ASSERT(length_ >= seg->length());
 			length_ -= seg->length();
 			seg->unref();
 		}
@@ -660,7 +649,11 @@ public:
 			*segp = src;
 			return (len);
 		}
-		/* XXX Could use trim() if src->length() > len.  */
+		if (src->length() > len) {
+			src->ref();
+			*segp = src->truncate(len);
+			return (len);
+		}
 		BufferSegment *seg = new BufferSegment();
 		*segp = seg;
 		return (copyout(seg, len));
@@ -1126,7 +1119,6 @@ public:
 					/* We do not need this segment at all.  */
 					bytes -= seg->length();
 					seg->unref();
-					offset = 0;
 
 					if (bytes == 0)
 						break;
@@ -1153,6 +1145,7 @@ public:
 				offset = 0;
 			}
 
+			ASSERT(seg->length() > offset + bytes);
 			seg = seg->skip(offset + bytes);
 			data_.insert(it, seg);
 
