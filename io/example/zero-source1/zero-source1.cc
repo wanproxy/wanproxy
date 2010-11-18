@@ -75,7 +75,7 @@ public:
 int
 main(void)
 {
-	static uint8_t zbuf[8192];
+	static uint8_t zbuf[65536];
 	memset(zbuf, 0, sizeof zbuf);
 
 	zero_buffer.append(zbuf, sizeof zbuf);
