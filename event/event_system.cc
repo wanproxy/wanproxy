@@ -99,16 +99,15 @@ EventSystem::start(void)
 			queue_.perform();
 			if (stop_ || reload_)
 				break;
+			if (!poll_.idle())
+				poll_.poll();
 		}
 
 		/*
 		 * Do a quick poll if necessary.
 		 */
-		if (!queue_.empty() || timeout_queue_.ready()) {
-			if (!poll_.idle())
-				poll_.poll();
+		if (!queue_.empty() || timeout_queue_.ready())
 			continue;
-		}
 
 		/*
 		 * But if there are no pending callbacks, and no timers or
