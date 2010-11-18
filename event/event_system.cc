@@ -99,12 +99,18 @@ EventSystem::start(void)
 			queue_.perform();
 			if (stop_ || reload_)
 				break;
+			/*
+			 * Quickly poll in between callbacks in case there are
+			 * a lot of callbacks or an infinite number of
+			 * callbacks, so that we can still handle I/O.
+			 */
 			if (!poll_.idle())
 				poll_.poll();
 		}
 
 		/*
-		 * Do a quick poll if necessary.
+		 * If there are any pending callbacks, go back to the start
+		 * of the loop.
 		 */
 		if (!queue_.empty() || timeout_queue_.ready())
 			continue;
