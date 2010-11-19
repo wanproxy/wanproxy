@@ -11,13 +11,13 @@ main(void)
 	TestGroup g("/test/buffer/cut1", "Buffer::cut #1");
 
 	unsigned n;
-	for (n = 1; n <= FILL_LENGTH; n++) {
+	for (n = 1; n < 12; n++) {
 		Buffer big;
 
 		big.append("Hello, ");
 		size_t headerlen = big.length();
 
-		uint8_t fill[n];
+		uint8_t fill[n * FILL_LENGTH];
 		unsigned i;
 		for (i = 0; i < sizeof fill; i++) {
 			fill[i] = FILL_BYTE;
@@ -33,7 +33,7 @@ main(void)
 			Test _(g, "Cut fill bytes.");
 
 			Buffer small(big);
-			small.cut(headerlen, FILL_NUMBER * n);
+			small.cut(headerlen, FILL_NUMBER * sizeof fill);
 			if (small.equal("Hello, world!\n"))
 				_.pass();
 		}
@@ -42,8 +42,9 @@ main(void)
 			Test _(g, "Proxy skip and trim.");
 
 			big.cut(0, headerlen);
-			big.cut(FILL_NUMBER * n, big.length() - (FILL_NUMBER * n));
-			if (big.length() == FILL_NUMBER * n)
+			big.cut(FILL_NUMBER * sizeof fill,
+				big.length() - (FILL_NUMBER * sizeof fill));
+			if (big.length() == FILL_NUMBER * sizeof fill)
 				_.pass();
 		}
 
@@ -56,7 +57,7 @@ main(void)
 				big.skip(1);
 			}
 
-			sum /= FILL_NUMBER * n * FILL_BYTE;
+			sum /= FILL_NUMBER * sizeof fill * FILL_BYTE;
 			if (sum == 1)
 				_.pass();
 		}
