@@ -1,3 +1,6 @@
+o) Make tack use the EventSystem and IOSystem now that the performance of
+   the latter is substantially better than the hand-rolled I/O of tack.
+
 For 0.7.1:
 o) Fix any bugs with XCodec EOS support.
 o) Add an ActionCache which classes can use to dole out Actions and which at
