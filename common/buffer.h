@@ -599,6 +599,44 @@ public:
 	}
 
 	/*
+	 * Append a 16-bit quantity to this buffer.  We always use a
+	 * pointer here unlike with append(uint8_t) so that differences in
+	 * type mus be explicit.  Also, we don't have a variant like this
+	 * for uint8_t since on platforms where 'char' is unsigned, a
+	 * literal could end up here rather than the std::string overload.
+	 */
+	void append(const uint16_t *p)
+	{
+		uint8_t data[sizeof *p];
+		memcpy(data, p, sizeof data);
+		append(data, sizeof data);
+	}
+
+	/*
+	 * Append a 32-bit quantity to this buffer.
+	 *
+	 * See append(const uint16_t *) for more information.
+	 */
+	void append(const uint32_t *p)
+	{
+		uint8_t data[sizeof *p];
+		memcpy(data, p, sizeof data);
+		append(data, sizeof data);
+	}
+
+	/*
+	 * Append a 64-bit quantity to this buffer.
+	 *
+	 * See append(const uint16_t *) for more information.
+	 */
+	void append(const uint64_t *p)
+	{
+		uint8_t data[sizeof *p];
+		memcpy(data, p, sizeof data);
+		append(data, sizeof data);
+	}
+
+	/*
 	 * Drop references to all BufferSegments in this Buffer and remove them
 	 * from its list.
 	 */
