@@ -40,6 +40,7 @@ class IOSystem {
 
 		void write_callback(Event);
 		void write_cancel(void);
+		Action *write_do(void);
 		Action *write_schedule(void);
 	};
 

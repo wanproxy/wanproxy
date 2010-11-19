@@ -286,6 +286,28 @@ IOSystem::Handle::write_callback(Event e)
 		HALT(log_) << "Unexpected event: " << e;
 	}
 
+	write_action_ = write_do();
+	if (write_action_ == NULL)
+		write_action_ = write_schedule();
+	ASSERT(write_action_ != NULL);
+}
+
+void
+IOSystem::Handle::write_cancel(void)
+{
+	ASSERT(write_action_ != NULL);
+	write_action_->cancel();
+	write_action_ = NULL;
+
+	if (write_callback_ != NULL) {
+		delete write_callback_;
+		write_callback_ = NULL;
+	}
+}
+
+Action *
+IOSystem::Handle::write_do(void)
+{
 	/* XXX This doesn't handle UDP nicely.  Right?  */
 	/* XXX If a UDP packet is > IOV_MAX segments, this will break it.  */
 	struct iovec iov[IOV_MAX];
@@ -350,16 +372,14 @@ IOSystem::Handle::write_callback(Event e)
 	if (len == -1) {
 		switch (errno) {
 		case EAGAIN:
-			write_action_ = write_schedule();
-			break;
+			return (NULL);
 		default:
 			write_callback_->param(Event(Event::Error, errno));
 			Action *a = EventSystem::instance()->schedule(write_callback_);
-			write_action_ = a;
 			write_callback_ = NULL;
-			break;
+			return (a);
 		}
-		return;
+		NOTREACHED();
 	}
 
 	write_buffer_.skip(len);
@@ -367,24 +387,10 @@ IOSystem::Handle::write_callback(Event e)
 	if (write_buffer_.empty()) {
 		write_callback_->param(Event::Done);
 		Action *a = EventSystem::instance()->schedule(write_callback_);
-		write_action_ = a;
 		write_callback_ = NULL;
-		return;
+		return (a);
 	}
-	write_action_ = write_schedule();
-}
-
-void
-IOSystem::Handle::write_cancel(void)
-{
-	ASSERT(write_action_ != NULL);
-	write_action_->cancel();
-	write_action_ = NULL;
-
-	if (write_callback_ != NULL) {
-		delete write_callback_;
-		write_callback_ = NULL;
-	}
+	return (NULL);
 }
 
 Action *
@@ -551,6 +557,14 @@ IOSystem::write(int fd, Channel *owner, off_t offset, Buffer *buffer, EventCallb
 
 	h->write_offset_ = offset;
 	h->write_callback_ = cb;
-	h->write_action_ = h->write_schedule();
-	return (cancellation(h, &IOSystem::Handle::write_cancel));
+	Action *a = h->write_do();
+	ASSERT(h->write_action_ == NULL);
+	if (a == NULL) {
+		ASSERT(h->write_callback_ != NULL);
+		h->write_action_ = h->write_schedule();
+		ASSERT(h->write_action_ != NULL);
+		return (cancellation(h, &IOSystem::Handle::write_cancel));
+	}
+	ASSERT(h->write_callback_ == NULL);
+	return (a);
 }
