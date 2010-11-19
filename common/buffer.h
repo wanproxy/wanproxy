@@ -7,15 +7,9 @@
 
 struct iovec;
 
-/*
- * XXX
- * Increase to 2048 to match FreeBSD mbuf clusters; this results in a rise
- * from ~150MB/s to ~1GB/s for the read-sink1 test.  But it seems to expose
- * some damage in Buffer::cut(unsigned, size_t).
- */
-#define	BUFFER_SEGMENT_SIZE	(128)
+#define	BUFFER_SEGMENT_SIZE	(2048)
 
-typedef	uint8_t	buffer_segment_size_t;
+typedef	uint16_t	buffer_segment_size_t;
 
 /*
  * A BufferSegment is a contiguous chunk of data which may be at most a fixed
