@@ -1140,14 +1140,21 @@ public:
 			/* This is the final segment.  */
 			if (offset != 0) {
 				/* Get any leading data.  */
+				ASSERT(seg->length() > offset + bytes);
+
 				seg->ref();
 				data_.insert(it, seg->truncate(offset));
-				offset = 0;
-			}
 
-			ASSERT(seg->length() > offset + bytes);
-			seg = seg->skip(offset + bytes);
-			data_.insert(it, seg);
+				seg = seg->skip(offset + bytes);
+				data_.insert(it, seg);
+
+				offset = 0;
+			} else {
+				ASSERT(seg->length() > bytes);
+
+				seg = seg->skip(bytes);
+				data_.insert(it, seg);
+			}
 
 			bytes -= bytes;
 			break;
