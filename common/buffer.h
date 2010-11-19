@@ -234,9 +234,9 @@ public:
 		if (ref_ != 1) {
 			BufferSegment *seg;
 
-			seg = this->copy();
+			seg = new BufferSegment();
+			seg->append(this->data() + bytes, this->length() - bytes);
 			this->unref();
-			seg = seg->skip(bytes);
 			return (seg);
 		}
 		offset_ += bytes;
@@ -260,9 +260,9 @@ public:
 		if (ref_ != 1) {
 			BufferSegment *seg;
 
-			seg = this->copy();
+			seg = new BufferSegment();
+			seg->append(this->data(), this->length() - bytes);
 			this->unref();
-			seg = seg->trim(bytes);
 			return (seg);
 		}
 		length_ -= bytes;
@@ -279,14 +279,22 @@ public:
 		if (bytes == 0)
 			return (this);
 
+		if (offset == 0)
+			return (this->skip(bytes));
+
+		if (offset + bytes == length())
+			return (this->trim(bytes));
+
 		ASSERT(offset + bytes < length());
 
 		if (ref_ != 1) {
 			BufferSegment *seg;
 
-			seg = this->copy();
+			seg = new BufferSegment();
+			seg->append(this->data(), offset);
+			seg->append(this->data() + offset + bytes,
+				    this->length() - (offset + bytes));
 			this->unref();
-			seg = seg->cut(offset, bytes);
 			return (seg);
 		}
 
