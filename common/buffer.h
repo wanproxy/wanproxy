@@ -271,6 +271,33 @@ public:
 	}
 
 	/*
+	 * Remove bytes at offset in the BufferSegment.  Creates a copy if
+	 * there are live references.
+	 */
+	BufferSegment *cut(unsigned offset, unsigned bytes)
+	{
+		if (bytes == 0)
+			return (this);
+
+		ASSERT(offset + bytes < length());
+
+		if (ref_ != 1) {
+			BufferSegment *seg;
+
+			seg = this->copy();
+			this->unref();
+			seg = seg->cut(offset, bytes);
+			return (seg);
+		}
+
+		memmove(head() + offset, head() + offset + bytes,
+			length() - (offset + bytes));
+		length_ -= bytes;
+
+		return (this);
+	}
+
+	/*
 	 * Adjusts the length to ignore bytes at the end of a BufferSegment.
 	 * Like trim() but takes the desired resulting length rather than the
 	 * number of bytes to trim.  Creates a copy if there are live
@@ -1131,24 +1158,31 @@ public:
 				continue;
 			}
 
-			/* This is the final segment.  */
-			if (offset != 0) {
-				/* Get any leading data.  */
-				ASSERT(seg->length() > offset + bytes);
+			/*
+			 * This is the final segment.
+			 *
+			 * We could split this into two segments instead of
+			 * using BufferSegment::cut().  That would mean doing
+			 * (effectively):
+			 *     seg->ref();
+			 *     seg0 = seg->truncate(offset);
+			 *     seg1 = seg->skip(offset + bytes);
+			 * If the original seg has only one ref, we can do the
+			 * skip in-place on it without modifying data, but we
+			 * have to copy it for the truncate.  So we have to
+			 * do a copy and now we (inefficiently) have two
+			 * segments.
+			 *
+			 * If we instead use BufferSegment::cut(), we have to
+			 * move data around a little if there's only one ref
+			 * and do a copy if there's more than one ref.  So we
+			 * have probably less overhead and demonstrably
+			 * fewer segments in this Buffer.
+			 */
+			seg = seg->cut(offset, bytes);
+			data_.insert(it, seg);
 
-				seg->ref();
-				data_.insert(it, seg->truncate(offset));
-
-				seg = seg->skip(offset + bytes);
-				data_.insert(it, seg);
-
-				offset = 0;
-			} else {
-				ASSERT(seg->length() > bytes);
-
-				seg = seg->skip(bytes);
-				data_.insert(it, seg);
-			}
+			offset = 0;
 
 			bytes -= bytes;
 			break;
