@@ -909,6 +909,48 @@ public:
 	}
 
 	/*
+	 * Finds the first occurance of any character in s in this Buffer's
+	 * data and sets offsetp to the offset it was found at.  If a limit is
+	 * given, at most that many characters will be searched.
+	 */
+	bool find_any(const std::string& s, unsigned *offsetp, size_t limit = 0) const
+	{
+		uint8_t set[256];
+		segment_list_t::const_iterator it;
+		unsigned offset;
+		size_t sit;
+
+		memset(set, 0, sizeof set);
+		for (sit = 0; sit < s.length(); sit++)
+			set[(unsigned char)s[sit]] = 1;
+
+		offset = 0;
+
+		if (limit == 0)
+			limit = length();
+
+		for (it = data_.begin(); it != data_.end(); ++it) {
+			const BufferSegment *seg = *it;
+			const uint8_t *p = seg->data();
+			size_t len = limit < seg->length() ? limit : seg->length();
+			unsigned i;
+
+			for (i = 0; i < len; i++) {
+				if (set[p[i]] == 0)
+					continue;
+				*offsetp = offset + (p - seg->data());
+				return (true);
+			}
+			offset += len;
+			limit -= len;
+
+			if (limit == 0)
+				break;
+		}
+		return (false);
+	}
+
+	/*
 	 * Returns the current amount of data associated with this Buffer.
 	 */
 	size_t length(void) const
