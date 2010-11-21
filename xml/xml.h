@@ -105,6 +105,8 @@ namespace XML {
 
 		void serialize(Buffer *) const;
 	};
+
+	void escape(Buffer *, const Buffer *);
 }
 
 #endif /* !XML_XML_H */

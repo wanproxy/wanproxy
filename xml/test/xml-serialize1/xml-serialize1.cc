@@ -23,7 +23,7 @@ main(void)
 
 	{
 		Test _(g, "Expected contents.");
-		if (out.equal("<?xml version=\"1.0\"?><test version=\"\\\"1.0'\">A <e>world</e>!<x/></test>"))
+		if (out.equal("<?xml version=\"1.0\"?><test version=\"&quot;1.0'\">A <e>world</e>!<x/></test>"))
 			_.pass();
 	}
 

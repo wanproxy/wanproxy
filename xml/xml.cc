@@ -8,8 +8,12 @@ void
 Attribute::serialize(Buffer *out) const
 {
 	out->append(key_);
+
 	out->append("=\"");
-	out->append(value_); /* XXX Escape.  */
+
+	Buffer tmp(value_);
+	XML::escape(out, &tmp);
+
 	out->append("\"");
 }
 
@@ -18,7 +22,7 @@ Element::Content::serialize(Buffer *out) const
 {
 	switch (type_) {
 	case CharacterDataContentType:
-		out->append(buffer_); /* XXX Escape.  */
+		XML::escape(out, &buffer_);
 		break;
 	case ElementContentType:
 		ASSERT(!element_.null());
@@ -72,4 +76,36 @@ Document::serialize(Buffer *out) const
 	ASSERT(!root_.null());
 
 	root_->serialize(out);
+}
+
+void
+XML::escape(Buffer *out, const Buffer *in)
+{
+	Buffer tmp;
+	tmp.append(in);
+
+	unsigned pos;
+	while (tmp.find_any("\"<>&", &pos)) {
+		if (pos != 0)
+			tmp.moveout(out, pos);
+		switch (tmp.peek()) {
+		case '"':
+			out->append("&quot;");
+			break;
+		case '<':
+			out->append("&lt;");
+			break;
+		case '>':
+			out->append("&gt;");
+			break;
+		case '&':
+			out->append("&amp;");
+			break;
+		default:
+			NOTREACHED();
+		}
+		tmp.skip(1);
+	}
+	if (!tmp.empty())
+		out->append(tmp);
 }
