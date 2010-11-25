@@ -55,7 +55,7 @@ endif
 
 #CFLAGS+=--std gnu++0x
 #CFLAGS+=-pedantic
-CFLAGS+=-Wno-deprecated
+CXXFLAGS+=-Wno-deprecated
 CFLAGS+=-W -Wall
 ifneq "${OSNAME}" "OpenBSD"
 CFLAGS+=-Werror
@@ -100,13 +100,16 @@ endef
 
 $(foreach _lib, ${USE_LIBS}, $(eval $(call __library_include, ${_lib})))
 
-OBJS+=  ${SRCS:.cc=.o}
+OBJS+=  $(patsubst %.cc,%.o,$(patsubst %.c,%.o,${SRCS}))
 
 ${PROGRAM}: ${OBJS}
 	${CXX} ${CXXFLAGS} ${CFLAGS} ${LDFLAGS} -o $@ ${OBJS} ${LDADD}
 
 .cc.o:
 	${CXX} ${CXXFLAGS} ${CFLAGS} -c -o $@ $<
+
+.c.o:
+	${CC} ${CFLAGS} -c -o $@ $<
 
 clean:
 	rm -f ${PROGRAM} ${OBJS}
