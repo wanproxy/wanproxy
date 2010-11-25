@@ -1,5 +1,10 @@
 o) Make tack use the EventSystem and IOSystem now that the performance of
    the latter is substantially better than the hand-rolled I/O of tack.
+o) Get simple packet capture/injection stuff working, enough to do some trivial
+   packet tunneling / deduplication stuff.
+o) Packet framing, so we can divide incoming Buffers up into protocol control
+   and data fields, so that we deduplicate at useful boundaries and don't do
+   things like include ephemeral fields.
 
 For 0.7.1:
 o) Fix any bugs with XCodec EOS support.
