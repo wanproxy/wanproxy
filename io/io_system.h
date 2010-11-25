@@ -75,9 +75,6 @@ public:
 			instance_ = new IOSystem();
 		return (instance_);
 	}
-
-private:
-	Action *try_read(void);
 };
 
 #endif /* !IO_SYSTEM_H */
