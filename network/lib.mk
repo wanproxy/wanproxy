@@ -19,8 +19,8 @@ LDADD+=	-lpcap
 USE_NETWORK_INTERFACES=	pcap
 endif
 
-ifdef USE_NETWORK_INTERFACES
 SRCS+=	network_interface.cc
+ifdef USE_NETWORK_INTERFACES
 SRCS+=	$(addprefix network_interface_,$(addsuffix .cc, ${USE_NETWORK_INTERFACES}))
 endif
 
