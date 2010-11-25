@@ -14,7 +14,8 @@ event		The event system and infrastructure to support it, such as
 io		Interface to IO subsystems, namely file descriptors and
 		sockets, as well as abstract classes for such things (e.g.
 		Channel, Pipe, Splice.)
-net		Networking utility functions and protocols.
+net		Networking utility functions.
+network		Low-level networking.
 programs	Stand-alone programs.
 		Organized into sub-directories named by program, i.e.
 		programs/wanproxy is WANProxy.
