@@ -10,6 +10,7 @@
 class PacketDumper {
 	NetworkInterface *interface_;
 	Action *receive_action_;
+	Action *stop_action_;
 public:
 	PacketDumper(NetworkInterface *interface)
 	: interface_(interface),
@@ -17,6 +18,9 @@ public:
 	{
 		EventCallback *cb = callback(this, &PacketDumper::receive_complete);
 		receive_action_ = interface_->receive(cb);
+
+		Callback *scb = callback(this, &PacketDumper::stop);
+		stop_action_ = EventSystem::instance()->register_interest(EventInterestReload, scb);
 	}
 
 	~PacketDumper()
@@ -45,6 +49,16 @@ private:
 
 		EventCallback *cb = callback(this, &PacketDumper::receive_complete);
 		receive_action_ = interface_->receive(cb);
+	}
+
+	void stop(void)
+	{
+		stop_action_->cancel();
+		stop_action_ = NULL;
+
+		ASSERT(receive_action_ != NULL);
+		receive_action_->cancel();
+		receive_action_ = NULL;
 	}
 };
 
