@@ -128,7 +128,7 @@ NetworkInterfacePCAP::receive_do(void)
 
 	ASSERT(cnt == 1);
 
-	receive_callback_->param(Event(Event::Done, &packet));
+	receive_callback_->param(Event(Event::Done, packet));
 	Action *a = EventSystem::instance()->schedule(receive_callback_);
 	receive_callback_ = NULL;
 	return (a);
