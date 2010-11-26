@@ -60,6 +60,7 @@ public:
 		Warning,
 		Notice,
 		Info,
+		Trace,
 		Debug,
 	};
 
@@ -172,12 +173,12 @@ public:
 	: log_(log),
 	  function_(function)
 	{
-		DEBUG(log_) << "Entered " << function_;
+		Log(log_, Log::Trace, __PRETTY_FUNCTION__) << "Entered " << function_;
 	}
 
 	~Trace()
 	{
-		DEBUG(log_) << "Exited " << function_;
+		Log(log_, Log::Trace, __PRETTY_FUNCTION__) << "Exited " << function_;
 	}
 };
 

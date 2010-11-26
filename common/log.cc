@@ -110,6 +110,7 @@ syslog_priority(const Log::Priority& priority)
 	case Log::Info:
 		return (LOG_INFO);
 	case Log::Debug:
+	case Log::Trace:
 		return (LOG_DEBUG);
 	default:
 		HALT("/log") << "Unhandled log priority!";
@@ -138,6 +139,8 @@ operator<< (std::ostream& os, const Log::Priority& priority)
 		return (os << "INFO");
 	case Log::Debug:
 		return (os << "DEBUG");
+	case Log::Trace:
+		return (os << "TRACE");
 	default:
 		HALT("/log") << "Unhandled log priority!";
 		return (os);
