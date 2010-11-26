@@ -9,13 +9,13 @@
 #include <network/network_interface.h>
 #include <network/network_interface_pcap.h>
 
+static void network_interface_pcap_handle(u_char *, const struct pcap_pkthdr *, const u_char *);
+
 NetworkInterfacePCAP::NetworkInterfacePCAP(pcap_t *pcap)
 : log_("/network/pcap"),
   pcap_(pcap),
   receive_callback_(NULL),
-  receive_action_(NULL),
-  transmit_callback_(NULL),
-  transmit_action_(NULL)
+  receive_action_(NULL)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];
 	int rv;
@@ -35,27 +35,62 @@ NetworkInterfacePCAP::~NetworkInterfacePCAP()
 
 	ASSERT(receive_callback_ == NULL);
 	ASSERT(receive_action_ == NULL);
-
-	ASSERT(transmit_callback_ == NULL);
-	ASSERT(transmit_action_ == NULL);
 }
 
 Action *
-NetworkInterfacePCAP::receive(EventCallback *)
+NetworkInterfacePCAP::receive(EventCallback *cb)
 {
-	NOTREACHED();
+	ASSERT(receive_action_ == NULL);
+	ASSERT(receive_callback_ == NULL);
+
+	receive_callback_ = cb;
+	Action *a = receive_do();
+	if (a == NULL) {
+		ASSERT(receive_callback_ != NULL);
+		receive_action_ = receive_schedule();
+		ASSERT(receive_action_ != NULL);
+		return (cancellation(this, &NetworkInterfacePCAP::receive_cancel));
+	}
+	ASSERT(receive_callback_ == NULL);
+	return (a);
 }
 
 Action *
-NetworkInterfacePCAP::transmit(Buffer *, EventCallback *)
+NetworkInterfacePCAP::transmit(Buffer *buffer, EventCallback *cb)
 {
-	NOTREACHED();
+	ASSERT(!buffer->empty());
+	buffer->clear();
+
+	cb->param(Event::Error);
+	return (EventSystem::instance()->schedule(cb));
 }
 
 void
-NetworkInterfacePCAP::receive_callback(Event)
+NetworkInterfacePCAP::receive_callback(Event e)
 {
-	NOTREACHED();
+	receive_action_->cancel();
+	receive_action_ = NULL;
+
+	switch (e.type_) {
+	case Event::EOS:
+	case Event::Done:
+		break;
+	case Event::Error: {
+		DEBUG(log_) << "Poll returned error: " << e;
+		receive_callback_->param(e);
+		Action *a = EventSystem::instance()->schedule(receive_callback_);
+		receive_action_ = a;
+		receive_callback_ = NULL;
+		return;
+	}
+	default:
+		HALT(log_) << "Unexpected event: " << e;
+	}
+
+	receive_action_ = receive_do();
+	if (receive_action_ == NULL)
+		receive_action_ = receive_schedule();
+	ASSERT(receive_action_ != NULL);
 }
 
 void
@@ -77,7 +112,26 @@ NetworkInterfacePCAP::receive_cancel(void)
 Action *
 NetworkInterfacePCAP::receive_do(void)
 {
-	NOTREACHED();
+	Buffer packet;
+
+	int cnt = pcap_dispatch(pcap_, 1, network_interface_pcap_handle, (u_char *)&packet);
+	if (cnt < 0) {
+		receive_callback_->param(Event(Event::Error));
+		Action *a = EventSystem::instance()->schedule(receive_callback_);
+		receive_callback_ = NULL;
+		return (a);
+	}
+
+	if (cnt == 0) {
+		return (NULL);
+	}
+
+	ASSERT(cnt == 1);
+
+	receive_callback_->param(Event(Event::Done, &packet));
+	Action *a = EventSystem::instance()->schedule(receive_callback_);
+	receive_callback_ = NULL;
+	return (a);
 }
 
 Action *
@@ -87,44 +141,6 @@ NetworkInterfacePCAP::receive_schedule(void)
 
 	EventCallback *cb = callback(this, &NetworkInterfacePCAP::receive_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Readable, pcap_fileno(pcap_), cb);
-	return (a);
-}
-
-void
-NetworkInterfacePCAP::transmit_callback(Event)
-{
-	NOTREACHED();
-}
-
-void
-NetworkInterfacePCAP::transmit_cancel(void)
-{
-	if (transmit_callback_ != NULL) {
-		delete transmit_callback_;
-		transmit_callback_ = NULL;
-
-		ASSERT(transmit_action_ != NULL);
-	}
-
-	if (transmit_action_ != NULL) {
-		transmit_action_->cancel();
-		transmit_action_ = NULL;
-	}
-}
-
-Action *
-NetworkInterfacePCAP::transmit_do(void)
-{
-	NOTREACHED();
-}
-
-Action *
-NetworkInterfacePCAP::transmit_schedule(void)
-{
-	ASSERT(transmit_action_ == NULL);
-
-	EventCallback *cb = callback(this, &NetworkInterfacePCAP::transmit_callback);
-	Action *a = EventSystem::instance()->poll(EventPoll::Writable, pcap_fileno(pcap_), cb);
 	return (a);
 }
 
@@ -144,4 +160,13 @@ NetworkInterfacePCAP::open(const std::string& ifname)
 		WARNING("/network/pcap") << "While opening " << ifname << ": " << errbuf;
 
 	return (new NetworkInterfacePCAP(pcap));
+}
+
+static void
+network_interface_pcap_handle(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
+{
+	Buffer *packet = (Buffer *)user;
+	ASSERT(packet->empty());
+
+	packet->append(bytes, h->caplen);
 }

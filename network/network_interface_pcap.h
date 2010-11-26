@@ -11,9 +11,6 @@ class NetworkInterfacePCAP : public NetworkInterface {
 
 	EventCallback *receive_callback_;
 	Action *receive_action_;
-
-	EventCallback *transmit_callback_;
-	Action *transmit_action_;
 private:
 	NetworkInterfacePCAP(pcap_t *);
 
@@ -28,11 +25,6 @@ private:
 	void receive_cancel(void);
 	Action *receive_do(void);
 	Action *receive_schedule(void);
-
-	void transmit_callback(Event);
-	void transmit_cancel(void);
-	Action *transmit_do(void);
-	Action *transmit_schedule(void);
 
 public:
 	static NetworkInterface *open(const std::string&);
