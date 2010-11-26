@@ -4,6 +4,7 @@ SUBDIR+=config
 SUBDIR+=event
 SUBDIR+=io
 SUBDIR+=net
+SUBDIR+=network
 SUBDIR+=programs
 SUBDIR+=xcodec
 SUBDIR+=xml
