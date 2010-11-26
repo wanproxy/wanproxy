@@ -9,6 +9,11 @@
 #include <network/network_interface.h>
 #include <network/network_interface_pcap.h>
 
+/*
+ * XXX
+ * This doesn't actually not block.  Argh!
+ */
+
 NetworkInterfacePCAP::NetworkInterfacePCAP(pcap_t *pcap)
 : log_("/network/pcap"),
   pcap_(pcap),
