@@ -9,25 +9,14 @@
 #include <network/network_interface.h>
 #include <network/network_interface_pcap.h>
 
-/*
- * XXX
- * This doesn't actually not block.  Argh!
- */
+static void network_interface_pcap_dispatch(u_char *, const struct pcap_pkthdr *, const u_char *);
 
 NetworkInterfacePCAP::NetworkInterfacePCAP(pcap_t *pcap)
 : log_("/network/pcap"),
   pcap_(pcap),
   receive_callback_(NULL),
   receive_action_(NULL)
-{
-	char errbuf[PCAP_ERRBUF_SIZE];
-	int rv;
-
-	errbuf[0] = '\0';
-	rv = pcap_setnonblock(pcap_, 1, errbuf);
-	if (rv == -1)
-		ERROR("/network/pcap") << "Could not set interface to non-blocking mode.";
-}
+{ }
 
 NetworkInterfacePCAP::~NetworkInterfacePCAP()
 {
@@ -115,23 +104,22 @@ NetworkInterfacePCAP::receive_cancel(void)
 Action *
 NetworkInterfacePCAP::receive_do(void)
 {
-	struct pcap_pkthdr *h;
-	const u_char *bytes;
-	int rv = pcap_next_ex(pcap_, &h, &bytes);
-	if (rv == -1) {
+	Buffer packet;
+	int cnt = pcap_dispatch(pcap_, 1, network_interface_pcap_dispatch, (u_char *)&packet);
+	if (cnt == -1) {
 		receive_callback_->param(Event(Event::Error));
 		Action *a = EventSystem::instance()->schedule(receive_callback_);
 		receive_callback_ = NULL;
 		return (a);
 	}
 
-	if (rv == 0) {
+	if (cnt == 0) {
 		return (NULL);
 	}
 
-	ASSERT(rv == 1);
+	ASSERT(cnt == 1);
 
-	receive_callback_->param(Event(Event::Done, Buffer(bytes, h->caplen)));
+	receive_callback_->param(Event(Event::Done, packet));
 	Action *a = EventSystem::instance()->schedule(receive_callback_);
 	receive_callback_ = NULL;
 	return (a);
@@ -143,7 +131,7 @@ NetworkInterfacePCAP::receive_schedule(void)
 	ASSERT(receive_action_ == NULL);
 
 	EventCallback *cb = callback(this, &NetworkInterfacePCAP::receive_callback);
-	Action *a = EventSystem::instance()->poll(EventPoll::Readable, pcap_fileno(pcap_), cb);
+	Action *a = EventSystem::instance()->poll(EventPoll::Readable, pcap_get_selectable_fd(pcap_), cb);
 	return (a);
 }
 
@@ -152,15 +140,54 @@ NetworkInterfacePCAP::open(const std::string& ifname)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];
 	pcap_t *pcap;
+	int rv;
 
 	errbuf[0] = '\0';
-	pcap = pcap_open_live(ifname.c_str(), 65535, 1, 1, errbuf);
+	pcap = pcap_create(ifname.c_str(), errbuf);
 	if (pcap == NULL) {
-		ERROR("/network/pcap") << "Unabled to open " << ifname << ": " << errbuf;
+		ERROR("/network/pcap") << "Unabled to create " << ifname << ": " << errbuf;
 		return (NULL);
 	}
-	if (errbuf[0] != '\0')
-		WARNING("/network/pcap") << "While opening " << ifname << ": " << errbuf;
+
+	if (pcap_get_selectable_fd(pcap) == -1) {
+		ERROR("/networ/pcap") << "Unable to get selectable file desciptor for " << ifname;
+		pcap_close(pcap);
+		return (NULL);
+	}
+
+	errbuf[0] = '\0';
+	rv = pcap_setnonblock(pcap, 1, errbuf);
+	if (rv == -1) {
+		ERROR("/network/pcap") << "Could not set " << ifname << " to non-blocking mode: " << errbuf;
+		pcap_close(pcap);
+		return (NULL);
+	}
+
+	rv = pcap_set_promisc(pcap, 1);
+	if (rv != 0) {
+		ERROR("/network/pcap") << "Could not put " << ifname << " into promiscuous mode: " << pcap_geterr(pcap);
+		pcap_close(pcap);
+		return (NULL);
+	}
+
+	rv = pcap_set_buffer_size(pcap, 65536);
+	ASSERT(rv == 0);
+
+	rv = pcap_activate(pcap);
+	if (rv != 0) {
+		ERROR("/network/pcap") << "Could not activate " << ifname << ": " << pcap_geterr(pcap);
+		pcap_close(pcap);
+		return (NULL);
+	}
 
 	return (new NetworkInterfacePCAP(pcap));
+}
+
+static void
+network_interface_pcap_dispatch(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
+{
+	Buffer *packet = (Buffer *)user;
+	ASSERT(packet->empty());
+
+	packet->append(bytes, h->caplen);
 }
