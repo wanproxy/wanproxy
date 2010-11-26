@@ -9,8 +9,6 @@
 #include <network/network_interface.h>
 #include <network/network_interface_pcap.h>
 
-static void network_interface_pcap_handle(u_char *, const struct pcap_pkthdr *, const u_char *);
-
 NetworkInterfacePCAP::NetworkInterfacePCAP(pcap_t *pcap)
 : log_("/network/pcap"),
   pcap_(pcap),
@@ -112,23 +110,23 @@ NetworkInterfacePCAP::receive_cancel(void)
 Action *
 NetworkInterfacePCAP::receive_do(void)
 {
-	Buffer packet;
-
-	int cnt = pcap_dispatch(pcap_, 1, network_interface_pcap_handle, (u_char *)&packet);
-	if (cnt < 0) {
+	struct pcap_pkthdr *h;
+	const u_char *bytes;
+	int rv = pcap_next_ex(pcap_, &h, &bytes);
+	if (rv == -1) {
 		receive_callback_->param(Event(Event::Error));
 		Action *a = EventSystem::instance()->schedule(receive_callback_);
 		receive_callback_ = NULL;
 		return (a);
 	}
 
-	if (cnt == 0) {
+	if (rv == 0) {
 		return (NULL);
 	}
 
-	ASSERT(cnt == 1);
+	ASSERT(rv == 1);
 
-	receive_callback_->param(Event(Event::Done, packet));
+	receive_callback_->param(Event(Event::Done, Buffer(bytes, h->caplen)));
 	Action *a = EventSystem::instance()->schedule(receive_callback_);
 	receive_callback_ = NULL;
 	return (a);
@@ -151,7 +149,7 @@ NetworkInterfacePCAP::open(const std::string& ifname)
 	pcap_t *pcap;
 
 	errbuf[0] = '\0';
-	pcap = pcap_open_live(ifname.c_str(), 65535, 1, 0, errbuf);
+	pcap = pcap_open_live(ifname.c_str(), 65535, 1, 1, errbuf);
 	if (pcap == NULL) {
 		ERROR("/network/pcap") << "Unabled to open " << ifname << ": " << errbuf;
 		return (NULL);
@@ -160,13 +158,4 @@ NetworkInterfacePCAP::open(const std::string& ifname)
 		WARNING("/network/pcap") << "While opening " << ifname << ": " << errbuf;
 
 	return (new NetworkInterfacePCAP(pcap));
-}
-
-static void
-network_interface_pcap_handle(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
-{
-	Buffer *packet = (Buffer *)user;
-	ASSERT(packet->empty());
-
-	packet->append(bytes, h->caplen);
 }
