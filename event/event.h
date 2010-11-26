@@ -115,6 +115,7 @@ struct Event {
 
 private:
 	/* Prevent accidental void * use.  */
+	Event(Type, const Buffer *);
 	Event(Type, int, const Buffer *);
 };
 
