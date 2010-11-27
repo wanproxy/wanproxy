@@ -46,8 +46,10 @@ OSNAME:=$(shell uname -s)
 
 CFLAGS+=-I${TOPDIR}
 ifdef NDEBUG
+CFLAGS+=-O2
 CFLAGS+=-DNDEBUG=1
 else
+CFLAGS+=-O
 ifneq "${OSNAME}" "SunOS"
 CFLAGS+=-g
 endif
