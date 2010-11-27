@@ -99,8 +99,8 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		/*
 		 * And for every byte in this BufferSegment.
 		 */
-		const uint8_t *p;
-		for (p = seg->data(); p < seg->end(); p++) {
+		const uint8_t *p, *q = seg->end();
+		for (p = seg->data(); p < q; p++) {
 			/*
 			 * Add it to the rolling hash.
 			 */
