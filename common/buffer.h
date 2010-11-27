@@ -202,6 +202,7 @@ public:
 	 */
 	void pullup(void)
 	{
+		ASSERT(ref_ == 1);
 		if (offset_ == 0)
 			return;
 		memmove(data_, data(), length());
