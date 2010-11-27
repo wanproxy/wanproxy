@@ -101,17 +101,36 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		 */
 		const uint8_t *p, *q = seg->end();
 		for (p = seg->data(); p < q; p++) {
-			/*
-			 * Add it to the rolling hash.
-			 */
-			xcodec_hash.roll(*p);
+			for (;;) {
+				/*
+				 * Add it to the rolling hash.
+				 */
+				xcodec_hash.roll(*p);
 
-			/*
-			 * If the rolling hash does not cover an entire
-			 * segment yet, just keep adding to it.
-			 */
-			if (++o < XCODEC_SEGMENT_LENGTH)
-				continue;
+				/*
+				 * We have a complete hash
+				 */
+				if (++o >= XCODEC_SEGMENT_LENGTH)
+					break;
+
+				/*
+				 * If the rolling hash does not cover an entire
+				 * segment yet, just keep adding to it.
+				 */
+				if (++p != q)
+					continue;
+
+				/*
+				 * Unless we've hit the end of this segment.
+				 */
+				break;
+			}
+
+			if (p == q) {
+				ASSERT(o < XCODEC_SEGMENT_LENGTH);
+				break;
+			}
+			ASSERT(o >= XCODEC_SEGMENT_LENGTH);
 
 			/*
 			 * And then mix the hash's internal state into a
