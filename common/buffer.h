@@ -1292,18 +1292,6 @@ public:
 	}
 
 	/*
-	 * Apply to a function each BufferSegment in this Buffer.
-	 */
-	template<typename T>
-	void foreach_segment(T& f) const
-	{
-		segment_list_t::const_iterator it;
-
-		for (it = data_.begin(); it != data_.end(); ++it)
-			f(*it);
-	}
-
-	/*
 	 * Fill a suppled iovec which has at most a specified number of elements
 	 * with the contents of this Buffer and return the number which were
 	 * populated.
