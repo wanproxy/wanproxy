@@ -25,6 +25,7 @@ enum FileAction {
 	None, Compress, Decompress
 };
 
+static bool codec_timing;
 static Timer codec_timer;
 
 static void compress(int, int, XCodec *);
@@ -45,14 +46,13 @@ main(int argc, char *argv[])
 	XCodecCache *cache = XCodecCache::lookup(uuid);
 	XCodec codec(cache);
 
-	bool timers, quiet_output, samples, verbose;
+	bool quiet_output, samples, verbose;
 	FileAction action;
 	int ch;
 
 	action = None;
 	quiet_output = false;
 	samples = false;
-	timers = false;
 	verbose = false;
 
 	while ((ch = getopt(argc, argv, "?cdvQST")) != -1) {
@@ -73,7 +73,7 @@ main(int argc, char *argv[])
 			samples = true;
 			break;
 		case 'T':
-			timers = true;
+			codec_timing = true;
 			break;
 		case '?':
 		default:
@@ -97,7 +97,7 @@ main(int argc, char *argv[])
 		process_files(argc, argv, action, &codec, quiet_output);
 		if (samples)
 			time_samples();
-		if (timers)
+		if (codec_timing)
 			time_stats();
 		break;
 	default:
@@ -114,9 +114,11 @@ compress(int ifd, int ofd, XCodec *codec)
 	Buffer input, output;
 
 	while (fill(ifd, &input)) {
-		codec_timer.start();
+		if (codec_timing)
+			codec_timer.start();
 		encoder.encode(&output, &input);
-		codec_timer.stop();
+		if (codec_timing)
+			codec_timer.stop();
 		flush(ofd, &output);
 	}
 	ASSERT(input.empty());
@@ -132,12 +134,14 @@ decompress(int ifd, int ofd, XCodec *codec)
 	(void)codec;
 
 	while (fill(ifd, &input)) {
-		codec_timer.start();
+		if (codec_timing)
+			codec_timer.start();
 		if (!decoder.decode(&output, &input)) {
 			ERROR("/decompress") << "Decode failed.";
 			return;
 		}
-		codec_timer.stop();
+		if (codec_timing)
+			codec_timer.stop();
 		flush(ofd, &output);
 	}
 	ASSERT(input.empty());
