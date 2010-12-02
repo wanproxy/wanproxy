@@ -2,7 +2,7 @@
 #include <common/test.h>
 
 static unsigned data_sizes[] = {
-	0, 1, 2, 3, 4, 7, 8, 11, 13,
+	1, 2, 3, 4, 7, 8, 11, 13,
 	BUFFER_SEGMENT_SIZE / 7, BUFFER_SEGMENT_SIZE / 6,
 	BUFFER_SEGMENT_SIZE / 5, BUFFER_SEGMENT_SIZE / 4,
 	BUFFER_SEGMENT_SIZE / 3, BUFFER_SEGMENT_SIZE / 2,
@@ -118,9 +118,13 @@ run_tests(TestGroup& g, unsigned i, unsigned j, unsigned k)
 			return;
 		if (buf.length() != jn)
 			return;
-		buf.moveout(jb, 1, jn - 1);
-		if (memcmp(jb, jp + 1, jn - 1) != 0)
-			return;
+		if (jn == 1) {
+			buf.skip(jn);
+		} else {
+			buf.moveout(jb, 1, jn - 1);
+			if (memcmp(jb, jp + 1, jn - 1) != 0)
+				return;
+		}
 	}
 	if (buf.length() != 0)
 		return;

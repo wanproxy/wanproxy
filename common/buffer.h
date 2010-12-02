@@ -100,6 +100,8 @@ public:
 	 */
 	BufferSegment *append(const uint8_t *buf, size_t len)
 	{
+		ASSERT(buf != NULL);
+		ASSERT(len != 0);
 		ASSERT(len <= avail());
 		if (ref_ != 1) {
 			BufferSegment *seg;
@@ -129,6 +131,7 @@ public:
 	 */
 	BufferSegment *append(const std::string& str)
 	{
+		ASSERT(!str.empty());
 		return (append((const uint8_t *)str.c_str(), str.length()));
 	}
 
@@ -146,6 +149,7 @@ public:
 	 */
 	BufferSegment *copy(void) const
 	{
+		ASSERT(length_ != 0);
 		BufferSegment *seg = new BufferSegment();
 		memcpy(seg->tail(), data(), length_);
 		seg->length_ = length_;
@@ -160,6 +164,9 @@ public:
 	{
 		size_t copied;
 
+		ASSERT(dst != NULL);
+		ASSERT(dstsize != 0);
+
 		if (offset + dstsize < length())
 			copied = dstsize;
 		else
@@ -173,6 +180,7 @@ public:
 	 */
 	const uint8_t *data(void) const
 	{
+		ASSERT(length_ != 0);
 		return (&data_[offset_]);
 	}
 
@@ -183,6 +191,7 @@ public:
 	 */
 	const uint8_t *end(void) const
 	{
+		ASSERT(length_ != 0);
 		return (&data_[offset_ + length_]);
 	}
 
@@ -202,6 +211,7 @@ public:
 	 */
 	void pullup(void)
 	{
+		ASSERT(length_ != 0);
 		ASSERT(ref_ == 1);
 		if (offset_ == 0)
 			return;
@@ -227,9 +237,7 @@ public:
 	 */
 	BufferSegment *skip(unsigned bytes)
 	{
-		if (bytes == 0)
-			return (this);
-
+		ASSERT(bytes != 0);
 		ASSERT(bytes < length());
 
 		if (ref_ != 1) {
@@ -253,9 +261,7 @@ public:
 	 */
 	BufferSegment *trim(unsigned bytes)
 	{
-		if (bytes == 0)
-			return (this);
-
+		ASSERT(bytes != 0);
 		ASSERT(bytes < length());
 
 		if (ref_ != 1) {
@@ -277,16 +283,14 @@ public:
 	 */
 	BufferSegment *cut(unsigned offset, unsigned bytes)
 	{
-		if (bytes == 0)
-			return (this);
+		ASSERT(bytes != 0);
+		ASSERT(offset + bytes < length());
 
 		if (offset == 0)
 			return (this->skip(bytes));
 
 		if (offset + bytes == length())
 			return (this->trim(bytes));
-
-		ASSERT(offset + bytes < length());
 
 		if (ref_ != 1) {
 			BufferSegment *seg;
@@ -323,6 +327,7 @@ public:
 	 */
 	bool equal(const uint8_t *buf, size_t len) const
 	{
+		ASSERT(len != 0);
 		if (len != length())
 			return (false);
 		return (memcmp(data(), buf, len) == 0);
@@ -334,6 +339,7 @@ public:
 	 */
 	bool equal(const std::string& str) const
 	{
+		ASSERT(!str.empty());
 		return (equal((const uint8_t *)str.c_str(), str.length()));
 	}
 
@@ -486,7 +492,8 @@ public:
 	Buffer& operator= (const std::string& str)
 	{
 		clear();
-		append(str);
+		if (!str.empty())
+			append(str);
 		return (*this);
 	}
 
@@ -515,13 +522,11 @@ public:
 	 */
 	void append(const Buffer& buf, size_t len)
 	{
-		if (len == 0)
-			return;
-
+		ASSERT(len != 0);
 		ASSERT(len <= buf.length());
 		append(buf);
 		if (buf.length() != len)
-			trim(buf.length() - len);
+			truncate(len);
 	}
 
 	/*
@@ -566,6 +571,8 @@ public:
 	{
 		BufferSegment *seg;
 		unsigned o;
+
+		ASSERT(len != 0);
 
 		/*
 		 * If we are adding less than a single segment worth of data,
@@ -858,6 +865,7 @@ public:
 	 */
 	bool equal(const uint8_t *buf, size_t len) const
 	{
+		ASSERT(len != 0);
 		if (len != length())
 			return (false);
 		return (prefix(buf, len));
@@ -965,6 +973,7 @@ public:
 	 */
 	void moveout(uint8_t *dst, unsigned offset, size_t dstsize)
 	{
+		ASSERT(dstsize != 0);
 		ASSERT(length() >= offset + dstsize);
 		size_t copied = copyout(dst, offset, dstsize);
 		ASSERT(copied == dstsize);
@@ -986,6 +995,7 @@ public:
 	 */
 	void moveout(Buffer *dst, unsigned offset, size_t dstsize)
 	{
+		ASSERT(dstsize != 0);
 		ASSERT(length() >= offset + dstsize);
 		if (offset != 0)
 			skip(offset);
@@ -1095,6 +1105,7 @@ public:
 		segment_list_t::iterator it;
 		unsigned skipped;
 
+		ASSERT(bytes != 0);
 		ASSERT(!empty());
 
 		if (bytes == length()) {
@@ -1142,6 +1153,7 @@ public:
 		segment_list_t::iterator it;
 		unsigned trimmed;
 
+		ASSERT(bytes != 0);
 		ASSERT(!empty());
 
 		if (bytes == length()) {
