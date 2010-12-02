@@ -103,6 +103,18 @@ endef
 
 $(foreach _lib, ${USE_LIBS}, $(eval $(call __library_include, ${_lib})))
 
+define __library_conditionals
+_lib:=${1}
+ifdef CFLAGS_${_lib}
+CFLAGS+=${CFLAGS_${_lib}}
+endif
+ifdef SRCS_${_lib}
+SRCS+=	${SRCS_${_lib}}
+endif
+endef
+
+$(foreach _lib, ${USE_LIBS}, $(eval $(call __library_conditionals, ${_lib})))
+
 OBJS+=  $(patsubst %.cc,%.o,$(patsubst %.c,%.o,${SRCS}))
 
 ${PROGRAM}: ${OBJS}
