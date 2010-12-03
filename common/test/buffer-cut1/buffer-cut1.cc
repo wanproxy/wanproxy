@@ -52,10 +52,16 @@ main(void)
 			Test _(g, "Correct fill byte checksum.");
 
 			uint64_t sum = 0;
-			while (!big.empty()) {
-				sum += big.peek();
-				big.skip(1);
+			Buffer::SegmentIterator iter = big.segments();
+			while (!iter.end()) {
+				const BufferSegment *seg = *iter;
+				const uint8_t *p;
+				const uint8_t *q = seg->end();
+				for (p = seg->data(); p < q; p++)
+					sum += *p;
+				iter.next();
 			}
+			big.clear();
 
 			sum /= FILL_NUMBER * sizeof fill * FILL_BYTE;
 			if (sum == 1)
