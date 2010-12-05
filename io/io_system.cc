@@ -252,6 +252,14 @@ IOSystem::Handle::read_do(void)
 		return (a);
 	}
 
+	/*
+	 * We may do another read without polling, but yield to other callbacks.
+	 */
+	if (len == sizeof data) {
+		/* TODO */
+		DEBUG(log_) << "Could read without polling.";
+	}
+
 	return (NULL);
 }
 
