@@ -48,3 +48,18 @@ o) If the encoded version of a stream is larger than the source would be
    tell the remote side how to pick out chunks to be taken as known to both
    parties in the future.  One approach would be to send a list of offsets
    at which hashes were declared.
+
+%%%
+
+Hash-set deduplication:
+
+For a given number of hashes (say 64), put an unordered list (hash?) of each
+64 hashes that are encountered into a database.
+
+When data is encoded, check whether its 64 hashes have appeared previously.  If
+they have, then use a compact encoding to list the order in which they appear
+and the offsets within the list at which escaped or new data is to be inserted.
+
+Eventually extend with one of the Computational Biology algorithms for finding
+sequences missing an element or with one element changed so that we can do work
+with deltas and offset sequences/sets more reliably.
