@@ -373,6 +373,8 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 void
 XCodecEncoder::encode_escape(Buffer *output, Buffer *input, unsigned length)
 {
+	ASSERT(length != 0);
+
 	do {
 		unsigned offset;
 		if (!input->find(XCODEC_MAGIC, &offset, length)) {
