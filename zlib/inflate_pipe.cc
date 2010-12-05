@@ -75,7 +75,8 @@ InflatePipe::process(Buffer *out, Buffer *in)
 			    stream_.avail_out == sizeof outbuf)
 				error = Z_OK;
 
-			out->append(outbuf, sizeof outbuf - stream_.avail_out);
+			if (stream_.avail_out != sizeof outbuf)
+				out->append(outbuf, sizeof outbuf - stream_.avail_out);
 			stream_.avail_out = sizeof outbuf;
 			stream_.next_out = outbuf;
 
