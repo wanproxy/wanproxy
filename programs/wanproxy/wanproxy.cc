@@ -13,16 +13,20 @@ int
 main(int argc, char *argv[])
 {
 	std::string configfile("");
+	bool verbose;
 	int ch;
 
 	INFO("/wanproxy") << "WANProxy";
 	INFO("/wanproxy") << "Copyright (c) 2008-2010 WANProxy.org.";
 	INFO("/wanproxy") << "All rights reserved.";
 
-	while ((ch = getopt(argc, argv, "c:")) != -1) {
+	while ((ch = getopt(argc, argv, "c:v")) != -1) {
 		switch (ch) {
 		case 'c':
 			configfile = optarg;
+			break;
+		case 'v':
+			verbose = true;
 			break;
 		default:
 			usage();
@@ -31,6 +35,12 @@ main(int argc, char *argv[])
 
 	if (configfile == "")
 		usage();
+
+	if (verbose) {
+		Log::mask(".?", Log::Debug);
+	} else {
+		Log::mask(".?", Log::Info);
+	}
 
 	WANProxyConfig config;
 	if (!config.configure(configfile))
@@ -42,6 +52,6 @@ main(int argc, char *argv[])
 static void
 usage(void)
 {
-	INFO("/wanproxy/usage") << "wanproxy -c configfile";
+	INFO("/wanproxy/usage") << "wanproxy [-v] -c configfile";
 	exit(1);
 }
