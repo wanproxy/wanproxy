@@ -1,3 +1,7 @@
 VPATH+=	${TOPDIR}/common/uuid
 
-SRCS+=	uuid.cc
+ifeq "${OSNAME}" "FreeBSD"
+SRCS+=	uuid_libc.cc
+else
+SRCS+=	uuid_libuuid.cc
+endif
