@@ -22,15 +22,6 @@ UUID::decode(Buffer *buf)
 	return (true);
 }
 
-bool
-UUID::encode(Buffer *buf) const
-{
-	ASSERT(string_.length() == UUID_SIZE);
-	buf->append(string_);
-
-	return (true);
-}
-
 void
 UUID::generate(void)
 {

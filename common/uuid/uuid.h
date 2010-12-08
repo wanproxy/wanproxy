@@ -11,7 +11,15 @@ struct UUID {
 	std::string string_;
 
 	bool decode(Buffer *);
-	bool encode(Buffer *) const;
+
+	bool encode(Buffer *buf) const
+	{
+		ASSERT(string_.length() == UUID_SIZE);
+		buf->append(string_);
+
+		return (true);
+	}
+
 	void generate(void);
 
 	bool operator< (const UUID& b) const
