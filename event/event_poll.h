@@ -57,17 +57,6 @@ private:
 	LogHandle log_;
 	poll_handler_map_t read_poll_;
 	poll_handler_map_t write_poll_;
-#if defined(USE_POLL_KQUEUE)
-	int kq_;
-#elif defined(USE_POLL_POLL)
-#elif defined(USE_POLL_SELECT)
-#elif defined(USE_POLL_EPOLL)
-	int ep_;
-#elif defined(USE_POLL_PORT)
-	int port_;
-#else
-#error "Unsupported poll mechanism."
-#endif
 
 	EventPoll(void);
 	~EventPoll();

@@ -12,6 +12,8 @@
 
 #define	EPOLL_EVENT_COUNT	128
 
+/* XXX See kq_map in event_poll_kqueue.c */
+
 EventPoll::EventPoll(void)
 : log_("/event/poll"),
   read_poll_(),
