@@ -40,5 +40,3 @@ LDADD+=		-lrt
 endif
 
 SRCS+=	event_poll_${USE_POLL}.cc
-
-__USE_POLL:=$(shell echo ${USE_POLL} | tr a-z A-Z)
