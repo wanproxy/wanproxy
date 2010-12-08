@@ -91,9 +91,3 @@ DeflatePipe::process(Buffer *out, Buffer *in)
 	}
 	NOTREACHED();
 }
-
-bool
-DeflatePipe::process_eos(void) const
-{
-	return (finished_);
-}

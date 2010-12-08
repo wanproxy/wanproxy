@@ -14,7 +14,6 @@ public:
 
 private:
 	bool process(Buffer *, Buffer *);
-	bool process_eos(void) const;
 };
 
 #endif /* !ZLIB_DEFLATE_PIPE_H */
