@@ -3,7 +3,7 @@
 
 #include <config/config_type_enum.h>
 
-#include <io/socket_types.h>
+#include <io/socket/socket_types.h>
 
 typedef ConfigTypeEnum<SocketAddressFamily> ConfigTypeAddressFamily;
 

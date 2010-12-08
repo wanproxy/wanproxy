@@ -7,7 +7,7 @@
 #include <event/action.h>
 #include <event/event.h>
 
-#include <io/socket_types.h>
+#include <io/socket/socket_types.h>
 
 #include "proxy_socks_listener.h"
 #include "wanproxy_config_class_interface.h"

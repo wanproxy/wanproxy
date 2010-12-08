@@ -8,7 +8,7 @@
 #include <io/pipe/pipe.h>
 #include <io/pipe/pipe_null.h>
 #include <io/pipe/pipe_pair.h>
-#include <io/socket.h>
+#include <io/socket/socket.h>
 #include <io/pipe/splice.h>
 #include <io/pipe/splice_pair.h>
 

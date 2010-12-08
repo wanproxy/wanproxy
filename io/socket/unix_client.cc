@@ -4,8 +4,8 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/socket.h>
-#include <io/unix_client.h>
+#include <io/socket/socket.h>
+#include <io/socket/unix_client.h>
 
 Action *
 UnixClient::connect(Socket **socketp, const std::string& name,

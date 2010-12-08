@@ -17,7 +17,7 @@
 #include <event/event_callback.h>
 #include <event/event_system.h>
 
-#include <io/socket.h>
+#include <io/socket/socket.h>
 
 /*
  * XXX Presently using AF_INET6 as the test for what is supported, but that is

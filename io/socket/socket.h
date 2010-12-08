@@ -2,7 +2,7 @@
 #define	SOCKET_H
 
 #include <io/file_descriptor.h>
-#include <io/socket_types.h>
+#include <io/socket/socket_types.h>
 
 class Socket : public FileDescriptor {
 	LogHandle log_;

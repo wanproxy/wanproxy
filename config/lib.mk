@@ -9,5 +9,5 @@ SRCS+=	config_type_log_level.cc
 SRCS+=	config_type_pointer.cc
 SRCS+=	config_type_string.cc
 
-SRCS_io+=config_class_address.cc
-SRCS_io+=config_type_address_family.cc
+SRCS_io_socket+=config_class_address.cc
+SRCS_io_socket+=config_type_address_family.cc

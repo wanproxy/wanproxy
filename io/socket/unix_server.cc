@@ -4,8 +4,8 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/socket.h>
-#include <io/unix_server.h>
+#include <io/socket/socket.h>
+#include <io/socket/unix_server.h>
 
 UnixServer *
 UnixServer::listen(const std::string& name)

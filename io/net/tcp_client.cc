@@ -5,7 +5,7 @@
 #include <event/event.h>
 #include <event/event_callback.h>
 
-#include <io/socket.h>
+#include <io/socket/socket.h>
 
 #include <io/net/tcp_client.h>
 

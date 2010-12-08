@@ -77,12 +77,12 @@ endef
 $(foreach _lib, ${USE_LIBS}, $(eval $(call __library_include, ${_lib})))
 
 define __library_conditionals
-_lib:=$(subst /,_,$(1))
-ifdef CFLAGS_${_lib}
-CFLAGS+=${CFLAGS_${_lib}}
+_lib_var:=$(subst /,_,$(1))
+ifdef CFLAGS_${_lib_var}
+CFLAGS+=${CFLAGS_${_lib_var}}
 endif
-ifdef SRCS_${_lib}
-SRCS+=	${SRCS_${_lib}}
+ifdef SRCS_${_lib_var}
+SRCS+=	${SRCS_${_lib_var}}
 endif
 endef
 
