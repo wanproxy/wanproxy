@@ -24,5 +24,3 @@ ifeq "${OSNAME}" "SunOS"
 LDADD+=		-lnsl
 LDADD+=		-lsocket
 endif
-
-IO_REQUIRES=	event

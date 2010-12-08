@@ -69,37 +69,9 @@ CFLAGS+=-Wno-uninitialized
 CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts
 #CFLAGS+=-Winline
 
-#
-# XXX
-# We completely ignore dependencies for now since this seems dodgy.
-#
-# define __library_check_dependency
-# _lib:=$(1)
-# _lib2:=$(2)
-# ifeq ${lib} ${lib2}
-# _library_found:=1
-# endif
-# endef
-# 
-# define __library_dependency
-# _lib:=$(1)
-# _lib2:=$(2)
-# _library_found:=0
-# $(foreach _lib3, ${USE_LIBS}, $(eval $(call __library_check_dependency, ${_lib2}, ${_lib3})))
-# ifneq ${_library_found} 1
-# $(error "Inclusion of library ${_lib} requires library ${_lib2}")
-# endif
-# endef
-
 define __library_include
 _lib:=$(1)
-# _LIB:=$(shell echo ${_lib} | tr a-z A-Z)
- 
 include ${TOPDIR}/${_lib}/lib.mk
- 
-# ifdef ${_LIB}_REQUIRES
-# $(foreach _lib2, ${${_LIB}_REQUIRES}, $(eval $(call __library_dependency, ${_lib}, ${_lib2})))
-# endif
 endef
 
 $(foreach _lib, ${USE_LIBS}, $(eval $(call __library_include, ${_lib})))
