@@ -24,7 +24,8 @@ PipeSimple::PipeSimple(const LogHandle& log)
   input_eos_(false),
   output_buffer_(),
   output_action_(NULL),
-  output_callback_(NULL)
+  output_callback_(NULL),
+  process_error_(false)
 {
 }
 
@@ -37,6 +38,8 @@ PipeSimple::~PipeSimple()
 Action *
 PipeSimple::input(Buffer *buf, EventCallback *cb)
 {
+	ASSERT(!process_error_);
+
 	if (buf->empty()) {
 		input_eos_ = true;
 	} else {
@@ -46,37 +49,26 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 	}
 
 	if (!process(&output_buffer_, &input_buffer_)) {
-		if (output_callback_ != NULL) {
-			ASSERT(output_action_ == NULL);
+		process_error_ = true;
 
-			input_buffer_.clear();
-			output_buffer_.clear();
-
-			output_callback_->param(Event::Error);
-			output_action_ = output_callback_->schedule();
-			output_callback_ = NULL;
-		}
-
-		cb->param(Event::Error);
-		return (cb->schedule());
+		input_buffer_.clear();
+		output_buffer_.clear();
 	}
 
-	if (output_callback_ != NULL &&
-	    (input_eos_ || !output_buffer_.empty())) {
+	if (output_callback_ != NULL) {
 		ASSERT(output_action_ == NULL);
 
-		if (output_buffer_.empty())
-			output_callback_->param(Event::EOS);
-		else {
-			output_callback_->param(Event(Event::Done, output_buffer_));
-			output_buffer_.clear();
+		Action *a = output_do(output_callback_);
+		if (a != NULL) {
+			output_action_ = a;
+			output_callback_ = NULL;
 		}
-
-		output_action_ = output_callback_->schedule();
-		output_callback_ = NULL;
 	}
 
-	cb->param(Event::Done);
+	if (process_error_)
+		cb->param(Event::Error);
+	else
+		cb->param(Event::Done);
 	return (cb->schedule());
 }
 
@@ -86,16 +78,9 @@ PipeSimple::output(EventCallback *cb)
 	ASSERT(output_action_ == NULL);
 	ASSERT(output_callback_ == NULL);
 
-	if (input_eos_ || !output_buffer_.empty()) {
-		if (output_buffer_.empty())
-			cb->param(Event::EOS);
-		else {
-			cb->param(Event(Event::Done, output_buffer_));
-			output_buffer_.clear();
-		}
-
-		return (cb->schedule());
-	}
+	Action *a = output_do(cb);
+	if (a != NULL)
+		return (a);
 
 	output_callback_ = cb;
 
@@ -116,4 +101,28 @@ PipeSimple::output_cancel(void)
 		delete output_callback_;
 		output_callback_ = NULL;
 	}
+}
+
+Action *
+PipeSimple::output_do(EventCallback *cb)
+{
+	if (process_error_) {
+		ASSERT(output_buffer_.empty());
+
+		cb->param(Event::Error);
+		return (cb->schedule());
+	}
+
+	if (!output_buffer_.empty()) {
+		cb->param(Event(Event::Done, output_buffer_));
+		output_buffer_.clear();
+		return (cb->schedule());
+	}
+
+	if (input_eos_) {
+		cb->param(Event::EOS);
+		return (cb->schedule());
+	}
+
+	return (NULL);
 }

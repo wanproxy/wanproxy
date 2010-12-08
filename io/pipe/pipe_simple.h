@@ -14,6 +14,8 @@ private:
 	Buffer output_buffer_;
 	Action *output_action_;
 	EventCallback *output_callback_;
+
+	bool process_error_;
 protected:
 	PipeSimple(const LogHandle&);
 	~PipeSimple();
@@ -23,6 +25,7 @@ protected:
 
 private:
 	void output_cancel(void);
+	Action *output_do(EventCallback *);
 
 protected:
 	virtual bool process(Buffer *, Buffer *) = 0;
