@@ -44,6 +44,7 @@ endif
 
 OSNAME:=$(shell uname -s)
 
+CFLAGS+=-pipe
 CFLAGS+=-I${TOPDIR}
 ifdef NDEBUG
 CFLAGS+=-O2
