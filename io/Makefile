@@ -1,3 +1,6 @@
+SUBDIR+=net
+SUBDIR+=pipe
+
 SUBDIR+=example
 SUBDIR+=test
 

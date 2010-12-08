@@ -1,7 +1,7 @@
 #ifndef	ZLIB_INFLATE_PIPE_H
 #define	ZLIB_INFLATE_PIPE_H
 
-#include <io/pipe_simple.h>
+#include <io/pipe/pipe_simple.h>
 
 #include <zlib.h>
 

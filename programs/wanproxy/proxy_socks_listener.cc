@@ -7,7 +7,7 @@
 
 #include <io/socket.h>
 
-#include <net/tcp_server.h>
+#include <io/net/tcp_server.h>
 
 #include "proxy_socks_connection.h"
 #include "proxy_socks_listener.h"

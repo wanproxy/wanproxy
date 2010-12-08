@@ -3,7 +3,7 @@
 
 #include <set>
 
-#include <io/pipe_pair.h>
+#include <io/pipe/pipe_pair.h>
 
 struct WANProxyCodec;
 class XCodec;

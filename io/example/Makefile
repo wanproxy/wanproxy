@@ -1,9 +1,5 @@
 SUBDIR+=block-write1
-SUBDIR+=pipe-link-null-cat1
-SUBDIR+=pipe-null-cat1
-SUBDIR+=pipe-sink1
 SUBDIR+=read-sink1
-SUBDIR+=splice-cat1
 SUBDIR+=zero-source1
 
 include ../../common/subdir.mk

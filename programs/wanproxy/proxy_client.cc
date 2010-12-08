@@ -5,14 +5,14 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/pipe.h>
-#include <io/pipe_null.h>
-#include <io/pipe_pair.h>
+#include <io/pipe/pipe.h>
+#include <io/pipe/pipe_null.h>
+#include <io/pipe/pipe_pair.h>
 #include <io/socket.h>
-#include <io/splice.h>
-#include <io/splice_pair.h>
+#include <io/pipe/splice.h>
+#include <io/pipe/splice_pair.h>
 
-#include <net/tcp_client.h>
+#include <io/net/tcp_client.h>
 
 #include "proxy_client.h"
 

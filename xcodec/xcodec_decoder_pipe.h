@@ -1,7 +1,7 @@
 #ifndef	XCODEC_DECODER_PIPE_H
 #define	XCODEC_DECODER_PIPE_H
 
-#include <io/pipe_simple.h>
+#include <io/pipe/pipe_simple.h>
 
 class XCodecDecoderPipe : public PipeSimple {
 	friend class XCodecPipePair;

@@ -8,8 +8,8 @@
 #include <event/event_system.h>
 
 #include <io/file_descriptor.h>
-#include <io/pipe.h>
-#include <io/splice.h>
+#include <io/pipe/pipe.h>
+#include <io/pipe/splice.h>
 
 #include <zlib/deflate_pipe.h>
 

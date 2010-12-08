@@ -4,7 +4,7 @@
 #include <ext/hash_map>
 #include <map>
 
-#include <common/uuid.h>
+#include <common/uuid/uuid.h>
 
 /*
  * XXX

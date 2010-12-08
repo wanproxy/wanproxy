@@ -4,7 +4,7 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/pipe.h>
+#include <io/pipe/pipe.h>
 
 #include <zlib/deflate_pipe.h>
 

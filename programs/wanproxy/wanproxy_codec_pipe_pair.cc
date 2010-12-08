@@ -5,10 +5,10 @@
 #include <event/callback.h>
 #include <event/event_system.h>
 
-#include <io/pipe.h>
-#include <io/pipe_link.h>
-#include <io/pipe_null.h>
-#include <io/pipe_pair.h>
+#include <io/pipe/pipe.h>
+#include <io/pipe/pipe_link.h>
+#include <io/pipe/pipe_null.h>
+#include <io/pipe/pipe_pair.h>
 
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_decoder.h>

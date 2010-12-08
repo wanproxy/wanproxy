@@ -70,14 +70,14 @@ CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wsha
 #CFLAGS+=-Winline
 
 define __library_include
-_lib:=$(1)
+_lib:=${1}
 include ${TOPDIR}/${_lib}/lib.mk
 endef
 
 $(foreach _lib, ${USE_LIBS}, $(eval $(call __library_include, ${_lib})))
 
 define __library_conditionals
-_lib:=${1}
+_lib:=$(subst /,_,$(1))
 ifdef CFLAGS_${_lib}
 CFLAGS+=${CFLAGS_${_lib}}
 endif
