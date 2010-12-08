@@ -6,6 +6,7 @@
 #include <event/callback.h>
 #include <event/event.h>
 #include <event/event_callback.h>
+#include <event/event_system.h>
 
 #include <network/network_interface.h>
 #include <network/network_interface_pcap.h>

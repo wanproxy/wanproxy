@@ -3,7 +3,6 @@
 #include <event/action.h>
 #include <event/callback.h>
 #include <event/event_system.h>
-#include <event/timeout.h>
 
 #include <network/network_interface.h>
 
