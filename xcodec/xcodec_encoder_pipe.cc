@@ -25,7 +25,6 @@ XCodecEncoderPipe::~XCodecEncoderPipe()
 void
 XCodecEncoderPipe::output_ready(void)
 {
-	PipeSimple::output_spontaneous();
 }
 
 bool
