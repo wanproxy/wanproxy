@@ -1,5 +1,5 @@
-#ifndef	TIMEOUT_H
-#define	TIMEOUT_H
+#ifndef	TIMEOUT_QUEUE_H
+#define	TIMEOUT_QUEUE_H
 
 #include <map>
 
@@ -112,4 +112,4 @@ public:
 	bool ready(void) const;
 };
 
-#endif /* !TIMEOUT_H */
+#endif /* !TIMEOUT_QUEUE_H */

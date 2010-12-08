@@ -13,6 +13,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 #include <event/event_system.h>
 
 #include <io/socket.h>
@@ -331,7 +333,7 @@ Socket::connect(const std::string& name, EventCallback *cb)
 	if (!addr(domain_, socktype_, protocol_, name)) {
 		ERROR(log_) << "Invalid name for connect: " << name;
 		cb->param(Event(Event::Error, EINVAL));
-		return (EventSystem::instance()->schedule(cb));
+		return (cb->schedule());
 	}
 
 	/*
@@ -355,7 +357,7 @@ Socket::connect(const std::string& name, EventCallback *cb)
 	switch (rv) {
 	case 0:
 		cb->param(Event::Done);
-		connect_action_ = EventSystem::instance()->schedule(cb);
+		connect_action_ = cb->schedule();
 		break;
 	case -1:
 		switch (errno) {
@@ -365,7 +367,7 @@ Socket::connect(const std::string& name, EventCallback *cb)
 			break;
 		default:
 			cb->param(Event(Event::Error, errno));
-			connect_action_ = EventSystem::instance()->schedule(cb);
+			connect_action_ = cb->schedule();
 			break;
 		}
 		break;
@@ -403,10 +405,10 @@ Socket::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 	int rv = ::shutdown(fd_, how);
 	if (rv == -1) {
 		cb->param(Event(Event::Error, errno));
-		return (EventSystem::instance()->schedule(cb));
+		return (cb->schedule());
 	}
 	cb->param(Event::Done);
-	return (EventSystem::instance()->schedule(cb));
+	return (cb->schedule());
 }
 
 std::string
@@ -453,7 +455,7 @@ Socket::accept_callback(Event e)
 	case Event::EOS:
 	case Event::Error:
 		accept_callback_->param(Event(Event::Error, e.error_));
-		accept_action_ = EventSystem::instance()->schedule(accept_callback_);
+		accept_action_ = accept_callback_->schedule();
 		accept_callback_ = NULL;
 		return;
 	default:
@@ -468,7 +470,7 @@ Socket::accept_callback(Event e)
 			return;
 		default:
 			accept_callback_->param(Event(Event::Error, errno));
-			accept_action_ = EventSystem::instance()->schedule(accept_callback_);
+			accept_action_ = accept_callback_->schedule();
 			accept_callback_ = NULL;
 			return;
 		}
@@ -476,7 +478,7 @@ Socket::accept_callback(Event e)
 
 	Socket *child = new Socket(s, domain_, socktype_, protocol_);
 	accept_callback_->param(Event(Event::Done, (void *)child));
-	Action *a = EventSystem::instance()->schedule(accept_callback_);
+	Action *a = accept_callback_->schedule();
 	accept_action_ = a;
 	accept_callback_ = NULL;
 }
@@ -519,7 +521,7 @@ Socket::connect_callback(Event e)
 	default:
 		HALT(log_) << "Unexpected event: " << e;
 	}
-	Action *a = EventSystem::instance()->schedule(connect_callback_);
+	Action *a = connect_callback_->schedule();
 	connect_action_ = a;
 	connect_callback_ = NULL;
 }

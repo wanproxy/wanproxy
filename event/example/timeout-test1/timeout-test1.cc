@@ -3,7 +3,6 @@
 #include <event/action.h>
 #include <event/callback.h>
 #include <event/event_system.h>
-#include <event/timeout.h>
 
 #define	TIMER1_MS	100
 #define	TIMER2_MS	2000

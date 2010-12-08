@@ -2,7 +2,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 
 #include <io/pipe.h>
 #include <io/pipe_sink.h>
@@ -34,13 +35,13 @@ PipeSink::input(Buffer *buf, EventCallback *cb)
 
 			output_callback_->param(Event::EOS);
 
-			output_action_ = EventSystem::instance()->schedule(output_callback_);
+			output_action_ = output_callback_->schedule();
 			output_callback_ = NULL;
 		}
 	}
 
 	cb->param(Event::Done);
-	return (EventSystem::instance()->schedule(cb));
+	return (cb->schedule());
 }
 
 Action *
@@ -52,7 +53,7 @@ PipeSink::output(EventCallback *cb)
 	if (input_eos_) {
 		cb->param(Event::EOS);
 
-		return (EventSystem::instance()->schedule(cb));
+		return (cb->schedule());
 	}
 
 	output_callback_ = cb;

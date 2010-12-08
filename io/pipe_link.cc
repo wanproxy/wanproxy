@@ -2,7 +2,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 
 #include <io/pipe.h>
 #include <io/pipe_link.h>
@@ -67,7 +68,7 @@ PipeLink::input_complete(Event e)
 	ASSERT(input_callback_ != NULL);
 
 	input_callback_->param(e);
-	input_action_ = EventSystem::instance()->schedule(input_callback_);
+	input_action_ = input_callback_->schedule();
 	input_callback_ = NULL;
 }
 

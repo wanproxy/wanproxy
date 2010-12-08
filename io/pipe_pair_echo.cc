@@ -2,7 +2,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 
 #include <io/pipe.h>
 #include <io/pipe_pair.h>
@@ -46,7 +47,7 @@ PipePairEcho::Half::input(Buffer *buf, EventCallback *cb)
 			response_pipe_->source_eos_ = true;
 			response_pipe_->output_callback_->param(Event::EOS);
 		}
-		response_pipe_->output_action_ = EventSystem::instance()->schedule(response_pipe_->output_callback_);
+		response_pipe_->output_action_ = response_pipe_->output_callback_->schedule();
 		response_pipe_->output_callback_ = NULL;
 	} else {
 		if (!buf->empty()) {
@@ -58,7 +59,7 @@ PipePairEcho::Half::input(Buffer *buf, EventCallback *cb)
 	}
 
 	cb->param(Event::Done);
-	return (EventSystem::instance()->schedule(cb));
+	return (cb->schedule());
 }
 
 Action *
@@ -77,7 +78,7 @@ PipePairEcho::Half::output(EventCallback *cb)
 			output_buffer_.clear();
 		}
 
-		return (EventSystem::instance()->schedule(cb));
+		return (cb->schedule());
 	}
 
 	output_callback_ = cb;

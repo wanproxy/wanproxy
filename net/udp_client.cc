@@ -2,7 +2,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 
 #include <io/socket.h>
 
@@ -39,7 +40,7 @@ UDPClient::connect(const std::string& iface, const std::string& name, EventCallb
 	socket_ = Socket::create(family_, SocketTypeDatagram, "udp", name);
 	if (socket_ == NULL) {
 		ccb->param(Event::Error);
-		Action *a = EventSystem::instance()->schedule(ccb);
+		Action *a = ccb->schedule();
 
 		delete this;
 
@@ -48,7 +49,7 @@ UDPClient::connect(const std::string& iface, const std::string& name, EventCallb
 
 	if (iface != "" && !socket_->bind(iface)) {
 		ccb->param(Event::Error);
-		Action *a = EventSystem::instance()->schedule(ccb);
+		Action *a = ccb->schedule();
 
 #if 0
 		/*
@@ -105,7 +106,7 @@ UDPClient::connect_complete(Event e)
 	e.data_ = (void *)socket_;
 
 	connect_callback_->param(e);
-	connect_action_ = EventSystem::instance()->schedule(connect_callback_);
+	connect_action_ = connect_callback_->schedule();
 	connect_callback_ = NULL;
 }
 

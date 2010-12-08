@@ -4,6 +4,7 @@
 #include <event/action.h>
 #include <event/callback.h>
 #include <event/condition.h>
+#include <event/event.h>
 #include <event/event_condition.h>
 #include <event/event_system.h>
 

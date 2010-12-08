@@ -2,6 +2,7 @@
 #define	TYPED_CONDITION_H
 
 #include <event/condition.h>
+#include <event/typed_callback.h>
 
 template<typename T>
 class TypedCondition {
@@ -39,7 +40,7 @@ public:
 			return;
 		ASSERT(wait_action_ == NULL);
 		wait_callback_->param(p);
-		wait_action_ = EventSystem::instance()->schedule(wait_callback_);
+		wait_action_ = wait_callback_->schedule();
 		wait_callback_ = NULL;
 	}
 

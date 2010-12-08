@@ -2,7 +2,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 
 #include <io/splice.h>
 #include <io/splice_pair.h>
@@ -113,6 +114,6 @@ SplicePair::splice_complete(Event e, Splice *splice)
 		ASSERT(e.type_ != Event::Done);
 		callback_->param(e);
 	}
-	callback_action_ = EventSystem::instance()->schedule(callback_);
+	callback_action_ = callback_->schedule();
 	callback_ = NULL;
 }

@@ -4,7 +4,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 
 #include <network/network_interface.h>
 #include <network/network_interface_pcap.h>
@@ -54,7 +55,7 @@ NetworkInterfacePCAP::transmit(Buffer *buffer, EventCallback *cb)
 	buffer->clear();
 
 	cb->param(Event::Error);
-	return (EventSystem::instance()->schedule(cb));
+	return (cb->schedule());
 }
 
 void
@@ -70,7 +71,7 @@ NetworkInterfacePCAP::receive_callback(Event e)
 	case Event::Error: {
 		DEBUG(log_) << "Poll returned error: " << e;
 		receive_callback_->param(e);
-		Action *a = EventSystem::instance()->schedule(receive_callback_);
+		Action *a = receive_callback_->schedule();
 		receive_action_ = a;
 		receive_callback_ = NULL;
 		return;
@@ -108,7 +109,7 @@ NetworkInterfacePCAP::receive_do(void)
 	int cnt = pcap_dispatch(pcap_, 1, network_interface_pcap_dispatch, (u_char *)&packet);
 	if (cnt == -1) {
 		receive_callback_->param(Event(Event::Error));
-		Action *a = EventSystem::instance()->schedule(receive_callback_);
+		Action *a = receive_callback_->schedule();
 		receive_callback_ = NULL;
 		return (a);
 	}
@@ -120,7 +121,7 @@ NetworkInterfacePCAP::receive_do(void)
 	ASSERT(cnt == 1);
 
 	receive_callback_->param(Event(Event::Done, packet));
-	Action *a = EventSystem::instance()->schedule(receive_callback_);
+	Action *a = receive_callback_->schedule();
 	receive_callback_ = NULL;
 	return (a);
 }

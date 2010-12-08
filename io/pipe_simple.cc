@@ -2,7 +2,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 
 #include <io/pipe.h>
 #include <io/pipe_simple.h>
@@ -52,12 +53,12 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 			output_buffer_.clear();
 
 			output_callback_->param(Event::Error);
-			output_action_ = EventSystem::instance()->schedule(output_callback_);
+			output_action_ = output_callback_->schedule();
 			output_callback_ = NULL;
 		}
 
 		cb->param(Event::Error);
-		return (EventSystem::instance()->schedule(cb));
+		return (cb->schedule());
 	}
 
 	if (output_callback_ != NULL &&
@@ -71,12 +72,12 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 			output_buffer_.clear();
 		}
 
-		output_action_ = EventSystem::instance()->schedule(output_callback_);
+		output_action_ = output_callback_->schedule();
 		output_callback_ = NULL;
 	}
 
 	cb->param(Event::Done);
-	return (EventSystem::instance()->schedule(cb));
+	return (cb->schedule());
 }
 
 Action *
@@ -93,7 +94,7 @@ PipeSimple::output(EventCallback *cb)
 			output_buffer_.clear();
 		}
 
-		return (EventSystem::instance()->schedule(cb));
+		return (cb->schedule());
 	}
 
 	output_callback_ = cb;

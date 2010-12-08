@@ -14,7 +14,7 @@ public:
 	  reload_action_(NULL),
 	  reload_count_(0)
 	{
-		action_ = EventSystem::instance()->schedule(callback(this, &ReloadTest::forever));
+		action_ = callback(this, &ReloadTest::forever)->schedule();
 		reload_action_ = EventSystem::instance()->register_interest(EventInterestReload, callback(this, &ReloadTest::reload));
 	}
 
@@ -29,7 +29,7 @@ private:
 		action_->cancel();
 		action_ = NULL;
 
-		action_ = EventSystem::instance()->schedule(callback(this, &ReloadTest::forever));
+		action_ = callback(this, &ReloadTest::forever)->schedule();
 	}
 
 	void reload(void)

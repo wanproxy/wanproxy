@@ -5,7 +5,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/timeout.h>
+#include <event/callback_queue.h>
+#include <event/timeout_queue.h>
 
 TimeoutQueue::NanoTime
 TimeoutQueue::NanoTime::current_time(void)

@@ -4,7 +4,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 
 #include <io/file_descriptor.h>
 #include <io/io_system.h>
@@ -54,5 +55,5 @@ Action *
 FileDescriptor::shutdown(bool, bool, EventCallback *cb)
 {
 	cb->param(Event::Error);
-	return (EventSystem::instance()->schedule(cb));
+	return (cb->schedule());
 }

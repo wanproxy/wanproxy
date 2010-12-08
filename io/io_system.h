@@ -1,6 +1,8 @@
 #ifndef	IO_SYSTEM_H
 #define	IO_SYSTEM_H
 
+#include <map>
+
 #include <io/io_system.h>
 
 class Channel;

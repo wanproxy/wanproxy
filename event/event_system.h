@@ -1,10 +1,11 @@
 #ifndef	EVENT_SYSTEM_H
 #define	EVENT_SYSTEM_H
 
+#include <event/callback_queue.h>
 #include <event/event.h>
 #include <event/event_callback.h>
 #include <event/event_poll.h>
-#include <event/timeout.h>
+#include <event/timeout_queue.h>
 
 enum EventInterest {
 	EventInterestReload,

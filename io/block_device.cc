@@ -4,7 +4,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 
 #include <io/block_device.h>
 #include <io/io_system.h>
@@ -50,7 +51,7 @@ BlockDevice::write(off_t offset, Buffer *buffer, EventCallback *cb)
 {
 	if (buffer->length() != bsize_) {
 		cb->param(Event::Error);
-		return (EventSystem::instance()->schedule(cb));
+		return (cb->schedule());
 	}
 	return (IOSystem::instance()->write(fd_, this, offset * bsize_, buffer, cb));
 }

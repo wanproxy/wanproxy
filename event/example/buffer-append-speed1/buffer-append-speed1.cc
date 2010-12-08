@@ -3,7 +3,6 @@
 #include <event/action.h>
 #include <event/callback.h>
 #include <event/event_system.h>
-#include <event/timeout.h>
 
 #define	TIMER_MS	1000
 
@@ -18,7 +17,7 @@ public:
 	: callback_action_(NULL),
 	  timeout_action_(NULL)
 	{
-		callback_action_ = EventSystem::instance()->schedule(callback(this, &BufferSpeed::callback_complete));
+		callback_action_ = callback(this, &BufferSpeed::callback_complete)->schedule();
 
 		INFO("/example/buffer/append/speed1") << "Arming timer.";
 		timeout_action_ = EventSystem::instance()->timeout(TIMER_MS, callback(this, &BufferSpeed::timer));
@@ -39,7 +38,7 @@ private:
 		tmp.append(zbuf, sizeof zbuf);
 		bytes_ += tmp.length();
 
-		callback_action_ = EventSystem::instance()->schedule(callback(this, &BufferSpeed::callback_complete));
+		callback_action_ = callback(this, &BufferSpeed::callback_complete)->schedule();
 	}
 
 	void timer(void)

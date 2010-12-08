@@ -3,7 +3,6 @@
 #include <event/action.h>
 #include <event/callback.h>
 #include <event/event_system.h>
-#include <event/timeout.h>
 
 #define	CALLBACK_NUMBER	1000
 #define	TIMER_MS	1000
@@ -20,7 +19,7 @@ public:
 	{
 		unsigned i;
 		for (i = 0; i < CALLBACK_NUMBER; i++)
-			callback_action_[i] = EventSystem::instance()->schedule(callback(this, &CallbackManySpeed::callback_complete, i));
+			callback_action_[i] = callback(this, &CallbackManySpeed::callback_complete, i)->schedule();
 
 		INFO("/example/callback/manyspeed1") << "Arming timer.";
 		timeout_action_ = EventSystem::instance()->timeout(TIMER_MS, callback(this, &CallbackManySpeed::timer));
@@ -39,7 +38,7 @@ private:
 
 		callback_count_++;
 
-		callback_action_[i] = EventSystem::instance()->schedule(callback(this, &CallbackManySpeed::callback_complete, i));
+		callback_action_[i] = callback(this, &CallbackManySpeed::callback_complete, i)->schedule();
 	}
 
 	void timer(void)

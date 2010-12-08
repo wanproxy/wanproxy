@@ -2,7 +2,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 
 #include <io/channel.h>
 #include <io/pipe.h>
@@ -129,7 +130,7 @@ Splice::complete(Event e)
 	}
 
 	callback_->param(e);
-	callback_action_ = EventSystem::instance()->schedule(callback_);
+	callback_action_ = callback_->schedule();
 	callback_ = NULL;
 }
 

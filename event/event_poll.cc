@@ -1,8 +1,9 @@
 #include <common/buffer.h>
 
 #include <event/action.h>
-#include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
+#include <event/event_poll.h>
 
 void
 EventPoll::PollHandler::callback(Event e)
@@ -17,7 +18,7 @@ EventPoll::PollHandler::callback(Event e)
 	ASSERT(action_ == NULL);
 	ASSERT(callback_ != NULL);
 	callback_->param(e);
-	Action *a = EventSystem::instance()->schedule(callback_);
+	Action *a = callback_->schedule();
 	callback_ = NULL;
 	action_ = a;
 }

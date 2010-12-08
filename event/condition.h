@@ -1,8 +1,6 @@
 #ifndef	CONDITION_H
 #define	CONDITION_H
 
-#include <event/event_system.h>
-
 class Condition {
 protected:
 	Condition(void)
@@ -36,7 +34,7 @@ public:
 		if (wait_callback_ == NULL)
 			return;
 		ASSERT(wait_action_ == NULL);
-		wait_action_ = EventSystem::instance()->schedule(wait_callback_);
+		wait_action_ = wait_callback_->schedule();
 		wait_callback_ = NULL;
 	}
 

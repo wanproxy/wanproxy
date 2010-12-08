@@ -12,6 +12,8 @@
 
 #include <event/action.h>
 #include <event/callback.h>
+#include <event/event.h>
+#include <event/event_callback.h>
 #include <event/event_system.h>
 
 #include <io/io_system.h>
@@ -64,7 +66,7 @@ IOSystem::Handle::close_callback(void)
 			break;
 		default:
 			close_callback_->param(Event(Event::Error, errno));
-			Action *a = EventSystem::instance()->schedule(close_callback_);
+			Action *a = close_callback_->schedule();
 			close_action_ = a;
 			close_callback_ = NULL;
 			break;
@@ -73,7 +75,7 @@ IOSystem::Handle::close_callback(void)
 	}
 	fd_ = -1;
 	close_callback_->param(Event::Done);
-	Action *a = EventSystem::instance()->schedule(close_callback_);
+	Action *a = close_callback_->schedule();
 	close_action_ = a;
 	close_callback_ = NULL;
 }
@@ -96,7 +98,7 @@ IOSystem::Handle::close_schedule(void)
 {
 	ASSERT(close_action_ == NULL);
 	Callback *cb = callback(this, &IOSystem::Handle::close_callback);
-	Action *a = EventSystem::instance()->schedule(cb);
+	Action *a = cb->schedule();
 	return (a);
 }
 
@@ -113,7 +115,7 @@ IOSystem::Handle::read_callback(Event e)
 	case Event::Error: {
 		DEBUG(log_) << "Poll returned error: " << e;
 		read_callback_->param(e);
-		Action *a = EventSystem::instance()->schedule(read_callback_);
+		Action *a = read_callback_->schedule();
 		read_action_ = a;
 		read_callback_ = NULL;
 		return;
@@ -150,7 +152,7 @@ IOSystem::Handle::read_do(void)
 		if (read_amount_ == 0)
 			read_amount_ = read_buffer_.length();
 		read_callback_->param(Event(Event::Done, Buffer(read_buffer_, read_amount_)));
-		Action *a = EventSystem::instance()->schedule(read_callback_);
+		Action *a = read_callback_->schedule();
 		read_callback_ = NULL;
 		read_buffer_.skip(read_amount_);
 		read_amount_ = 0;
@@ -212,7 +214,7 @@ IOSystem::Handle::read_do(void)
 			return (NULL);
 		default:
 			read_callback_->param(Event(Event::Error, errno, read_buffer_));
-			Action *a = EventSystem::instance()->schedule(read_callback_);
+			Action *a = read_callback_->schedule();
 			read_callback_ = NULL;
 			read_buffer_.clear();
 			read_amount_ = 0;
@@ -232,7 +234,7 @@ IOSystem::Handle::read_do(void)
 	 */
 	if (len == 0) {
 		read_callback_->param(Event(Event::EOS, read_buffer_));
-		Action *a = EventSystem::instance()->schedule(read_callback_);
+		Action *a = read_callback_->schedule();
 		read_callback_ = NULL;
 		read_buffer_.clear();
 		read_amount_ = 0;
@@ -245,7 +247,7 @@ IOSystem::Handle::read_do(void)
 		if (read_amount_ == 0)
 			read_amount_ = read_buffer_.length();
 		read_callback_->param(Event(Event::Done, Buffer(read_buffer_, read_amount_)));
-		Action *a = EventSystem::instance()->schedule(read_callback_);
+		Action *a = read_callback_->schedule();
 		read_callback_ = NULL;
 		read_buffer_.skip(read_amount_);
 		read_amount_ = 0;
@@ -285,7 +287,7 @@ IOSystem::Handle::write_callback(Event e)
 	case Event::Error: {
 		DEBUG(log_) << "Poll returned error: " << e;
 		write_callback_->param(e);
-		Action *a = EventSystem::instance()->schedule(write_callback_);
+		Action *a = write_callback_->schedule();
 		write_action_ = a;
 		write_callback_ = NULL;
 		return;
@@ -383,7 +385,7 @@ IOSystem::Handle::write_do(void)
 			return (NULL);
 		default:
 			write_callback_->param(Event(Event::Error, errno));
-			Action *a = EventSystem::instance()->schedule(write_callback_);
+			Action *a = write_callback_->schedule();
 			write_callback_ = NULL;
 			return (a);
 		}
@@ -394,7 +396,7 @@ IOSystem::Handle::write_do(void)
 
 	if (write_buffer_.empty()) {
 		write_callback_->param(Event::Done);
-		Action *a = EventSystem::instance()->schedule(write_callback_);
+		Action *a = write_callback_->schedule();
 		write_callback_ = NULL;
 		return (a);
 	}

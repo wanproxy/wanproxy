@@ -1,7 +1,6 @@
 #ifndef	DROPBOX_H
 #define	DROPBOX_H
 
-#include <event/typed_callback.h>
 #include <event/typed_condition.h>
 
 template<typename T>
