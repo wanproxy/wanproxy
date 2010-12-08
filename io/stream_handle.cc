@@ -7,12 +7,11 @@
 #include <event/event.h>
 #include <event/event_callback.h>
 
-#include <io/block_device.h>
+#include <io/stream_handle.h>
 #include <io/io_system.h>
 
-BlockDevice::BlockDevice(int fd, size_t bsize)
-: BlockChannel(bsize),
-  log_("/block/device"),
+StreamHandle::StreamHandle(int fd)
+: log_("/file/descriptor"),
   fd_(fd)
 {
 	int flags = ::fcntl(fd_, F_GETFL, 0);
@@ -29,29 +28,32 @@ BlockDevice::BlockDevice(int fd, size_t bsize)
 	IOSystem::instance()->attach(fd_, this);
 }
 
-BlockDevice::~BlockDevice()
+StreamHandle::~StreamHandle()
 {
 	IOSystem::instance()->detach(fd_, this);
 }
 
 Action *
-BlockDevice::close(EventCallback *cb)
+StreamHandle::close(EventCallback *cb)
 {
 	return (IOSystem::instance()->close(fd_, this, cb));
 }
 
 Action *
-BlockDevice::read(off_t offset, EventCallback *cb)
+StreamHandle::read(size_t amount, EventCallback *cb)
 {
-	return (IOSystem::instance()->read(fd_, this, offset * bsize_, bsize_, cb));
+	return (IOSystem::instance()->read(fd_, this, -1, amount, cb));
 }
 
 Action *
-BlockDevice::write(off_t offset, Buffer *buffer, EventCallback *cb)
+StreamHandle::write(Buffer *buffer, EventCallback *cb)
 {
-	if (buffer->length() != bsize_) {
-		cb->param(Event::Error);
-		return (cb->schedule());
-	}
-	return (IOSystem::instance()->write(fd_, this, offset * bsize_, buffer, cb));
+	return (IOSystem::instance()->write(fd_, this, -1, buffer, cb));
+}
+
+Action *
+StreamHandle::shutdown(bool, bool, EventCallback *cb)
+{
+	cb->param(Event::Error);
+	return (cb->schedule());
 }

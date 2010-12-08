@@ -7,7 +7,7 @@
 #include <event/event.h>
 #include <event/event_system.h>
 
-#include <io/file_descriptor.h>
+#include <io/stream_handle.h>
 #include <io/pipe/pipe.h>
 #include <io/pipe/pipe_sink.h>
 #include <io/pipe/splice.h>
@@ -15,10 +15,10 @@
 class Catenate {
 	LogHandle log_;
 
-	FileDescriptor input_;
+	StreamHandle input_;
 	Action *input_action_;
 
-	FileDescriptor output_;
+	StreamHandle output_;
 	Action *output_action_;
 
 	Splice splice_;
@@ -65,7 +65,7 @@ public:
 		output_action_ = output_.close(ocb);
 	}
 
-	void close_complete(Event e, FileDescriptor *fd)
+	void close_complete(Event e, StreamHandle *fd)
 	{
 		if (fd == &input_) {
 			input_action_->cancel();

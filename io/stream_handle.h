@@ -3,13 +3,13 @@
 
 #include <io/channel.h>
 
-class FileDescriptor : public StreamChannel {
+class StreamHandle : public StreamChannel {
 	LogHandle log_;
 protected:
 	int fd_;
 public:
-	FileDescriptor(int);
-	~FileDescriptor();
+	StreamHandle(int);
+	~StreamHandle();
 
 	virtual Action *close(EventCallback *);
 	virtual Action *read(size_t, EventCallback *);

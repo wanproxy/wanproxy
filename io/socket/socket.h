@@ -1,10 +1,10 @@
 #ifndef	SOCKET_H
 #define	SOCKET_H
 
-#include <io/file_descriptor.h>
+#include <io/stream_handle.h>
 #include <io/socket/socket_types.h>
 
-class Socket : public FileDescriptor {
+class Socket : public StreamHandle {
 	LogHandle log_;
 	int domain_;
 	int socktype_;

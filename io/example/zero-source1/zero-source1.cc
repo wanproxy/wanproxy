@@ -7,14 +7,14 @@
 #include <event/event.h>
 #include <event/event_system.h>
 
-#include <io/file_descriptor.h>
+#include <io/stream_handle.h>
 
 static Buffer zero_buffer;
 
 class Source {
 	LogHandle log_;
 
-	FileDescriptor fd_;
+	StreamHandle fd_;
 	Action *action_;
 public:
 	Source(int fd)

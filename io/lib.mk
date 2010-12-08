@@ -1,5 +1,5 @@
 VPATH+=	${TOPDIR}/io
 
-SRCS+=	block_device.cc
-SRCS+=	file_descriptor.cc
+SRCS+=	block_handle.cc
 SRCS+=	io_system.cc
+SRCS+=	stream_handle.cc

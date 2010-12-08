@@ -3,13 +3,13 @@
 
 #include <io/channel.h>
 
-class BlockDevice : public BlockChannel {
+class BlockHandle : public BlockChannel {
 	LogHandle log_;
 protected:
 	int fd_;
 public:
-	BlockDevice(int, size_t);
-	~BlockDevice();
+	BlockHandle(int, size_t);
+	~BlockHandle();
 
 	virtual Action *close(EventCallback *);
 	virtual Action *read(off_t, EventCallback *);

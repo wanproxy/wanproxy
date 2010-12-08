@@ -8,7 +8,7 @@
 #include <event/event.h>
 #include <event/event_system.h>
 
-#include <io/block_device.h>
+#include <io/block_handle.h>
 
 #define	BW_BSIZE	65536
 static uint8_t data_buffer[BW_BSIZE];
@@ -16,7 +16,7 @@ static uint8_t data_buffer[BW_BSIZE];
 class BlockWriter {
 	LogHandle log_;
 
-	BlockDevice dev_;
+	BlockHandle dev_;
 	uint64_t block_number_;
 	uint64_t block_count_;
 

@@ -265,7 +265,7 @@ struct socket_address {
 };
 
 Socket::Socket(int fd, int domain, int socktype, int protocol)
-: FileDescriptor(fd),
+: StreamHandle(fd),
   log_("/socket"),
   domain_(domain),
   socktype_(socktype),

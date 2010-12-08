@@ -7,11 +7,12 @@
 #include <event/event.h>
 #include <event/event_callback.h>
 
-#include <io/file_descriptor.h>
+#include <io/block_handle.h>
 #include <io/io_system.h>
 
-FileDescriptor::FileDescriptor(int fd)
-: log_("/file/descriptor"),
+BlockHandle::BlockHandle(int fd, size_t bsize)
+: BlockChannel(bsize),
+  log_("/block/device"),
   fd_(fd)
 {
 	int flags = ::fcntl(fd_, F_GETFL, 0);
@@ -28,32 +29,29 @@ FileDescriptor::FileDescriptor(int fd)
 	IOSystem::instance()->attach(fd_, this);
 }
 
-FileDescriptor::~FileDescriptor()
+BlockHandle::~BlockHandle()
 {
 	IOSystem::instance()->detach(fd_, this);
 }
 
 Action *
-FileDescriptor::close(EventCallback *cb)
+BlockHandle::close(EventCallback *cb)
 {
 	return (IOSystem::instance()->close(fd_, this, cb));
 }
 
 Action *
-FileDescriptor::read(size_t amount, EventCallback *cb)
+BlockHandle::read(off_t offset, EventCallback *cb)
 {
-	return (IOSystem::instance()->read(fd_, this, -1, amount, cb));
+	return (IOSystem::instance()->read(fd_, this, offset * bsize_, bsize_, cb));
 }
 
 Action *
-FileDescriptor::write(Buffer *buffer, EventCallback *cb)
+BlockHandle::write(off_t offset, Buffer *buffer, EventCallback *cb)
 {
-	return (IOSystem::instance()->write(fd_, this, -1, buffer, cb));
-}
-
-Action *
-FileDescriptor::shutdown(bool, bool, EventCallback *cb)
-{
-	cb->param(Event::Error);
-	return (cb->schedule());
+	if (buffer->length() != bsize_) {
+		cb->param(Event::Error);
+		return (cb->schedule());
+	}
+	return (IOSystem::instance()->write(fd_, this, offset * bsize_, buffer, cb));
 }

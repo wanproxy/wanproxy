@@ -7,12 +7,12 @@
 #include <event/event.h>
 #include <event/event_system.h>
 
-#include <io/file_descriptor.h>
+#include <io/stream_handle.h>
 
 class Sink {
 	LogHandle log_;
 
-	FileDescriptor fd_;
+	StreamHandle fd_;
 	Action *action_;
 public:
 	Sink(int fd)
