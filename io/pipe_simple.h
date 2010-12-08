@@ -9,10 +9,9 @@ protected:
 
 private:
 	Buffer input_buffer_;
-protected:
 	bool input_eos_;
 
-private:
+	Buffer output_buffer_;
 	Action *output_action_;
 	EventCallback *output_callback_;
 protected:
@@ -26,8 +25,6 @@ private:
 	void output_cancel(void);
 
 protected:
-	void output_spontaneous(void);
-
 	virtual bool process(Buffer *, Buffer *) = 0;
 };
 

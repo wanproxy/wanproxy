@@ -21,6 +21,7 @@ PipeSimple::PipeSimple(const LogHandle& log)
 : log_(log),
   input_buffer_(),
   input_eos_(false),
+  output_buffer_(),
   output_action_(NULL),
   output_callback_(NULL)
 {
@@ -43,28 +44,35 @@ PipeSimple::input(Buffer *buf, EventCallback *cb)
 		buf->clear();
 	}
 
-	if (output_callback_ != NULL) {
-		ASSERT(output_action_ == NULL);
+	if (!process(&output_buffer_, &input_buffer_)) {
+		if (output_callback_ != NULL) {
+			ASSERT(output_action_ == NULL);
 
-		Buffer tmp;
-		if (!process(&tmp, &input_buffer_)) {
+			input_buffer_.clear();
+			output_buffer_.clear();
+
 			output_callback_->param(Event::Error);
 			output_action_ = EventSystem::instance()->schedule(output_callback_);
 			output_callback_ = NULL;
-
-			cb->param(Event::Error);
-			return (EventSystem::instance()->schedule(cb));
 		}
 
-		if (!tmp.empty() || input_eos_) {
-			if (input_eos_ && tmp.empty()) {
-				output_callback_->param(Event::EOS);
-			} else {
-				output_callback_->param(Event(Event::Done, tmp));
-			}
-			output_action_ = EventSystem::instance()->schedule(output_callback_);
-			output_callback_ = NULL;
+		cb->param(Event::Error);
+		return (EventSystem::instance()->schedule(cb));
+	}
+
+	if (output_callback_ != NULL &&
+	    (input_eos_ || !output_buffer_.empty())) {
+		ASSERT(output_action_ == NULL);
+
+		if (output_buffer_.empty())
+			output_callback_->param(Event::EOS);
+		else {
+			output_callback_->param(Event(Event::Done, output_buffer_));
+			output_buffer_.clear();
 		}
+
+		output_action_ = EventSystem::instance()->schedule(output_callback_);
+		output_callback_ = NULL;
 	}
 
 	cb->param(Event::Done);
@@ -77,24 +85,15 @@ PipeSimple::output(EventCallback *cb)
 	ASSERT(output_action_ == NULL);
 	ASSERT(output_callback_ == NULL);
 
-	if (!input_buffer_.empty() || input_eos_) {
-		Buffer tmp;
-		if (!process(&tmp, &input_buffer_)) {
-			cb->param(Event::Error);
-			return (EventSystem::instance()->schedule(cb));
+	if (input_eos_ || !output_buffer_.empty()) {
+		if (output_buffer_.empty())
+			cb->param(Event::EOS);
+		else {
+			cb->param(Event(Event::Done, output_buffer_));
+			output_buffer_.clear();
 		}
 
-		if (!tmp.empty() || input_eos_) {
-			if (input_eos_ && tmp.empty()) {
-				ASSERT(input_buffer_.empty());
-				cb->param(Event::EOS);
-			} else {
-				ASSERT(!tmp.empty());
-				cb->param(Event(Event::Done, tmp));
-			}
-
-			return (EventSystem::instance()->schedule(cb));
-		}
+		return (EventSystem::instance()->schedule(cb));
 	}
 
 	output_callback_ = cb;
@@ -116,38 +115,4 @@ PipeSimple::output_cancel(void)
 		delete output_callback_;
 		output_callback_ = NULL;
 	}
-}
-
-void
-PipeSimple::output_spontaneous(void)
-{
-	if (output_callback_ == NULL)
-		return;
-
-	Buffer tmp;
-	if (!process(&tmp, &input_buffer_)) {
-		output_callback_->param(Event::Error);
-		output_action_ = EventSystem::instance()->schedule(output_callback_);
-		output_callback_ = NULL;
-
-		return;
-	}
-	ASSERT(input_buffer_.empty());
-
-	/*
-	 * XXX
-	 * Would prefer for this to never happen!
-	 */
-	if (tmp.empty() && !input_eos_) {
-		DEBUG(log_) << "Spontaneous output generated no output despite EOS being unset.";
-		return;
-	}
-
-	if (tmp.empty()) {
-		output_callback_->param(Event::EOS);
-	} else {
-		output_callback_->param(Event(Event::Done, tmp));
-	}
-	output_action_ = EventSystem::instance()->schedule(output_callback_);
-	output_callback_ = NULL;
 }
