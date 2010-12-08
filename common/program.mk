@@ -45,10 +45,10 @@ endif
 OSNAME:=$(shell uname -s)
 
 CFLAGS+=-pipe
-CFLAGS+=-I${TOPDIR}
+CPPFLAGS+=-I${TOPDIR}
 ifdef NDEBUG
 CFLAGS+=-O2
-CFLAGS+=-DNDEBUG=1
+CPPFLAGS+=-DNDEBUG=1
 else
 CFLAGS+=-O
 ifneq "${OSNAME}" "SunOS"
@@ -94,10 +94,10 @@ ${PROGRAM}: ${OBJS}
 	${CXX} ${CXXFLAGS} ${CFLAGS} ${LDFLAGS} -o $@ ${OBJS} ${LDADD}
 
 .cc.o:
-	${CXX} ${CXXFLAGS} ${CFLAGS} -c -o $@ $<
+	${CXX} ${CPPFLAGS} ${CXXFLAGS} ${CFLAGS} -c -o $@ $<
 
 .c.o:
-	${CC} ${CFLAGS} -c -o $@ $<
+	${CC} ${CPPFLAGS} ${CFLAGS} -c -o $@ $<
 
 clean:
 	rm -f ${PROGRAM} ${OBJS}
