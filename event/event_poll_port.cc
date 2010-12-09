@@ -10,7 +10,6 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
 
 /* XXX See kq_map in event_poll_kqueue.c */
 

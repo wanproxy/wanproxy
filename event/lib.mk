@@ -2,7 +2,7 @@ VPATH+=	${TOPDIR}/event
 
 SRCS+=	callback.cc
 SRCS+=	event_poll.cc
-SRCS+=	event_system.cc
+SRCS+=	event_thread.cc
 SRCS+=	timeout_queue.cc
 
 ifndef USE_POLL

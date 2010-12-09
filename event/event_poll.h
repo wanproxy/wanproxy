@@ -4,7 +4,7 @@
 #include <map>
 
 class EventPoll {
-	friend class EventSystem;
+	friend class EventThread;
 	friend class PollAction;
 
 public:

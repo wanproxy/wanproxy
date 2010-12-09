@@ -7,7 +7,6 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
 
 EventPoll::EventPoll(void)
 : log_("/event/poll"),

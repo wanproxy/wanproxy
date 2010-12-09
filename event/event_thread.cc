@@ -5,13 +5,14 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event_thread.h>
 
 static void signal_reload(int);
 static void signal_stop(int);
 
-EventSystem::EventSystem(void)
-: log_("/event/system"),
+EventThread::EventThread(void)
+: Thread("EventThread"),
+  log_("/event/thread"),
   queue_(),
   reload_(),
   stop_(),
@@ -19,46 +20,46 @@ EventSystem::EventSystem(void)
   timeout_queue_(),
   poll_()
 {
-	INFO(log_) << "Starting event system.";
+	INFO(log_) << "Starting event thread.";
 
 	signal(SIGHUP, signal_reload);
 	signal(SIGINT, signal_stop);
 }
 
-EventSystem::~EventSystem()
+EventThread::~EventThread()
 {
 }
 
 Action *
-EventSystem::poll(const EventPoll::Type& type, int fd, EventCallback *cb)
+EventThread::poll(const EventPoll::Type& type, int fd, EventCallback *cb)
 {
 	Action *a = poll_.poll(type, fd, cb);
 	return (a);
 }
 
 Action *
-EventSystem::register_interest(const EventInterest& interest, Callback *cb)
+EventThread::register_interest(const EventInterest& interest, Callback *cb)
 {
 	Action *a = interest_queue_[interest].append(cb);
 	return (a);
 }
 
 Action *
-EventSystem::schedule(Callback *cb)
+EventThread::schedule(Callback *cb)
 {
 	Action *a = queue_.append(cb);
 	return (a);
 }
 
 Action *
-EventSystem::timeout(unsigned secs, Callback *cb)
+EventThread::timeout(unsigned secs, Callback *cb)
 {
 	Action *a = timeout_queue_.append(secs, cb);
 	return (a);
 }
 
 void
-EventSystem::start(void)
+EventThread::main(void)
 {
 	for (;;) {
 		/*
@@ -125,7 +126,7 @@ EventSystem::start(void)
 		 * If there are timers ticking down, then let the poll module
 		 * block until a timer will be ready.
 		 * XXX Maybe block 1 second less, just in case?  We'll never
-		 * be a realtime system though, so any attempt at pretending
+		 * be a realtime thread though, so any attempt at pretending
 		 * to be one, beyond giving time events priority at the top of
 		 * this loop, is probably a mistake.
 		 */
@@ -143,15 +144,15 @@ EventSystem::start(void)
 }
 
 void
-EventSystem::stop(void)
+EventThread::stop(void)
 {
 	signal(SIGINT, SIG_DFL);
-	INFO(log_) << "Stopping event system.";
+	INFO(log_) << "Stopping event thread.";
 	stop_ = true;
 }
 
 void
-EventSystem::reload(void)
+EventThread::reload(void)
 {
 	signal(SIGHUP, SIG_IGN);
 	INFO(log_) << "Running reload events.";
@@ -161,11 +162,13 @@ EventSystem::reload(void)
 static void
 signal_reload(int)
 {
-	EventSystem::instance()->reload();
+	EventThread::self()->reload();
+	/* XXX Forward signal to all threads.  */
 }
 
 static void
 signal_stop(int)
 {
-	EventSystem::instance()->stop();
+	EventThread::self()->stop();
+	/* XXX Forward signal to all threads.  */
 }

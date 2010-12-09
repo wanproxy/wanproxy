@@ -8,7 +8,6 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
 
 #define	EPOLL_EVENT_COUNT	128
 

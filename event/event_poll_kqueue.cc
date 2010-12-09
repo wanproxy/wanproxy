@@ -8,7 +8,9 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
+#include <event/event_poll.h>
 
 static std::map<EventPoll *, int> kq_map;
 
