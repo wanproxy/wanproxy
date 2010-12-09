@@ -1,5 +1,8 @@
+o) Fix any bugs with XCodec EOS support.
 o) Make tack use the EventSystem and IOSystem now that the performance of
    the latter is substantially better than the hand-rolled I/O of tack.
+o) Replace singletons with thread-local storage.
+o) Introduce trivial multi-threading.
 o) Get simple packet capture/injection stuff working, enough to do some trivial
    packet tunneling / deduplication stuff.
 o) Packet framing, so we can divide incoming Buffers up into protocol control
@@ -7,7 +10,6 @@ o) Packet framing, so we can divide incoming Buffers up into protocol control
    things like include ephemeral fields or sensitive information.
 
 For 0.7.1:
-o) Fix any bugs with XCodec EOS support.
 o) Add an ActionCache which classes can use to dole out Actions and which at
    destruction time will assert that there are no outstanding actions.  This
    will make debugging code involving Actions easier and give better Action
