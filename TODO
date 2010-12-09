@@ -4,7 +4,7 @@ o) Get simple packet capture/injection stuff working, enough to do some trivial
    packet tunneling / deduplication stuff.
 o) Packet framing, so we can divide incoming Buffers up into protocol control
    and data fields, so that we deduplicate at useful boundaries and don't do
-   things like include ephemeral fields.
+   things like include ephemeral fields or sensitive information.
 
 For 0.7.1:
 o) Fix any bugs with XCodec EOS support.
