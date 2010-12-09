@@ -11,6 +11,11 @@ o) Packet framing, so we can divide incoming Buffers up into protocol control
 o) Begin introducing locking.
 o) Split polling across multiple threads, or do callbacks in one thread and
    run the IOSystem on another (IOThread?)
+o) Find ways to reduce the cost of the EventThread abstraction, possibly by
+   decomposing it into several things and running timeouts and polling in
+   separate threads, so the inner loops are tighter.  callback-speed1 has
+   gotten quite painful on Mac OS X (though little impact on FreeBSD, perhaps
+   thread-local storage is faster on FreeBSD?)
 
 For 0.7.1:
 o) Add an ActionCache which classes can use to dole out Actions and which at
