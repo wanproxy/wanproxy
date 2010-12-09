@@ -14,8 +14,6 @@
  * ready to process more data.
  *
  * TODO: Asynchronous processing function.
- *
- * XXX Should flag error and ensure all subsequent input() and output() fail.
  */
 
 PipeSimple::PipeSimple(const LogHandle& log)
