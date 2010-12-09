@@ -8,6 +8,9 @@ o) Get simple packet capture/injection stuff working, enough to do some trivial
 o) Packet framing, so we can divide incoming Buffers up into protocol control
    and data fields, so that we deduplicate at useful boundaries and don't do
    things like include ephemeral fields or sensitive information.
+o) Begin introducing locking.
+o) Split polling across multiple threads, or do callbacks in one thread and
+   run the IOSystem on another (IOThread?)
 
 For 0.7.1:
 o) Add an ActionCache which classes can use to dole out Actions and which at
