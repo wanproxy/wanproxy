@@ -18,6 +18,7 @@ o) Find ways to reduce the cost of the EventThread abstraction, possibly by
    thread-local storage is faster on FreeBSD?)
 o) Add centralized implementations of Catenate and other patterns in lots of
    the tests.
+o) Thread-aware signal handling.
 
 For 0.7.1:
 o) Add an ActionCache which classes can use to dole out Actions and which at
