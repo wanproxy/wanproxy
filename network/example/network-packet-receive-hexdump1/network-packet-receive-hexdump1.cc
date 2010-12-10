@@ -2,6 +2,7 @@
 
 #include <event/action.h>
 #include <event/callback.h>
+#include <event/event_main.h>
 #include <event/event_system.h>
 
 #include <network/network_interface.h>
@@ -99,7 +100,7 @@ main(int argc, char *argv[])
 
 	PacketDumper dumper(interface);
 
-	EventSystem::instance()->start();
+	event_main();
 
 	delete interface;
 }

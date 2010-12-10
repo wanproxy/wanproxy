@@ -5,8 +5,9 @@
 #include <event/callback.h>
 #include <event/condition.h>
 #include <event/event.h>
+#include <event/event_callback.h>
 #include <event/event_condition.h>
-#include <event/event_system.h>
+#include <event/event_main.h>
 
 struct ConditionTest {
 	unsigned key_;
@@ -68,5 +69,5 @@ main(void)
 		new ConditionTest(i, g);
 	}
 
-	EventSystem::instance()->start();
+	event_main();
 }

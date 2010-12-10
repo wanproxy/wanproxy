@@ -5,7 +5,8 @@
 #include <event/action.h>
 #include <event/callback.h>
 #include <event/event.h>
-#include <event/event_system.h>
+#include <event/event_callback.h>
+#include <event/event_main.h>
 
 #include <io/stream_handle.h>
 #include <io/pipe/pipe.h>
@@ -92,5 +93,5 @@ main(void)
 	InflatePipe pipe;
 	Catenate cat(STDIN_FILENO, &pipe, STDOUT_FILENO);
 
-	EventSystem::instance()->start();
+	event_main();
 }

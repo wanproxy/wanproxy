@@ -3,7 +3,7 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event_main.h>
 
 #include "wanproxy_config.h"
 
@@ -46,7 +46,7 @@ main(int argc, char *argv[])
 	if (!config.configure(configfile))
 		HALT("/wanproxy") << "Could not configure proxies.";
 
-	EventSystem::instance()->start();
+	event_main();
 }
 
 static void

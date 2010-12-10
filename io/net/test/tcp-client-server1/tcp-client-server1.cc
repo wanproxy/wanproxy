@@ -3,7 +3,9 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
+#include <event/event_main.h>
 
 #include <io/socket/socket.h>
 
@@ -293,7 +295,9 @@ main(void)
 	Listener *l = new Listener("/ip", SocketAddressFamilyIP, "[localhost]:0");
 	Listener *l4 = new Listener("/ipv4", SocketAddressFamilyIPv4, "[localhost]:0");
 	Listener *l6 = new Listener("/ipv6", SocketAddressFamilyIPv6, "[::1]:0");
-	EventSystem::instance()->start();
+
+	event_main();
+
 	delete l;
 	delete l4;
 	delete l6;

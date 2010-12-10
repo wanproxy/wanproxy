@@ -3,7 +3,7 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event_main.h>
 
 #include <io/socket/socket.h>
 
@@ -299,6 +299,8 @@ main(void)
 		data[i] = random() % 0xff;
 
 	Listener *l = new Listener();
-	EventSystem::instance()->start();
+
+	event_main();
+
 	delete l;
 }

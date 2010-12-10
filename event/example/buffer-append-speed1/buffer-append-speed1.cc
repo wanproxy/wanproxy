@@ -2,6 +2,7 @@
 
 #include <event/action.h>
 #include <event/callback.h>
+#include <event/event_main.h>
 #include <event/event_system.h>
 
 #define	TIMER_MS	1000
@@ -62,6 +63,8 @@ main(void)
 	memset(zbuf, 0, sizeof zbuf);
 
 	BufferSpeed *cs = new BufferSpeed();
-	EventSystem::instance()->start();
+
+	event_main();
+
 	delete cs;
 }

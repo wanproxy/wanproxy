@@ -2,6 +2,7 @@
 
 #include <event/action.h>
 #include <event/callback.h>
+#include <event/event_main.h>
 #include <event/event_system.h>
 
 #define	TIMER_MS	1000
@@ -57,6 +58,8 @@ main(void)
 	INFO("/example/callback/speed1") << "Timer delay: " << TIMER_MS << "ms";
 
 	CallbackSpeed *cs = new CallbackSpeed();
-	EventSystem::instance()->start();
+
+	event_main();
+
 	delete cs;
 }

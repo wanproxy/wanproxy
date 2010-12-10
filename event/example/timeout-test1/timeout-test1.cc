@@ -2,6 +2,7 @@
 
 #include <event/action.h>
 #include <event/callback.h>
+#include <event/event_main.h>
 #include <event/event_system.h>
 
 #define	TIMER1_MS	100
@@ -49,6 +50,8 @@ main(void)
 	INFO("/example/timeout/test1") << "Timer 2 delay: " << TIMER2_MS;
 
 	TimeoutTest *tt = new TimeoutTest();
-	EventSystem::instance()->start();
+
+	event_main();
+
 	delete tt;
 }

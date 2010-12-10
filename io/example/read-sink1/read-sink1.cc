@@ -5,7 +5,8 @@
 #include <event/action.h>
 #include <event/callback.h>
 #include <event/event.h>
-#include <event/event_system.h>
+#include <event/event_callback.h>
+#include <event/event_main.h>
 
 #include <io/stream_handle.h>
 
@@ -73,5 +74,5 @@ main(void)
 {
 	Sink sink(STDIN_FILENO);
 
-	EventSystem::instance()->start();
+	event_main();
 }

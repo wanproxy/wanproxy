@@ -3,7 +3,9 @@
 
 #include <event/action.h>
 #include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event.h>
+#include <event/event_callback.h>
+#include <event/event_main.h>
 
 #include <io/pipe/pipe.h>
 #include <io/pipe/pipe_null.h>
@@ -144,5 +146,5 @@ main(void)
 	PipeNull pipe;
 	Producer producer(&pipe);
 	Consumer consumer(&pipe);
-	EventSystem::instance()->start();
+	event_main();
 }

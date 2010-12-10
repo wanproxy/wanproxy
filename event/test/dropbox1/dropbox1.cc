@@ -4,7 +4,7 @@
 #include <event/action.h>
 #include <event/callback.h>
 #include <event/dropbox.h>
-#include <event/event_system.h>
+#include <event/event_main.h>
 
 struct DropboxTest {
 	unsigned key_;
@@ -71,5 +71,5 @@ main(void)
 		new DropboxTest(i, g);
 	}
 
-	EventSystem::instance()->start();
+	event_main();
 }

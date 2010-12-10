@@ -2,6 +2,7 @@
 
 #include <event/action.h>
 #include <event/callback.h>
+#include <event/event_main.h>
 #include <event/event_system.h>
 
 #define	CALLBACK_NUMBER	1000
@@ -63,6 +64,8 @@ main(void)
 	INFO("/example/callback/manyspeed1") << "Timer delay: " << TIMER_MS << "ms";
 
 	CallbackManySpeed *cs = new CallbackManySpeed();
-	EventSystem::instance()->start();
+
+	event_main();
+
 	delete cs;
 }

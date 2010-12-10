@@ -2,6 +2,7 @@
 
 #include <event/action.h>
 #include <event/callback.h>
+#include <event/event_main.h>
 #include <event/event_system.h>
 
 class ReloadTest {
@@ -47,6 +48,8 @@ int
 main(void)
 {
 	ReloadTest *tt = new ReloadTest();
-	EventSystem::instance()->start();
+
+	event_main();
+
 	delete tt;
 }

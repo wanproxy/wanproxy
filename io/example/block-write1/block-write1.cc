@@ -6,7 +6,8 @@
 #include <event/action.h>
 #include <event/callback.h>
 #include <event/event.h>
-#include <event/event_system.h>
+#include <event/event_callback.h>
+#include <event/event_main.h>
 
 #include <io/block_handle.h>
 
@@ -95,7 +96,7 @@ main(void)
 	ASSERT(fd != -1);
 	BlockWriter bw(fd, (128 * 1024 * 1024) / BW_BSIZE);
 
-	EventSystem::instance()->start();
+	event_main();
 
 	::unlink("block_file.128M");
 }
