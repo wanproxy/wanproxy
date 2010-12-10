@@ -1,5 +1,8 @@
 VPATH+=	${TOPDIR}/common/thread
 
-SRCS+=	thread_posix.cc
+THREAD_MODEL=	posix
+
+SRCS+=	mutex_${THREAD_MODEL}.cc
+SRCS+=	thread_${THREAD_MODEL}.cc
 
 LDADD+=	-lpthread
