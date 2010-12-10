@@ -1,10 +1,7 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include <common/buffer.h>
-
-#include <event/action.h>
-#include <event/callback.h>
+#include <event/event_callback.h>
 #include <event/event_thread.h>
 
 static void signal_reload(int);

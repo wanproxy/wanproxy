@@ -1,9 +1,6 @@
-#include <common/buffer.h>
 #include <common/endian.h>
 
-#include <event/action.h>
-#include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event_callback.h>
 
 #include <io/pipe/pipe.h>
 #include <io/pipe/pipe_link.h>

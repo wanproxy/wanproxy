@@ -1,8 +1,14 @@
-#include <common/buffer.h>
-
-#include <event/action.h>
-#include <event/callback.h>
-#include <event/event_system.h>
+/*
+ * XXX
+ *
+ * We should just need <common/buffer.h>, but GCC is awful about
+ * defining EventCallback as a tag after having a full definition
+ * of it in a previous header file, so pipe.h can't do:
+ * 	class EventCallback;
+ * Unless no consumer is including <event/event_callback.h> before
+ * pipe.h.
+ */
+#include <event/event_callback.h>
 
 #include <io/pipe/pipe.h>
 #include <io/pipe/pipe_null.h>

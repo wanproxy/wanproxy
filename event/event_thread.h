@@ -3,8 +3,6 @@
 
 #include <common/thread/thread.h>
 #include <event/callback_queue.h>
-#include <event/event.h>
-#include <event/event_callback.h>
 #include <event/event_poll.h>
 #include <event/timeout_queue.h>
 

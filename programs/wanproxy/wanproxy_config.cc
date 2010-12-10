@@ -2,15 +2,11 @@
 #include <fstream>
 #include <sstream>
 
-#include <common/buffer.h>
-
 #include <config/config.h>
 #include <config/config_class.h>
 #include <config/config_class_log_mask.h>
 
-#include <event/action.h>
-#include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event_callback.h>
 
 #include "wanproxy_config.h"
 #include "wanproxy_config_class_codec.h"

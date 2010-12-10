@@ -1,7 +1,4 @@
-#include <common/buffer.h> /* XXX For class Event */
-
-#include <event/action.h>
-#include <event/callback.h>
+#include <event/event_callback.h>
 #include <event/event_main.h>
 #include <event/event_system.h>
 

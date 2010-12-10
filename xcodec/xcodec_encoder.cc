@@ -2,9 +2,7 @@
 #include <common/endian.h>
 
 #if defined(XCODEC_PIPES)
-#include <event/action.h>
-#include <event/callback.h>
-#include <event/event_system.h>
+#include <event/event_callback.h>
 
 #include <io/pipe/pipe.h>
 #endif
