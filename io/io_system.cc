@@ -7,12 +7,8 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include <common/buffer.h>
 #include <common/limits.h>
 
-#include <event/action.h>
-#include <event/callback.h>
-#include <event/event.h>
 #include <event/event_callback.h>
 #include <event/event_system.h>
 

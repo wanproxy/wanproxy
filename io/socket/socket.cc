@@ -8,12 +8,8 @@
 #include <fcntl.h>
 #include <netdb.h>
 
-#include <common/buffer.h>
 #include <common/endian.h>
 
-#include <event/action.h>
-#include <event/callback.h>
-#include <event/event.h>
 #include <event/event_callback.h>
 #include <event/event_system.h>
 

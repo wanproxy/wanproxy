@@ -1,10 +1,5 @@
 #include <unistd.h>
 
-#include <common/buffer.h>
-
-#include <event/action.h>
-#include <event/callback.h>
-#include <event/event.h>
 #include <event/event_callback.h>
 #include <event/event_main.h>
 

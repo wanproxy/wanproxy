@@ -1,6 +1,8 @@
 #ifndef	EVENT_H
 #define	EVENT_H
 
+#include <common/buffer.h>
+
 /*
  * The general-purpose event type.  Never extended or anything like that.
  * Tracking a user-specified pointer is handled by the callback, providers of

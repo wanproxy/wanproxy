@@ -1,7 +1,7 @@
 #ifndef	CALLBACK_H
 #define	CALLBACK_H
 
-class Action;
+#include <event/action.h>
 
 class Callback {
 protected:
