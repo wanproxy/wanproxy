@@ -1,7 +1,8 @@
 #ifndef	EVENT_CONDITION_H
 #define	EVENT_CONDITION_H
 
-#include "typed_condition.h"
+#include <event/event.h>
+#include <event/typed_condition.h>
 
 typedef	class TypedCondition<Event> EventCondition;
 typedef	class TypedConditionVariable<Event> EventConditionVariable;
