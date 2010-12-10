@@ -16,6 +16,8 @@ o) Find ways to reduce the cost of the EventThread abstraction, possibly by
    separate threads, so the inner loops are tighter.  callback-speed1 has
    gotten quite painful on Mac OS X (though little impact on FreeBSD, perhaps
    thread-local storage is faster on FreeBSD?)
+o) Add centralized implementations of Catenate and other patterns in lots of
+   the tests.
 
 For 0.7.1:
 o) Add an ActionCache which classes can use to dole out Actions and which at
