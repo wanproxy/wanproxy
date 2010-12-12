@@ -4,8 +4,11 @@
 #include <common/thread/lock.h>
 
 struct MutexState;
+class SleepQueue;
 
 class Mutex : public Lock {
+	friend class SleepQueue;
+
 	MutexState *state_;
 public:
 	Mutex(LockClass *, const std::string&);
