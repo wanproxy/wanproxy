@@ -19,6 +19,8 @@ static std::map<Thread *, ThreadPOSIX *> thread_posix_map;
 static void thread_posix_init(void);
 static void *thread_posix_start(void *);
 
+static NullThread initial_thread("initial thread");
+
 void
 Thread::join(void)
 {
@@ -74,6 +76,8 @@ Thread::start(void)
 Thread *
 Thread::self(void)
 {
+	if (!thread_posix_initialized)
+		thread_posix_init();
 	ASSERT(thread_posix_initialized);
 
 	void *ptr = pthread_getspecific(thread_posix_key);
@@ -93,6 +97,23 @@ thread_posix_init(void)
 		ERROR("/thread/posix/init") << "Could not initialize thread-local Thread pointer key.";
 		return;
 	}
+
+	ThreadPOSIX *td = new ThreadPOSIX();
+	td->td_ = &initial_thread;
+	td->ptd_ = pthread_self();
+
+	rv = pthread_setspecific(thread_posix_key, td);
+	if (rv == -1) {
+		ERROR("/thread/posix/init") << "Could not set thread-local Thread pointer for initial thread.";
+		delete td;
+		return;
+	}
+
+	thread_posix_map[td->td_] = td;
+
+#if defined(__FreeBSD__)
+	pthread_set_name_np(td->ptd_, td->td_->name_.c_str());
+#endif
 
 	thread_posix_initialized = true;
 }

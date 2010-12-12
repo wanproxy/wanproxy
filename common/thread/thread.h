@@ -22,4 +22,20 @@ public:
 	static Thread *self(void);
 };
 
+class NullThread : public Thread {
+public:
+	NullThread(const std::string& name)
+	: Thread(name)
+	{ }
+
+	~NullThread()
+	{ }
+
+private:
+	void main(void)
+	{
+		NOTREACHED();
+	}
+};
+
 #endif /* !THREAD_H */
