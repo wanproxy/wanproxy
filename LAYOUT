@@ -1,26 +1,34 @@
-Top-level directory layout:
+Component directory layout:
 
 Directory	Description
 =============	=============================================================
 alg		Portable implementations of simple, standard algorithms.
-		Organized into sub-directories based on type, i.e. alg/hash
-		is hashing algorithms.
-common		Non-specific functionality that is of general interest, i.e.
+		Organized into sub-directories based on type.
+alg/hash	Hash algorithms.
+common		Non-specific functionality that is of general interest, e.g.
 		the logging system, test infrastructure and Buffer class.
+common/thread	Threading infrastructure.
+common/timer	Time sampling infrastructure.
+common/uuid	UUID API.
 config		General-purpose configuration system infrastructure and some
 		essential types and classes.
 event		The event system and infrastructure to support it, such as
 		the various implementations of the poll interface.
-io		Interface to IO subsystems, namely file descriptors and
-		sockets, as well as abstract classes for such things (e.g.
-		Channel, Pipe, Splice.)
-net		Networking utility functions.
-network		Low-level networking.
-programs	Stand-alone programs.
-		Organized into sub-directories named by program, i.e.
-		programs/wanproxy is WANProxy.
+io		IO system, namely file descriptors interfaces.
+io/net		Networking abstractions for the IO system, utility functions and
+		protocols.
+io/pipe		Pipe infrastructure; abstractions and useful types.
+io/socket	Sockets interface to the IO system.
+network		Low-level networking, e.g. packet capture.
+programs	Stand-alone programs, organized into sub-directories named by
+		program.
+programs/tack	File-oriented dictionary compression using XCodec.
+programs/wanproxy
+		WANProxy.
+programs/xcdump	XCodec stream decoder and pretty-printer.
 xcodec		The XCodec codec, which performs deduplication, and its
 		internal interfaces.
+xml		Trivial XML functions.
 zlib		Wrappers around zlib, providing Pipes that do inflate and
 		deflate.
 
