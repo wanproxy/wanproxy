@@ -35,6 +35,7 @@ struct SleepQueueState {
 		mutex_state_->lock();
 		ASSERT(mutex_state_->owner_ == Thread::self());
 		rv = pthread_cond_signal(&cond_);
+		ASSERT(mutex_state_->owner_ == Thread::self());
 		mutex_state_->unlock();
 		ASSERT(rv != -1);
 	}
@@ -47,6 +48,10 @@ struct SleepQueueState {
 		ASSERT(mutex_state_->owner_ == Thread::self());
 		mutex_state_->owner_ = NULL;
 		rv = pthread_cond_wait(&cond_, &mutex_state_->mutex_);
+		while (mutex_state_->owner_ != NULL) {
+			mutex_state_->unlock();
+			mutex_state_->lock();
+		}
 		mutex_state_->owner_ = Thread::self();
 		mutex_state_->unlock();
 		ASSERT(rv != -1);

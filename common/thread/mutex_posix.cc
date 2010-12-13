@@ -58,10 +58,9 @@ Mutex::lock(void)
 	ASSERT(self != NULL);
 
 	state_->lock();
-	if (state_->owner_ != NULL) {
-		HALT("/mutex") << "Attempt to lock already-owned mutex.";
+	while (state_->owner_ != NULL) {
 		state_->unlock();
-		return;
+		state_->lock();
 	}
 	state_->owner_ = self;
 	state_->unlock();
