@@ -1,17 +1,19 @@
 #ifndef	THREAD_H
 #define	THREAD_H
 
+struct ThreadState;
+
 class Thread {
+	friend struct ThreadState;
+
 	std::string name_;
+	ThreadState *state_;
 
 protected:
-	Thread(const std::string& name)
-	: name_(name)
-	{ }
+	Thread(const std::string&);
 
 public:
-	virtual ~Thread()
-	{ }
+	virtual ~Thread();
 
 	void join(void);
 	void start(void);

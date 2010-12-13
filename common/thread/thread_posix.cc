@@ -5,43 +5,46 @@
 
 #include <map>
 
+#include <common/thread/mutex.h>
+#include <common/thread/sleep_queue.h>
 #include <common/thread/thread.h>
 
-struct ThreadPOSIX {
-	Thread *td_;
-	pthread_t ptd_;
-};
+#include "thread_posix.h"
 
 static bool thread_posix_initialized;
 static pthread_key_t thread_posix_key;
-static std::map<Thread *, ThreadPOSIX *> thread_posix_map;
+
+static LockClass thread_start_lock_class("Thread::start");
+static Mutex thread_start_mutex(&thread_start_lock_class, "Thread::start");
+static SleepQueue thread_start_sleepq("Thread::start", &thread_start_mutex);
 
 static void thread_posix_init(void);
 static void *thread_posix_start(void *);
 
 static NullThread initial_thread("initial thread");
 
+Thread::Thread(const std::string& name)
+: name_(name),
+  state_(new ThreadState())
+{ }
+
+Thread::~Thread()
+{
+	if (state_ != NULL) {
+		delete state_;
+		state_ = NULL;
+	}
+}
+
 void
 Thread::join(void)
 {
-	std::map<Thread *, ThreadPOSIX *>::iterator it;
-
-	it = thread_posix_map.find(this);
-	if (it == thread_posix_map.end()) {
-		ERROR("/thread/posix") << "Attempt to join non-existant thread.";
-		return;
-	}
-
 	void *val;
-	ThreadPOSIX *td = it->second;
-	int rv = pthread_join(td->ptd_, &val);
+	int rv = pthread_join(state_->td_, &val);
 	if (rv == -1) {
 		ERROR("/thread/posix") << "Thread join failed.";
 		return;
 	}
-
-	thread_posix_map.erase(it);
-	delete td;
 }
 
 void
@@ -55,22 +58,20 @@ Thread::start(void)
 		}
 	}
 
-	ThreadPOSIX *td = new ThreadPOSIX();
-	td->td_ = this;
+	thread_start_mutex.lock();
 
-	thread_posix_map[td->td_] = td;
-
-	int rv = pthread_create(&td->ptd_, NULL, thread_posix_start, td);
+	pthread_t td;
+	int rv = pthread_create(&td, NULL, thread_posix_start, this);
 	if (rv == -1) {
 		ERROR("/thread/posix") << "Unable to start thread.";
-		delete td->td_;
-		delete td;
 		return;
 	}
 
-#if defined(__FreeBSD__)
-	pthread_set_name_np(td->ptd_, td->td_->name_.c_str());
-#endif
+	thread_start_sleepq.wait();
+
+	ASSERT(td == state_->td_);
+
+	thread_start_mutex.unlock();
 }
 
 Thread *
@@ -83,8 +84,7 @@ Thread::self(void)
 	void *ptr = pthread_getspecific(thread_posix_key);
 	if (ptr == NULL)
 		return (NULL);
-	ThreadPOSIX *td = (ThreadPOSIX *)ptr;
-	return (td->td_);
+	return ((Thread *)ptr);
 }
 
 static void
@@ -98,22 +98,7 @@ thread_posix_init(void)
 		return;
 	}
 
-	ThreadPOSIX *td = new ThreadPOSIX();
-	td->td_ = &initial_thread;
-	td->ptd_ = pthread_self();
-
-	rv = pthread_setspecific(thread_posix_key, td);
-	if (rv == -1) {
-		ERROR("/thread/posix/init") << "Could not set thread-local Thread pointer for initial thread.";
-		delete td;
-		return;
-	}
-
-	thread_posix_map[td->td_] = td;
-
-#if defined(__FreeBSD__)
-	pthread_set_name_np(td->ptd_, td->td_->name_.c_str());
-#endif
+	ThreadState::start(thread_posix_key, &initial_thread);
 
 	thread_posix_initialized = true;
 }
@@ -121,15 +106,15 @@ thread_posix_init(void)
 static void *
 thread_posix_start(void *arg)
 {
-	ThreadPOSIX *td = (ThreadPOSIX *)arg;
+	Thread *td = (Thread *)arg;
 
-	int rv = pthread_setspecific(thread_posix_key, td);
-	if (rv == -1) {
-		ERROR("/thread/posix/start") << "Could not set thread-local Thread pointer.";
-		return (NULL);
-	}
+	ThreadState::start(thread_posix_key, td);
 
-	td->td_->main();
+	thread_start_mutex.lock();
+	thread_start_sleepq.signal();
+	thread_start_mutex.unlock();
+
+	td->main();
 
 	return (NULL);
 }

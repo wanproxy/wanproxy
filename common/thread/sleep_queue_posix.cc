@@ -8,11 +8,11 @@
 
 struct SleepQueueState {
 	pthread_cond_t cond_;
-	pthread_mutex_t *mutex_;
+	MutexState *mutex_state_;
 
 	SleepQueueState(MutexState *mutex_state)
 	: cond_(),
-	  mutex_(&mutex_state->mutex_)
+	  mutex_state_(mutex_state)
 	{
 		int rv;
 
@@ -32,7 +32,10 @@ struct SleepQueueState {
 	{
 		int rv;
 
+		mutex_state_->lock();
+		ASSERT(mutex_state_->owner_ == Thread::self());
 		rv = pthread_cond_signal(&cond_);
+		mutex_state_->unlock();
 		ASSERT(rv != -1);
 	}
 
@@ -40,7 +43,12 @@ struct SleepQueueState {
 	{
 		int rv;
 
-		rv = pthread_cond_wait(&cond_, mutex_);
+		mutex_state_->lock();
+		ASSERT(mutex_state_->owner_ == Thread::self());
+		mutex_state_->owner_ = NULL;
+		rv = pthread_cond_wait(&cond_, &mutex_state_->mutex_);
+		mutex_state_->owner_ = Thread::self();
+		mutex_state_->unlock();
 		ASSERT(rv != -1);
 	}
 };
@@ -53,7 +61,9 @@ SleepQueue::SleepQueue(const std::string& name, Mutex *mutex)
 
 SleepQueue::~SleepQueue()
 {
+#if 0 /* XXX What about extern SleepQueues?  */
 	ASSERT_LOCK_OWNED(mutex_);
+#endif
 
 	if (state_ != NULL) {
 		delete state_;

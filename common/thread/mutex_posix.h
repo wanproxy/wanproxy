@@ -33,9 +33,11 @@ struct MutexState {
 		rv = pthread_mutexattr_destroy(&mutex_attr_);
 		ASSERT(rv != -1);
 
+#if 0 /* XXX What about extern Mutexes?  */
 		Thread *self = Thread::self();
 		ASSERT(self != NULL);
 		ASSERT(owner_ == self);
+#endif
 	}
 
 	void lock(void)
