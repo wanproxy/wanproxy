@@ -54,31 +54,15 @@ Mutex::assert_owned(bool owned, const std::string& file, unsigned line, const st
 void
 Mutex::lock(void)
 {
-	Thread *self = Thread::self();
-	ASSERT(self != NULL);
-
 	state_->lock();
-	while (state_->owner_ != NULL) {
-		state_->unlock();
-		state_->lock();
-	}
-	state_->owner_ = self;
+	state_->lock_acquire();
 	state_->unlock();
 }
 
 void
 Mutex::unlock(void)
 {
-	Thread *self = Thread::self();
-	ASSERT(self != NULL);
-
 	state_->lock();
-	if (state_->owner_ == NULL) {
-		HALT("/mutex") << "Attempt to unlock already-unlocked mutex.";
-		state_->unlock();
-		return;
-	}
-	ASSERT(state_->owner_ == self);
-	state_->owner_ = NULL;
+	state_->lock_release();
 	state_->unlock();
 }

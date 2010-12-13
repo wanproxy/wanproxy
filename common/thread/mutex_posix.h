@@ -40,6 +40,9 @@ struct MutexState {
 #endif
 	}
 
+	/*
+	 * Acquire the underlying lock.
+	 */
 	void lock(void)
 	{
 		int rv;
@@ -48,12 +51,47 @@ struct MutexState {
 		ASSERT(rv != -1);
 	}
 
+	/*
+	 * Acquire ownership of this mutex.
+	 */
+	void lock_acquire(void)
+	{
+		Thread *self = Thread::self();
+		ASSERT(self != NULL);
+
+		while (owner_ != NULL) {
+			unlock();
+			/* XXX Wait on a condvar instead?  */
+			lock();
+		}
+		owner_ = self;
+	}
+
+	/*
+	 * Release the underlying lock.
+	 */
 	void unlock(void)
 	{
 		int rv;
 
 		rv = pthread_mutex_unlock(&mutex_);
 		ASSERT(rv != -1);
+	}
+
+	/*
+	 * Release ownership of this Mutex.
+	 */
+	void lock_release(void)
+	{
+		Thread *self = Thread::self();
+		ASSERT(self != NULL);
+
+		if (owner_ == NULL) {
+			HALT("/mutex") << "Attempt to unlock already-unlocked mutex.";
+			return;
+		}
+		ASSERT(owner_ == self);
+		owner_ = NULL;
 	}
 };
 
