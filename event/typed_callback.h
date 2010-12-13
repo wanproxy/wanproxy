@@ -7,8 +7,9 @@ template<typename T>
 class TypedCallback : public Callback {
 	T param_;
 protected:
-	TypedCallback(void)
-	: param_()
+	TypedCallback(CallbackScheduler *scheduler)
+	: Callback(scheduler),
+	  param_()
 	{ }
 
 public:
@@ -40,8 +41,8 @@ private:
 	method_t method_;
 public:
 	template<typename Tm>
-	ObjectTypedCallback(C *obj, Tm method)
-	: TypedCallback<T>(),
+	ObjectTypedCallback(CallbackScheduler *scheduler, C *obj, Tm method)
+	: TypedCallback<T>(scheduler),
 	  obj_(obj),
 	  method_(method)
 	{ }
@@ -67,8 +68,8 @@ private:
 	A arg_;
 public:
 	template<typename Tm>
-	ObjectTypedArgCallback(C *obj, Tm method, A arg)
-	: TypedCallback<T>(),
+	ObjectTypedArgCallback(CallbackScheduler *scheduler, C *obj, Tm method, A arg)
+	: TypedCallback<T>(scheduler),
 	  obj_(obj),
 	  method_(method),
 	  arg_(arg)
@@ -87,14 +88,14 @@ private:
 template<typename T, class C>
 TypedCallback<T> *callback(C *obj, void (C::*const method)(T))
 {
-	TypedCallback<T> *cb = new ObjectTypedCallback<T, C>(obj, method);
+	TypedCallback<T> *cb = new ObjectTypedCallback<T, C>(NULL, obj, method);
 	return (cb);
 }
 
 template<typename T, class C, typename A>
 TypedCallback<T> *callback(C *obj, void (C::*const method)(T, A), A arg)
 {
-	TypedCallback<T> *cb = new ObjectTypedArgCallback<T, C, A>(obj, method, arg);
+	TypedCallback<T> *cb = new ObjectTypedArgCallback<T, C, A>(NULL, obj, method, arg);
 	return (cb);
 }
 

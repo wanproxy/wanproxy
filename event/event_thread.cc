@@ -24,36 +24,7 @@ EventThread::EventThread(void)
 }
 
 EventThread::~EventThread()
-{
-}
-
-Action *
-EventThread::poll(const EventPoll::Type& type, int fd, EventCallback *cb)
-{
-	Action *a = poll_.poll(type, fd, cb);
-	return (a);
-}
-
-Action *
-EventThread::register_interest(const EventInterest& interest, Callback *cb)
-{
-	Action *a = interest_queue_[interest].append(cb);
-	return (a);
-}
-
-Action *
-EventThread::schedule(Callback *cb)
-{
-	Action *a = queue_.append(cb);
-	return (a);
-}
-
-Action *
-EventThread::timeout(unsigned secs, Callback *cb)
-{
-	Action *a = timeout_queue_.append(secs, cb);
-	return (a);
-}
+{ }
 
 void
 EventThread::main(void)

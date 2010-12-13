@@ -4,5 +4,7 @@
 Action *
 Callback::schedule(void)
 {
+	if (scheduler_ != NULL)
+		return (scheduler_->schedule(this));
 	return (EventSystem::instance()->schedule(this));
 }

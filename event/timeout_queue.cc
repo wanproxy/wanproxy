@@ -43,7 +43,7 @@ TimeoutQueue::append(uintmax_t ms, Callback *cb)
 	now.nanoseconds_ += (ms % 1000) * 1000000;
 
 	CallbackQueue& queue = timeout_queue_[now];
-	Action *a = queue.append(cb);
+	Action *a = queue.schedule(cb);
 	return (a);
 }
 

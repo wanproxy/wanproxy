@@ -3,7 +3,7 @@
 
 #include <deque>
 
-class CallbackQueue {
+class CallbackQueue : public CallbackScheduler {
 	class CallbackAction : public Cancellable {
 	public:
 		CallbackQueue *const queue_;
@@ -44,7 +44,7 @@ public:
 		ASSERT(queue_.empty());
 	}
 
-	Action *append(Callback *cb)
+	Action *schedule(Callback *cb)
 	{
 		CallbackAction *a = new CallbackAction(this, generation_, cb);
 		queue_.push_back(a);

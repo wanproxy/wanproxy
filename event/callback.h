@@ -3,9 +3,25 @@
 
 #include <event/action.h>
 
-class Callback {
+class Callback;
+
+class CallbackScheduler {
 protected:
-	Callback(void)
+	CallbackScheduler(void)
+	{ }
+
+public:
+	virtual ~CallbackScheduler()
+	{ }
+
+	virtual Action *schedule(Callback *) = 0;
+};
+
+class Callback {
+	CallbackScheduler *scheduler_;
+protected:
+	Callback(CallbackScheduler *scheduler)
+	: scheduler_(scheduler)
 	{ }
 
 public:
@@ -34,8 +50,9 @@ private:
 	method_t method_;
 public:
 	template<typename T>
-	ObjectCallback(C *obj, T method)
-	: obj_(obj),
+	ObjectCallback(CallbackScheduler *scheduler, C *obj, T method)
+	: Callback(scheduler),
+	  obj_(obj),
 	  method_(method)
 	{ }
 
@@ -60,8 +77,8 @@ private:
 	A arg_;
 public:
 	template<typename Tm>
-	ObjectArgCallback(C *obj, Tm method, A arg)
-	: Callback(),
+	ObjectArgCallback(CallbackScheduler *scheduler, C *obj, Tm method, A arg)
+	: Callback(scheduler),
 	  obj_(obj),
 	  method_(method),
 	  arg_(arg)
@@ -80,14 +97,14 @@ private:
 template<class C>
 Callback *callback(C *obj, typename ObjectCallback<C>::method_t method)
 {
-	Callback *cb = new ObjectCallback<C>(obj, method);
+	Callback *cb = new ObjectCallback<C>(NULL, obj, method);
 	return (cb);
 }
 
 template<class C, typename A>
 Callback *callback(C *obj, void (C::*const method)(A), A arg)
 {
-	Callback *cb = new ObjectArgCallback<C, A>(obj, method, arg);
+	Callback *cb = new ObjectArgCallback<C, A>(NULL, obj, method, arg);
 	return (cb);
 }
 

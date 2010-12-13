@@ -24,10 +24,30 @@ public:
 	~EventThread();
 
 public:
-	Action *poll(const EventPoll::Type&, int, EventCallback *);
-	Action *register_interest(const EventInterest&, Callback *);
-	Action *schedule(Callback *);
-	Action *timeout(unsigned, Callback *);
+	Action *poll(const EventPoll::Type& type, int fd, EventCallback *cb)
+	{
+		Action *a = poll_.poll(type, fd, cb);
+		return (a);
+	}
+
+	Action *register_interest(const EventInterest& interest, Callback *cb)
+	{
+		Action *a = interest_queue_[interest].schedule(cb);
+		return (a);
+	}
+
+	Action *schedule(Callback *cb)
+	{
+		Action *a = queue_.schedule(cb);
+		return (a);
+	}
+
+	Action *timeout(unsigned secs, Callback *cb)
+	{
+		Action *a = timeout_queue_.append(secs, cb);
+		return (a);
+	}
+
 private:
 	void main(void);
 public:
