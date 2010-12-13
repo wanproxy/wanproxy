@@ -7,16 +7,18 @@
 #include <event/event_callback.h>
 #include <event/event_poll.h>
 
-static std::map<EventPoll *, int> kq_map;
+struct EventPollState {
+	int kq_;
+};
 
 EventPoll::EventPoll(void)
 : log_("/event/poll"),
   read_poll_(),
-  write_poll_()
+  write_poll_(),
+  state_(new EventPollState())
 {
-	int kq = kqueue();
-	ASSERT(kq != -1);
-	kq_map[this] = kq;
+	state_->kq_ = kqueue();
+	ASSERT(state_->kq_ != -1);
 }
 
 EventPoll::~EventPoll()
@@ -24,10 +26,14 @@ EventPoll::~EventPoll()
 	ASSERT(read_poll_.empty());
 	ASSERT(write_poll_.empty());
 
-	std::map<EventPoll *, int>::iterator it;
-	it = kq_map.find(this);
-	ASSERT(it != kq_map.end());
-	kq_map.erase(it);
+	if (state_ != NULL) {
+		if (state_->kq_ != -1) {
+			close(state_->kq_);
+			state_->kq_ = -1;
+		}
+		delete state_;
+		state_ = NULL;
+	}
 }
 
 Action *
@@ -51,8 +57,7 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 	default:
 		NOTREACHED();
 	}
-	int kq = kq_map[this];
-	int evcnt = ::kevent(kq, &kev, 1, NULL, 0, NULL);
+	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
 	if (evcnt == -1)
 		HALT(log_) << "Could not add event to kqueue.";
 	ASSERT(evcnt == 0);
@@ -84,8 +89,7 @@ EventPoll::cancel(const Type& type, int fd)
 		EV_SET(&kev, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
 		break;
 	}
-	int kq = kq_map[this];
-	int evcnt = ::kevent(kq, &kev, 1, NULL, 0, NULL);
+	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
 	if (evcnt == -1)
 		HALT(log_) << "Could not delete event from kqueue.";
 	ASSERT(evcnt == 0);
@@ -111,8 +115,7 @@ EventPoll::wait(int ms)
 	}
 
 	struct kevent kev[kevcnt];
-	int kq = kq_map[this];
-	int evcnt = kevent(kq, NULL, 0, kev, kevcnt, ms == -1 ? NULL : &ts);
+	int evcnt = kevent(state_->kq_, NULL, 0, kev, kevcnt, ms == -1 ? NULL : &ts);
 	if (evcnt == -1) {
 		if (errno == EINTR) {
 			INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";

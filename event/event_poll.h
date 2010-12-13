@@ -3,6 +3,8 @@
 
 #include <map>
 
+struct EventPollState;
+
 class EventPoll {
 	friend class EventThread;
 	friend class PollAction;
@@ -57,6 +59,7 @@ private:
 	LogHandle log_;
 	poll_handler_map_t read_poll_;
 	poll_handler_map_t write_poll_;
+	EventPollState *state_;
 
 	EventPoll(void);
 	~EventPoll();

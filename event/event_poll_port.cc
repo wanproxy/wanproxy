@@ -11,7 +11,7 @@
 #include <event/action.h>
 #include <event/callback.h>
 
-/* XXX See kq_map in event_poll_kqueue.c */
+/* XXX See state_ in event_poll_kqueue.c */
 
 EventPoll::EventPoll(void)
 : log_("/event/poll"),

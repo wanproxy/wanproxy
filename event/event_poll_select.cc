@@ -9,7 +9,8 @@
 EventPoll::EventPoll(void)
 : log_("/event/poll"),
   read_poll_(),
-  write_poll_()
+  write_poll_(),
+  state_(NULL)
 {
 }
 
