@@ -99,4 +99,18 @@ TypedCallback<T> *callback(C *obj, void (C::*const method)(T, A), A arg)
 	return (cb);
 }
 
+template<typename T, class C>
+TypedCallback<T> *callback(CallbackScheduler *scheduler, C *obj, void (C::*const method)(T))
+{
+	TypedCallback<T> *cb = new ObjectTypedCallback<T, C>(scheduler, obj, method);
+	return (cb);
+}
+
+template<typename T, class C, typename A>
+TypedCallback<T> *callback(CallbackScheduler *scheduler, C *obj, void (C::*const method)(T, A), A arg)
+{
+	TypedCallback<T> *cb = new ObjectTypedArgCallback<T, C, A>(scheduler, obj, method, arg);
+	return (cb);
+}
+
 #endif /* !TYPED_CALLBACK_H */
