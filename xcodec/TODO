@@ -1,3 +1,4 @@
+o) Push EOS and HELLO into the pipes themselves.
 o) Don't let a peer claim to have our UUID?
 o) Permanent storage.
 o) Decide whether to keep a std::set (or something fancier) of hashes associated
