@@ -43,7 +43,10 @@ public:
 	void start(void)
 	{
 		td_.start();
+	}
 
+	void join(void)
+	{
 		td_.join();
 	}
 

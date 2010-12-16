@@ -6,4 +6,6 @@ void
 event_main(void)
 {
 	EventSystem::instance()->start();
+
+	EventSystem::instance()->join();
 }
