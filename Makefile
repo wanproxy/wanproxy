@@ -1,6 +1,7 @@
 SUBDIR+=alg
 SUBDIR+=common
 SUBDIR+=config
+SUBDIR+=crypto
 SUBDIR+=event
 SUBDIR+=io
 SUBDIR+=network
