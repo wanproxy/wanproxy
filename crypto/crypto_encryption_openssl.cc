@@ -46,6 +46,13 @@ public:
 
 	Action *submit(Buffer *in, EventCallback *cb)
 	{
+		/*
+		 * We process a single, large, linear byte buffer here rather
+		 * than going a BufferSegment at a time, even though the byte
+		 * buffer is less efficient than some alternatives, because
+		 * there are padding and buffering implications if each
+		 * BufferSegment's length is not modular to the block size.
+		 */
 		uint8_t indata[in->length()];
 		in->moveout(indata, sizeof indata);
 
