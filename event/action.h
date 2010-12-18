@@ -67,10 +67,42 @@ private:
 	}
 };
 
+template<class C, typename A>
+class CancellationArg : public Cancellable {
+	typedef void (C::*const method_t)(A);
+
+	C *const obj_;
+	method_t method_;
+	A arg_;
+public:
+	template<typename T>
+	CancellationArg(C *obj, T method, A arg)
+	: obj_(obj),
+	  method_(method),
+	  arg_(arg)
+	{ }
+
+	~CancellationArg()
+	{ }
+
+private:
+	void cancel(void)
+	{
+		(obj_->*method_)(arg_);
+	}
+};
+
 template<class C, typename T>
 Action *cancellation(C *obj, T method)
 {
 	Action *a = new Cancellation<C>(obj, method);
+	return (a);
+}
+
+template<class C, typename T, typename A>
+Action *cancellation(C *obj, T method, A arg)
+{
+	Action *a = new CancellationArg<C, A>(obj, method, arg);
 	return (a);
 }
 

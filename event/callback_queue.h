@@ -3,6 +3,8 @@
 
 #include <deque>
 
+#include <event/callback.h>
+
 class CallbackQueue : public CallbackScheduler {
 	class CallbackAction : public Cancellable {
 	public:
