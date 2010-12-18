@@ -12,7 +12,8 @@ class BufferSpeed {
 	Action *timeout_action_;
 public:
 	BufferSpeed(void)
-	: callback_action_(NULL),
+	: bytes_(0),
+	  callback_action_(NULL),
 	  timeout_action_(NULL)
 	{
 		callback_action_ = callback(this, &BufferSpeed::callback_complete)->schedule();
