@@ -216,38 +216,15 @@ dump(int ifd, int ofd)
 static bool
 fill(int fd, Buffer *input)
 {
-	BufferSegment *segments[XCDUMP_IOVEC_SIZE];
-	struct iovec iov[XCDUMP_IOVEC_SIZE];
-	BufferSegment *seg;
+	uint8_t data[65536];
 	ssize_t len;
-	unsigned i;
 
-	for (i = 0; i < XCDUMP_IOVEC_SIZE; i++) {
-		seg = new BufferSegment();
-		iov[i].iov_base = seg->head();
-		iov[i].iov_len = BUFFER_SEGMENT_SIZE;
-		segments[i] = seg;
-	}
-
-	len = readv(fd, iov, XCDUMP_IOVEC_SIZE);
+	len = read(fd, data, sizeof data);
 	if (len == -1)
 		HALT("/fill") << "read failed.";
-	for (i = 0; i < XCDUMP_IOVEC_SIZE; i++) {
-		seg = segments[i];
-		if (len > 0) {
-			if (len > BUFFER_SEGMENT_SIZE) {
-				seg->set_length(BUFFER_SEGMENT_SIZE);
-				len -= BUFFER_SEGMENT_SIZE;
-			} else {
-				seg->set_length((size_t)len);
-				len = 0;
-			}
-			input->append(seg);
-		}
-		seg->unref();
-	}
-	if (input->empty())
+	if (len == 0)
 		return (false);
+	input->append(data, len);
 	return (true);
 }
 
