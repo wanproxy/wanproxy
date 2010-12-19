@@ -23,10 +23,8 @@ enum CryptoEncryptionOperation {
 };
 
 class CryptoEncryptionSession {
-	const CryptoEncryptionMethod *method_;
 protected:
-	CryptoEncryptionSession(const CryptoEncryptionMethod *method)
-	: method_(method)
+	CryptoEncryptionSession(void)
 	{ }
 
 public:

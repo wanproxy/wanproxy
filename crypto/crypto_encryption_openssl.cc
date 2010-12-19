@@ -1,24 +1,23 @@
 #include <openssl/evp.h>
 
-#include <map>
+#include <common/factory.h>
 
 #include <crypto/crypto_encryption.h>
 
-class CryptoEncryptionSessionOpenSSL : public CryptoEncryptionSession {
+class CryptoEncryptionSessionEVP : public CryptoEncryptionSession {
 	LogHandle log_;
 	const EVP_CIPHER *cipher_;
 	EVP_CIPHER_CTX ctx_;
 public:
-	CryptoEncryptionSessionOpenSSL(const CryptoEncryptionMethod *method, const EVP_CIPHER *cipher)
-	: CryptoEncryptionSession(method),
-	  log_("/crypto/encryption/session/openssl"),
+	CryptoEncryptionSessionEVP(const EVP_CIPHER *cipher)
+	: log_("/crypto/encryption/session/openssl"),
 	  cipher_(cipher),
 	  ctx_()
 	{
 		EVP_CIPHER_CTX_init(&ctx_);
 	}
 
-	~CryptoEncryptionSessionOpenSSL()
+	~CryptoEncryptionSessionEVP()
 	{
 		EVP_CIPHER_CTX_cleanup(&ctx_);
 	}
@@ -69,22 +68,20 @@ public:
 
 class CryptoEncryptionMethodOpenSSL : public CryptoEncryptionMethod {
 	LogHandle log_;
-	std::map<CryptoCipher, const EVP_CIPHER *> cipher_map_;
+	FactoryMap<CryptoCipher, CryptoEncryptionSession> cipher_map_;
 public:
 	CryptoEncryptionMethodOpenSSL(void)
-	: log_("/crypto/encryption/openssl")
+	: log_("/crypto/encryption/openssl"),
+	  cipher_map_()
 	{
 		OpenSSL_add_all_algorithms();
 
-		cipher_map_[CryptoCipher(CryptoAES128, CryptoModeCBC)] = EVP_aes_128_cbc();
-		cipher_map_[CryptoCipher(CryptoAES192, CryptoModeCBC)] = EVP_aes_192_cbc();
-		cipher_map_[CryptoCipher(CryptoAES256, CryptoModeCBC)] = EVP_aes_256_cbc();
+		factory<CryptoEncryptionSessionEVP> evp_factory;
+		cipher_map_.enter(CryptoCipher(CryptoAES128, CryptoModeCBC), evp_factory(EVP_aes_128_cbc()));
+		cipher_map_.enter(CryptoCipher(CryptoAES192, CryptoModeCBC), evp_factory(EVP_aes_192_cbc()));
+		cipher_map_.enter(CryptoCipher(CryptoAES256, CryptoModeCBC), evp_factory(EVP_aes_256_cbc()));
 
-#if 0
-		std::map<CryptoCipher, const EVP_CIPHER *>::const_iterator it;
-		for (it = cipher_map_.begin(); it != cipher_map_.end(); ++it)
-			CryptoSystem::instance()->register_method(it->first, this);
-#endif
+		/* XXX Register.  */
 	}
 
 	~CryptoEncryptionMethodOpenSSL()
@@ -94,13 +91,7 @@ public:
 
 	CryptoEncryptionSession *session(CryptoCipher cipher) const
 	{
-		std::map<CryptoCipher, const EVP_CIPHER *>::const_iterator it;
-
-		it = cipher_map_.find(cipher);
-		if (it == cipher_map_.end())
-			return (NULL);
-
-		return (new CryptoEncryptionSessionOpenSSL(this, it->second));
+		return (cipher_map_.create(cipher));
 	}
 };
 
