@@ -7,7 +7,8 @@
 
 struct iovec;
 
-#define	BUFFER_SEGMENT_SIZE	(2048)
+#define	BUFFER_SEGMENT_SIZE		(2048)
+#define	BUFFER_SEGMENT_CACHE_LIMIT	(512)	/* 1MB of data.  */
 
 typedef	uint16_t	buffer_segment_size_t;
 
@@ -28,7 +29,7 @@ class BufferSegment {
 	buffer_segment_size_t offset_;
 	buffer_segment_size_t length_;
 	unsigned ref_;
-public:
+
 	/*
 	 * Creates a new, empty BufferSegment with a single reference.
 	 */
@@ -47,6 +48,43 @@ public:
 		ASSERT(ref_ == 0);
 	}
 
+public:
+	/*
+	 * Get an empty BufferSegment.
+	 */
+	static BufferSegment *create(void)
+	{
+		if (!segment_cache.empty()) {
+			BufferSegment *seg = segment_cache.front();
+			ASSERT(seg->ref_ == 0);
+			segment_cache.pop_front();
+			seg->ref_++;
+
+			seg->offset_ = 0;
+			seg->length_ = 0;
+
+			return (seg);
+		}
+		return (new BufferSegment());
+	}
+
+	/*
+	 * Get a BufferSegment with the requested data.
+	 */
+	static BufferSegment *create(const uint8_t *buf, size_t len)
+	{
+		ASSERT(buf != NULL);
+		ASSERT(len != 0);
+		ASSERT(len <= BUFFER_SEGMENT_SIZE);
+
+		BufferSegment *seg = create();
+		memcpy(seg->data_, buf, len);
+		seg->length_ = len;
+
+		return (seg);
+	}
+
+
 	/*
 	 * Bump the reference count.
 	 */
@@ -63,8 +101,12 @@ public:
 	void unref(void)
 	{
 		ASSERT(ref_ != 0);
-		if (--ref_ == 0)
-			delete this;
+		if (--ref_ == 0) {
+			if (segment_cache.size() == BUFFER_SEGMENT_CACHE_LIMIT)
+				delete this;
+			else
+				segment_cache.push_back(this);
+		}
 	}
 
 	/*
@@ -150,9 +192,7 @@ public:
 	BufferSegment *copy(void) const
 	{
 		ASSERT(length_ != 0);
-		BufferSegment *seg = new BufferSegment();
-		memcpy(seg->tail(), data(), length_);
-		seg->length_ = length_;
+		BufferSegment *seg = BufferSegment::create(data(), length_);
 		return (seg);
 	}
 
@@ -243,8 +283,7 @@ public:
 		if (ref_ != 1) {
 			BufferSegment *seg;
 
-			seg = new BufferSegment();
-			seg->append(this->data() + bytes, this->length() - bytes);
+			seg = BufferSegment::create(this->data() + bytes, this->length() - bytes);
 			this->unref();
 			return (seg);
 		}
@@ -267,8 +306,7 @@ public:
 		if (ref_ != 1) {
 			BufferSegment *seg;
 
-			seg = new BufferSegment();
-			seg->append(this->data(), this->length() - bytes);
+			seg = BufferSegment::create(this->data(), this->length() - bytes);
 			this->unref();
 			return (seg);
 		}
@@ -295,8 +333,7 @@ public:
 		if (ref_ != 1) {
 			BufferSegment *seg;
 
-			seg = new BufferSegment();
-			seg->append(this->data(), offset);
+			seg = BufferSegment::create(this->data(), offset);
 			seg->append(this->data() + offset + bytes,
 				    this->length() - (offset + bytes));
 			this->unref();
@@ -350,6 +387,9 @@ public:
 	{
 		return (equal(seg->data(), seg->length()));
 	}
+
+private:
+	static std::deque<BufferSegment *> segment_cache;
 };
 
 /*
@@ -593,15 +633,13 @@ public:
 		 * Complete segments.
 		 */
 		for (o = 0; o < len / BUFFER_SEGMENT_SIZE; o++) {
-			seg = new BufferSegment();
-			seg->append(buf + (o * BUFFER_SEGMENT_SIZE), BUFFER_SEGMENT_SIZE);
+			seg = BufferSegment::create(buf + (o * BUFFER_SEGMENT_SIZE), BUFFER_SEGMENT_SIZE);
 			append(seg);
 			seg->unref();
 		}
 		if (len % BUFFER_SEGMENT_SIZE == 0)
 			return;
-		seg = new BufferSegment();
-		seg->append(buf + (o * BUFFER_SEGMENT_SIZE), len % BUFFER_SEGMENT_SIZE);
+		seg = BufferSegment::create(buf + (o * BUFFER_SEGMENT_SIZE), len % BUFFER_SEGMENT_SIZE);
 		append(seg);
 		seg->unref();
 	}
@@ -729,7 +767,7 @@ public:
 			*segp = src->truncate(len);
 			return (len);
 		}
-		BufferSegment *seg = new BufferSegment();
+		BufferSegment *seg = BufferSegment::create();
 		*segp = seg;
 		return (copyout(seg, len));
 	}

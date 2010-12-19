@@ -7,7 +7,7 @@ main(void)
 	TestGroup g("/test/buffer/pullup1", "BufferSegment::pullup #1");
 
 	{
-		BufferSegment *seg = new BufferSegment();
+		BufferSegment *seg = BufferSegment::create();
 		seg->append("ABCD");
 		{
 			Test _(g, "BufferSegment equal");

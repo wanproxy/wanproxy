@@ -14,7 +14,7 @@ main(void)
 
 	{
 
-		BufferSegment *seg = new BufferSegment();
+		BufferSegment *seg = BufferSegment::create();
 		while (seg->avail() > 0) {
 			BufferSegment *seg2 = seg->append("A");
 			Test _(g, "Byte append");
