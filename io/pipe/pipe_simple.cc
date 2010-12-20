@@ -24,7 +24,7 @@ PipeSimple::consume(Buffer *buf)
 	bool input_eos = buf->empty();
 	Buffer out;
 	if (!process(&out, buf)) {
-		error();
+		produce_error();
 		return;
 	}
 	if (!out.empty())

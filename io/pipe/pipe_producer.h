@@ -26,8 +26,8 @@ private:
 	Action *output_do(EventCallback *);
 
 public:
-	void error(void);
 	void produce(Buffer *);
+	void produce_error(void);
 
 protected:
 	virtual void consume(Buffer *) = 0;

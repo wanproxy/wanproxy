@@ -101,13 +101,17 @@ PipeProducer::output_do(EventCallback *cb)
 }
 
 void
-PipeProducer::error(void)
+PipeProducer::produce(Buffer *buf)
 {
 	ASSERT(!error_);
 	ASSERT(!output_eos_);
 
-	error_ = true;
-	output_buffer_.clear();
+	if (!buf->empty()) {
+		output_buffer_.append(buf);
+		buf->clear();
+	} else {
+		output_eos_ = true;
+	}
 
 	if (output_callback_ != NULL) {
 		ASSERT(output_action_ == NULL);
@@ -121,17 +125,13 @@ PipeProducer::error(void)
 }
 
 void
-PipeProducer::produce(Buffer *buf)
+PipeProducer::produce_error(void)
 {
 	ASSERT(!error_);
 	ASSERT(!output_eos_);
 
-	if (!buf->empty()) {
-		output_buffer_.append(buf);
-		buf->clear();
-	} else {
-		output_eos_ = true;
-	}
+	error_ = true;
+	output_buffer_.clear();
 
 	if (output_callback_ != NULL) {
 		ASSERT(output_action_ == NULL);
