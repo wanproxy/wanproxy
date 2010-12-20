@@ -11,7 +11,10 @@ protected:
 	PipePairProducer(void)
 	: incoming_pipe_(NULL),
 	  outgoing_pipe_(NULL)
-	{ }
+	{
+		incoming_pipe_ = new PipeProducerWrapper<PipePairProducer>(this, &PipePairProducer::incoming_consume);
+		outgoing_pipe_ = new PipeProducerWrapper<PipePairProducer>(this, &PipePairProducer::outgoing_consume);
+	}
 public:
 	virtual ~PipePairProducer()
 	{
@@ -43,15 +46,11 @@ protected:
 public:
 	Pipe *get_incoming(void)
 	{
-		ASSERT(incoming_pipe_ == NULL);
-		incoming_pipe_ = new PipeProducerWrapper<PipePairProducer>(this, &PipePairProducer::incoming_consume);
 		return (incoming_pipe_);
 	}
 
 	Pipe *get_outgoing(void)
 	{
-		ASSERT(outgoing_pipe_ == NULL);
-		outgoing_pipe_ = new PipeProducerWrapper<PipePairProducer>(this, &PipePairProducer::outgoing_consume);
 		return (outgoing_pipe_);
 	}
 };

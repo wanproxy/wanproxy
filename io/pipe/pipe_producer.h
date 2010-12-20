@@ -25,10 +25,11 @@ private:
 	void output_cancel(void);
 	Action *output_do(EventCallback *);
 
-protected:
+public:
 	void error(void);
 	void produce(Buffer *);
 
+protected:
 	virtual void consume(Buffer *) = 0;
 };
 
