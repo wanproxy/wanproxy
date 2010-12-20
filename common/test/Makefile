@@ -1,4 +1,4 @@
-SUBDIR+=buffer--apend1
+SUBDIR+=buffer-append1
 SUBDIR+=buffer-cut1
 SUBDIR+=buffer-ops1
 SUBDIR+=buffer-prefix1
