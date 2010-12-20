@@ -102,8 +102,20 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 			return;
 		}
 
-		ASSERT(!output.empty());
-		decoder_produce(&output);
+		if (!output.empty()) {
+			decoder_produce(&output);
+		} else {
+			/*
+			 * We should only get no output from the decoder if
+			 * we're waiting on the next frame.  It would be nice
+			 * to make the encoder framing aware so that it would
+			 * not end up with encoded data that straddles a frame
+			 * boundary.  (Fixing that would also allow us to
+			 * simplify length checking within the decoder
+			 * considerably.)
+			 */
+			ASSERT(!decoder_frame_buffer_.empty());
+		}
 	}
 }
 
