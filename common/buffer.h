@@ -566,7 +566,7 @@ public:
 		ASSERT(len <= buf.length());
 		append(buf);
 		if (buf.length() != len)
-			truncate(len);
+			trim(buf.length() - len);
 	}
 
 	/*
