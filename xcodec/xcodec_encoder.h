@@ -4,43 +4,17 @@
 #include <xcodec/xcodec_window.h>
 
 class XCodecCache;
-class XCodecDecoder;
-#if defined(XCODEC_PIPES)
-class XCodecDecoderPipe;
-class XCodecEncoderPipe;
-#endif
 
 class XCodecEncoder {
-#if defined(XCODEC_PIPES)
-	friend class XCodecDecoderPipe;
-	friend class XCodecEncoderPipe;
-#endif
-
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
-#if defined(XCODEC_PIPES)
-	XCodecEncoderPipe *pipe_;
-#endif
-	Buffer queued_;
-	bool sent_eos_;
-	bool received_eos_; /* XXX So wrong!  */
 
 public:
-	XCodecEncoder(XCodec *);
+	XCodecEncoder(XCodecCache *);
 	~XCodecEncoder();
 
 	void encode(Buffer *, Buffer *);
-
-	void encode_ask(uint64_t);
-	void encode_learn(BufferSegment *);
-	void encode_push(void);
-
-	void received_eos(void);
-
-#if defined(XCODEC_PIPES)
-	void set_pipe(XCodecEncoderPipe *);
-#endif
 private:
 	void encode_declaration(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment **);
 	void encode_escape(Buffer *, Buffer *, unsigned);

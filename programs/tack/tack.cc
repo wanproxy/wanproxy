@@ -108,7 +108,7 @@ main(int argc, char *argv[])
 static void
 compress(int ifd, int ofd, XCodec *codec)
 {
-	XCodecEncoder encoder(codec);
+	XCodecEncoder encoder(codec->cache());
 	Buffer input, output;
 
 	while (fill(ifd, &input)) {
@@ -126,7 +126,7 @@ compress(int ifd, int ofd, XCodec *codec)
 static void
 decompress(int ifd, int ofd, XCodec *codec)
 {
-	XCodecDecoder decoder;
+	XCodecDecoder decoder(codec->cache());
 	Buffer input, output;
 
 	(void)codec;

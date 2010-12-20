@@ -111,47 +111,57 @@
  */
 #define	XCODEC_OP_EOS	((uint8_t)0x07)
 
+/*
+ * Usage:
+ * 	<MAGIC> <OP_FRAME> length[uint16_t] data[uint8_t x length]
+ *
+ * Effects:
+ * 	Frames an encoded chunk.  As distinct to OP_OOB below.
+ *
+ * Side-effects:
+ * 	None.
+ */
+#define	XCODEC_OP_FRAME	((uint8_t)0x08)
+
+/*
+ * Usage:
+ * 	<MAGIC> <OP_OOB> length[uint16_t] data[uint8_t x length]
+ *
+ * Effects:
+ * 	A reply to a previously-encoded chunk or other out-of-band message.
+ * 	Is encoded, but does not produce data directly.
+ *
+ * 	May only contain:
+ * 		OP_HELLO
+ * 		OP_ASK
+ * 		OP_LEARN
+ * 		OP_EOS ?
+ *
+ * Side-effects:
+ * 	None.
+ */
+#define	XCODEC_OP_OOB	((uint8_t)0x10)
+
+#define	XCODEC_FRAME_LENGTH	(16384)
 #define	XCODEC_SEGMENT_LENGTH	(128)
 
-class XCodecDecoder;
-class XCodecEncoder;
-
-#include <xcodec/xcodec_cache.h>
+class XCodecCache;
 
 class XCodec {
-	friend class XCodecDecoder;
-	friend class XCodecEncoder;
-
 	LogHandle log_;
 	XCodecCache *cache_;
-	Buffer hello_;
 public:
 	XCodec(XCodecCache *database)
 	: log_("/xcodec"),
 	  cache_(database)
-	{
-		Buffer extra;
-
-		if (!cache_->uuid_encode(&extra))
-			NOTREACHED();
-
-		uint8_t len = extra.length();
-		ASSERT(len == UUID_SIZE);
-
-		hello_.append(XCODEC_MAGIC);
-		hello_.append(XCODEC_OP_HELLO);
-		hello_.append(len);
-		hello_.append(extra);
-
-		ASSERT(hello_.length() == 3 + UUID_SIZE);
-	}
+	{ }
 
 	~XCodec()
 	{ }
 
-	const Buffer *hello(void) const
+	XCodecCache *cache(void)
 	{
-		return (&hello_);
+		return (cache_);
 	}
 };
 

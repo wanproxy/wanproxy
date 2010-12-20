@@ -1,42 +1,21 @@
 #include <common/buffer.h>
 #include <common/endian.h>
 
-#if defined(XCODEC_PIPES)
-#include <event/event_callback.h>
-
-#include <io/pipe/pipe.h>
-#endif
-
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_cache.h>
 #include <xcodec/xcodec_encoder.h>
-#if defined(XCODEC_PIPES)
-#include <xcodec/xcodec_encoder_pipe.h>
-#endif
 #include <xcodec/xcodec_hash.h>
 
 typedef	std::pair<unsigned, uint64_t> offset_hash_pair_t;
 
-XCodecEncoder::XCodecEncoder(XCodec *codec)
+XCodecEncoder::XCodecEncoder(XCodecCache *cache)
 : log_("/xcodec/encoder"),
-  cache_(codec->cache_),
-  window_(),
-#if defined(XCODEC_PIPES)
-  pipe_(NULL),
-#endif
-  queued_(),
-  sent_eos_(false),
-  received_eos_(false)
-{
-	queued_.append(codec->hello());
-}
+  cache_(cache),
+  window_()
+{ }
 
 XCodecEncoder::~XCodecEncoder()
-{
-#if defined(XCODEC_PIPES)
-	ASSERT(pipe_ == NULL);
-#endif
-}
+{ }
 
 /*
  * This takes a view of a data stream and turns it into a series of references
@@ -46,25 +25,8 @@ XCodecEncoder::~XCodecEncoder()
 void
 XCodecEncoder::encode(Buffer *output, Buffer *input)
 {
-	/* Process any queued HELLOs, ASKs or LEARNs.  */
-	if (!queued_.empty()) {
-		DEBUG(log_) << "Pushing queued data.";
-
-		output->append(&queued_);
-		queued_.clear();
-	} else {
-		if (!sent_eos_ && input->empty()) {
-			DEBUG(log_) << "Sending <EOS>.";
-			output->append(XCODEC_MAGIC);
-			output->append(XCODEC_OP_EOS);
-			sent_eos_ = true;
-		}
-	}
-
 	if (input->empty())
 		return;
-
-	ASSERT(!sent_eos_);
 
 	if (input->length() < XCODEC_SEGMENT_LENGTH) {
 		encode_escape(output, input, input->length());
@@ -276,68 +238,6 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	ASSERT(outq.empty());
 	ASSERT(input->empty());
 }
-
-/*
- * Encode an ASK of the remote XCodec.
- */
-void
-XCodecEncoder::encode_ask(uint64_t hash)
-{
-	uint64_t behash = BigEndian::encode(hash);
-
-	queued_.append(XCODEC_MAGIC);
-	queued_.append(XCODEC_OP_ASK);
-	queued_.append((const uint8_t *)&behash, sizeof behash);
-}
-
-/*
- * Encode a LEARN for the remote XCodec.
- */
-void
-XCodecEncoder::encode_learn(BufferSegment *seg)
-{
-	queued_.append(XCODEC_MAGIC);
-	queued_.append(XCODEC_OP_LEARN);
-	queued_.append(seg);
-}
-
-/*
- * Signal that output is ready if there is some that has been queued.
- */
-void
-XCodecEncoder::encode_push(void)
-{
-#if defined(XCODEC_PIPES)
-	if (!queued_.empty() && pipe_ != NULL)
-		pipe_->output_ready();
-#endif
-}
-
-void
-XCodecEncoder::received_eos(void)
-{
-	if (received_eos_) {
-		DEBUG(log_) << "Received duplicate <EOS> from decoder.";
-	}
-	received_eos_ = true;
-}
-
-#if defined(XCODEC_PIPES)
-/*
- * Set or clear the association with an XCodecPipe.
- */
-void
-XCodecEncoder::set_pipe(XCodecEncoderPipe *pipe)
-{
-	ASSERT(pipe != NULL || pipe_ != NULL);
-	ASSERT(pipe_ == NULL || pipe == NULL);
-
-	pipe_ = pipe;
-
-	if (pipe_ != NULL && !queued_.empty())
-		pipe_->output_ready();
-}
-#endif
 
 void
 XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, BufferSegment **segp)

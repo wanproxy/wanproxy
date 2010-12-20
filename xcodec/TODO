@@ -1,4 +1,6 @@
 o) Push EOS and HELLO into the pipes themselves.
+o) Go back to a lookahead decoder so we don't have to do an ASK/LEARN at a time,
+   that will be really painful on long, slow links.
 o) Don't let a peer claim to have our UUID?
 o) Permanent storage.
 o) Decide whether to keep a std::set (or something fancier) of hashes associated

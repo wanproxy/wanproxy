@@ -7,21 +7,14 @@
 #include <xcodec/xcodec_encoder.h>
 #include <xcodec/xcodec_hash.h>
 
-XCodecDecoder::XCodecDecoder(void)
+XCodecDecoder::XCodecDecoder(XCodecCache *cache)
 : log_("/xcodec/decoder"),
-  cache_(NULL),
-  window_(),
-  encoder_(NULL),
-  queued_(),
-  asked_()
+  cache_(cache),
+  window_()
 { }
 
 XCodecDecoder::~XCodecDecoder()
-{
-	ASSERT(encoder_ == NULL);
-	if (!asked_.empty())
-		DEBUG(log_) << asked_.size() << " outstanding <ASK>s when destroyed.";
-}
+{ }
 
 /*
  * Decode an XCodec-encoded stream.  Returns false if there was an
@@ -46,48 +39,18 @@ XCodecDecoder::~XCodecDecoder()
 bool
 XCodecDecoder::decode(Buffer *output, Buffer *input)
 {
-	bool queued_data = false;
-
-	for (;;) {
-		/*
-		 * If there is queued data and no more outstanding hashes,
-		 * handle the queued data.
-		 */
-		if (!queued_.empty() && asked_.empty()) {
-			DEBUG(log_) << "Handling queued data.";
-			/* XXX input->prepend(queued_);  */
-
-			Buffer tmp(queued_);
-			queued_.clear();
-			tmp.append(input);
-			input->clear();
-			input->append(tmp);
-		}
-
-		if (input->empty())
-			break;
-
+	while (!input->empty()) {
 		unsigned off;
 		if (!input->find(XCODEC_MAGIC, &off)) {
-			if (queued_.empty()) {
-				output->append(input);
-			} else {
-				queued_.append(input);
-			}
-
+			output->append(input);
 			input->clear();
 
 			break;
 		}
 
 		if (off != 0) {
-			if (queued_.empty()) {
-				output->append(input, off);
-				input->skip(off);
-			} else {
-				queued_.append(input, off);
-				input->skip(off);
-			}
+			output->append(input, off);
+			input->skip(off);
 		}
 		ASSERT(!input->empty());
 
@@ -100,67 +63,9 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 		uint8_t op;
 		input->copyout(&op, sizeof XCODEC_MAGIC, sizeof op);
 
-		if (cache_ == NULL && op != XCODEC_OP_HELLO) {
-			ERROR(log_) << "No cache selected before <HELLO>.";
-			return (false);
-		}
-
 		switch (op) {
-		case XCODEC_OP_HELLO:
-			if (cache_ != NULL) {
-				ERROR(log_) << "Got <HELLO> twice.";
-				return (false);
-			}
-
-			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t) + UUID_SIZE)
-				goto done;
-			else {
-				if (!queued_.empty()) {
-					ERROR(log_) << "Got <HELLO> with data queued.";
-					return (false);
-				}
-
-				uint8_t len;
-				input->copyout(&len, sizeof XCODEC_MAGIC + sizeof op, sizeof len);
-				if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof len + len)
-					goto done;
-				UUID uuid;
-				switch (len) {
-				case 0:
-					/* XXX Compatability?  */
-					uuid.generate();
-					break;
-				case UUID_SIZE: {
-					Buffer uubuf;
-					uubuf.append(input, sizeof XCODEC_MAGIC + sizeof op + sizeof len + len);
-					uubuf.skip(sizeof XCODEC_MAGIC + sizeof op + sizeof len);
-					ASSERT(uubuf.length() == UUID_SIZE);
-					if (!uuid.decode(&uubuf)) {
-						ERROR(log_) << "Invalid UUID in <HELLO>.";
-						return (false);
-					}
-
-					break;
-				}
-				default:
-					ERROR(log_) << "Unsupported <HELLO> length: " << (unsigned)len;
-					return (false);
-				}
-				input->skip(sizeof XCODEC_MAGIC + sizeof op + sizeof len + len);
-
-				cache_ = XCodecCache::lookup(uuid);
-				ASSERT(cache_ != NULL);
-
-				INFO(log_) << "Peer connected with UUID: " << uuid.string_;
-			}
-			break;
 		case XCODEC_OP_ESCAPE:
-			if (queued_.empty()) {
-				output->append(XCODEC_MAGIC);
-			} else {
-				queued_.append(XCODEC_MAGIC);
-				queued_.append(XCODEC_OP_ESCAPE);
-			}
+			output->append(XCODEC_MAGIC);
 			input->skip(sizeof XCODEC_MAGIC + sizeof op);
 			break;
 		case XCODEC_OP_EXTRACT:
@@ -188,17 +93,13 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 					cache_->enter(hash, seg);
 				}
 
+#if 0
 				/* Just in case.  */
 				asked_.erase(hash);
+#endif
 
-				if (queued_.empty()) {
-					window_.declare(hash, seg);
-					output->append(seg);
-				} else {
-					queued_.append(XCODEC_MAGIC);
-					queued_.append(XCODEC_OP_EXTRACT);
-					queued_.append(seg);
-				}
+				window_.declare(hash, seg);
+				output->append(seg);
 				seg->unref();
 			}
 			break;
@@ -212,11 +113,12 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 
 				BufferSegment *oseg = cache_->lookup(hash);
 				if (oseg == NULL) {
-					if (encoder_ == NULL) {
+					if (true) { /* XXX */
 						ERROR(log_) << "Unknown hash in <REF>: " << hash;
 						return (false);
 					}
 
+#if 0
 					if (asked_.find(hash) == asked_.end()) {
 						DEBUG(log_) << "Sending <ASK>, waiting for <LEARN>.";
 						encoder_->encode_ask(hash);
@@ -230,15 +132,10 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 					queued_.append(XCODEC_MAGIC);
 					queued_.append(XCODEC_OP_REF);
 					queued_.append((const uint8_t *)&behash, sizeof behash);
+#endif
 				} else {
-					if (queued_.empty()) {
-						window_.declare(hash, oseg);
-						output->append(oseg);
-					} else {
-						queued_.append(XCODEC_MAGIC);
-						queued_.append(XCODEC_OP_REF);
-						queued_.append((const uint8_t *)&behash, sizeof behash);
-					}
+					window_.declare(hash, oseg);
+					output->append(oseg);
 					oseg->unref();
 				}
 			}
@@ -247,21 +144,17 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
 				goto done;
 			else {
-				if (queued_.empty()) {
-					uint8_t idx;
-					input->moveout(&idx, sizeof XCODEC_MAGIC + sizeof op, sizeof idx);
+				uint8_t idx;
+				input->moveout(&idx, sizeof XCODEC_MAGIC + sizeof op, sizeof idx);
 
-					BufferSegment *oseg = window_.dereference(idx);
-					if (oseg == NULL) {
-						ERROR(log_) << "Index not present in <BACKREF> window: " << (unsigned)idx;
-						return (false);
-					}
-
-					output->append(oseg);
-					oseg->unref();
-				} else {
-					input->moveout(&queued_, sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t));
+				BufferSegment *oseg = window_.dereference(idx);
+				if (oseg == NULL) {
+					ERROR(log_) << "Index not present in <BACKREF> window: " << (unsigned)idx;
+					return (false);
 				}
+
+				output->append(oseg);
+				oseg->unref();
 			}
 			break;
 		case XCODEC_OP_LEARN:
@@ -289,9 +182,11 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 					DEBUG(log_) << "Successful <LEARN>.";
 					cache_->enter(hash, seg);
 				}
+#if 0
 				asked_.erase(hash);
 				if (asked_.empty())
 					DEBUG(log_) << "No outstanding <ASK>s after <LEARN>.";
+#endif
 				seg->unref();
 			}
 			break;
@@ -299,7 +194,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint64_t))
 				goto done;
 			else {
-				if (encoder_ == NULL) {
+				if (true) { /* XXX */
 					ERROR(log_) << "Cannot handle <ASK> without associated encoder.";
 					return (false);
 				}
@@ -315,10 +210,10 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 				}
 
 				DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
+#if 0
 				encoder_->encode_learn(oseg);
+#endif
 				oseg->unref();
-
-				queued_data = true;
 			}
 			break;
 		case XCODEC_OP_EOS:
@@ -328,9 +223,11 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 				input->skip(sizeof XCODEC_MAGIC + sizeof op);
 				DEBUG(log_) << "Received <EOS>.  Bytes remaining: " << input->length();
 
+#if 0
 				if (encoder_ != NULL) {
 					encoder_->received_eos();
 				}
+#endif
 			}
 			break;
 		default:
@@ -338,18 +235,5 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 			return (false);
 		}
 	}
-done:	if (queued_data) {
-		ASSERT(encoder_ != NULL);
-		encoder_->encode_push();
-	}
-	return (true);
-}
-
-void
-XCodecDecoder::set_encoder(XCodecEncoder *encoder)
-{
-	ASSERT(encoder != NULL || encoder_ != NULL);
-	ASSERT(encoder_ == NULL || encoder == NULL);
-
-	encoder_ = encoder;
+done:	return (true);
 }
