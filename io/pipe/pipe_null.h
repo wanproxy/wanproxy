@@ -1,15 +1,22 @@
 #ifndef	IO_PIPE_NULL_H
 #define	IO_PIPE_NULL_H
 
-#include <io/pipe/pipe_simple.h>
+#include <io/pipe/pipe_producer.h>
 
-class PipeNull : public PipeSimple {
+class PipeNull : public PipeProducer {
 public:
-	PipeNull(void);
-	~PipeNull();
+	PipeNull(void)
+	: PipeProducer("/io/pipe_null")
+	{ }
+
+	~PipeNull()
+	{ }
 
 private:
-	bool process(Buffer *, Buffer *);
+	void consume(Buffer *buf)
+	{
+		produce(buf);
+	}
 };
 
 #endif /* !IO_PIPE_NULL_H */
