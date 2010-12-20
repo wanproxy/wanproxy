@@ -180,7 +180,7 @@ XCodecPipePair::decode_oob(Buffer *buf)
 				ASSERT(decoder_ == NULL);
 				decoder_ = new XCodecDecoder(decoder_cache_);
 
-				INFO(log_) << "Peer connected with UUID: " << uuid.string_;
+				DEBUG(log_) << "Peer connected with UUID: " << uuid.string_;
 			}
 			break;
 		case XCODEC_OP_ASK:
