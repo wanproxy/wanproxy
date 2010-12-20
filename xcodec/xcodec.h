@@ -1,7 +1,7 @@
 #ifndef	XCODEC_H
 #define	XCODEC_H
 
-#define	XCODEC_MAGIC	((uint8_t)0xf1)	/* Magic!  */
+#define	XCODEC_MAGIC		((uint8_t)0xf1)	/* Magic!  */
 
 /*
  * Usage:
@@ -13,7 +13,7 @@
  * Sife-effects:
  * 	Possibly many.
  */
-#define	XCODEC_OP_HELLO	((uint8_t)0x00)
+#define	XCODEC_OP_HELLO		((uint8_t)0x00)
 
 /*
  * Usage:
@@ -56,7 +56,7 @@
  * Side-effects:
  * 	The data is put into the backref FIFO.
  */
-#define	XCODEC_OP_REF	((uint8_t)0x03)
+#define	XCODEC_OP_REF		((uint8_t)0x03)
 
 /*
  * Usage:
@@ -81,7 +81,7 @@
  * Side-effects:
  * 	None.
  */
-#define	XCODEC_OP_LEARN	((uint8_t)0x05)
+#define	XCODEC_OP_LEARN		((uint8_t)0x05)
 
 /*
  * Usage:
@@ -96,7 +96,7 @@
  * Side-effects:
  * 	None.
  */
-#define	XCODEC_OP_ASK	((uint8_t)0x06)
+#define	XCODEC_OP_ASK		((uint8_t)0x06)
 
 /*
  * Usage:
@@ -106,10 +106,22 @@
  * 	Alert the other party that we have no intention of sending more data.
  *
  * Side-effects:
- * 	When both parties have sent EOS with no other data in-between, they may
- * 	shut down their connection.
+ * 	The other party will send <OP_EOS_ACK> when it has processed all of
+ * 	the data we have sent.
  */
-#define	XCODEC_OP_EOS	((uint8_t)0x07)
+#define	XCODEC_OP_EOS		((uint8_t)0x07)
+
+/*
+ * Usage:
+ * 	<MAGIC> <OP_EOS_ACK>
+ *
+ * Effects:
+ * 	Alert the other party that we have no intention of reading more data.
+ *
+ * Side-effects:
+ * 	The connection will be torn down.
+ */
+#define	XCODEC_OP_EOS_ACK	((uint8_t)0x08)
 
 /*
  * Usage:
@@ -121,7 +133,7 @@
  * Side-effects:
  * 	None.
  */
-#define	XCODEC_OP_FRAME	((uint8_t)0x08)
+#define	XCODEC_OP_FRAME		((uint8_t)0x09)
 
 /*
  * Usage:
@@ -140,7 +152,7 @@
  * Side-effects:
  * 	None.
  */
-#define	XCODEC_OP_OOB	((uint8_t)0x10)
+#define	XCODEC_OP_OOB		((uint8_t)0x0a)
 
 #define	XCODEC_FRAME_LENGTH	(16384)
 #define	XCODEC_SEGMENT_LENGTH	(128)

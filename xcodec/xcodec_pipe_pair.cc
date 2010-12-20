@@ -13,6 +13,11 @@
 #include <xcodec/xcodec_hash.h>
 #include <xcodec/xcodec_pipe_pair.h>
 
+/*
+ * XXX
+ * I think the EOS/EOS_ACK mechanism can be simplified.
+ */
+
 static void encode_frame(Buffer *, Buffer *);
 static void encode_oob(Buffer *, Buffer *);
 
@@ -120,6 +125,26 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 			 * considerably.)
 			 */
 			ASSERT(!decoder_frame_buffer_.empty());
+		}
+	}
+
+	if (decoder_buffer_.empty() && decoder_frame_buffer_.empty()) {
+		if (decoder_received_eos_ack_) {
+			DEBUG(log_) << "Decoder finished, got <EOS_ACK>, shutting down channel.";
+
+			Buffer eos;
+			encoder_produce(&eos);
+		} else if (decoder_received_eos_) {
+			DEBUG(log_) << "Decoder and encoder finished, got <EOS>, sending <EOS_ACK>.";
+
+			Buffer eos_ack;
+			eos_ack.append(XCODEC_MAGIC);
+			eos_ack.append(XCODEC_OP_EOS_ACK);
+
+			Buffer oob;
+			encode_oob(&oob, &eos_ack);
+
+			encoder_produce(&oob);
 		}
 	}
 }
@@ -246,6 +271,24 @@ XCodecPipePair::decode_oob(Buffer *buf)
 				seg->unref();
 			}
 			break;
+		case XCODEC_OP_EOS:
+			if (decoder_received_eos_) {
+				ERROR(log_) << "Duplicate <EOS>.";
+				return (false);
+			}
+			decoder_received_eos_ = true;
+			break;
+		case XCODEC_OP_EOS_ACK:
+			if (!encoder_sent_eos_) {
+				ERROR(log_) << "Got <EOS_ACK> before sending <EOS>.";
+				return (false);
+			}
+			if (decoder_received_eos_ack_) {
+				ERROR(log_) << "Duplicate <EOS_ACK>.";
+				return (false);
+			}
+			decoder_received_eos_ack_ = true;
+			break;
 		default:
 			ERROR(log_) << "Unsupported operation in OOB stream.";
 			return (false);
@@ -258,11 +301,13 @@ XCodecPipePair::decode_oob(Buffer *buf)
 void
 XCodecPipePair::encoder_consume(Buffer *buf)
 {
+	ASSERT(!encoder_sent_eos_);
+
 	Buffer output;
 
 	if (encoder_ == NULL) {
 		if (buf->empty()) {
-			DEBUG(log_) << "Encoder received EOS before any data.";
+			INFO(log_) << "Encoder received EOS before any data.";
 			encoder_produce(buf);
 			return;
 		}
@@ -299,6 +344,16 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 		ASSERT(!output.empty());
 
 		encoder_produce(&output);
+	} else {
+		Buffer eos;
+		eos.append(XCODEC_MAGIC);
+		eos.append(XCODEC_OP_EOS);
+
+		encode_oob(&output, &eos);
+
+		encoder_produce(&output);
+
+		encoder_sent_eos_ = true;
 	}
 }
 

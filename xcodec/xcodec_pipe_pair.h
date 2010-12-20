@@ -19,11 +19,14 @@ class XCodecPipePair : public PipePair {
 	XCodecDecoder *decoder_;
 	XCodecCache *decoder_cache_;
 	std::set<uint64_t> decoder_unknown_hashes_;
+	bool decoder_received_eos_;
+	bool decoder_received_eos_ack_;
 	Buffer decoder_buffer_;
 	Buffer decoder_frame_buffer_;
 	PipeProducerWrapper<XCodecPipePair> *decoder_pipe_;
 
 	XCodecEncoder *encoder_;
+	bool encoder_sent_eos_;
 	PipeProducerWrapper<XCodecPipePair> *encoder_pipe_;
 public:
 	XCodecPipePair(XCodec *codec, XCodecPipePairType type)
@@ -33,10 +36,13 @@ public:
 	  decoder_(NULL),
 	  decoder_cache_(NULL),
 	  decoder_unknown_hashes_(),
+	  decoder_received_eos_(false),
+	  decoder_received_eos_ack_(false),
 	  decoder_buffer_(),
 	  decoder_frame_buffer_(),
 	  decoder_pipe_(NULL),
 	  encoder_(NULL),
+	  encoder_sent_eos_(false),
 	  encoder_pipe_(NULL)
 	{
 		decoder_pipe_ = new PipeProducerWrapper<XCodecPipePair>(this, &XCodecPipePair::decoder_consume);
