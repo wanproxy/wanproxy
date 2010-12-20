@@ -37,7 +37,7 @@ protected:
 
 	void outgoing_produce(Buffer *buf)
 	{
-		incoming_pipe_->produce(buf);
+		outgoing_pipe_->produce(buf);
 	}
 
 public:
