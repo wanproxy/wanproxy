@@ -16,7 +16,7 @@ public:
 	XCodecDecoder(XCodecCache *);
 	~XCodecDecoder();
 
-	bool decode(Buffer *, Buffer *);
+	bool decode(Buffer *, Buffer *, std::set<uint64_t>&);
 };
 
 #endif /* !XCODEC_DECODER_H */

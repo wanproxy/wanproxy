@@ -95,8 +95,13 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 		if (decoder_frame_buffer_.empty())
 			continue;
 
+		if (!decoder_unknown_hashes_.empty()) {
+			DEBUG(log_) << "Waiting for unknown hashes to continue processing data.";
+			continue;
+		}
+
 		Buffer output;
-		if (!decoder_->decode(&output, &decoder_frame_buffer_)) {
+		if (!decoder_->decode(&output, &decoder_frame_buffer_, decoder_unknown_hashes_)) {
 			ERROR(log_) << "Decoder exiting with error.";
 			decoder_error();
 			return;
@@ -178,6 +183,69 @@ XCodecPipePair::decode_oob(Buffer *buf)
 				INFO(log_) << "Peer connected with UUID: " << uuid.string_;
 			}
 			break;
+		case XCODEC_OP_ASK:
+			if (encoder_ == NULL) {
+				ERROR(log_) << "Got <ASK> before sending <HELLO>.";
+				return (false);
+			} else {
+				uint64_t hash;
+				buf->extract(&hash);
+				buf->skip(sizeof hash);
+				hash = BigEndian::decode(hash);
+
+				BufferSegment *oseg = codec_->cache()->lookup(hash);
+				if (oseg == NULL) {
+					ERROR(log_) << "Unknown hash in <ASK>: " << hash;
+					return (false);
+				}
+
+				DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
+
+				Buffer learn;
+				learn.append(XCODEC_MAGIC);
+				learn.append(XCODEC_OP_LEARN);
+				learn.append(oseg);
+				oseg->unref();
+
+				Buffer oob;
+				encode_oob(&oob, &learn);
+
+				encoder_produce(&oob);
+			}
+			break;
+		case XCODEC_OP_LEARN:
+			if (decoder_cache_ == NULL) {
+				ERROR(log_) << "Got <LEARN> before <HELLO>.";
+				return (false);
+			} else {
+				BufferSegment *seg;
+				buf->copyout(&seg, XCODEC_SEGMENT_LENGTH);
+				buf->skip(XCODEC_SEGMENT_LENGTH);
+
+				uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
+				if (decoder_unknown_hashes_.find(hash) == decoder_unknown_hashes_.end()) {
+					INFO(log_) << "Gratuitous <LEARN> without <ASK>.";
+				} else {
+					decoder_unknown_hashes_.erase(hash);
+				}
+
+				BufferSegment *oseg = decoder_cache_->lookup(hash);
+				if (oseg != NULL) {
+					if (!oseg->equal(seg)) {
+						oseg->unref();
+						ERROR(log_) << "Collision in <LEARN>.";
+						seg->unref();
+						return (false);
+					}
+					oseg->unref();
+					DEBUG(log_) << "Redundant <LEARN>.";
+				} else {
+					DEBUG(log_) << "Successful <LEARN>.";
+					decoder_cache_->enter(hash, seg);
+				}
+				seg->unref();
+			}
+			break;
 		default:
 			ERROR(log_) << "Unsupported operation in OOB stream.";
 			return (false);
@@ -228,6 +296,7 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 		ASSERT(!encoded.empty());
 
 		encode_frame(&output, &encoded);
+		ASSERT(!output.empty());
 
 		encoder_produce(&output);
 	}

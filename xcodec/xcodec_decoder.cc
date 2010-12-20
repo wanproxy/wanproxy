@@ -17,6 +17,8 @@ XCodecDecoder::~XCodecDecoder()
 { }
 
 /*
+ * XXX These comments are out-of-date.
+ *
  * Decode an XCodec-encoded stream.  Returns false if there was an
  * inconsistency, error or unrecoverable condition in the stream.
  * Returns true if we were able to process the stream entirely or
@@ -37,7 +39,7 @@ XCodecDecoder::~XCodecDecoder()
  * share an originator.
  */
 bool
-XCodecDecoder::decode(Buffer *output, Buffer *input)
+XCodecDecoder::decode(Buffer *output, Buffer *input, std::set<uint64_t>& unknown_hashes)
 {
 	while (!input->empty()) {
 		unsigned off;
@@ -93,11 +95,6 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 					cache_->enter(hash, seg);
 				}
 
-#if 0
-				/* Just in case.  */
-				asked_.erase(hash);
-#endif
-
 				window_.declare(hash, seg);
 				output->append(seg);
 				seg->unref();
@@ -113,26 +110,14 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 
 				BufferSegment *oseg = cache_->lookup(hash);
 				if (oseg == NULL) {
-					if (true) { /* XXX */
-						ERROR(log_) << "Unknown hash in <REF>: " << hash;
-						return (false);
-					}
-
-#if 0
-					if (asked_.find(hash) == asked_.end()) {
+					if (unknown_hashes.find(hash) == unknown_hashes.end()) {
 						DEBUG(log_) << "Sending <ASK>, waiting for <LEARN>.";
-						encoder_->encode_ask(hash);
-						asked_.insert(hash);
-
-						queued_data = true;
+						unknown_hashes.insert(hash);
 					} else {
 						DEBUG(log_) << "Already sent <ASK>, waiting for <LEARN>.";
 					}
 
-					queued_.append(XCODEC_MAGIC);
-					queued_.append(XCODEC_OP_REF);
-					queued_.append((const uint8_t *)&behash, sizeof behash);
-#endif
+					return (true);
 				} else {
 					window_.declare(hash, oseg);
 					output->append(oseg);
@@ -155,79 +140,6 @@ XCodecDecoder::decode(Buffer *output, Buffer *input)
 
 				output->append(oseg);
 				oseg->unref();
-			}
-			break;
-		case XCODEC_OP_LEARN:
-			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + XCODEC_SEGMENT_LENGTH)
-				goto done;
-			else {
-				input->skip(sizeof XCODEC_MAGIC + sizeof op);
-
-				BufferSegment *seg;
-				input->copyout(&seg, XCODEC_SEGMENT_LENGTH);
-				input->skip(XCODEC_SEGMENT_LENGTH);
-
-				uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
-				BufferSegment *oseg = cache_->lookup(hash);
-				if (oseg != NULL) {
-					if (!oseg->equal(seg)) {
-						oseg->unref();
-						ERROR(log_) << "Collision in <LEARN>.";
-						seg->unref();
-						return (false);
-					}
-					oseg->unref();
-					DEBUG(log_) << "Redundant <LEARN>.";
-				} else {
-					DEBUG(log_) << "Successful <LEARN>.";
-					cache_->enter(hash, seg);
-				}
-#if 0
-				asked_.erase(hash);
-				if (asked_.empty())
-					DEBUG(log_) << "No outstanding <ASK>s after <LEARN>.";
-#endif
-				seg->unref();
-			}
-			break;
-		case XCODEC_OP_ASK:
-			if (input->length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint64_t))
-				goto done;
-			else {
-				if (true) { /* XXX */
-					ERROR(log_) << "Cannot handle <ASK> without associated encoder.";
-					return (false);
-				}
-
-				uint64_t behash;
-				input->moveout((uint8_t *)&behash, sizeof XCODEC_MAGIC + sizeof op, sizeof behash);
-				uint64_t hash = BigEndian::decode(behash);
-
-				BufferSegment *oseg = cache_->lookup(hash);
-				if (oseg == NULL) {
-					ERROR(log_) << "Unknown hash in <ASK>: " << hash;
-					return (false);
-				}
-
-				DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
-#if 0
-				encoder_->encode_learn(oseg);
-#endif
-				oseg->unref();
-			}
-			break;
-		case XCODEC_OP_EOS:
-			if (input->length() < sizeof XCODEC_MAGIC + sizeof op)
-				goto done;
-			else {
-				input->skip(sizeof XCODEC_MAGIC + sizeof op);
-				DEBUG(log_) << "Received <EOS>.  Bytes remaining: " << input->length();
-
-#if 0
-				if (encoder_ != NULL) {
-					encoder_->received_eos();
-				}
-#endif
 			}
 			break;
 		default:

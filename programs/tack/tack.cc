@@ -126,6 +126,7 @@ compress(int ifd, int ofd, XCodec *codec)
 static void
 decompress(int ifd, int ofd, XCodec *codec)
 {
+	std::set<uint64_t> unknown_hashes;
 	XCodecDecoder decoder(codec->cache());
 	Buffer input, output;
 
@@ -134,12 +135,16 @@ decompress(int ifd, int ofd, XCodec *codec)
 	while (fill(ifd, &input)) {
 		if (codec_timing)
 			codec_timer.start();
-		if (!decoder.decode(&output, &input)) {
+		if (!decoder.decode(&output, &input, unknown_hashes)) {
 			ERROR("/decompress") << "Decode failed.";
 			return;
 		}
 		if (codec_timing)
 			codec_timer.stop();
+		if (!unknown_hashes.empty()) {
+			ERROR("/decompress") << "Cannot decode stream with unknown hashes.";
+			return;
+		}
 		flush(ofd, &output);
 	}
 	ASSERT(input.empty());

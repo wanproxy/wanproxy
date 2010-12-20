@@ -18,6 +18,7 @@ class XCodecPipePair : public PipePair {
 
 	XCodecDecoder *decoder_;
 	XCodecCache *decoder_cache_;
+	std::set<uint64_t> decoder_unknown_hashes_;
 	Buffer decoder_buffer_;
 	Buffer decoder_frame_buffer_;
 	PipeProducerWrapper<XCodecPipePair> *decoder_pipe_;
@@ -31,6 +32,7 @@ public:
 	  type_(type),
 	  decoder_(NULL),
 	  decoder_cache_(NULL),
+	  decoder_unknown_hashes_(),
 	  decoder_buffer_(),
 	  decoder_frame_buffer_(),
 	  decoder_pipe_(NULL),
