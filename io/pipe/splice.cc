@@ -18,6 +18,7 @@ Splice::Splice(StreamChannel *source, Pipe *pipe, StreamChannel *sink)
   read_eos_(false),
   read_action_(NULL),
   input_action_(NULL),
+  output_eos_(false),
   output_action_(NULL),
   write_action_(NULL),
   shutdown_action_(NULL)
@@ -177,6 +178,8 @@ Splice::input_complete(Event e)
 	if (!read_eos_) {
 		EventCallback *cb = callback(this, &Splice::read_complete);
 		read_action_ = source_->read(0, cb);
+	} else if (output_eos_) {
+		complete(Event::EOS);
 	}
 }
 
@@ -244,5 +247,9 @@ Splice::shutdown_complete(Event e)
 
 	if (e.type_ == Event::Error)
 		DEBUG(log_) << "Could not shut down write channel.";
-	complete(Event::EOS);
+	if (read_eos_) {
+		complete(Event::EOS);
+	} else {
+		output_eos_ = true;
+	}
 }

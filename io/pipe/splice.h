@@ -16,6 +16,7 @@ class Splice {
 	bool read_eos_;
 	Action *read_action_;
 	Action *input_action_;
+	bool output_eos_;
 	Action *output_action_;
 	Action *write_action_;
 	Action *shutdown_action_;
