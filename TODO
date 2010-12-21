@@ -1,3 +1,5 @@
+o) Fix WANProxyCodecPipePair to manage PipeSplices appropriately, given their
+   sensitivity wrt outstanding actions.
 o) Fix any remaining bugs with XCodec EOS support.
 o) Make tack use the EventSystem and IOSystem now that the performance of
    the latter is substantially better than the hand-rolled I/O of tack.

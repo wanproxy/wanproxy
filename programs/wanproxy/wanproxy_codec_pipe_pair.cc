@@ -91,6 +91,14 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 
 WANProxyCodecPipePair::~WANProxyCodecPipePair()
 {
+	/*
+	 * XXX
+	 *
+	 * This is wrong.  We need to delete the PipeLinks first, since
+	 * they may have actions running internally.  Should we bring
+	 * PipeSplice into this PipePair directly and manage that action
+	 * explicitly?
+	 */
 	std::set<Pipe *>::iterator pit;
 	while ((pit = pipes_.begin()) != pipes_.end()) {
 		Pipe *pipe = *pit;
