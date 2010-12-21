@@ -23,12 +23,15 @@ PipeSplice::~PipeSplice()
 }
 
 Action *
-PipeSplice::start(EventCallback *cb)
+PipeSplice::start(EventCallback *scb)
 {
 	ASSERT(action_ == NULL);
 	ASSERT(callback_ == NULL);
 
-	callback_ = cb;
+	EventCallback *cb = callback(this, &PipeSplice::output_complete);
+	action_ = source_->output(cb);
+
+	callback_ = scb;
 
 	return (cancellation(this, &PipeSplice::cancel));
 }
