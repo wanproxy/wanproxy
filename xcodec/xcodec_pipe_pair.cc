@@ -202,7 +202,6 @@ XCodecPipePair::decode_oob(Buffer *buf)
 		buf->moveout(&op, sizeof magic, sizeof op);
 		switch (op) {
 		case XCODEC_OP_HELLO:
-			DEBUG(log_) << "Process OOB <HELLO>.";
 			if (decoder_cache_ != NULL) {
 				ERROR(log_) << "Got <HELLO> twice.";
 				return (false);
@@ -244,7 +243,6 @@ XCodecPipePair::decode_oob(Buffer *buf)
 			}
 			break;
 		case XCODEC_OP_ASK:
-			DEBUG(log_) << "Process OOB <ASK>.";
 			if (encoder_ == NULL) {
 				ERROR(log_) << "Got <ASK> before sending <HELLO>.";
 				return (false);
@@ -275,7 +273,6 @@ XCodecPipePair::decode_oob(Buffer *buf)
 			}
 			break;
 		case XCODEC_OP_LEARN:
-			DEBUG(log_) << "Process OOB <LEARN>.";
 			if (decoder_cache_ == NULL) {
 				ERROR(log_) << "Got <LEARN> before <HELLO>.";
 				return (false);
@@ -309,7 +306,6 @@ XCodecPipePair::decode_oob(Buffer *buf)
 			}
 			break;
 		case XCODEC_OP_EOS:
-			DEBUG(log_) << "Process OOB <EOS>.";
 			if (decoder_received_eos_) {
 				ERROR(log_) << "Duplicate <EOS>.";
 				return (false);
@@ -317,7 +313,6 @@ XCodecPipePair::decode_oob(Buffer *buf)
 			decoder_received_eos_ = true;
 			break;
 		case XCODEC_OP_EOS_ACK:
-			DEBUG(log_) << "Process OOB <EOS_ACK>.";
 			if (!encoder_sent_eos_) {
 				ERROR(log_) << "Got <EOS_ACK> before sending <EOS>.";
 				return (false);
