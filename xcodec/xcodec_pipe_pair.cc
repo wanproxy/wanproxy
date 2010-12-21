@@ -14,26 +14,36 @@
 #include <xcodec/xcodec_pipe_pair.h>
 
 /*
- * And now for something completely different, a note on how end-of-stream indication works with the XCodec.
+ * And now for something completely different, a note on how end-of-stream
+ * indication works with the XCodec.
  *
- * When things are going along smoothly, the XCodec is a nice one-way stream compressor.  All you need is state
- * that you already have or state from earlier in the stream.  However, it doesn't take much for things to go
- * less smoothly.  When you have two connections, a symbol may be defined in the first and referenced in the
- * second, and the reference in the second stream may be decoded before the definition in the first one.  In
- * this case, we have <ASK> and <LEARN> in the <OOB> stream to communicate bidirectionally to get the
- * reference.  If we're actually going to get the definition soon, that's a bit wasteful, and there are a lot
- * of optimizations we can make, but the basic principle needs to be robust in case, say, the first connection
- * goes down.
+ * When things are going along smoothly, the XCodec is a nice one-way stream
+ * compressor.  All you need is state that you already have or state from
+ * earlier in the stream.  However, it doesn't take much for things to go less
+ * smoothly.  When you have two connections, a symbol may be defined in the
+ * first and referenced in the second, and the reference in the second stream
+ * may be decoded before the definition in the first one.  In this case, we
+ * have <ASK> and <LEARN> in the <OOB> stream to communicate bidirectionally
+ * to get the reference.  If we're actually going to get the definition soon,
+ * that's a bit wasteful, and there are a lot of optimizations we can make,
+ * but the basic principle needs to be robust in case, say, the first
+ * connection goes down.
  *
- * Because of this, we can't just pass through end-of-stream indicators freely.  When the encoder receives EOS
- * from a StreamChannel, we could then send EOS out to the StreamChannel that connects us to the decoder on the
- * other side of the network.  But what if that decoder needs to <ASK> us about a symbol we sent a reference to
- * just before EOS?
+ * Because of this, we can't just pass through end-of-stream indicators
+ * freely.  When the encoder receives EOS from a StreamChannel, we could then
+ * send EOS out to the StreamChannel that connects us to the decoder on the
+ * other side of the network.  But what if that decoder needs to <ASK> us
+ * about a symbol we sent a reference to just before EOS?
  *
- * So we send <EOS> rather than EOS, a message saying that the encoded stream has ended.
+ * So we send <EOS> rather than EOS, a message saying that the encoded stream
+ * has ended.
  *
- * When the decoder receives <EOS> it can send EOS on to the StreamChannel it is writing to, assuming it has
- * processed all outstanding frame data.
+ * When the decoder receives <EOS> it can send EOS on to the StreamChannel it
+ * is writing to, assuming it has processed all outstanding frame data.  And
+ * when it has finished processing all outstanding frame data, it will send
+ * <EOS_ACK> on the encoder's output StreamChannel, to the remote decoder.
+ * When both sides have sent <EOS_ACK>, the encoder's StreamChannels may be
+ * shut down and no more communication will occur.
  */
 
 static void encode_frame(Buffer *, Buffer *);

@@ -147,7 +147,8 @@
  * 		OP_HELLO
  * 		OP_ASK
  * 		OP_LEARN
- * 		OP_EOS ?
+ * 		OP_EOS
+ * 		OP_EOS_ACK
  *
  * Side-effects:
  * 	None.
