@@ -6,6 +6,7 @@ struct WANProxyCodec;
 
 class ProxyListener {
 	LogHandle log_;
+	std::string name_;
 	TCPServer *server_;
 	Action *accept_action_;
 	Action *close_action_;
@@ -17,7 +18,7 @@ class ProxyListener {
 	std::string remote_name_;
 
 public:
-	ProxyListener(WANProxyCodec *, WANProxyCodec *, SocketAddressFamily,
+	ProxyListener(const std::string&, WANProxyCodec *, WANProxyCodec *, SocketAddressFamily,
 		      const std::string&, SocketAddressFamily,
 		      const std::string&);
 	~ProxyListener();

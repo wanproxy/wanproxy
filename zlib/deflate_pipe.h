@@ -1,19 +1,18 @@
 #ifndef	ZLIB_DEFLATE_PIPE_H
 #define	ZLIB_DEFLATE_PIPE_H
 
-#include <io/pipe/pipe_simple.h>
+#include <io/pipe/pipe_producer.h>
 
 #include <zlib.h>
 
-class DeflatePipe : public PipeSimple {
+class DeflatePipe : public PipeProducer {
 	z_stream stream_;
-	bool finished_;
 public:
 	DeflatePipe(int = 0);
 	~DeflatePipe();
 
 private:
-	bool process(Buffer *, Buffer *);
+	void consume(Buffer *);
 };
 
 #endif /* !ZLIB_DEFLATE_PIPE_H */

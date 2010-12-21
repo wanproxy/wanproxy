@@ -6,6 +6,7 @@ class XCodec;
 
 class ProxySocksListener {
 	LogHandle log_;
+	std::string name_;
 	TCPServer *server_;
 	Action *accept_action_;
 	Action *close_action_;
@@ -13,7 +14,7 @@ class ProxySocksListener {
 	std::string interface_;
 
 public:
-	ProxySocksListener(SocketAddressFamily, const std::string&);
+	ProxySocksListener(const std::string&, SocketAddressFamily, const std::string&);
 	~ProxySocksListener();
 
 private:

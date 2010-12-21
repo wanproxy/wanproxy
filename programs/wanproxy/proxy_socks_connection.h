@@ -22,6 +22,7 @@ class ProxySocksConnection {
 	};
 
 	LogHandle log_;
+	std::string name_;
 	Socket *client_;
 	Action *action_;
 	State state_;
@@ -31,7 +32,7 @@ class ProxySocksConnection {
 	std::string socks5_remote_name_;
 
 public:
-	ProxySocksConnection(Socket *);
+	ProxySocksConnection(const std::string&, Socket *);
 private:
 	~ProxySocksConnection();
 

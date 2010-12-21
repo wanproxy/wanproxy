@@ -21,12 +21,14 @@ class XCodecPipePair : public PipePair {
 	std::set<uint64_t> decoder_unknown_hashes_;
 	bool decoder_received_eos_;
 	bool decoder_received_eos_ack_;
+	bool decoder_sent_eos_;
 	Buffer decoder_buffer_;
 	Buffer decoder_frame_buffer_;
 	PipeProducerWrapper<XCodecPipePair> *decoder_pipe_;
 
 	XCodecEncoder *encoder_;
 	bool encoder_sent_eos_;
+	bool encoder_sent_eos_ack_;
 	PipeProducerWrapper<XCodecPipePair> *encoder_pipe_;
 public:
 	XCodecPipePair(XCodec *codec, XCodecPipePairType type)
@@ -38,15 +40,17 @@ public:
 	  decoder_unknown_hashes_(),
 	  decoder_received_eos_(false),
 	  decoder_received_eos_ack_(false),
+	  decoder_sent_eos_(false),
 	  decoder_buffer_(),
 	  decoder_frame_buffer_(),
 	  decoder_pipe_(NULL),
 	  encoder_(NULL),
 	  encoder_sent_eos_(false),
+	  encoder_sent_eos_ack_(false),
 	  encoder_pipe_(NULL)
 	{
-		decoder_pipe_ = new PipeProducerWrapper<XCodecPipePair>(this, &XCodecPipePair::decoder_consume);
-		encoder_pipe_ = new PipeProducerWrapper<XCodecPipePair>(this, &XCodecPipePair::encoder_consume);
+		decoder_pipe_ = new PipeProducerWrapper<XCodecPipePair>(log_ + "/decoder", this, &XCodecPipePair::decoder_consume);
+		encoder_pipe_ = new PipeProducerWrapper<XCodecPipePair>(log_ + "/encoder", this, &XCodecPipePair::encoder_consume);
 	}
 
 	~XCodecPipePair()

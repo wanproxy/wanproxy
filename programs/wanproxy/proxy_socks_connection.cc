@@ -7,8 +7,9 @@
 #include "proxy_client.h"
 #include "proxy_socks_connection.h"
 
-ProxySocksConnection::ProxySocksConnection(Socket *client)
-: log_("/wanproxy/proxy_socks_connection"),
+ProxySocksConnection::ProxySocksConnection(const std::string& name, Socket *client)
+: log_("/wanproxy/proxy/" + name + "/socks/connection"),
+  name_(name),
   client_(client),
   action_(NULL),
   state_(GetSOCKSVersion),
@@ -225,7 +226,7 @@ ProxySocksConnection::write_complete(Event e)
 		family = SocketAddressFamilyIPv4;
 	}
 
-	new ProxyClient(NULL, client_, family, remote_name.str());
+	new ProxyClient(name_, NULL, client_, family, remote_name.str());
 
 	client_ = NULL;
 	delete this;

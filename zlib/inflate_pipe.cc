@@ -7,7 +7,7 @@
 #define	INFLATE_CHUNK_SIZE	65536
 
 InflatePipe::InflatePipe(void)
-: PipeSimple("/zlib/inflate_pipe"),
+: PipeProducer("/zlib/inflate_pipe"),
   stream_()
 {
 	stream_.zalloc = Z_NULL;
@@ -29,9 +29,10 @@ InflatePipe::~InflatePipe()
 		ERROR(log_) << "Inflate stream did not end cleanly.";
 }
 
-bool
-InflatePipe::process(Buffer *out, Buffer *in)
+void
+InflatePipe::consume(Buffer *in)
 {
+	Buffer out;
 	uint8_t outbuf[INFLATE_CHUNK_SIZE];
 	bool first = true;
 
@@ -64,22 +65,32 @@ InflatePipe::process(Buffer *out, Buffer *in)
 			    flush == Z_NO_FLUSH)
 				break;
 			if (error == Z_NEED_DICT || error == Z_DATA_ERROR ||
-			    error == Z_MEM_ERROR)
-				return (false);
+			    error == Z_MEM_ERROR) {
+				produce_error();
+				return;
+			}
 
 			if (flush != Z_NO_FLUSH && error == Z_BUF_ERROR &&
 			    stream_.avail_out == sizeof outbuf)
 				error = Z_OK;
 
 			if (stream_.avail_out != sizeof outbuf)
-				out->append(outbuf, sizeof outbuf - stream_.avail_out);
+				out.append(outbuf, sizeof outbuf - stream_.avail_out);
 			stream_.avail_out = sizeof outbuf;
 			stream_.next_out = outbuf;
 
 			if (flush == Z_NO_FLUSH)
 				break;
-			if (error == Z_OK || error == Z_STREAM_END)
-				return (true);
+			if (error == Z_OK || error == Z_STREAM_END) {
+				if (!out.empty())
+					produce(&out);
+
+				if (flush == Z_FINISH && error == Z_STREAM_END) {
+					Buffer eos;
+					produce(&eos);
+				}
+				return;
+			}
 			/* More data to output.  */
 		}
 

@@ -22,7 +22,7 @@ class Splice {
 	Action *shutdown_action_;
 
 public:
-	Splice(StreamChannel *, Pipe *, StreamChannel *);
+	Splice(const LogHandle&, StreamChannel *, Pipe *, StreamChannel *);
 	~Splice();
 
 	Action *start(EventCallback *);

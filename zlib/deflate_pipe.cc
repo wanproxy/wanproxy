@@ -7,9 +7,8 @@
 #define	DEFLATE_CHUNK_SIZE	65536
 
 DeflatePipe::DeflatePipe(int level)
-: PipeSimple("/zlib/deflate_pipe"),
-  stream_(),
-  finished_(false)
+: PipeProducer("/zlib/deflate_pipe"),
+  stream_()
 {
 	stream_.zalloc = Z_NULL;
 	stream_.zfree = Z_NULL;
@@ -27,16 +26,12 @@ DeflatePipe::~DeflatePipe()
 		ERROR(log_) << "Deflate stream did not end cleanly.";
 }
 
-bool
-DeflatePipe::process(Buffer *out, Buffer *in)
+void
+DeflatePipe::consume(Buffer *in)
 {
+	Buffer out;
 	uint8_t outbuf[DEFLATE_CHUNK_SIZE];
 	bool first = true;
-
-	if (finished_) {
-		ASSERT(in->empty());
-		return (true);
-	}
 
 	stream_.avail_out = sizeof outbuf;
 	stream_.next_out = outbuf;
@@ -67,17 +62,24 @@ DeflatePipe::process(Buffer *out, Buffer *in)
 			    flush == Z_NO_FLUSH)
 				break;
 
-			out->append(outbuf, sizeof outbuf - stream_.avail_out);
+			out.append(outbuf, sizeof outbuf - stream_.avail_out);
 			stream_.avail_out = sizeof outbuf;
 			stream_.next_out = outbuf;
 
 			if (flush == Z_NO_FLUSH)
 				break;
-			if (flush == Z_SYNC_FLUSH && error == Z_OK)
-				return (true);
+			if (flush == Z_SYNC_FLUSH && error == Z_OK) {
+				if (!out.empty())
+					produce(&out);
+				return;
+			}
 			if (flush == Z_FINISH && error == Z_STREAM_END) {
-				finished_ = true;
-				return (true);
+				if (!out.empty())
+					produce(&out);
+
+				Buffer eos;
+				produce(&eos);
+				return;
 			}
 			/* More data to output.  */
 		}

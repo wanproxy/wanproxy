@@ -12,13 +12,15 @@ class ConfigObject {
 	friend class Config;
 	friend class ConfigClass;
 
+	std::string name_;
 	Config *config_;
 	ConfigClass *class_;
 	std::map<std::string, ConfigValue *> members_;
 
 public:
-	ConfigObject(Config *config, ConfigClass *cc)
-	: config_(config),
+	ConfigObject(const std::string& xname, Config *config, ConfigClass *cc)
+	: name_(xname),
+	  config_(config),
 	  class_(cc),
 	  members_()
 	{ }
@@ -43,7 +45,7 @@ public:
 #endif
 
 	template<typename T>
-	ConfigValue *get(const std::string& name, T **ctp) const
+	ConfigValue *get(const std::string& mname, T **ctp) const
 	{
 		std::map<std::string, ConfigValue *>::const_iterator it;
 
@@ -52,7 +54,7 @@ public:
 		 * set *ctp to NULL in *all* of these cases.  Have tried shaving
 		 * the yak and gotten only despair.
 		 */
-		it = members_.find(name);
+		it = members_.find(mname);
 		if (it == members_.end()) {
 			*ctp = NULL; /* XXX GCC -Wuninitialized.  */
 			return (NULL);
@@ -74,14 +76,19 @@ public:
 		return (cv);
 	}
 
-	bool has(const std::string& name) const
+	bool has(const std::string& mname) const
 	{
 		std::map<std::string, ConfigValue *>::const_iterator it;
 
-		it = members_.find(name);
+		it = members_.find(mname);
 		if (it == members_.end())
 			return (false);
 		return (true);
+	}
+
+	std::string name(void) const
+	{
+		return (name_);
 	}
 };
 

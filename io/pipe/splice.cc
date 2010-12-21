@@ -8,8 +8,8 @@
  * A Splice passes data unidirectionall between StreamChannels across a Pipe.
  */
 
-Splice::Splice(StreamChannel *source, Pipe *pipe, StreamChannel *sink)
-: log_("/splice"),
+Splice::Splice(const LogHandle& log, StreamChannel *source, Pipe *pipe, StreamChannel *sink)
+: log_(""),
   source_(source),
   pipe_(pipe),
   sink_(sink),
@@ -23,6 +23,8 @@ Splice::Splice(StreamChannel *source, Pipe *pipe, StreamChannel *sink)
   write_action_(NULL),
   shutdown_action_(NULL)
 {
+	log_ = log + "/splice";
+
 	ASSERT(source_ != NULL);
 	ASSERT(pipe_ != NULL);
 	ASSERT(sink_ != NULL);

@@ -60,7 +60,7 @@ WANProxyConfigClassProxySocks::activate(ConfigObject *co)
 		return (false);
 
 	std::string interface_address = '[' + interface_hoststr + ']' + ':' + interface_portstr;
-	ProxySocksListener *listener = new ProxySocksListener(interface_family, interface_address);
+	ProxySocksListener *listener = new ProxySocksListener(co->name(), interface_family, interface_address);
 	object_listener_map_[co] = listener;
 
 	return (true);

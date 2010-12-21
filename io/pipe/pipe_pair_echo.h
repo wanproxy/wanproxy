@@ -6,6 +6,7 @@
 class PipePairEcho : public PipePairProducer {
 public:
 	PipePairEcho(void)
+	: PipePairProducer("/pipe/pair/echo")
 	{ }
 
 	~PipePairEcho()

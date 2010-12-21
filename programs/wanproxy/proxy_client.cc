@@ -14,10 +14,11 @@
 
 #include "proxy_client.h"
 
-ProxyClient::ProxyClient(PipePair *pipe_pair, Socket *local_socket,
+ProxyClient::ProxyClient(const std::string& name,
+			 PipePair *pipe_pair, Socket *local_socket,
 			 SocketAddressFamily family,
 			 const std::string& remote_name)
-: log_("/wanproxy/proxy/client"),
+: log_("/wanproxy/proxy/" + name + "/client"),
   stop_action_(NULL),
   local_action_(NULL),
   local_socket_(local_socket),
@@ -135,8 +136,8 @@ ProxyClient::connect_complete(Event e)
 	remote_socket_ = (Socket *)e.data_;
 	ASSERT(remote_socket_ != NULL);
 
-	incoming_splice_ = new Splice(remote_socket_, incoming_pipe_, local_socket_);
-	outgoing_splice_ = new Splice(local_socket_, outgoing_pipe_, remote_socket_);
+	incoming_splice_ = new Splice(log_ + "/incoming", remote_socket_, incoming_pipe_, local_socket_);
+	outgoing_splice_ = new Splice(log_ + "/outgoing", local_socket_, outgoing_pipe_, remote_socket_);
 
 	splice_pair_ = new SplicePair(outgoing_splice_, incoming_splice_);
 

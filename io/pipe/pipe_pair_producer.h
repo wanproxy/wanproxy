@@ -8,12 +8,12 @@ class PipePairProducer : public PipePair {
 	PipeProducerWrapper<PipePairProducer> *incoming_pipe_;
 	PipeProducerWrapper<PipePairProducer> *outgoing_pipe_;
 protected:
-	PipePairProducer(void)
+	PipePairProducer(const LogHandle& log)
 	: incoming_pipe_(NULL),
 	  outgoing_pipe_(NULL)
 	{
-		incoming_pipe_ = new PipeProducerWrapper<PipePairProducer>(this, &PipePairProducer::incoming_consume);
-		outgoing_pipe_ = new PipeProducerWrapper<PipePairProducer>(this, &PipePairProducer::outgoing_consume);
+		incoming_pipe_ = new PipeProducerWrapper<PipePairProducer>(log + "/incoming", this, &PipePairProducer::incoming_consume);
+		outgoing_pipe_ = new PipeProducerWrapper<PipePairProducer>(log + "/outgoing", this, &PipePairProducer::outgoing_consume);
 	}
 public:
 	virtual ~PipePairProducer()

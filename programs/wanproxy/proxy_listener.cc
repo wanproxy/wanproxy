@@ -12,13 +12,15 @@
 
 #include "wanproxy_codec_pipe_pair.h"
 
-ProxyListener::ProxyListener(WANProxyCodec *interface_codec,
+ProxyListener::ProxyListener(const std::string& name,
+			     WANProxyCodec *interface_codec,
 			     WANProxyCodec *remote_codec,
 			     SocketAddressFamily interface_family,
 			     const std::string& interface,
 			     SocketAddressFamily remote_family,
 			     const std::string& remote_name)
-: log_("/wanproxy/proxy_listener"),
+: log_("/wanproxy/proxy/" + name + "/listener"),
+  name_(name),
   server_(NULL),
   accept_action_(NULL),
   close_action_(NULL),
@@ -69,7 +71,7 @@ ProxyListener::accept_complete(Event e)
 	if (e.type_ == Event::Done) {
 		Socket *client = (Socket *)e.data_;
 		PipePair *pipe_pair = new WANProxyCodecPipePair(interface_codec_, remote_codec_);
-		new ProxyClient(pipe_pair, client, remote_family_, remote_name_);
+		new ProxyClient(name_, pipe_pair, client, remote_family_, remote_name_);
 	}
 
 	EventCallback *cb = callback(this, &ProxyListener::accept_complete);

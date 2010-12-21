@@ -10,8 +10,9 @@
 #include "proxy_socks_connection.h"
 #include "proxy_socks_listener.h"
 
-ProxySocksListener::ProxySocksListener(SocketAddressFamily family, const std::string& interface)
-: log_("/wanproxy/proxy_socks_listener"),
+ProxySocksListener::ProxySocksListener(const std::string& name, SocketAddressFamily family, const std::string& interface)
+: log_("/wanproxy/proxy/" + name + "/socks/listener"),
+  name_(name),
   server_(NULL),
   accept_action_(NULL),
   close_action_(NULL),
@@ -57,7 +58,7 @@ ProxySocksListener::accept_complete(Event e)
 
 	if (e.type_ == Event::Done) {
 		Socket *client = (Socket *)e.data_;
-		new ProxySocksConnection(client);
+		new ProxySocksConnection(name_, client);
 	}
 
 	EventCallback *cb = callback(this, &ProxySocksListener::accept_complete);

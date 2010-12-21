@@ -27,7 +27,7 @@ public:
 	  input_action_(NULL),
 	  output_(output),
 	  output_action_(NULL),
-	  splice_(&input_, pipe, &output_)
+	  splice_(log_, &input_, pipe, &output_)
 	{
 		EventCallback *cb = callback(this, &Catenate::splice_complete);
 		splice_action_ = splice_.start(cb);

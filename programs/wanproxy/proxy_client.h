@@ -31,7 +31,7 @@ class ProxyClient {
 	Action *splice_action_;
 
 public:
-	ProxyClient(PipePair *, Socket *, SocketAddressFamily, const std::string&);
+	ProxyClient(const std::string&, PipePair *, Socket *, SocketAddressFamily, const std::string&);
 private:
 	~ProxyClient();
 

@@ -14,8 +14,26 @@
 #include <xcodec/xcodec_pipe_pair.h>
 
 /*
- * XXX
- * I think the EOS/EOS_ACK mechanism can be simplified.
+ * And now for something completely different, a note on how end-of-stream indication works with the XCodec.
+ *
+ * When things are going along smoothly, the XCodec is a nice one-way stream compressor.  All you need is state
+ * that you already have or state from earlier in the stream.  However, it doesn't take much for things to go
+ * less smoothly.  When you have two connections, a symbol may be defined in the first and referenced in the
+ * second, and the reference in the second stream may be decoded before the definition in the first one.  In
+ * this case, we have <ASK> and <LEARN> in the <OOB> stream to communicate bidirectionally to get the
+ * reference.  If we're actually going to get the definition soon, that's a bit wasteful, and there are a lot
+ * of optimizations we can make, but the basic principle needs to be robust in case, say, the first connection
+ * goes down.
+ *
+ * Because of this, we can't just pass through end-of-stream indicators freely.  When the encoder receives EOS
+ * from a StreamChannel, we could then send EOS out to the StreamChannel that connects us to the decoder on the
+ * other side of the network.  But what if that decoder needs to <ASK> us about a symbol we sent a reference to
+ * just before EOS?
+ *
+ * So we send <EOS> rather than EOS, a message saying that the encoded stream has ended.
+ *
+ * When the decoder receives <EOS> it can send EOS on to the StreamChannel it is writing to, assuming it has
+ * processed all outstanding frame data.
  */
 
 static void encode_frame(Buffer *, Buffer *);
@@ -27,7 +45,12 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 	if (buf->empty()) {
 		if (!decoder_buffer_.empty())
 			ERROR(log_) << "Remote encoder closed connection with data outstanding.";
-		decoder_produce(buf);
+		if (!decoder_frame_buffer_.empty())
+			ERROR(log_) << "Remote encoder closed connection with frame data outstanding.";
+		if (!decoder_sent_eos_) {
+			decoder_sent_eos_ = true;
+			decoder_produce(buf);
+		}
 		return;
 	}
 
@@ -36,7 +59,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 
 	while (!decoder_buffer_.empty()) {
 		if (decoder_buffer_.length() < sizeof (uint8_t) + sizeof (uint8_t) + sizeof (uint16_t))
-			return;
+			break;
 
 		uint8_t magic;
 		decoder_buffer_.extract(&magic);
@@ -97,6 +120,20 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 			NOTREACHED();
 		}
 
+		if (decoder_received_eos_ && !encoder_sent_eos_ack_) {
+			DEBUG(log_) << "Decoder finished, got <EOS>, sending <EOS_ACK>.";
+
+			Buffer eos_ack;
+			eos_ack.append(XCODEC_MAGIC);
+			eos_ack.append(XCODEC_OP_EOS_ACK);
+
+			Buffer oob;
+			encode_oob(&oob, &eos_ack);
+
+			encoder_produce(&oob);
+			encoder_sent_eos_ack_ = true;
+		}
+
 		if (decoder_frame_buffer_.empty())
 			continue;
 
@@ -128,24 +165,21 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 		}
 	}
 
-	if (decoder_buffer_.empty() && decoder_frame_buffer_.empty()) {
-		if (decoder_received_eos_ack_) {
-			DEBUG(log_) << "Decoder finished, got <EOS_ACK>, shutting down channel.";
+	if (decoder_received_eos_ && !decoder_sent_eos_) {
+		DEBUG(log_) << "Decoder finished, got <EOS>, shutting down decoder output channel.";
+		Buffer eos;
+		decoder_produce(&eos);
+		decoder_sent_eos_ = true;
+	}
 
-			Buffer eos;
-			encoder_produce(&eos);
-		} else if (decoder_received_eos_) {
-			DEBUG(log_) << "Decoder and encoder finished, got <EOS>, sending <EOS_ACK>.";
+	if (encoder_sent_eos_ack_ && decoder_received_eos_ack_) {
+		ASSERT(decoder_buffer_.empty());
+		ASSERT(decoder_frame_buffer_.empty());
 
-			Buffer eos_ack;
-			eos_ack.append(XCODEC_MAGIC);
-			eos_ack.append(XCODEC_OP_EOS_ACK);
+		DEBUG(log_) << "Decoder finished, got <EOS_ACK>, shutting down encoder output channel.";
 
-			Buffer oob;
-			encode_oob(&oob, &eos_ack);
-
-			encoder_produce(&oob);
-		}
+		Buffer eos;
+		encoder_produce(&eos);
 	}
 }
 
@@ -168,6 +202,7 @@ XCodecPipePair::decode_oob(Buffer *buf)
 		buf->moveout(&op, sizeof magic, sizeof op);
 		switch (op) {
 		case XCODEC_OP_HELLO:
+			DEBUG(log_) << "Process OOB <HELLO>.";
 			if (decoder_cache_ != NULL) {
 				ERROR(log_) << "Got <HELLO> twice.";
 				return (false);
@@ -209,6 +244,7 @@ XCodecPipePair::decode_oob(Buffer *buf)
 			}
 			break;
 		case XCODEC_OP_ASK:
+			DEBUG(log_) << "Process OOB <ASK>.";
 			if (encoder_ == NULL) {
 				ERROR(log_) << "Got <ASK> before sending <HELLO>.";
 				return (false);
@@ -239,6 +275,7 @@ XCodecPipePair::decode_oob(Buffer *buf)
 			}
 			break;
 		case XCODEC_OP_LEARN:
+			DEBUG(log_) << "Process OOB <LEARN>.";
 			if (decoder_cache_ == NULL) {
 				ERROR(log_) << "Got <LEARN> before <HELLO>.";
 				return (false);
@@ -272,6 +309,7 @@ XCodecPipePair::decode_oob(Buffer *buf)
 			}
 			break;
 		case XCODEC_OP_EOS:
+			DEBUG(log_) << "Process OOB <EOS>.";
 			if (decoder_received_eos_) {
 				ERROR(log_) << "Duplicate <EOS>.";
 				return (false);
@@ -279,6 +317,7 @@ XCodecPipePair::decode_oob(Buffer *buf)
 			decoder_received_eos_ = true;
 			break;
 		case XCODEC_OP_EOS_ACK:
+			DEBUG(log_) << "Process OOB <EOS_ACK>.";
 			if (!encoder_sent_eos_) {
 				ERROR(log_) << "Got <EOS_ACK> before sending <EOS>.";
 				return (false);

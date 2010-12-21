@@ -45,7 +45,7 @@ Config::create(const std::string& cname, const std::string& oname)
 	}
 
 	ConfigClass *cc = class_map_[cname];
-	ConfigObject *co = new ConfigObject(this, cc);
+	ConfigObject *co = new ConfigObject(oname, this, cc);
 
 	object_map_[oname] = co;
 
