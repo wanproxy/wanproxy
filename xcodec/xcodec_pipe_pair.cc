@@ -130,22 +130,22 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 			NOTREACHED();
 		}
 
-		if (decoder_received_eos_ && !encoder_sent_eos_ack_) {
-			DEBUG(log_) << "Decoder finished, got <EOS>, sending <EOS_ACK>.";
+		if (decoder_frame_buffer_.empty()) {
+			if (decoder_received_eos_ && !encoder_sent_eos_ack_) {
+				DEBUG(log_) << "Decoder finished, got <EOS>, sending <EOS_ACK>.";
 
-			Buffer eos_ack;
-			eos_ack.append(XCODEC_MAGIC);
-			eos_ack.append(XCODEC_OP_EOS_ACK);
+				Buffer eos_ack;
+				eos_ack.append(XCODEC_MAGIC);
+				eos_ack.append(XCODEC_OP_EOS_ACK);
 
-			Buffer oob;
-			encode_oob(&oob, &eos_ack);
+				Buffer oob;
+				encode_oob(&oob, &eos_ack);
 
-			encoder_produce(&oob);
-			encoder_sent_eos_ack_ = true;
-		}
-
-		if (decoder_frame_buffer_.empty())
+				encoder_produce(&oob);
+				encoder_sent_eos_ack_ = true;
+			}
 			continue;
+		}
 
 		if (!decoder_unknown_hashes_.empty()) {
 			DEBUG(log_) << "Waiting for unknown hashes to continue processing data.";
@@ -350,12 +350,6 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 	Buffer output;
 
 	if (encoder_ == NULL) {
-		if (buf->empty()) {
-			INFO(log_) << "Encoder received EOS before any data.";
-			encoder_produce(buf);
-			return;
-		}
-
 		Buffer extra;
 		if (!codec_->cache()->uuid_encode(&extra)) {
 			ERROR(log_) << "Could not encode UUID for <HELLO>.";
