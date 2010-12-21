@@ -1,4 +1,4 @@
-o) Fix any bugs with XCodec EOS support.
+o) Fix any remaining bugs with XCodec EOS support.
 o) Make tack use the EventSystem and IOSystem now that the performance of
    the latter is substantially better than the hand-rolled I/O of tack.
 o) Replace singletons with thread-local storage.
@@ -29,16 +29,10 @@ o) Add an ActionCache which classes can use to dole out Actions and which at
    destruction time will assert that there are no outstanding actions.  This
    will make debugging code involving Actions easier and give better Action
    allocation performance, done properly.
-o) Rewrite PipeLink to constantly poll for spontaneous output.  Make sure all
-   other things can handle spontaneous output.
-o) Make XCodecEncoder and XCodecDecoder pipes outright so as to avoid all of
-   the weird interactions between each and its Pipe variant.
 
 For 0.7.2:
-o) A better look-ahead parser.
 o) Test error handling in epoll.
 o) Test error handling with port(3C).
-o) Condition variables to suppport spontaneous output from XCodecEncoderPipe.
 o) Make UnixClient and UnixServer take the SocketType as an argument to make
    it possible to support both stream-orientation and datagram-orientation?
    Would need to update UnixServer's API to support both models.
@@ -49,7 +43,7 @@ o) Move to the getrusage-based Timer class and make it clear that that is what
    it is for.  Perhaps create a Timer base class and a UserTimer and WallTimer
    for real use?
 o) Add a flush token for Pipe::input() ?
-o) Add a flesh Event type for Pipe::output() ?
+o) Add a flush Event type for Pipe::output() ?
    XXX It's unclear, but I think a flush method or similar may be needed to
        implement buffer limiting?  A flush method being like input(), except
        that it only returns once the last Pipe in the Pipeline has returned
@@ -70,7 +64,7 @@ o) Cache hierarchy, including persistent storage.
 o) TLS.
 
 For 0.9.0:
-o) Handle OOB data.
+o) Handle TCP OOB data.
 
 After 1.0.0:
 o) A CLI program for management.  Remember to USE_POLL=select since Mac OS X can
