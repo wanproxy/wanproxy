@@ -1,22 +1,25 @@
 #ifndef	IO_PIPE_SINK_H
 #define	IO_PIPE_SINK_H
 
-class Action;
+#include <io/pipe/pipe_producer.h>
 
-class PipeSink : public Pipe {
-	bool input_eos_;
-
-	Action *output_action_;
-	EventCallback *output_callback_;
+class PipeSink : public PipeProducer {
 public:
-	PipeSink(void);
-	~PipeSink();
+	PipeSink(void)
+	: PipeProducer("/io/pipe_sink")
+	{ }
 
-	Action *input(Buffer *, EventCallback *);
-	Action *output(EventCallback *);
+	~PipeSink()
+	{ }
 
 private:
-	void output_cancel(void);
+	void consume(Buffer *buf)
+	{
+		if (buf->empty())
+			produce(buf);
+		else
+			buf->clear();
+	}
 };
 
 #endif /* !IO_PIPE_SINK_H */
