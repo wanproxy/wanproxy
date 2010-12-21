@@ -90,8 +90,6 @@ private:
 		decoder_pipe_->produce(buf);
 	}
 
-	bool decode_oob(Buffer *);
-
 	void encoder_consume(Buffer *);
 
 	void encoder_error(void)

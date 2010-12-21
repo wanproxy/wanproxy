@@ -121,23 +121,10 @@ dump(int ifd, int ofd)
 			uint8_t op;
 			input.copyout(&op, sizeof XCODEC_MAGIC, sizeof op);
 			switch (op) {
-			case XCODEC_OP_HELLO:
-				if (input.length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
-					break;
-				else {
-					uint8_t len;
-					input.copyout(&len, sizeof XCODEC_MAGIC + sizeof op, sizeof len);
-					if (input.length() < sizeof XCODEC_MAGIC + sizeof op + sizeof len + len)
-						break;
-					bprintf(&output, "<hello length=\"%u\"/>\n", (unsigned)len);
-					input.skip(sizeof XCODEC_MAGIC + sizeof op + sizeof len + len);
-				}
-				continue;
 			case XCODEC_OP_ESCAPE:
 				bprintf(&output, "<escape />");
 				input.skip(sizeof XCODEC_MAGIC + sizeof op);
 				continue;
-			case XCODEC_OP_LEARN:
 			case XCODEC_OP_EXTRACT:
 				if (input.length() < sizeof XCODEC_MAGIC + sizeof op + XCODEC_SEGMENT_LENGTH)
 					break;
@@ -150,7 +137,7 @@ dump(int ifd, int ofd)
 
 					uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
 
-					bprintf(&output, "<hash-%s", op == XCODEC_OP_LEARN ? "learn" : "declare");
+					bprintf(&output, "<hash-declare");
 					if (dump_verbosity > 0) {
 						bprintf(&output, " hash=\"0x%016jx\"", (uintmax_t)hash);
 						if (dump_verbosity > 1) {
@@ -164,7 +151,6 @@ dump(int ifd, int ofd)
 					seg->unref();
 				}
 				continue;
-			case XCODEC_OP_ASK:
 			case XCODEC_OP_REF:
 				if (input.length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint64_t))
 					break;
@@ -173,7 +159,7 @@ dump(int ifd, int ofd)
 					input.moveout((uint8_t *)&behash, sizeof XCODEC_MAGIC + sizeof op, sizeof behash);
 					uint64_t hash = BigEndian::decode(behash);
 
-					bprintf(&output, "<hash-%s", op == XCODEC_OP_ASK ? "ask" : "reference");
+					bprintf(&output, "<hash-reference");
 					if (dump_verbosity > 0)
 						bprintf(&output, " hash=\"0x%016jx\"", (uintmax_t)hash);
 					bprintf(&output, "/>\n");
@@ -190,14 +176,6 @@ dump(int ifd, int ofd)
 					if (dump_verbosity > 0)
 						bprintf(&output, " offset=\"%u\"", (unsigned)idx);
 					bprintf(&output, "/>\n");
-				}
-				continue;
-			case XCODEC_OP_EOS:
-				if (input.length() < sizeof XCODEC_MAGIC + sizeof op)
-					break;
-				else {
-					input.skip(sizeof XCODEC_MAGIC + sizeof op);
-					bprintf(&output, "<end-of-stream/>\n");
 				}
 				continue;
 			default:

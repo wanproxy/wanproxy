@@ -46,8 +46,86 @@
  * shut down and no more communication will occur.
  */
 
+/*
+ * Usage:
+ * 	<OP_HELLO> length[uint8_t] data[uint8_t x length]
+ *
+ * Effects:
+ * 	Must appear at the start of and only at the start of an encoded	stream.
+ *
+ * Sife-effects:
+ * 	Possibly many.
+ */
+#define	XCODEC_PIPE_OP_HELLO	((uint8_t)0xff)
+
+
+/*
+ * Usage:
+ * 	<OP_LEARN> data[uint8_t x XCODEC_PIPE_SEGMENT_LENGTH]
+ *
+ * Effects:
+ * 	The `data' is hashed, the hash is associated with the data if possible.
+ *
+ * Side-effects:
+ * 	None.
+ */
+#define	XCODEC_PIPE_OP_LEARN	((uint8_t)0xfe)
+
+/*
+ * Usage:
+ * 	<OP_ASK> hash[uint64_t]
+ *
+ * Effects:
+ * 	An OP_LEARN will be sent in response with the data corresponding to the
+ * 	hash.
+ *
+ * 	If the hash is unknown, error will be indicated.
+ *
+ * Side-effects:
+ * 	None.
+ */
+#define	XCODEC_PIPE_OP_ASK	((uint8_t)0xfd)
+
+/*
+ * Usage:
+ * 	<OP_EOS>
+ *
+ * Effects:
+ * 	Alert the other party that we have no intention of sending more data.
+ *
+ * Side-effects:
+ * 	The other party will send <OP_EOS_ACK> when it has processed all of
+ * 	the data we have sent.
+ */
+#define	XCODEC_PIPE_OP_EOS	((uint8_t)0xfc)
+
+/*
+ * Usage:
+ * 	<OP_EOS_ACK>
+ *
+ * Effects:
+ * 	Alert the other party that we have no intention of reading more data.
+ *
+ * Side-effects:
+ * 	The connection will be torn down.
+ */
+#define	XCODEC_PIPE_OP_EOS_ACK	((uint8_t)0xfb)
+
+/*
+ * Usage:
+ * 	<FRAME> length[uint16_t] data[uint8_t x length]
+ *
+ * Effects:
+ * 	Frames an encoded chunk.  As distinct to OP_OOB below.
+ *
+ * Side-effects:
+ * 	None.
+ */
+#define	XCODEC_PIPE_OP_FRAME	((uint8_t)0x00)
+
+#define	XCODEC_PIPE_MAX_FRAME	(32768)
+
 static void encode_frame(Buffer *, Buffer *);
-static void encode_oob(Buffer *, Buffer *);
 
 void
 XCodecPipePair::decoder_consume(Buffer *buf)
@@ -71,63 +149,162 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 		if (decoder_buffer_.length() < sizeof (uint8_t) + sizeof (uint8_t) + sizeof (uint16_t))
 			break;
 
-		uint8_t magic;
-		decoder_buffer_.extract(&magic);
-		switch (magic) {
-		case XCODEC_MAGIC:
-			break;
-		default:
-			ERROR(log_) << "Expected magic and got another character.";
-			decoder_error();
-			return;
-		}
-
-		uint8_t op;
-		decoder_buffer_.extract(&op, sizeof magic);
+		uint8_t op = decoder_buffer_.peek();
 		switch (op) {
-		case XCODEC_OP_FRAME:
+		case XCODEC_PIPE_OP_HELLO:
+			if (decoder_cache_ != NULL) {
+				ERROR(log_) << "Got <HELLO> twice.";
+				decoder_error();
+				return;
+			} else {
+				uint8_t len;
+				if (decoder_buffer_.length() < sizeof op + sizeof len)
+					return;
+				decoder_buffer_.copyout(&len, sizeof op, sizeof len);
+
+				if (decoder_buffer_.length() < sizeof op + sizeof len + len)
+					return;
+
+				if (len != UUID_SIZE) {
+					ERROR(log_) << "Unsupported <HELLO> length: " << (unsigned)len;
+					decoder_error();
+					return;
+				}
+
+				Buffer uubuf;
+				decoder_buffer_.moveout(&uubuf, sizeof op + sizeof len, UUID_SIZE);
+
+				UUID uuid;
+				if (!uuid.decode(&uubuf)) {
+					ERROR(log_) << "Invalid UUID in <HELLO>.";
+					decoder_error();
+					return;
+				}
+
+				decoder_cache_ = XCodecCache::lookup(uuid);
+				ASSERT(decoder_cache_ != NULL);
+
+				ASSERT(decoder_ == NULL);
+				decoder_ = new XCodecDecoder(decoder_cache_);
+
+				DEBUG(log_) << "Peer connected with UUID: " << uuid.string_;
+			}
+			break;
+		case XCODEC_PIPE_OP_ASK:
+			if (encoder_ == NULL) {
+				ERROR(log_) << "Got <ASK> before sending <HELLO>.";
+				decoder_error();
+				return;
+			} else {
+				uint64_t hash;
+				if (decoder_buffer_.length() < sizeof op + sizeof hash)
+					return;
+				decoder_buffer_.extract(&hash, sizeof op);
+				hash = BigEndian::decode(hash);
+
+				BufferSegment *oseg = codec_->cache()->lookup(hash);
+				if (oseg == NULL) {
+					ERROR(log_) << "Unknown hash in <ASK>: " << hash;
+					decoder_error();
+					return;
+				}
+
+				DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
+
+				Buffer learn;
+				learn.append(XCODEC_PIPE_OP_LEARN);
+				learn.append(oseg);
+				oseg->unref();
+
+				encoder_produce(&learn);
+			}
+			break;
+		case XCODEC_PIPE_OP_LEARN:
+			if (decoder_cache_ == NULL) {
+				ERROR(log_) << "Got <LEARN> before <HELLO>.";
+				decoder_error();
+				return;
+			} else {
+				if (decoder_buffer_.length() < sizeof op + XCODEC_SEGMENT_LENGTH)
+					return;
+
+				decoder_buffer_.skip(sizeof op);
+
+				BufferSegment *seg;
+				decoder_buffer_.copyout(&seg, XCODEC_SEGMENT_LENGTH);
+				decoder_buffer_.skip(XCODEC_SEGMENT_LENGTH);
+
+				uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
+				if (decoder_unknown_hashes_.find(hash) == decoder_unknown_hashes_.end()) {
+					INFO(log_) << "Gratuitous <LEARN> without <ASK>.";
+				} else {
+					decoder_unknown_hashes_.erase(hash);
+				}
+
+				BufferSegment *oseg = decoder_cache_->lookup(hash);
+				if (oseg != NULL) {
+					if (!oseg->equal(seg)) {
+						oseg->unref();
+						ERROR(log_) << "Collision in <LEARN>.";
+						seg->unref();
+						decoder_error();
+						return;
+					}
+					oseg->unref();
+					DEBUG(log_) << "Redundant <LEARN>.";
+				} else {
+					DEBUG(log_) << "Successful <LEARN>.";
+					decoder_cache_->enter(hash, seg);
+				}
+				seg->unref();
+			}
+			break;
+		case XCODEC_PIPE_OP_EOS:
+			if (decoder_received_eos_) {
+				ERROR(log_) << "Duplicate <EOS>.";
+				decoder_error();
+				return;
+			}
+			decoder_received_eos_ = true;
+			break;
+		case XCODEC_PIPE_OP_EOS_ACK:
+			if (!encoder_sent_eos_) {
+				ERROR(log_) << "Got <EOS_ACK> before sending <EOS>.";
+				decoder_error();
+				return;
+			}
+			if (decoder_received_eos_ack_) {
+				ERROR(log_) << "Duplicate <EOS_ACK>.";
+				decoder_error();
+				return;
+			}
+			decoder_received_eos_ack_ = true;
+			break;
+		case XCODEC_PIPE_OP_FRAME:
 			if (decoder_ == NULL) {
 				ERROR(log_) << "Got frame data before decoder initialized.";
 				decoder_error();
 				return;
+			} else {
+				uint16_t len;
+				decoder_buffer_.extract(&len, sizeof op);
+				len = BigEndian::decode(len);
+				if (len == 0 || len > XCODEC_PIPE_MAX_FRAME) {
+					ERROR(log_) << "Invalid framed data length.";
+					decoder_error();
+					return;
+				}
+
+				if (decoder_buffer_.length() < sizeof op + sizeof len + len)
+					return;
+
+				decoder_buffer_.moveout(&decoder_frame_buffer_, sizeof op + sizeof len, len);
 			}
 			break;
-		case XCODEC_OP_OOB:
-			break;
 		default:
-			ERROR(log_) << "Got unframed data; remote codec must be out-of-date.";
+			ERROR(log_) << "Unsupported operation in pipe stream.";
 			decoder_error();
 			return;
-		}
-
-		uint16_t len;
-		decoder_buffer_.extract(&len, sizeof magic + sizeof op);
-		len = BigEndian::decode(len);
-		if (len == 0 || len > XCODEC_FRAME_LENGTH) {
-			ERROR(log_) << "Invalid framed data length.";
-			decoder_error();
-			return;
-		}
-
-		if (decoder_buffer_.length() < sizeof magic + sizeof op + sizeof len + len)
-			return;
-
-		Buffer data;
-		decoder_buffer_.moveout(&data, sizeof magic + sizeof op + sizeof len, len);
-
-		switch (op) {
-		case XCODEC_OP_OOB:
-			if (!decode_oob(&data)) {
-				ERROR(log_) << "Error in OOB stream.";
-				decoder_error();
-				return;
-			}
-			break;
-		case XCODEC_OP_FRAME:
-			data.moveout(&decoder_frame_buffer_, data.length());
-			break;
-		default:
-			NOTREACHED();
 		}
 
 		if (decoder_frame_buffer_.empty()) {
@@ -135,13 +312,9 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 				DEBUG(log_) << "Decoder finished, got <EOS>, sending <EOS_ACK>.";
 
 				Buffer eos_ack;
-				eos_ack.append(XCODEC_MAGIC);
-				eos_ack.append(XCODEC_OP_EOS_ACK);
+				eos_ack.append(XCODEC_PIPE_OP_EOS_ACK);
 
-				Buffer oob;
-				encode_oob(&oob, &eos_ack);
-
-				encoder_produce(&oob);
+				encoder_produce(&eos_ack);
 				encoder_sent_eos_ack_ = true;
 			}
 			continue;
@@ -193,155 +366,6 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 	}
 }
 
-bool
-XCodecPipePair::decode_oob(Buffer *buf)
-{
-	while (!buf->empty()) {
-		uint8_t magic = buf->peek();
-		if (magic != XCODEC_MAGIC) {
-			ERROR(log_) << "Expected magic and got another character in OOB stream.";
-			return (false);
-		}
-
-		if (buf->empty()) {
-			ERROR(log_) << "Missing operation in OOB stream.";
-			return (false);
-		}
-
-		uint8_t op;
-		buf->moveout(&op, sizeof magic, sizeof op);
-		switch (op) {
-		case XCODEC_OP_HELLO:
-			if (decoder_cache_ != NULL) {
-				ERROR(log_) << "Got <HELLO> twice.";
-				return (false);
-			} else {
-				if (buf->length() < sizeof (uint8_t)) {
-					ERROR(log_) << "Truncated <HELLO>.";
-					return (false);
-				}
-
-				uint8_t len = buf->peek();
-				buf->skip(1);
-
-				if (buf->length() < len) {
-					ERROR(log_) << "Truncated OOB stream.";
-					return (false);
-				}
-
-				if (len != UUID_SIZE) {
-					ERROR(log_) << "Unsupported <HELLO> length: " << (unsigned)len;
-					return (false);
-				}
-
-				Buffer uubuf;
-				buf->moveout(&uubuf, UUID_SIZE);
-
-				UUID uuid;
-				if (!uuid.decode(&uubuf)) {
-					ERROR(log_) << "Invalid UUID in <HELLO>.";
-					return (false);
-				}
-
-				decoder_cache_ = XCodecCache::lookup(uuid);
-				ASSERT(decoder_cache_ != NULL);
-
-				ASSERT(decoder_ == NULL);
-				decoder_ = new XCodecDecoder(decoder_cache_);
-
-				DEBUG(log_) << "Peer connected with UUID: " << uuid.string_;
-			}
-			break;
-		case XCODEC_OP_ASK:
-			if (encoder_ == NULL) {
-				ERROR(log_) << "Got <ASK> before sending <HELLO>.";
-				return (false);
-			} else {
-				uint64_t hash;
-				buf->extract(&hash);
-				buf->skip(sizeof hash);
-				hash = BigEndian::decode(hash);
-
-				BufferSegment *oseg = codec_->cache()->lookup(hash);
-				if (oseg == NULL) {
-					ERROR(log_) << "Unknown hash in <ASK>: " << hash;
-					return (false);
-				}
-
-				DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
-
-				Buffer learn;
-				learn.append(XCODEC_MAGIC);
-				learn.append(XCODEC_OP_LEARN);
-				learn.append(oseg);
-				oseg->unref();
-
-				Buffer oob;
-				encode_oob(&oob, &learn);
-
-				encoder_produce(&oob);
-			}
-			break;
-		case XCODEC_OP_LEARN:
-			if (decoder_cache_ == NULL) {
-				ERROR(log_) << "Got <LEARN> before <HELLO>.";
-				return (false);
-			} else {
-				BufferSegment *seg;
-				buf->copyout(&seg, XCODEC_SEGMENT_LENGTH);
-				buf->skip(XCODEC_SEGMENT_LENGTH);
-
-				uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
-				if (decoder_unknown_hashes_.find(hash) == decoder_unknown_hashes_.end()) {
-					INFO(log_) << "Gratuitous <LEARN> without <ASK>.";
-				} else {
-					decoder_unknown_hashes_.erase(hash);
-				}
-
-				BufferSegment *oseg = decoder_cache_->lookup(hash);
-				if (oseg != NULL) {
-					if (!oseg->equal(seg)) {
-						oseg->unref();
-						ERROR(log_) << "Collision in <LEARN>.";
-						seg->unref();
-						return (false);
-					}
-					oseg->unref();
-					DEBUG(log_) << "Redundant <LEARN>.";
-				} else {
-					DEBUG(log_) << "Successful <LEARN>.";
-					decoder_cache_->enter(hash, seg);
-				}
-				seg->unref();
-			}
-			break;
-		case XCODEC_OP_EOS:
-			if (decoder_received_eos_) {
-				ERROR(log_) << "Duplicate <EOS>.";
-				return (false);
-			}
-			decoder_received_eos_ = true;
-			break;
-		case XCODEC_OP_EOS_ACK:
-			if (!encoder_sent_eos_) {
-				ERROR(log_) << "Got <EOS_ACK> before sending <EOS>.";
-				return (false);
-			}
-			if (decoder_received_eos_ack_) {
-				ERROR(log_) << "Duplicate <EOS_ACK>.";
-				return (false);
-			}
-			decoder_received_eos_ack_ = true;
-			break;
-		default:
-			ERROR(log_) << "Unsupported operation in OOB stream.";
-			return (false);
-		}
-	}
-
-	return (true);
-}
-
 void
 XCodecPipePair::encoder_consume(Buffer *buf)
 {
@@ -360,15 +384,11 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 		uint8_t len = extra.length();
 		ASSERT(len == UUID_SIZE);
 
-		Buffer hello;
-		hello.append(XCODEC_MAGIC);
-		hello.append(XCODEC_OP_HELLO);
-		hello.append(len);
-		hello.append(extra);
+		output.append(XCODEC_PIPE_OP_HELLO);
+		output.append(len);
+		output.append(extra);
 
-		ASSERT(hello.length() == 3 + UUID_SIZE);
-
-		encode_oob(&output, &hello);
+		ASSERT(output.length() == 2 + UUID_SIZE);
 
 		encoder_ = new XCodecEncoder(codec_->cache());
 	}
@@ -380,19 +400,11 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 
 		encode_frame(&output, &encoded);
 		ASSERT(!output.empty());
-
-		encoder_produce(&output);
 	} else {
-		Buffer eos;
-		eos.append(XCODEC_MAGIC);
-		eos.append(XCODEC_OP_EOS);
-
-		encode_oob(&output, &eos);
-
-		encoder_produce(&output);
-
+		output.append(XCODEC_PIPE_OP_EOS);
 		encoder_sent_eos_ = true;
 	}
+	encoder_produce(&output);
 }
 
 static void
@@ -400,34 +412,18 @@ encode_frame(Buffer *out, Buffer *in)
 {
 	while (!in->empty()) {
 		uint16_t framelen;
-		if (in->length() <= XCODEC_FRAME_LENGTH)
+		if (in->length() <= XCODEC_PIPE_MAX_FRAME)
 			framelen = in->length();
 		else
-			framelen = XCODEC_FRAME_LENGTH;
+			framelen = XCODEC_PIPE_MAX_FRAME;
 
 		Buffer frame;
 		in->moveout(&frame, framelen);
 
 		framelen = BigEndian::encode(framelen);
 
-		out->append(XCODEC_MAGIC);
-		out->append(XCODEC_OP_FRAME);
+		out->append(XCODEC_PIPE_OP_FRAME);
 		out->append(&framelen);
 		out->append(frame);
 	}
-}
-
-static void
-encode_oob(Buffer *out, Buffer *in)
-{
-	ASSERT(!in->empty());
-	ASSERT(in->length() <= XCODEC_FRAME_LENGTH);
-
-	uint16_t ooblen = in->length();
-	ooblen = BigEndian::encode(ooblen);
-
-	out->append(XCODEC_MAGIC);
-	out->append(XCODEC_OP_OOB);
-	out->append(&ooblen);
-	in->moveout(out, in->length());
 }
