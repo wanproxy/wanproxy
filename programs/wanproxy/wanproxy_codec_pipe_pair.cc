@@ -37,7 +37,7 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 		}
 
 		if (incoming->codec_ != NULL) {
-			PipePair *pair = new XCodecPipePair(incoming->codec_, XCodecPipePairTypeServer);
+			PipePair *pair = new XCodecPipePair("/wanproxy/codec/" + incoming->name_, incoming->codec_, XCodecPipePairTypeServer);
 			pipe_pairs_.insert(pair);
 
 			std::pair<Pipe *, Pipe *> pipe_pair(pair->get_incoming(), pair->get_outgoing());
@@ -47,7 +47,7 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 
 	if (outgoing != NULL) {
 		if (outgoing->codec_ != NULL) {
-			PipePair *pair = new XCodecPipePair(outgoing->codec_, XCodecPipePairTypeClient);
+			PipePair *pair = new XCodecPipePair("/wanproxy/codec/" + outgoing->name_, outgoing->codec_, XCodecPipePairTypeClient);
 			pipe_pairs_.insert(pair);
 
 			std::pair<Pipe *, Pipe *> pipe_pair(pair->get_incoming(), pair->get_outgoing());

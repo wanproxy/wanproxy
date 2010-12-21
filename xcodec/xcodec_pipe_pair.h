@@ -31,8 +31,8 @@ class XCodecPipePair : public PipePair {
 	bool encoder_sent_eos_ack_;
 	PipeProducerWrapper<XCodecPipePair> *encoder_pipe_;
 public:
-	XCodecPipePair(XCodec *codec, XCodecPipePairType type)
-	: log_("/xcodec/pipe/pair"),
+	XCodecPipePair(const LogHandle& log, XCodec *codec, XCodecPipePairType type)
+	: log_(log + "/xcodec"),
 	  codec_(codec),
 	  type_(type),
 	  decoder_(NULL),

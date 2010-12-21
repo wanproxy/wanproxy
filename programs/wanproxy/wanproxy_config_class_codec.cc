@@ -17,7 +17,7 @@ WANProxyConfigClassCodec::activate(ConfigObject *co)
 	if (object_codec_map_.find(co) != object_codec_map_.end())
 		return (false);
 
-	WANProxyCodec *wc = new WANProxyCodec();
+	WANProxyCodec *wc = new WANProxyCodec(co->name());
 
 	WANProxyConfigTypeCodec *codecct;
 	ConfigValue *codeccv = co->get("codec", &codecct);
