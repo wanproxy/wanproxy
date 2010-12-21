@@ -1,8 +1,10 @@
 #ifndef	IO_PIPE_SIMPLE_WRAPPER_H
 #define	IO_PIPE_SIMPLE_WRAPPER_H
 
+#include <io/pipe/pipe_producer.h>
+
 template<typename T>
-class PipeSimpleWrapper : public PipeSimple {
+class PipeSimpleWrapper : public PipeProducer {
 	typedef bool (T::*process_method_t)(Buffer *, Buffer *);
 
 	T *obj_;
@@ -10,7 +12,7 @@ class PipeSimpleWrapper : public PipeSimple {
 public:
 	template<typename Tp>
 	PipeSimpleWrapper(T *obj, Tp process_method)
-	: PipeSimple("/pipe/simple/wrapper"),
+	: PipeProducer("/pipe/simple/wrapper"),
 	  obj_(obj),
 	  process_method_(process_method)
 	{ }
@@ -18,9 +20,14 @@ public:
 	~PipeSimpleWrapper()
 	{ }
 
-	bool process(Buffer *out, Buffer *in)
+	void consume(Buffer *in)
 	{
-		return ((obj_->*process_method_)(out, in));
+		Buffer out;
+		if (!(obj_->*process_method_)(&out, in)) {
+			produce_error();
+			return;
+		}
+		produce(&out);
 	}
 };
 

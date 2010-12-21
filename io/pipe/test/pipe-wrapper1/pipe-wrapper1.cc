@@ -4,7 +4,6 @@
 #include <event/event_main.h>
 
 #include <io/pipe/pipe.h>
-#include <io/pipe/pipe_simple.h>
 #include <io/pipe/pipe_simple_wrapper.h>
 
 static uint8_t data[65536];
