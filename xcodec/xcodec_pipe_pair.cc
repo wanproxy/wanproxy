@@ -146,9 +146,6 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 	buf->clear();
 
 	while (!decoder_buffer_.empty()) {
-		if (decoder_buffer_.length() < sizeof (uint8_t) + sizeof (uint8_t) + sizeof (uint16_t))
-			break;
-
 		uint8_t op = decoder_buffer_.peek();
 		switch (op) {
 		case XCODEC_PIPE_OP_HELLO:
@@ -345,6 +342,20 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 			 * considerably.)
 			 */
 			ASSERT(!decoder_frame_buffer_.empty());
+		}
+
+		Buffer ask;
+		std::set<uint64_t>::const_iterator it;
+		for (it = decoder_unknown_hashes_.begin(); it != decoder_unknown_hashes_.end(); ++it) {
+			uint64_t hash = *it;
+			hash = BigEndian::encode(hash);
+
+			ask.append(XCODEC_PIPE_OP_ASK);
+			ask.append(&hash);
+		}
+		if (!ask.empty()) {
+			DEBUG(log_) << "Sending <ASK>s.";
+			encoder_produce(&ask);
 		}
 	}
 
