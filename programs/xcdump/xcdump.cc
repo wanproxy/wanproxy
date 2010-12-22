@@ -17,8 +17,6 @@
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_hash.h>
 
-#define	XCDUMP_IOVEC_SIZE	(IOV_MAX)
-
 static int dump_verbosity;
 
 static void bhexdump(Buffer *, const uint8_t *, size_t);
