@@ -23,16 +23,14 @@ enum FileAction {
 	None, Compress, Decompress
 };
 
-static bool codec_timing;
-static Timer codec_timer;
-
-static void compress(int, int, XCodec *);
-static void decompress(int, int, XCodec *);
+static void compress(int, int, XCodec *, bool, Timer *);
+static void decompress(int, int, XCodec *, bool, Timer *);
 static bool fill(int, Buffer *);
 static void flush(int, Buffer *);
-static void process_files(int, char *[], FileAction, XCodec *, bool);
-static void time_samples(void);
-static void time_stats(void);
+static void process_file(int, int, FileAction, XCodec *, bool, Timer *);
+static void process_files(int, char *[], FileAction, XCodec *, bool, bool, Timer *);
+static void time_samples(Timer *);
+static void time_stats(Timer *);
 static void usage(void);
 
 int
@@ -44,11 +42,12 @@ main(int argc, char *argv[])
 	XCodecCache *cache = XCodecCache::lookup(uuid);
 	XCodec codec(cache);
 
-	bool quiet_output, samples, verbose;
+	bool codec_timing, quiet_output, samples, verbose;
 	FileAction action;
 	int ch;
 
 	action = None;
+	codec_timing = false;
 	quiet_output = false;
 	samples = false;
 	verbose = false;
@@ -87,16 +86,18 @@ main(int argc, char *argv[])
 		Log::mask(".?", Log::Info);
 	}
 
+	Timer codec_timer;
+
 	switch (action) {
 	case None:
 		usage();
 	case Compress:
 	case Decompress:
-		process_files(argc, argv, action, &codec, quiet_output);
+		process_files(argc, argv, action, &codec, quiet_output, codec_timing, &codec_timer);
 		if (samples)
-			time_samples();
+			time_samples(&codec_timer);
 		if (codec_timing)
-			time_stats();
+			time_stats(&codec_timer);
 		break;
 	default:
 		NOTREACHED();
@@ -106,17 +107,17 @@ main(int argc, char *argv[])
 }
 
 static void
-compress(int ifd, int ofd, XCodec *codec)
+compress(int ifd, int ofd, XCodec *codec, bool timing, Timer *timer)
 {
 	XCodecEncoder encoder(codec->cache());
 	Buffer input, output;
 
 	while (fill(ifd, &input)) {
-		if (codec_timing)
-			codec_timer.start();
+		if (timing)
+			timer->start();
 		encoder.encode(&output, &input);
-		if (codec_timing)
-			codec_timer.stop();
+		if (timing)
+			timer->stop();
 		flush(ofd, &output);
 	}
 	ASSERT(input.empty());
@@ -124,7 +125,7 @@ compress(int ifd, int ofd, XCodec *codec)
 }
 
 static void
-decompress(int ifd, int ofd, XCodec *codec)
+decompress(int ifd, int ofd, XCodec *codec, bool timing, Timer *timer)
 {
 	std::set<uint64_t> unknown_hashes;
 	XCodecDecoder decoder(codec->cache());
@@ -133,14 +134,14 @@ decompress(int ifd, int ofd, XCodec *codec)
 	(void)codec;
 
 	while (fill(ifd, &input)) {
-		if (codec_timing)
-			codec_timer.start();
+		if (timing)
+			timer->start();
 		if (!decoder.decode(&output, &input, unknown_hashes)) {
 			ERROR("/decompress") << "Decode failed.";
 			return;
 		}
-		if (codec_timing)
-			codec_timer.stop();
+		if (timing)
+			timer->stop();
 		if (!unknown_hashes.empty()) {
 			ERROR("/decompress") << "Cannot decode stream with unknown hashes.";
 			return;
@@ -192,14 +193,14 @@ flush(int fd, Buffer *output)
 }
 
 static void
-process_file(int ifd, int ofd, FileAction action, XCodec *codec)
+process_file(int ifd, int ofd, FileAction action, XCodec *codec, bool timing, Timer *timer)
 {
 	switch (action) {
 	case Compress:
-		compress(ifd, ofd, codec);
+		compress(ifd, ofd, codec, timing, timer);
 		break;
 	case Decompress:
-		decompress(ifd, ofd, codec);
+		decompress(ifd, ofd, codec, timing, timer);
 		break;
 	default:
 		NOTREACHED();
@@ -207,7 +208,7 @@ process_file(int ifd, int ofd, FileAction action, XCodec *codec)
 }
 
 static void
-process_files(int argc, char *argv[], FileAction action, XCodec *codec, bool quiet)
+process_files(int argc, char *argv[], FileAction action, XCodec *codec, bool quiet, bool timing, Timer *timer)
 {
 	int ifd, ofd;
 
@@ -217,7 +218,7 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, bool qui
 			ofd = -1;
 		else
 			ofd = STDOUT_FILENO;
-		process_file(ifd, ofd, action, codec);
+		process_file(ifd, ofd, action, codec, timing, timer);
 	} else {
 		while (argc--) {
 			const char *file = *argv++;
@@ -229,15 +230,15 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, bool qui
 			else
 				ofd = STDOUT_FILENO;
 
-			process_file(ifd, ofd, action, codec);
+			process_file(ifd, ofd, action, codec, timing, timer);
 		}
 	}
 }
 
 static void
-time_samples(void)
+time_samples(Timer *timer)
 {
-	std::vector<uintmax_t> samples = codec_timer.samples();
+	std::vector<uintmax_t> samples = timer->samples();
 	std::vector<uintmax_t>::iterator it;
 
 	for (it = samples.begin(); it != samples.end(); ++it)
@@ -245,9 +246,9 @@ time_samples(void)
 }
 
 static void
-time_stats(void)
+time_stats(Timer *timer)
 {
-	std::vector<uintmax_t> samples = codec_timer.samples();
+	std::vector<uintmax_t> samples = timer->samples();
 	std::vector<uintmax_t>::iterator it;
 	LogHandle log("/codec_timer");
 	uintmax_t microseconds;
