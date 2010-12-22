@@ -290,6 +290,8 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 				return;
 			} else {
 				uint16_t len;
+				if (decoder_buffer_.length() < sizeof op + sizeof len)
+					return;
 				decoder_buffer_.extract(&len, sizeof op);
 				len = BigEndian::decode(len);
 				if (len == 0 || len > XCODEC_PIPE_MAX_FRAME) {
