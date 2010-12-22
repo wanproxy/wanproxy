@@ -16,6 +16,10 @@ class XCodecPipePair : public PipePair {
 	XCodec *codec_;
 	XCodecPipePairType type_;
 
+	/*
+	 * XXX
+	 * Have N encoders and decoders, one for each ''level'', to do multi-level encoding.
+	 */
 	XCodecDecoder *decoder_;
 	XCodecCache *decoder_cache_;
 	std::set<uint64_t> decoder_unknown_hashes_;
