@@ -338,14 +338,15 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 		} else {
 			/*
 			 * We should only get no output from the decoder if
-			 * we're waiting on the next frame.  It would be nice
-			 * to make the encoder framing aware so that it would
-			 * not end up with encoded data that straddles a frame
+			 * we're waiting on the next frame or we need an
+			 * unknown hash.  It would be nice to make the
+			 * encoder framing aware so that it would not end
+			 * up with encoded data that straddles a frame
 			 * boundary.  (Fixing that would also allow us to
 			 * simplify length checking within the decoder
 			 * considerably.)
 			 */
-			ASSERT(!decoder_frame_buffer_.empty());
+			ASSERT(!decoder_frame_buffer_.empty() || !decoder_unknown_hashes_.empty());
 		}
 
 		Buffer ask;
