@@ -29,7 +29,7 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 
 	if (incoming != NULL) {
 		if (incoming->compressor_) {
-			std::pair<Pipe *, Pipe *> pipe_pair(new DeflatePipe(9), new InflatePipe());
+			std::pair<Pipe *, Pipe *> pipe_pair(new DeflatePipe(incoming->compressor_level_), new InflatePipe());
 
 			pipes_.insert(pipe_pair.first);
 			pipes_.insert(pipe_pair.second);
@@ -56,7 +56,7 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 		}
 
 		if (outgoing->compressor_) {
-			std::pair<Pipe *, Pipe *> pipe_pair(new InflatePipe(), new DeflatePipe(9));
+			std::pair<Pipe *, Pipe *> pipe_pair(new InflatePipe(), new DeflatePipe(outgoing->compressor_level_));
 
 			pipes_.insert(pipe_pair.first);
 			pipes_.insert(pipe_pair.second);

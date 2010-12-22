@@ -70,9 +70,11 @@ WANProxyConfigClassCodec::activate(ConfigObject *co)
 		switch (compressor) {
 		case WANProxyConfigCompressorZlib:
 			wc->compressor_ = true;
+			wc->compressor_level_ = 9;
 			break;
 		case WANProxyConfigCompressorNone:
 			wc->compressor_ = false;
+			wc->compressor_level_ = 0;
 			break;
 		default:
 			delete wc;
@@ -82,6 +84,32 @@ WANProxyConfigClassCodec::activate(ConfigObject *co)
 		}
 	} else {
 		wc->compressor_ = false;
+	}
+
+	ConfigTypeInt *compressor_levelct;
+	ConfigValue *compressor_levelcv = co->get("compressor_level", &compressor_levelct);
+	if (compressor_levelcv != NULL) {
+		intmax_t compressor_level;
+		if (!compressor_levelct->get(compressor_levelcv, &compressor_level)) {
+			delete wc;
+
+			return (false);
+		}
+
+		if (!wc->compressor_) {
+			delete wc;
+
+			ERROR("/wanproxy/config/codec") << "Compressor level set but no compressor.";
+			return (false);
+		}
+
+		if (compressor_level < 0 || compressor_level > 9) {
+			delete wc;
+
+			ERROR("/wanproxy/config/codec") << "Compressor level must be in range 0..9 (inclusive.)";
+			return (false);
+		}
+		wc->compressor_level_ = compressor_level;
 	}
 
 	object_codec_map_[co] = wc;

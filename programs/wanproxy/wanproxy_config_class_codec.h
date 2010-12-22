@@ -1,6 +1,8 @@
 #ifndef	WANPROXY_CONFIG_CLASS_CODEC_H
 #define	WANPROXY_CONFIG_CLASS_CODEC_H
 
+#include <config/config_type_int.h>
+
 #include "wanproxy_codec.h"
 #include "wanproxy_config_type_codec.h"
 #include "wanproxy_config_type_compressor.h"
@@ -14,6 +16,7 @@ public:
 	{
 		add_member("codec", &wanproxy_config_type_codec);
 		add_member("compressor", &wanproxy_config_type_compressor);
+		add_member("compressor_level", &config_type_int);
 	}
 
 	~WANProxyConfigClassCodec()
