@@ -1,6 +1,5 @@
 #include <sys/types.h>
 #include <sys/errno.h>
-#include <sys/uio.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
