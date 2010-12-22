@@ -135,7 +135,7 @@ dump(int ifd, int ofd)
 					input.copyout(&seg, XCODEC_SEGMENT_LENGTH);
 					input.skip(XCODEC_SEGMENT_LENGTH);
 
-					uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
+					uint64_t hash = XCodecHash::hash(seg->data());
 
 					bprintf(&output, "<hash-declare");
 					if (dump_verbosity > 0) {
