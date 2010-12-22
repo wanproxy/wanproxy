@@ -266,6 +266,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 				decoder_error();
 				return;
 			}
+			decoder_buffer_.skip(1);
 			decoder_received_eos_ = true;
 			break;
 		case XCODEC_PIPE_OP_EOS_ACK:
@@ -279,6 +280,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 				decoder_error();
 				return;
 			}
+			decoder_buffer_.skip(1);
 			decoder_received_eos_ack_ = true;
 			break;
 		case XCODEC_PIPE_OP_FRAME:
