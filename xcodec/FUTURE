@@ -1,6 +1,3 @@
-o) Truncate the Adler hashing to exactly some number of bits that is the
-   most that are needed to overflow once (or maybe twice?) with 128-byte
-   blocks.
 o) Create a new XCodecTag that incorporates a hash and a counter and
    perhaps other things...
 o) The counter will increment for each collision (or perhaps just be a
@@ -36,10 +33,6 @@ o) Write a garbage-collector for the dictionary.  LRU?
 Possibly-bad future ideas:
 
 o) Incorporate run-length encoding.
-o) Possibly use two hash functions -- even just mixing crc in with the Adler
-   stuff might help increase our hash entropy?  Been a while since I really
-   read up on the subject and would do well to do so again.  Currently the
-   entropy is not great.
 o) Incorporate occasional (figure out frequency) CRCs or such of the next N
    bytes of decoded data to make it possible to detect any hash mismatches,
    using a different hash function to any that go into the hash.

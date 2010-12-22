@@ -1,104 +1,74 @@
 #ifndef	XCODEC_HASH_H
 #define	XCODEC_HASH_H
 
-#include <alg/hash/adler32.h>
-
-template<unsigned Tlength>
 class XCodecHash {
-	Adler32<Tlength> a_, b_;
+	struct RollingHash {
+		uint16_t sum1_;
+		uint32_t sum2_;
+		uint8_t buffer_[XCODEC_SEGMENT_LENGTH];
+
+		RollingHash(void)
+		: sum1_(0),
+		  sum2_(0),
+		  buffer_()
+		{
+			memset(buffer_, 0, XCODEC_SEGMENT_LENGTH);
+		}
+
+		void roll(uint8_t ch, unsigned start)
+		{
+			uint8_t dead;
+
+			dead = buffer_[start];
+
+			sum1_ -= dead;
+			sum2_ -= dead * XCODEC_SEGMENT_LENGTH;
+
+			buffer_[start] = ch;
+
+			sum1_ += ch;
+			sum2_ += sum1_;
+		}
+	};
+
+	RollingHash bytes_;
+	RollingHash bits_;
+	uint8_t start_;
 
 public:
 	XCodecHash(void)
-	: a_(),
-	  b_()
-	{ }
+	: bytes_(),
+	  bits_(),
+	  start_(0)
+	{
+	}
 
 	~XCodecHash()
 	{ }
 
 	void roll(uint8_t ch)
 	{
-		unsigned bit;
+		bytes_.roll(ch + 1, start_);
+		bits_.roll(ffs(ch) + 1, start_);
 
-		a_ += ch;
-		bit = ffs(ch);
-		ch >>= bit;
-		if (bit == 0) {
-			b_ += 8 * ch * ch;
-		} else {
-			b_ += bit * ch * (ch << bit);
-		}
+		start_ = (start_ + 1) % XCODEC_SEGMENT_LENGTH;
 	}
-
-	static uint32_t mix(uint32_t a, uint32_t b, uint32_t c)
-	{
-		/*
-		 * Bob Jenkins' mix function.
-		 */
-		a -= b;
-		a -= c;
-		a ^= c >> 13;
-
-		b -= c;
-		b -= a;
-		b ^= a << 8;
-
-		c -= a;
-		c -= b;
-		c ^= b >> 13;
-
-		a -= b;
-		a -= c;
-		a ^= c >> 12;
-
-		b -= c;
-		b -= a;
-		b ^= a << 16;
-
-		c -= a;
-		c -= b;
-		c ^= b >> 5;
-
-		a -= b;
-		a -= c;
-		a ^= c >> 3;
-
-		b -= c;
-		b -= a;
-		b ^= a << 10;
-
-		c -= a;
-		c -= b;
-		c ^= b >> 15;
-
-		return (c);
-	}
-
-	struct mix_functor {
-		uintmax_t operator() (const uint32_t& a, const uint32_t& b)
-		{
-			return (mix(a, b, b - a));
-		}
-	};
 
 	uint64_t mix(void) const
 	{
-		mix_functor f;
-
-		uint32_t m = f(a_.mix(f), b_.mix(f));
-		uint32_t n = f(m, b_.mix(f));
-
-		return (((uint64_t)m << 32) | n);
+		uint64_t bits_hash = (bits_.sum2_ << 10) | bits_.sum1_;
+		uint64_t bytes_hash = (bytes_.sum2_ << 15) | bytes_.sum1_;
+		return ((bits_hash << 36) | bytes_hash);
 	}
 
 	static uint64_t hash(const uint8_t *data)
 	{
-		XCodecHash<Tlength> hash;
+		XCodecHash xchash;
 		unsigned i;
 
-		for (i = 0; i < Tlength; i++)
-			hash.roll(data[i]);
-		return (hash.mix());
+		for (i = 0; i < XCODEC_SEGMENT_LENGTH; i++)
+			xchash.roll(*data++);
+		return (xchash.mix());
 	}
 };
 

@@ -235,7 +235,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 				decoder_buffer_.copyout(&seg, XCODEC_SEGMENT_LENGTH);
 				decoder_buffer_.skip(XCODEC_SEGMENT_LENGTH);
 
-				uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
+				uint64_t hash = XCodecHash::hash(seg->data());
 				if (decoder_unknown_hashes_.find(hash) == decoder_unknown_hashes_.end()) {
 					INFO(log_) << "Gratuitous <LEARN> without <ASK>.";
 				} else {

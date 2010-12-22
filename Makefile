@@ -1,4 +1,3 @@
-SUBDIR+=alg
 SUBDIR+=common
 SUBDIR+=config
 SUBDIR+=crypto

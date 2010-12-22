@@ -2,9 +2,6 @@ Component directory layout:
 
 Directory	Description
 =============	=============================================================
-alg		Portable implementations of simple, standard algorithms.
-		Organized into sub-directories based on type.
-alg/hash	Hash algorithms.
 common		Non-specific functionality that is of general interest, e.g.
 		the logging system, test infrastructure and Buffer class.
 common/thread	Threading infrastructure.

@@ -80,7 +80,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input, std::set<uint64_t>& unknown
 				input->copyout(&seg, XCODEC_SEGMENT_LENGTH);
 				input->skip(XCODEC_SEGMENT_LENGTH);
 
-				uint64_t hash = XCodecHash<XCODEC_SEGMENT_LENGTH>::hash(seg->data());
+				uint64_t hash = XCodecHash::hash(seg->data());
 				BufferSegment *oseg = cache_->lookup(hash);
 				if (oseg != NULL) {
 					if (oseg->equal(seg)) {

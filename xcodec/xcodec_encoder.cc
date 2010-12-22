@@ -33,7 +33,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		return;
 	}
 
-	XCodecHash<XCODEC_SEGMENT_LENGTH> xcodec_hash;
+	XCodecHash xcodec_hash;
 	offset_hash_pair_t candidate;
 	bool have_candidate;
 	Buffer outq;
