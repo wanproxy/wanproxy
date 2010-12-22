@@ -49,7 +49,7 @@ public:
 	void roll(uint8_t ch)
 	{
 		bytes_.roll(ch + 1, start_);
-		bits_.roll(ffs(ch) + 1, start_);
+		bits_.roll(ffs(ch), start_);
 
 		start_ = (start_ + 1) % XCODEC_SEGMENT_LENGTH;
 	}
