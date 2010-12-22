@@ -1,15 +1,16 @@
 #ifndef	XCODEC_HASH_H
 #define	XCODEC_HASH_H
 
-#include <alg/hash/adler64.h>
+#include <alg/hash/adler32.h>
 
 template<unsigned Tlength>
 class XCodecHash {
-	Adler64<Tlength> adler64_;
+	Adler32<Tlength> a_, b_;
 
 public:
 	XCodecHash(void)
-	: adler64_()
+	: a_(),
+	  b_()
 	{ }
 
 	~XCodecHash()
@@ -17,7 +18,16 @@ public:
 
 	void roll(uint8_t ch)
 	{
-		adler64_ += ch;
+		unsigned bit;
+
+		a_ += ch;
+		bit = ffs(ch);
+		ch >>= bit;
+		if (bit == 0) {
+			b_ += 8 * ch * ch;
+		} else {
+			b_ += bit * ch * (ch << bit);
+		}
 	}
 
 	static uint32_t mix(uint32_t a, uint32_t b, uint32_t c)
@@ -67,13 +77,7 @@ public:
 	struct mix_functor {
 		uintmax_t operator() (const uint32_t& a, const uint32_t& b)
 		{
-			uint64_t sum;
-
-			sum = 0;
-			sum |= mix(a, b, b - a);
-			sum |= (uint64_t)mix(Tlength, b ^ a, (uint32_t)sum) << 32;
-
-			return (sum);
+			return (mix(a, b, b - a));
 		}
 	};
 
@@ -81,7 +85,10 @@ public:
 	{
 		mix_functor f;
 
-		return (adler64_.mix(f));
+		uint32_t m = f(a_.mix(f), b_.mix(f));
+		uint32_t n = f(m, b_.mix(f));
+
+		return (((uint64_t)m << 32) | n);
 	}
 
 	static uint64_t hash(const uint8_t *data)
