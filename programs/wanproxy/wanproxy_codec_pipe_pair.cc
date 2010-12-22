@@ -22,7 +22,8 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 : incoming_pipe_(NULL),
   outgoing_pipe_(NULL),
   pipes_(),
-  pipe_pairs_()
+  pipe_pairs_(),
+  pipe_links_()
 {
 	std::deque<std::pair<Pipe *, Pipe *> > pipe_list;
 
@@ -82,8 +83,8 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 		incoming_pipe_ = new PipeLink(incoming_pipe_, pipe_list.front().first);
 		outgoing_pipe_ = new PipeLink(outgoing_pipe_, pipe_list.front().second);
 
-		pipes_.insert(incoming_pipe_);
-		pipes_.insert(outgoing_pipe_);
+		pipe_links_.push_front(incoming_pipe_);
+		pipe_links_.push_front(outgoing_pipe_);
 
 		pipe_list.pop_front();
 	}
@@ -92,13 +93,17 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 WANProxyCodecPipePair::~WANProxyCodecPipePair()
 {
 	/*
-	 * XXX
-	 *
-	 * This is wrong.  We need to delete the PipeLinks first, since
-	 * they may have actions running internally.  Should we bring
-	 * PipeSplice into this PipePair directly and manage that action
-	 * explicitly?
+	 * We need to delete the PipeLinks first, since they may have
+	 * actions running internally.
 	 */
+	std::list<Pipe *>::iterator plit;
+	while ((plit = pipe_links_.begin()) != pipe_links_.end()) {
+		Pipe *pipe_link = *plit;
+		pipe_links_.erase(plit);
+
+		delete pipe_link;
+	}
+
 	std::set<Pipe *>::iterator pit;
 	while ((pit = pipes_.begin()) != pipes_.end()) {
 		Pipe *pipe = *pit;

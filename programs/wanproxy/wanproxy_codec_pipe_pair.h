@@ -1,6 +1,7 @@
 #ifndef	WANPROXY_CODEC_PIPE_H
 #define	WANPROXY_CODEC_PIPE_H
 
+#include <list>
 #include <set>
 
 #include <io/pipe/pipe_pair.h>
@@ -14,6 +15,7 @@ class WANProxyCodecPipePair : public PipePair {
 
 	std::set<Pipe *> pipes_;
 	std::set<PipePair *> pipe_pairs_;
+	std::list<Pipe *> pipe_links_;
 public:
 	WANProxyCodecPipePair(WANProxyCodec *, WANProxyCodec *);
 	~WANProxyCodecPipePair();
