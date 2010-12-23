@@ -7,7 +7,7 @@
 
 #include <io/net/tcp_server.h>
 
-#include "proxy_client.h"
+#include "proxy_connector.h"
 #include "proxy_listener.h"
 
 #include "wanproxy_codec_pipe_pair.h"
@@ -71,7 +71,7 @@ ProxyListener::accept_complete(Event e)
 	if (e.type_ == Event::Done) {
 		Socket *client = (Socket *)e.data_;
 		PipePair *pipe_pair = new WANProxyCodecPipePair(interface_codec_, remote_codec_);
-		new ProxyClient(name_, pipe_pair, client, remote_family_, remote_name_);
+		new ProxyConnector(name_, pipe_pair, client, remote_family_, remote_name_);
 	}
 
 	EventCallback *cb = callback(this, &ProxyListener::accept_complete);

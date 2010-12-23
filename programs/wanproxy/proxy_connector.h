@@ -1,5 +1,5 @@
-#ifndef	PROXY_CLIENT_H
-#define	PROXY_CLIENT_H
+#ifndef	PROXY_CONNECTOR_H
+#define	PROXY_CONNECTOR_H
 
 #include <set>
 
@@ -8,7 +8,7 @@ class PipePair;
 class Splice;
 class SplicePair;
 
-class ProxyClient {
+class ProxyConnector {
 	LogHandle log_;
 
 	Action *stop_action_;
@@ -31,9 +31,9 @@ class ProxyClient {
 	Action *splice_action_;
 
 public:
-	ProxyClient(const std::string&, PipePair *, Socket *, SocketAddressFamily, const std::string&);
+	ProxyConnector(const std::string&, PipePair *, Socket *, SocketAddressFamily, const std::string&);
 private:
-	~ProxyClient();
+	~ProxyConnector();
 
 	void close_complete(Event, void *);
 	void connect_complete(Event);
@@ -43,4 +43,4 @@ private:
 	void schedule_close(void);
 };
 
-#endif /* !PROXY_CLIENT_H */
+#endif /* !PROXY_CONNECTOR_H */

@@ -4,7 +4,7 @@
 
 #include <io/socket/socket.h>
 
-#include "proxy_client.h"
+#include "proxy_connector.h"
 #include "proxy_socks_connection.h"
 
 ProxySocksConnection::ProxySocksConnection(const std::string& name, Socket *client)
@@ -226,7 +226,7 @@ ProxySocksConnection::write_complete(Event e)
 		family = SocketAddressFamilyIPv4;
 	}
 
-	new ProxyClient(name_, NULL, client_, family, remote_name.str());
+	new ProxyConnector(name_, NULL, client_, family, remote_name.str());
 
 	client_ = NULL;
 	delete this;
