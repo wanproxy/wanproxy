@@ -7,8 +7,6 @@ static struct WANProxyConfigTypeProxyType::Mapping wanproxy_config_type_proxy_ty
 	{ "UDP-TCP",	WANProxyConfigProxyTypeUDPTCP },
 	{ "UDP-UDP",	WANProxyConfigProxyTypeUDPUDP },
 	{ "UDP",	WANProxyConfigProxyTypeUDPUDP },
-	{ "SSH",	WANProxyConfigProxyTypeSSHSSH },
-	{ "SSH-SSH",	WANProxyConfigProxyTypeSSHSSH },
 	{ NULL,		WANProxyConfigProxyTypeTCPTCP }
 };
 
