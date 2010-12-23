@@ -4,6 +4,8 @@ o) Add a PAUSE/RESUME mechanism so that we don't have, say, more than 1MB of dat
    queued up during an ASK/LEARN session?  PAUSE when we send an ASK with more
    than 1MB or data or get more than 1MB of data with an ASK outstanding, and then
    send a RESUME once we get <1MB of data outstanding?
+o) Use a 16-bit window counter rather than an 8-bit one so we have an 8MB window
+   rather than a 32KB one.
 o) Don't let a peer claim to have our UUID?
 o) Permanent storage.
 o) Decide whether to keep a std::set (or something fancier) of hashes associated
