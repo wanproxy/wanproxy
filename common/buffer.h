@@ -776,82 +776,40 @@ public:
 	 * Extract an 8-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
-	void extract(uint8_t *p, unsigned offset) const
+	void extract(uint8_t *p, unsigned offset = 0) const
 	{
-		size_t copied = copyout(p, offset, sizeof *p);
-		ASSERT(copied == sizeof *p);
-	}
-
-	/*
-	 * Extract an 8-bit quantity out of the beginning of this Buffer.  No
-	 * endianness is assumed.
-	 */
-	void extract(uint8_t *p) const
-	{
-		extract(p, 0);
+		ASSERT(length() >= offset + sizeof *p);
+		copyout(p, offset, sizeof *p);
 	}
 
 	/*
 	 * Extract a 16-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
-	void extract(uint16_t *p, unsigned offset) const
+	void extract(uint16_t *p, unsigned offset = 0) const
 	{
-		uint8_t data[sizeof *p];
-		size_t copied = copyout(data, offset, sizeof data);
-		ASSERT(copied == sizeof data);
-		memcpy(p, data, sizeof data);
-	}
-
-	/*
-	 * Extract a 16-bit quantity out of the beginning of this Buffer.  No
-	 * endianness is assumed.
-	 */
-	void extract(uint16_t *p) const
-	{
-		extract(p, 0);
+		ASSERT(length() >= offset + sizeof *p);
+		copyout((uint8_t *)p, offset, sizeof *p);
 	}
 
 	/*
 	 * Extract a 32-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
-	void extract(uint32_t *p, unsigned offset) const
+	void extract(uint32_t *p, unsigned offset = 0) const
 	{
-		uint8_t data[sizeof *p];
-		size_t copied = copyout(data, offset, sizeof data);
-		ASSERT(copied == sizeof data);
-		memcpy(p, data, sizeof data);
-	}
-
-	/*
-	 * Extract a 32-bit quantity out of the beginning of this Buffer.  No
-	 * endianness is assumed.
-	 */
-	void extract(uint32_t *p) const
-	{
-		extract(p, 0);
+		ASSERT(length() >= offset + sizeof *p);
+		copyout((uint8_t *)p, offset, sizeof *p);
 	}
 
 	/*
 	 * Extract a 64-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
-	void extract(uint64_t *p, unsigned offset) const
+	void extract(uint64_t *p, unsigned offset = 0) const
 	{
-		uint8_t data[sizeof *p];
-		size_t copied = copyout(data, offset, sizeof data);
-		ASSERT(copied == sizeof data);
-		memcpy(p, data, sizeof data);
-	}
-
-	/*
-	 * Extract a 64-bit quantity out of the beginning of this Buffer.  No
-	 * endianness is assumed.
-	 */
-	void extract(uint64_t *p) const
-	{
-		extract(p, 0);
+		ASSERT(length() >= offset + sizeof *p);
+		copyout((uint8_t *)p, offset, sizeof *p);
 	}
 
 	/*
