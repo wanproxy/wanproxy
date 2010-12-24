@@ -28,6 +28,11 @@ main(void)
 			big.append(fill, sizeof fill);
 		}
 		sum *= FILL_NUMBER;
+		{
+			Test _(g, "Expected length.");
+			if (big.length() == n * FILL_LENGTH * FILL_NUMBER + headerlen)
+				_.pass();
+		}
 
 		big.append("world!\n");
 
