@@ -63,7 +63,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input, std::set<uint64_t>& unknown
 			break;
 
 		uint8_t op;
-		input->copyout(&op, sizeof XCODEC_MAGIC, sizeof op);
+		input->extract(&op, sizeof XCODEC_MAGIC);
 
 		switch (op) {
 		case XCODEC_OP_ESCAPE:

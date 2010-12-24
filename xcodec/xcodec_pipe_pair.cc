@@ -157,7 +157,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 				uint8_t len;
 				if (decoder_buffer_.length() < sizeof op + sizeof len)
 					return;
-				decoder_buffer_.copyout(&len, sizeof op, sizeof len);
+				decoder_buffer_.extract(&len, sizeof op);
 
 				if (decoder_buffer_.length() < sizeof op + sizeof len + len)
 					return;
