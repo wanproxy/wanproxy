@@ -1037,8 +1037,7 @@ public:
 		ASSERT(length() >= offset + dstsize);
 		if (offset != 0)
 			skip(offset);
-		dst->append(this, dstsize);
-		skip(dstsize);
+		skip(dstsize, dst);
 	}
 
 	/*
@@ -1138,7 +1137,7 @@ public:
 	 *
 	 * XXX Keep in sync with trim().
 	 */
-	void skip(size_t bytes)
+	void skip(size_t bytes, Buffer *clip = NULL)
 	{
 		segment_list_t::iterator it;
 		unsigned skipped;
@@ -1165,6 +1164,8 @@ public:
 			if ((bytes - skipped) >= seg->length()) {
 				skipped += seg->length();
 				data_.erase(it);
+				if (clip != NULL)
+					clip->append(seg);
 				seg->unref();
 				continue;
 			}
@@ -1172,6 +1173,8 @@ public:
 			/*
 			 * Skip a partial segment.
 			 */
+			if (clip != NULL)
+				clip->append(seg->data(), bytes - skipped);
 			seg = seg->skip(bytes - skipped);
 			*it = seg;
 			skipped += bytes - skipped;
@@ -1186,7 +1189,7 @@ public:
 	 *
 	 * XXX Keep in sync with skip().
 	 */
-	void trim(size_t bytes)
+	void trim(size_t bytes, Buffer *clip = NULL)
 	{
 		segment_list_t::iterator it;
 		unsigned trimmed;
@@ -1213,6 +1216,8 @@ public:
 			if ((bytes - trimmed) >= seg->length()) {
 				trimmed += seg->length();
 				data_.erase(it);
+				if (clip != NULL)
+					clip->append(seg);
 				seg->unref();
 				continue;
 			}
@@ -1220,6 +1225,8 @@ public:
 			/*
 			 * Trim a partial segment.
 			 */
+			if (clip != NULL)
+				clip->append(seg->data() + (seg->length() - (bytes - trimmed)), bytes - trimmed);
 			seg = seg->trim(bytes - trimmed);
 			*it = seg;
 			trimmed += bytes - trimmed;
@@ -1237,7 +1244,7 @@ public:
 	 * sense to merge skip and trim and to just pick the iterator based on
 	 * the end it's being done at.
 	 */
-	void cut(unsigned offset, size_t bytes)
+	void cut(unsigned offset, size_t bytes, Buffer *clip = NULL)
 	{
 		segment_list_t::iterator it;
 
@@ -1247,13 +1254,13 @@ public:
 
 		/* Remove from start.  */
 		if (offset == 0) {
-			skip(bytes);
+			skip(bytes, clip);
 			return;
 		}
 
 		/* Remove from end.  */
 		if (offset + bytes == length_) {
-			trim(bytes);
+			trim(bytes, clip);
 			return;
 		}
 
@@ -1278,12 +1285,16 @@ public:
 				if (offset == 0) {
 					/* We do not need this segment at all.  */
 					bytes -= seg->length();
+					if (clip != NULL)
+						clip->append(seg);
 					seg->unref();
 
 					if (bytes == 0)
 						break;
 					continue;
 				}
+				if (clip != NULL)
+					clip->append(seg->data() + offset, seg->length() - offset);
 				/* We need only the first offset bytes of this segment.  */
 				bytes -= seg->length() - offset;
 				seg = seg->truncate(offset);
@@ -1318,6 +1329,8 @@ public:
 			 * have probably less overhead and demonstrably
 			 * fewer segments in this Buffer.
 			 */
+			if (clip != NULL)
+				clip->append(seg->data() + offset, bytes);
 			seg = seg->cut(offset, bytes);
 			data_.insert(it, seg);
 

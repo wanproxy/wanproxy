@@ -11,7 +11,7 @@ main(void)
 	TestGroup g("/test/buffer/cut1", "Buffer::cut #1");
 
 	unsigned n;
-	for (n = 1; n < 12; n++) {
+	for (n = 1; n < 23; n++) {
 		Buffer big;
 
 		big.append("Hello, ");
@@ -30,22 +30,40 @@ main(void)
 		big.append("world!\n");
 
 		{
-			Test _(g, "Cut fill bytes.");
-
+			Buffer clip;
 			Buffer small(big);
-			small.cut(headerlen, FILL_NUMBER * sizeof fill);
-			if (small.equal("Hello, world!\n"))
-				_.pass();
+			small.cut(headerlen, FILL_NUMBER * sizeof fill, &clip);
+			{ 
+				Test _(g, "Cut fill bytes.");
+				if (small.equal("Hello, world!\n"))
+					_.pass();
+			}
+			{
+				Test _(g, "Expected clipped fill bytes.");
+				Buffer expected;
+				for (i = 0; i < FILL_NUMBER; i++) {
+					expected.append(fill, sizeof fill);
+				}
+				if (clip.equal(&expected))
+					_.pass();
+			}
 		}
 
 		{
-			Test _(g, "Proxy skip and trim.");
-
-			big.cut(0, headerlen);
+			Buffer clip;
+			big.cut(0, headerlen, &clip);
 			big.cut(FILL_NUMBER * sizeof fill,
-				big.length() - (FILL_NUMBER * sizeof fill));
-			if (big.length() == FILL_NUMBER * sizeof fill)
-				_.pass();
+				big.length() - (FILL_NUMBER * sizeof fill), &clip);
+			{
+				Test _(g, "Proxy skip and trim.");
+				if (big.length() == FILL_NUMBER * sizeof fill)
+					_.pass();
+			}
+			{
+				Test _(g, "Expected clipped beginning and end.");
+				if (clip.equal("Hello, world!\n"))
+					_.pass();
+			}
 		}
 
 		{
