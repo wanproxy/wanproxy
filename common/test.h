@@ -30,6 +30,9 @@ private:
 	void test(bool passed, const std::string& description)
 	{
 		if (passed) {
+#if 0
+			DEBUG(log_) << "PASS: " << description;
+#endif
 			passes_++;
 		} else {
 			ERROR(log_) << "FAIL: " << description;
@@ -49,6 +52,12 @@ public:
 	  passed_(false)
 	{ }
 
+	Test(TestGroup& group, const std::string& description, bool passed)
+	: group_(group),
+	  description_(description),
+	  passed_(passed)
+	{ }
+
 	~Test()
 	{
 		group_.test(passed_, description_);
@@ -60,5 +69,10 @@ public:
 		passed_ = true;
 	}
 };
+
+#define	TEST_ASSERT(g, p)						\
+	do {								\
+		Test __test_assert((g), #p, (p));			\
+	} while (0)
 
 #endif /* !TEST_H */
