@@ -200,19 +200,13 @@ public:
 	 * Copy out the requested number of bytes or the entire available
 	 * length, whichever is smaller.  Returns the amount of data read.
 	 */
-	size_t copyout(uint8_t *dst, unsigned offset, size_t dstsize) const
+	void copyout(uint8_t *dst, unsigned offset, size_t dstsize) const
 	{
-		size_t copied;
-
 		ASSERT(dst != NULL);
 		ASSERT(dstsize != 0);
+		ASSERT(length() >= offset + dstsize);
 
-		if (offset + dstsize < length())
-			copied = dstsize;
-		else
-			copied = length() - offset;
-		memcpy(dst, data() + offset, copied);
-		return (copied);
+		memcpy(dst, data() + offset, dstsize);
 	}
 
 	/*
@@ -705,12 +699,9 @@ public:
 	 * Copy up to dstsize bytes out of this Buffer starting at offset to a
 	 * byte buffer.
 	 */
-	size_t copyout(uint8_t *dst, unsigned offset, size_t dstsize) const
+	void copyout(uint8_t *dst, unsigned offset, size_t dstsize) const
 	{
 		segment_list_t::const_iterator it;
-		size_t copied;
-
-		copied = 0;
 
 		for (it = data_.begin(); it != data_.end(); ++it) {
 			const BufferSegment *seg = *it;
@@ -720,19 +711,24 @@ public:
 				continue;
 			}
 
-			copied += seg->copyout(dst + copied, offset, dstsize - copied);
-			offset = 0;
-			if (copied == dstsize)
-				break;
+			size_t seglen = seg->length() - offset;
+			if (dstsize > seglen) {
+				seg->copyout(dst, offset, seglen);
+				dst += seglen;
+				dstsize -= seglen;
+				offset = 0;
+				continue;
+			}
+			seg->copyout(dst, offset, dstsize);
+			break;
 		}
-		return (copied);
 	}
 
 	/*
 	 * Copy up to dstsize bytes out of the beginning of this Buffer to a
 	 * byte buffer.
 	 */
-	size_t copyout(uint8_t *dst, size_t dstsize) const
+	void copyout(uint8_t *dst, size_t dstsize) const
 	{
 		return (copyout(dst, 0, dstsize));
 	}
@@ -741,12 +737,11 @@ public:
 	 * Append at most len bytes from the start of this Buffer to a
 	 * specified BufferSegment.
 	 */
-	size_t copyout(BufferSegment *seg, size_t len) const
+	void copyout(BufferSegment *seg, size_t len) const
 	{
 		ASSERT(seg->avail() >= len);
-		len = copyout(seg->tail(), len);
+		copyout(seg->tail(), len);
 		seg->set_length(seg->length() + len);
-		return (len);
 	}
 
 	/*
@@ -754,22 +749,20 @@ public:
 	 * from the start of this Buffer if the first BufferSegment is not of
 	 * the expected length.
 	 */
-	size_t copyout(BufferSegment **segp, size_t len) const
+	void copyout(BufferSegment **segp, size_t len) const
 	{
 		BufferSegment *src = data_.front();
 		if (src->length() == len) {
 			src->ref();
 			*segp = src;
-			return (len);
 		}
 		if (src->length() > len) {
 			src->ref();
 			*segp = src->truncate(len);
-			return (len);
 		}
 		BufferSegment *seg = BufferSegment::create();
 		*segp = seg;
-		return (copyout(seg, len));
+		copyout(seg, len);
 	}
 
 	/*
@@ -971,8 +964,7 @@ public:
 	{
 		ASSERT(dstsize != 0);
 		ASSERT(length() >= offset + dstsize);
-		size_t copied = copyout(dst, offset, dstsize);
-		ASSERT(copied == dstsize);
+		copyout(dst, offset, dstsize);
 		skip(offset + dstsize);
 	}
 
