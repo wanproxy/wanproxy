@@ -22,12 +22,13 @@ enum FileAction {
 	None, Compress, Decompress
 };
 
-static void compress(int, int, XCodec *, bool, Timer *);
-static void decompress(int, int, XCodec *, bool, Timer *);
+static void compress(const std::string&, int, int, XCodec *, bool, Timer *, bool);
+static void decompress(const std::string&, int, int, XCodec *, bool, Timer *, bool);
 static bool fill(int, Buffer *);
 static void flush(int, Buffer *);
-static void process_file(int, int, FileAction, XCodec *, bool, Timer *);
-static void process_files(int, char *[], FileAction, XCodec *, bool, bool, Timer *);
+static void print_ratio(const std::string&, uint64_t, uint64_t);
+static void process_file(const std::string&, int, int, FileAction, XCodec *, bool, Timer *, bool);
+static void process_files(int, char *[], FileAction, XCodec *, bool, bool, Timer *, bool);
 static void time_samples(Timer *);
 static void time_stats(Timer *);
 static void usage(void);
@@ -41,7 +42,7 @@ main(int argc, char *argv[])
 	XCodecCache *cache = XCodecCache::lookup(uuid);
 	XCodec codec(cache);
 
-	bool codec_timing, quiet_output, samples, verbose;
+	bool codec_timing, quiet_output, samples, stats, verbose;
 	FileAction action;
 	int ch;
 
@@ -49,15 +50,19 @@ main(int argc, char *argv[])
 	codec_timing = false;
 	quiet_output = false;
 	samples = false;
+	stats = false;
 	verbose = false;
 
-	while ((ch = getopt(argc, argv, "?cdvQST")) != -1) {
+	while ((ch = getopt(argc, argv, "?cdsvQST")) != -1) {
 		switch (ch) {
 		case 'c':
 			action = Compress;
 			break;
 		case 'd':
 			action = Decompress;
+			break;
+		case 's':
+			stats = true;
 			break;
 		case 'v':
 			verbose = true;
@@ -92,7 +97,7 @@ main(int argc, char *argv[])
 		usage();
 	case Compress:
 	case Decompress:
-		process_files(argc, argv, action, &codec, quiet_output, codec_timing, &codec_timer);
+		process_files(argc, argv, action, &codec, quiet_output, codec_timing, &codec_timer, stats);
 		if (samples)
 			time_samples(&codec_timer);
 		if (codec_timing)
@@ -106,33 +111,52 @@ main(int argc, char *argv[])
 }
 
 static void
-compress(int ifd, int ofd, XCodec *codec, bool timing, Timer *timer)
+compress(const std::string& name, int ifd, int ofd, XCodec *codec, bool timing, Timer *timer, bool stats)
 {
 	XCodecEncoder encoder(codec->cache());
 	Buffer input, output;
+	uint64_t inbytes, outbytes;
+
+	if (stats)
+		inbytes = outbytes = 0;
 
 	while (fill(ifd, &input)) {
+		if (stats)
+			inbytes += input.length();
 		if (timing)
 			timer->start();
 		encoder.encode(&output, &input);
 		if (timing)
 			timer->stop();
+		if (stats) {
+			inbytes -= input.length();
+			outbytes += output.length();
+		}
 		flush(ofd, &output);
 	}
 	ASSERT(input.empty());
 	ASSERT(output.empty());
+
+	if (stats)
+		print_ratio(name, inbytes, outbytes);
 }
 
 static void
-decompress(int ifd, int ofd, XCodec *codec, bool timing, Timer *timer)
+decompress(const std::string& name, int ifd, int ofd, XCodec *codec, bool timing, Timer *timer, bool stats)
 {
 	std::set<uint64_t> unknown_hashes;
 	XCodecDecoder decoder(codec->cache());
 	Buffer input, output;
+	uint64_t inbytes, outbytes;
 
 	(void)codec;
 
+	if (stats)
+		inbytes = outbytes = 0;
+
 	while (fill(ifd, &input)) {
+		if (stats)
+			inbytes += input.length();
 		if (timing)
 			timer->start();
 		if (!decoder.decode(&output, &input, unknown_hashes)) {
@@ -145,10 +169,17 @@ decompress(int ifd, int ofd, XCodec *codec, bool timing, Timer *timer)
 			ERROR("/decompress") << "Cannot decode stream with unknown hashes.";
 			return;
 		}
+		if (stats) {
+			inbytes -= input.length();
+			outbytes += output.length();
+		}
 		flush(ofd, &output);
 	}
 	ASSERT(input.empty());
 	ASSERT(output.empty());
+
+	if (stats)
+		print_ratio(name, inbytes, outbytes);
 }
 
 static bool
@@ -192,14 +223,20 @@ flush(int fd, Buffer *output)
 }
 
 static void
-process_file(int ifd, int ofd, FileAction action, XCodec *codec, bool timing, Timer *timer)
+print_ratio(const std::string& name, uint64_t inbytes, uint64_t outbytes)
+{
+	INFO("/codec_stats") << name << ": " << inbytes << " bytes in, " << outbytes << " bytes out.";
+}
+
+static void
+process_file(const std::string& name, int ifd, int ofd, FileAction action, XCodec *codec, bool timing, Timer *timer, bool stats)
 {
 	switch (action) {
 	case Compress:
-		compress(ifd, ofd, codec, timing, timer);
+		compress(name, ifd, ofd, codec, timing, timer, stats);
 		break;
 	case Decompress:
-		decompress(ifd, ofd, codec, timing, timer);
+		decompress(name, ifd, ofd, codec, timing, timer, stats);
 		break;
 	default:
 		NOTREACHED();
@@ -207,7 +244,7 @@ process_file(int ifd, int ofd, FileAction action, XCodec *codec, bool timing, Ti
 }
 
 static void
-process_files(int argc, char *argv[], FileAction action, XCodec *codec, bool quiet, bool timing, Timer *timer)
+process_files(int argc, char *argv[], FileAction action, XCodec *codec, bool quiet, bool timing, Timer *timer, bool stats)
 {
 	int ifd, ofd;
 
@@ -217,7 +254,7 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, bool qui
 			ofd = -1;
 		else
 			ofd = STDOUT_FILENO;
-		process_file(ifd, ofd, action, codec, timing, timer);
+		process_file("<stdin>", ifd, ofd, action, codec, timing, timer, stats);
 	} else {
 		while (argc--) {
 			const char *file = *argv++;
@@ -229,7 +266,9 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, bool qui
 			else
 				ofd = STDOUT_FILENO;
 
-			process_file(ifd, ofd, action, codec, timing, timer);
+			process_file(file, ifd, ofd, action, codec, timing, timer, stats);
+
+			close(ifd);
 		}
 	}
 }
@@ -264,7 +303,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: tack [-vQST] -c [file ...]\n"
-"       tack [-vQST] -d [file ...]\n");
+"usage: tack [-svQST] -c [file ...]\n"
+"       tack [-svQST] -d [file ...]\n");
 	exit(1);
 }
