@@ -17,15 +17,17 @@ main(void)
 		big.append("Hello, ");
 		size_t headerlen = big.length();
 
+		uint64_t sum = 0xfeedfacecafebabe * n;
 		uint8_t fill[n * FILL_LENGTH];
 		unsigned i;
 		for (i = 0; i < sizeof fill; i++) {
-			fill[i] = FILL_BYTE;
+			sum += fill[i] = random() % FILL_BYTE;
 		}
 
 		for (i = 0; i < FILL_NUMBER; i++) {
 			big.append(fill, sizeof fill);
 		}
+		sum *= FILL_NUMBER;
 
 		big.append("world!\n");
 
@@ -69,20 +71,18 @@ main(void)
 		{
 			Test _(g, "Correct fill byte checksum.");
 
-			uint64_t sum = 0;
 			Buffer::SegmentIterator iter = big.segments();
 			while (!iter.end()) {
 				const BufferSegment *seg = *iter;
 				const uint8_t *p;
 				const uint8_t *q = seg->end();
 				for (p = seg->data(); p < q; p++)
-					sum += *p;
+					sum -= *p;
 				iter.next();
 			}
 			big.clear();
 
-			sum /= FILL_NUMBER * sizeof fill * FILL_BYTE;
-			if (sum == 1)
+			if (sum == 0xfeedfacecafebabe * n * FILL_NUMBER)
 				_.pass();
 		}
 	}
