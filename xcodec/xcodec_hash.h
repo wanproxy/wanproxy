@@ -3,9 +3,9 @@
 
 class XCodecHash {
 	struct RollingHash {
-		uint16_t sum1_;
-		uint32_t sum2_;
-		uint8_t buffer_[XCODEC_SEGMENT_LENGTH];
+		uint32_t sum1_;					/* Really <16-bit.  */
+		uint32_t sum2_;					/* Really <32-bit.  */
+		uint32_t buffer_[XCODEC_SEGMENT_LENGTH];	/* Really 8-bit.  */
 
 		RollingHash(void)
 		: sum1_(0),
