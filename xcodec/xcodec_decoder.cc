@@ -105,7 +105,8 @@ XCodecDecoder::decode(Buffer *output, Buffer *input, std::set<uint64_t>& unknown
 				goto done;
 			else {
 				uint64_t behash;
-				input->moveout((uint8_t *)&behash, sizeof XCODEC_MAGIC + sizeof op, sizeof behash);
+				input->extract(&behash, sizeof XCODEC_MAGIC + sizeof op);
+				input->skip(sizeof XCODEC_MAGIC + sizeof op + sizeof behash);
 				uint64_t hash = BigEndian::decode(behash);
 
 				BufferSegment *oseg = cache_->lookup(hash);
