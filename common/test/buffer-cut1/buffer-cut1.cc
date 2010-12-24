@@ -17,7 +17,7 @@ main(void)
 		big.append("Hello, ");
 		size_t headerlen = big.length();
 
-		uint64_t sum = 0xfeedfacecafebabe * n;
+		uint64_t sum = 0xfeedfacecafebabeull * n;
 		uint8_t fill[n * FILL_LENGTH];
 		unsigned i;
 		for (i = 0; i < sizeof fill; i++) {
@@ -87,7 +87,7 @@ main(void)
 			}
 			big.clear();
 
-			if (sum == 0xfeedfacecafebabe * n * FILL_NUMBER)
+			if (sum == 0xfeedfacecafebabeull * n * FILL_NUMBER)
 				_.pass();
 		}
 	}
