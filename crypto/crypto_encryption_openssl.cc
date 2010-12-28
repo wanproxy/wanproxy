@@ -30,13 +30,25 @@ public:
 		if (iv->length() < (size_t)EVP_CIPHER_iv_length(cipher_))
 			return (false);
 
+		int enc;
+		switch (operation) {
+		case CryptoEncrypt:
+			enc = 1;
+			break;
+		case CryptoDecrypt:
+			enc = 0;
+			break;
+		default:
+			return (false);
+		}
+
 		uint8_t keydata[key->length()];
 		key->copyout(keydata, sizeof keydata);
 
 		uint8_t ivdata[iv->length()];
 		iv->copyout(ivdata, sizeof ivdata);
 
-		int rv = EVP_CipherInit(&ctx_, cipher_, keydata, ivdata, operation == CryptoEncrypt ? 1 : 0);
+		int rv = EVP_CipherInit(&ctx_, cipher_, keydata, ivdata, enc);
 		if (rv == 0)
 			return (false);
 
