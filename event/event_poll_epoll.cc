@@ -6,26 +6,38 @@
 
 #include <common/buffer.h>
 
-#include <event/action.h>
-#include <event/callback.h>
+#include <event/event_callback.h>
+#include <event/event_poll.h>
 
 #define	EPOLL_EVENT_COUNT	128
 
-/* XXX See state_ in event_poll_kqueue.c */
+struct EventPollState {
+	int ep_;
+};
 
 EventPoll::EventPoll(void)
 : log_("/event/poll"),
   read_poll_(),
   write_poll_(),
-  ep_(epoll_create(EPOLL_EVENT_COUNT))
+  state_(new EventPollState())
 {
-	ASSERT(ep_ != -1);
+	state_->ep_ = epoll_create(EPOLL_EVENT_COUNT);
+	ASSERT(state_->ep_ != -1);
 }
 
 EventPoll::~EventPoll()
 {
 	ASSERT(read_poll_.empty());
 	ASSERT(write_poll_.empty());
+
+	if (state_ != NULL) {
+		if (state_->ep_ != -1) {
+			close(state_->ep_);
+			state_->ep_ = -1;
+		}
+		delete state_;
+		state_ = NULL;
+	}
 }
 
 Action *
@@ -53,7 +65,7 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 	default:
 		NOTREACHED();
 	}
-	int rv = ::epoll_ctl(ep_, unique ? EPOLL_CTL_ADD : EPOLL_CTL_MOD, fd, &eev);
+	int rv = ::epoll_ctl(state_->ep_, unique ? EPOLL_CTL_ADD : EPOLL_CTL_MOD, fd, &eev);
 	if (rv == -1)
 		HALT(log_) << "Could not add event to epoll.";
 	ASSERT(rv == 0);
@@ -89,7 +101,7 @@ EventPoll::cancel(const Type& type, int fd)
 		eev.events = unique ? 0 : EPOLLIN;
 		break;
 	}
-	int rv = ::epoll_ctl(ep_, unique ? EPOLL_CTL_DEL : EPOLL_CTL_MOD, fd, &eev);
+	int rv = ::epoll_ctl(state_->ep_, unique ? EPOLL_CTL_DEL : EPOLL_CTL_MOD, fd, &eev);
 	if (rv == -1)
 		HALT(log_) << "Could not delete event from epoll.";
 	ASSERT(rv == 0);
@@ -114,7 +126,7 @@ EventPoll::wait(int ms)
 	}
 
 	struct epoll_event eev[EPOLL_EVENT_COUNT];
-	int evcnt = ::epoll_wait(ep_, eev, EPOLL_EVENT_COUNT, ms);
+	int evcnt = ::epoll_wait(state_->ep_, eev, EPOLL_EVENT_COUNT, ms);
 	if (evcnt == -1) {
 		if (errno == EINTR) {
 			INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";
