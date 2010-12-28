@@ -395,7 +395,7 @@ Socket::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 		how = SHUT_WR;
 	else {
 		NOTREACHED();
-		return (false);
+		return (NULL);
 	}
 
 	int rv = ::shutdown(fd_, how);
