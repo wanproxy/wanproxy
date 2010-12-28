@@ -2,6 +2,7 @@
 #if defined(__FreeBSD__)
 #include <pthread_np.h>
 #endif
+#include <signal.h>
 
 #include <set>
 
