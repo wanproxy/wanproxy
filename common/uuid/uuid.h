@@ -10,6 +10,10 @@
 struct UUID {
 	std::string string_;
 
+	UUID(void)
+	: string_("")
+	{ }
+
 	bool decode(Buffer *);
 
 	bool encode(Buffer *buf) const
