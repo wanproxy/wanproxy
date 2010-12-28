@@ -12,7 +12,7 @@ class XCodecHash {
 		  sum2_(0),
 		  buffer_()
 		{
-			memset(buffer_, 0, XCODEC_SEGMENT_LENGTH);
+			memset(buffer_, 0, sizeof buffer_);
 		}
 
 		void roll(uint8_t ch, unsigned start)
