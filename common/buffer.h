@@ -755,10 +755,12 @@ public:
 		if (src->length() == len) {
 			src->ref();
 			*segp = src;
+			return;
 		}
 		if (src->length() > len) {
 			src->ref();
 			*segp = src->truncate(len);
+			return;
 		}
 		BufferSegment *seg = BufferSegment::create();
 		*segp = seg;
