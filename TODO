@@ -18,7 +18,6 @@ o) Find ways to reduce the cost of the EventThread abstraction, possibly by
    thread-local storage is faster on FreeBSD?)
 o) Add centralized implementations of Catenate and other patterns in lots of
    the tests.
-o) Thread-aware signal handling.
 o) When splitting things into different threads, add a pipe-oriented condition
    variable facility or something, at least for threads which need to poll,
    rather than just use condition variabls.  Or perhaps we should just use an
