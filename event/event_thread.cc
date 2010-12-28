@@ -5,14 +5,12 @@
 #include <event/event_thread.h>
 
 static void signal_reload(int);
-static void signal_stop(int);
 
 EventThread::EventThread(void)
 : Thread("EventThread"),
   log_("/event/thread"),
   queue_(),
   reload_(),
-  stop_(),
   interest_queue_(),
   timeout_queue_(),
   poll_()
@@ -20,7 +18,6 @@ EventThread::EventThread(void)
 	INFO(log_) << "Starting event thread.";
 
 	signal(SIGHUP, signal_reload);
-	signal(SIGINT, signal_stop);
 }
 
 EventThread::~EventThread()
@@ -112,14 +109,6 @@ EventThread::main(void)
 }
 
 void
-EventThread::stop(void)
-{
-	signal(SIGINT, SIG_DFL);
-	INFO(log_) << "Stopping event thread.";
-	stop_ = true;
-}
-
-void
 EventThread::reload(void)
 {
 	signal(SIGHUP, SIG_IGN);
@@ -131,12 +120,5 @@ static void
 signal_reload(int)
 {
 	EventThread::self()->reload();
-	/* XXX Forward signal to all threads.  */
-}
-
-static void
-signal_stop(int)
-{
-	EventThread::self()->stop();
 	/* XXX Forward signal to all threads.  */
 }

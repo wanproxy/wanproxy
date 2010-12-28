@@ -21,7 +21,11 @@ static SleepQueue thread_start_sleepq("Thread::start", &thread_start_mutex);
 static void thread_posix_init(void);
 static void *thread_posix_start(void *);
 
+static void thread_posix_signal_stop(int);
+
 static NullThread initial_thread("initial thread");
+
+bool Thread::stop_ = false;
 
 Thread::Thread(const std::string& name)
 : name_(name),
@@ -92,6 +96,8 @@ thread_posix_init(void)
 {
 	ASSERT(!thread_posix_initialized);
 
+	signal(SIGINT, thread_posix_signal_stop);
+
 	int rv = pthread_key_create(&thread_posix_key, NULL);
 	if (rv == -1) {
 		ERROR("/thread/posix/init") << "Could not initialize thread-local Thread pointer key.";
@@ -117,4 +123,14 @@ thread_posix_start(void *arg)
 	td->main();
 
 	return (NULL);
+}
+
+static void
+thread_posix_signal_stop(int sig)
+{
+	signal(sig, SIG_DFL);
+	Thread::stop_ = true;
+
+	INFO("/thread/posix/signal") << "Received SIGINT; setting stop flag.";
+	/* XXX Forward signal to all threads.  */
 }

@@ -15,7 +15,6 @@ class EventThread : public Thread {
 	LogHandle log_;
 	CallbackQueue queue_;
 	bool reload_;
-	bool stop_;
 	std::map<EventInterest, CallbackQueue> interest_queue_;
 	TimeoutQueue timeout_queue_;
 	EventPoll poll_;
@@ -51,8 +50,6 @@ public:
 private:
 	void main(void);
 public:
-	void stop(void);
-
 	void reload(void);
 
 	static EventThread *self(void)

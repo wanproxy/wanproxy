@@ -22,6 +22,8 @@ public:
 
 public:
 	static Thread *self(void);
+
+	static bool stop_;
 };
 
 class NullThread : public Thread {
