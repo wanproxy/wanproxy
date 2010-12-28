@@ -66,7 +66,7 @@ endif
 CFLAGS+=-Wno-system-headers
 #CFLAGS+=-Wno-unused-parameter
 CFLAGS+=-Wno-uninitialized
-CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts
+CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts -Wreorder
 #CFLAGS+=-Winline
 
 define __library_include
