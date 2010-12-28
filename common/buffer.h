@@ -10,7 +10,7 @@ struct iovec;
 #define	BUFFER_SEGMENT_SIZE		(2048)
 #define	BUFFER_SEGMENT_CACHE_LIMIT	(512)	/* 1MB of data.  */
 
-typedef	uint16_t	buffer_segment_size_t;
+typedef	unsigned buffer_segment_size_t;
 
 /*
  * A BufferSegment is a contiguous chunk of data which may be at most a fixed
