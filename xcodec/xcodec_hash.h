@@ -40,8 +40,7 @@ public:
 	: bytes_(),
 	  bits_(),
 	  start_(0)
-	{
-	}
+	{ }
 
 	~XCodecHash()
 	{ }
