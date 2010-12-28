@@ -58,7 +58,6 @@
  */
 #define	XCODEC_PIPE_OP_HELLO	((uint8_t)0xff)
 
-
 /*
  * Usage:
  * 	<OP_LEARN> data[uint8_t x XCODEC_PIPE_SEGMENT_LENGTH]
