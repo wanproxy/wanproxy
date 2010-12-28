@@ -325,7 +325,7 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 		output->append(XCODEC_MAGIC);
 		output->append(XCODEC_OP_REF);
 		uint64_t behash = BigEndian::encode(hash);
-		output->append((const uint8_t *)&behash, sizeof behash);
+		output->append(&behash);
 
 		window_.declare(hash, oseg);
 	}

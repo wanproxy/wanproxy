@@ -309,11 +309,11 @@ ProxySocksConnection::schedule_write(void)
 			uint32_t address = BigEndian::encode(network_address_);
 
 			response.append(0x01);
-			response.append((const uint8_t *)&address, sizeof address);
+			response.append(&address);
 		}
 
 		uint16_t port = BigEndian::encode(network_port_);
-		response.append((const uint8_t *)&port, sizeof port);
+		response.append(&port);
 		break;
 	}
 	default:
