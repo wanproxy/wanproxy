@@ -29,17 +29,3 @@ Timer::stop(void)
 
 	samples_.push_back(stop_ - start_);
 }
-
-uintmax_t
-Timer::sample(void) const
-{
-	if (samples_.size() != 1)
-		HALT("/timer") << "Requested 1 sample but " << samples_.size() << " available.";
-	return (samples_[0]);
-}
-
-std::vector<uintmax_t>
-Timer::samples(void) const
-{
-	return (samples_);
-}
