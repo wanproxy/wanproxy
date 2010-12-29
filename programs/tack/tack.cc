@@ -226,6 +226,11 @@ static void
 print_ratio(const std::string& name, uint64_t inbytes, uint64_t outbytes)
 {
 	INFO("/codec_stats") << name << ": " << inbytes << " bytes in, " << outbytes << " bytes out.";
+	if (inbytes <= outbytes) {
+		INFO("/codec_stats") << name << ": bloat ratio 1:" << ((float)outbytes / inbytes) << " (" << ((float)inbytes / outbytes) << ":1)";
+	} else {
+		INFO("/codec_stats") << name << ": compression ratio 1:" << ((float)outbytes / inbytes) << " (" << ((float)inbytes / outbytes) << ":1)";
+	}
 }
 
 static void
