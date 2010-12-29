@@ -6,7 +6,11 @@
 #include <xcodec/xcodec_encoder.h>
 #include <xcodec/xcodec_hash.h>
 
-typedef	std::pair<unsigned, uint64_t> offset_hash_pair_t;
+struct candidate_symbol {
+	bool set_;
+	unsigned offset_;
+	uint64_t symbol_;
+};
 
 XCodecEncoder::XCodecEncoder(XCodecCache *cache)
 : log_("/xcodec/encoder"),
@@ -34,12 +38,11 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	}
 
 	XCodecHash xcodec_hash;
-	offset_hash_pair_t candidate;
-	bool have_candidate;
+	candidate_symbol candidate;
 	Buffer outq;
 	unsigned o = 0;
 
-	have_candidate = false;
+	candidate.set_ = false;
 
 	/*
 	 * While there is input.
@@ -106,21 +109,21 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			 * overlap with the data that the rolling hash presently
 			 * covers, declare it now.
 			 */
-			if (have_candidate && candidate.first + XCODEC_SEGMENT_LENGTH <= start) {
+			if (candidate.set_ && candidate.offset_ + XCODEC_SEGMENT_LENGTH <= start) {
 				BufferSegment *nseg;
-				encode_declaration(output, &outq, candidate.first, candidate.second, &nseg);
+				encode_declaration(output, &outq, candidate.offset_, candidate.symbol_, &nseg);
 
-				o -= candidate.first + XCODEC_SEGMENT_LENGTH;
+				o -= candidate.offset_ + XCODEC_SEGMENT_LENGTH;
 				start = o - XCODEC_SEGMENT_LENGTH;
 
-				have_candidate = false;
+				candidate.set_ = false;
 
 				/*
 				 * If, on top of that, the just-declared hash is
 				 * the same as the current hash, consider referencing
 				 * it immediately.
 				 */
-				if (hash == candidate.second) {
+				if (hash == candidate.symbol_) {
 					/*
 					 * If it's a hash collision, though, nevermind.
 					 * Skip trying to use this hash as a reference,
@@ -167,7 +170,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 					 * in escaped form, so any candidate hash
 					 * before it is invalid now.
 					 */
-					have_candidate = false;
+					candidate.set_ = false;
 					continue;
 				}
 
@@ -185,14 +188,14 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			 * Not defined before, it's a candidate for declaration if
 			 * we don't already have one.
 			 */
-			if (have_candidate) {
+			if (candidate.set_) {
 				/*
 				 * We already have a hash that occurs earlier,
 				 * isn't a collision and includes data that's
 				 * covered by this hash, so don't remember it
 				 * and keep going.
 				 */
-				ASSERT(candidate.first + XCODEC_SEGMENT_LENGTH > start);
+				ASSERT(candidate.offset_ + XCODEC_SEGMENT_LENGTH > start);
 				continue;
 			}
 
@@ -203,9 +206,9 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			 * find something to reference we can declare this one
 			 * for future use.
 			 */
-			candidate.first = start;
-			candidate.second = hash;
-			have_candidate = true;
+			candidate.offset_ = start;
+			candidate.symbol_ = hash;
+			candidate.set_ = true;
 		}
 
 		seg->unref();
@@ -220,10 +223,10 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	/*
 	 * There's a hash we can declare, do it.
 	 */
-	if (have_candidate) {
+	if (candidate.set_) {
 		ASSERT(!outq.empty());
-		encode_declaration(output, &outq, candidate.first, candidate.second, NULL);
-		have_candidate = false;
+		encode_declaration(output, &outq, candidate.offset_, candidate.symbol_, NULL);
+		candidate.set_ = false;
 	}
 
 	/*
@@ -234,7 +237,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		encode_escape(output, &outq, outq.length());
 	}
 
-	ASSERT(!have_candidate);
+	ASSERT(!candidate.set_);
 	ASSERT(outq.empty());
 	ASSERT(input->empty());
 }
