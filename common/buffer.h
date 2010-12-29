@@ -989,7 +989,8 @@ public:
 		ASSERT(length() >= offset + dstsize);
 		if (offset != 0)
 			skip(offset);
-		skip(dstsize, dst);
+		dst->append(this, dstsize);
+		skip(dstsize);
 	}
 
 	/*
