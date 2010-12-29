@@ -119,7 +119,7 @@ dump(int ifd, int ofd)
 			input.copyout(&op, sizeof XCODEC_MAGIC, sizeof op);
 			switch (op) {
 			case XCODEC_OP_ESCAPE:
-				bprintf(&output, "<escape />");
+				bprintf(&output, "<escape />\n");
 				input.skip(sizeof XCODEC_MAGIC + sizeof op);
 				continue;
 			case XCODEC_OP_EXTRACT:
