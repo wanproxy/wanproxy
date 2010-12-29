@@ -141,6 +141,8 @@ operator<< (std::ostream& os, Event::Type type)
 static inline std::ostream&
 operator<< (std::ostream& os, Event e)
 {
+	if (e.type_ != Event::Error && e.error_ == 0)
+		return (os << e.type_);
 	return (os << e.type_ << '/' << e.error_ << " [" <<
 		strerror(e.error_) << "]");
 }
