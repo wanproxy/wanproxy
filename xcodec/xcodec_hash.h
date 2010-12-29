@@ -11,8 +11,20 @@ class XCodecHash {
 		: sum1_(0),
 		  sum2_(0),
 		  buffer_()
+		{ }
+
+		void add(uint8_t ch, unsigned start)
 		{
-			memset(buffer_, 0, sizeof buffer_);
+			buffer_[start] = ch;
+
+			sum1_ += ch;
+			sum2_ += sum1_;
+		}
+
+		void reset(void)
+		{
+			sum1_ = 0;
+			sum2_ = 0;
 		}
 
 		void roll(uint8_t ch, unsigned start)
@@ -33,20 +45,44 @@ class XCodecHash {
 
 	RollingHash bytes_;
 	RollingHash bits_;
-	uint8_t start_;
+	unsigned start_;
+	unsigned length_;
 
 public:
 	XCodecHash(void)
 	: bytes_(),
 	  bits_(),
-	  start_(0)
+	  start_(0),
+	  length_(0)
 	{ }
 
 	~XCodecHash()
 	{ }
 
+	void add(uint8_t ch)
+	{
+		ASSERT(length_ < XCODEC_SEGMENT_LENGTH);
+
+		bytes_.add(ch + 1, start_);
+		bits_.add(ffs(ch), start_);
+
+		length_++;
+		start_ = (start_ + 1) % XCODEC_SEGMENT_LENGTH;
+	}
+
+	void reset(void)
+	{
+		bytes_.reset();
+		bits_.reset();
+
+		length_ = 0;
+		start_ = 0;
+	}
+
 	void roll(uint8_t ch)
 	{
+		ASSERT(length_ == XCODEC_SEGMENT_LENGTH);
+
 		bytes_.roll(ch + 1, start_);
 		bits_.roll(ffs(ch), start_);
 
@@ -55,6 +91,8 @@ public:
 
 	uint64_t mix(void) const
 	{
+		ASSERT(length_ == XCODEC_SEGMENT_LENGTH);
+
 		uint64_t bits_hash = (bits_.sum2_ << 10) | bits_.sum1_;
 		uint64_t bytes_hash = (bytes_.sum2_ << 15) | bytes_.sum1_;
 		return ((bits_hash << 36) | bytes_hash);
@@ -66,7 +104,7 @@ public:
 		unsigned i;
 
 		for (i = 0; i < XCODEC_SEGMENT_LENGTH; i++)
-			xchash.roll(*data++);
+			xchash.add(*data++);
 		return (xchash.mix());
 	}
 };

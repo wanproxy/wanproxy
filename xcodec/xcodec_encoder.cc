@@ -49,6 +49,17 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	 */
 	while (!input->empty()) {
 		/*
+		 * If we cannot acquire a complete hash within this segment,
+		 * stop looking.
+		 */
+		if (o + input->length() < XCODEC_SEGMENT_LENGTH) {
+			DEBUG(log_) << "Buffer couldn't yield a hash.";
+			outq.append(input);
+			input->clear();
+			break;
+		}
+
+		/*
 		 * Take the first BufferSegment out of the input Buffer.
 		 */
 		BufferSegment *seg;
@@ -64,36 +75,51 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		 */
 		const uint8_t *p, *q = seg->end();
 		for (p = seg->data(); p < q; p++) {
-			for (;;) {
+			/*
+			 * If we cannot acquire a complete hash within this segment.
+			 */
+			if (o + (q - p) < XCODEC_SEGMENT_LENGTH) {
 				/*
-				 * Add it to the rolling hash.
+				 * Hash all of the bytes from it and continue.
+				 */
+				o += q - p;
+				while (p < q)
+					xcodec_hash.add(*p++);
+				break;
+			}
+
+			/*
+			 * If we don't have a complete hash.
+			 */
+			if (o < XCODEC_SEGMENT_LENGTH) {
+				for (;;) {
+					/*
+					 * Add bytes to the hash.
+					 */
+					xcodec_hash.add(*p);
+
+					/*
+					 * Until we have a complete hash.
+					 */
+					if (++o == XCODEC_SEGMENT_LENGTH)
+						break;
+
+					/*
+					 * Go to the next byte.
+					 */
+					p++;
+				}
+				ASSERT(o == XCODEC_SEGMENT_LENGTH);
+			} else {
+				/*
+				 * Roll it into the rolling hash.
 				 */
 				xcodec_hash.roll(*p);
-
-				/*
-				 * We have a complete hash
-				 */
-				if (++o >= XCODEC_SEGMENT_LENGTH)
-					break;
-
-				/*
-				 * If the rolling hash does not cover an entire
-				 * segment yet, just keep adding to it.
-				 */
-				if (++p != q)
-					continue;
-
-				/*
-				 * Unless we've hit the end of this segment.
-				 */
-				break;
+				o++;
 			}
 
-			if (p == q) {
-				ASSERT(o < XCODEC_SEGMENT_LENGTH);
-				break;
-			}
 			ASSERT(o >= XCODEC_SEGMENT_LENGTH);
+			ASSERT(p != q);
 
 			/*
 			 * And then mix the hash's internal state into a
@@ -142,6 +168,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 					 * or reference.
 					 */
 					o = 0;
+					xcodec_hash.reset();
 
 					DEBUG(log_) << "Hit in adjacent-declare pass.";
 					continue;
@@ -164,6 +191,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 					oseg->unref();
 
 					o = 0;
+					xcodec_hash.reset();
 
 					/*
 					 * We have output any data before this hash
