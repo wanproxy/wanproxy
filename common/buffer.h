@@ -989,8 +989,7 @@ public:
 		ASSERT(length() >= offset + dstsize);
 		if (offset != 0)
 			skip(offset);
-		dst->append(this, dstsize);
-		skip(dstsize);
+		skip(dstsize, dst);
 	}
 
 	/*
@@ -1099,6 +1098,8 @@ public:
 		ASSERT(!empty());
 
 		if (bytes == length()) {
+			if (clip != NULL)
+				clip->append(this);
 			clear();
 			return;
 		}
@@ -1151,6 +1152,8 @@ public:
 		ASSERT(!empty());
 
 		if (bytes == length()) {
+			if (clip != NULL)
+				clip->append(this);
 			clear();
 			return;
 		}
