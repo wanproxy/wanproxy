@@ -9,6 +9,8 @@
 /*
  * XXX
  * Make more like an LRU and make present() bump up in the window.
+ *
+ * Maybe add an explicit use() mechanism?
  */
 class XCodecWindow {
 	uint64_t window_[XCODEC_WINDOW_COUNT];
