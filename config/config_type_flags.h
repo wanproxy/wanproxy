@@ -20,7 +20,8 @@ private:
 public:
 	ConfigTypeFlags(const std::string& name, struct Mapping *mappings)
 	: ConfigType(name),
-	  flags_()
+	  flags_(),
+	  flag_map_()
 	{
 		ASSERT(mappings != NULL);
 		while (mappings->string_ != NULL) {

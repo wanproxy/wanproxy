@@ -10,7 +10,7 @@ protected:
 	TypedCondition(void)
 	{ }
 
-	~TypedCondition()
+	virtual ~TypedCondition()
 	{ }
 
 public:

@@ -40,7 +40,7 @@ protected:
 	CryptoEncryptionMethod(void)
 	{ }
 
-	~CryptoEncryptionMethod()
+	virtual ~CryptoEncryptionMethod()
 	{ }
 public:
 	virtual CryptoEncryptionSession *session(CryptoCipher) const = 0;

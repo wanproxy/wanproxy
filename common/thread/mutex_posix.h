@@ -10,6 +10,7 @@ struct MutexState {
 	MutexState(void)
 	: mutex_(),
 	  mutex_attr_(),
+	  cond_(),
 	  owner_(NULL)
 	{
 		int rv;

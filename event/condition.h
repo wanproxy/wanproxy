@@ -6,7 +6,7 @@ protected:
 	Condition(void)
 	{ }
 
-	~Condition()
+	virtual ~Condition()
 	{ }
 
 public:

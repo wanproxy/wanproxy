@@ -20,7 +20,8 @@ private:
 public:
 	ConfigTypeEnum(const std::string& name, struct Mapping *mappings)
 	: ConfigType(name),
-	  enums_()
+	  enums_(),
+	  enum_map_()
 	{
 		ASSERT(mappings != NULL);
 		while (mappings->string_ != NULL) {

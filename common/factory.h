@@ -84,9 +84,11 @@ struct factory {
 template<typename K, typename C>
 class FactoryMap {
 	typedef std::map<K, Factory<C> *> map_type;
+
 	map_type map_;
 public:
 	FactoryMap(void)
+	: map_()
 	{ }
 
 	~FactoryMap()
