@@ -26,6 +26,7 @@ enum FileAction {
 #define	TACK_FLAG_CODEC_TIMING		(0x00000002)
 #define	TACK_FLAG_BYTE_STATS		(0x00000004)
 #define	TACK_FLAG_CODEC_TIMING_EACH	(0x00000008)
+#define	TACK_FLAG_CODEC_TIMING_SAMPLES	(0x00000010)
 
 static void compress(const std::string&, int, int, XCodec *, unsigned, Timer *);
 static void decompress(const std::string&, int, int, XCodec *, unsigned, Timer *);
@@ -34,7 +35,7 @@ static void flush(int, Buffer *);
 static void print_ratio(const std::string&, uint64_t, uint64_t);
 static void process_file(const std::string&, int, int, FileAction, XCodec *, unsigned, Timer *);
 static void process_files(int, char *[], FileAction, XCodec *, unsigned, Timer *);
-static void time_samples(Timer *);
+static void time_samples(const std::string&, Timer *);
 static void time_stats(const std::string&, Timer *);
 static void usage(void);
 
@@ -47,14 +48,13 @@ main(int argc, char *argv[])
 	XCodecCache *cache = XCodecCache::lookup(uuid);
 	XCodec codec(cache);
 
-	bool samples, verbose;
+	bool verbose;
 	FileAction action;
 	unsigned flags;
 	int ch;
 
 	action = None;
 	flags = 0;
-	samples = false;
 	verbose = false;
 
 	while ((ch = getopt(argc, argv, "?cdsvEQST")) != -1) {
@@ -78,7 +78,7 @@ main(int argc, char *argv[])
 			flags |= TACK_FLAG_QUIET_OUTPUT;
 			break;
 		case 'S':
-			samples = true;
+			flags |= TACK_FLAG_CODEC_TIMING_SAMPLES;
 			break;
 		case 'T':
 			flags |= TACK_FLAG_CODEC_TIMING;
@@ -91,15 +91,8 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if ((flags & TACK_FLAG_CODEC_TIMING_EACH) != 0 &&
-	    (flags & TACK_FLAG_CODEC_TIMING) == 0)
-		usage();
-
-	if (samples && (flags & TACK_FLAG_CODEC_TIMING) == 0)
-		usage();
-
-	if ((flags & TACK_FLAG_CODEC_TIMING_EACH) != 0 &&
-	    samples)
+	if ((flags & TACK_FLAG_CODEC_TIMING) == 0 &&
+	    (flags & TACK_FLAG_CODEC_TIMING_EACH | TACK_FLAG_CODEC_TIMING_SAMPLES) != 0)
 		usage();
 
 	if (verbose) {
@@ -119,8 +112,8 @@ main(int argc, char *argv[])
 
 		if ((flags & TACK_FLAG_CODEC_TIMING) != 0 &&
 		    (flags & TACK_FLAG_CODEC_TIMING_EACH) == 0) {
-			if (samples)
-				time_samples(&codec_timer);
+			if ((flags & TACK_FLAG_CODEC_TIMING_SAMPLES) != 0)
+				time_samples("", &codec_timer);
 			else
 				time_stats("<total>", &codec_timer);
 		}
@@ -267,8 +260,12 @@ process_file(const std::string& name, int ifd, int ofd, FileAction action, XCode
 		NOTREACHED();
 	}
 
-	if ((flags & TACK_FLAG_CODEC_TIMING_EACH) != 0)
-		time_stats(name, timer);
+	if ((flags & TACK_FLAG_CODEC_TIMING_EACH) != 0) {
+		if ((flags & TACK_FLAG_CODEC_TIMING_SAMPLES) != 0)
+			time_samples(name, timer);
+		else
+			time_stats(name, timer);
+	}
 }
 
 static void
@@ -306,13 +303,20 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, unsigned
 }
 
 static void
-time_samples(Timer *timer)
+time_samples(const std::string& name, Timer *timer)
 {
 	std::vector<uintmax_t> samples = timer->samples();
 	std::vector<uintmax_t>::iterator it;
 
-	for (it = samples.begin(); it != samples.end(); ++it)
-		fprintf(stderr, "%ju\n", *it);
+	if (name == "") {
+		for (it = samples.begin(); it != samples.end(); ++it)
+			fprintf(stderr, "%ju\n", *it);
+	} else {
+		for (it = samples.begin(); it != samples.end(); ++it)
+			fprintf(stderr, "%s,%ju\n", name.c_str(), *it);
+	}
+
+	timer->reset();
 }
 
 static void
@@ -337,7 +341,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: tack [-svQ] [-T [-E | -S]] -c [file ...]\n"
-"       tack [-svQ] [-T [-E | -S]] -d [file ...]\n");
+"usage: tack [-svQ] [-T [-ES]] -c [file ...]\n"
+"       tack [-svQ] [-T [-ES]] -d [file ...]\n");
 	exit(1);
 }
