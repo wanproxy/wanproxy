@@ -34,7 +34,7 @@ static bool fill(int, Buffer *);
 static void flush(int, Buffer *);
 static void print_ratio(const std::string&, uint64_t, uint64_t);
 static void process_file(const std::string&, int, int, FileAction, XCodec *, unsigned, Timer *);
-static void process_files(int, char *[], FileAction, XCodec *, unsigned, Timer *);
+static void process_files(int, char *[], FileAction, XCodec *, unsigned);
 static void time_samples(const std::string&, Timer *);
 static void time_stats(const std::string&, Timer *);
 static void usage(void);
@@ -91,6 +91,9 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
+	if (action == None)
+		usage();
+
 	if ((flags & TACK_FLAG_CODEC_TIMING) == 0 &&
 	    (flags & TACK_FLAG_CODEC_TIMING_EACH | TACK_FLAG_CODEC_TIMING_SAMPLES) != 0)
 		usage();
@@ -101,26 +104,7 @@ main(int argc, char *argv[])
 		Log::mask(".?", Log::Info);
 	}
 
-	Timer codec_timer;
-
-	switch (action) {
-	case None:
-		usage();
-	case Compress:
-	case Decompress:
-		process_files(argc, argv, action, &codec, flags, &codec_timer);
-
-		if ((flags & TACK_FLAG_CODEC_TIMING) != 0 &&
-		    (flags & TACK_FLAG_CODEC_TIMING_EACH) == 0) {
-			if ((flags & TACK_FLAG_CODEC_TIMING_SAMPLES) != 0)
-				time_samples("", &codec_timer);
-			else
-				time_stats("<total>", &codec_timer);
-		}
-		break;
-	default:
-		NOTREACHED();
-	}
+	process_files(argc, argv, action, &codec, flags);
 
 	return (0);
 }
@@ -249,6 +233,12 @@ print_ratio(const std::string& name, uint64_t inbytes, uint64_t outbytes)
 static void
 process_file(const std::string& name, int ifd, int ofd, FileAction action, XCodec *codec, unsigned flags, Timer *timer)
 {
+	if ((flags & TACK_FLAG_CODEC_TIMING_EACH) != 0) {
+		ASSERT(timer == NULL);
+
+		timer = new Timer();
+	}
+
 	switch (action) {
 	case Compress:
 		compress(name, ifd, ofd, codec, flags, timer);
@@ -265,13 +255,21 @@ process_file(const std::string& name, int ifd, int ofd, FileAction action, XCode
 			time_samples(name, timer);
 		else
 			time_stats(name, timer);
+		delete timer;
 	}
 }
 
 static void
-process_files(int argc, char *argv[], FileAction action, XCodec *codec, unsigned flags, Timer *timer)
+process_files(int argc, char *argv[], FileAction action, XCodec *codec, unsigned flags)
 {
+	Timer *timer;
 	int ifd, ofd;
+
+	if ((flags & TACK_FLAG_CODEC_TIMING) != 0 &&
+	    (flags & TACK_FLAG_CODEC_TIMING_EACH) == 0)
+		timer = new Timer();
+	else
+		timer = NULL;
 
 	if (argc == 0) {
 		ifd = STDIN_FILENO;
@@ -300,6 +298,16 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, unsigned
 			close(ifd);
 		}
 	}
+
+	if ((flags & TACK_FLAG_CODEC_TIMING) != 0 &&
+	    (flags & TACK_FLAG_CODEC_TIMING_EACH) == 0) {
+		ASSERT(timer != NULL);
+		if ((flags & TACK_FLAG_CODEC_TIMING_SAMPLES) != 0)
+			time_samples("", timer);
+		else
+			time_stats("<total>", timer);
+		delete timer;
+	}
 }
 
 static void
@@ -315,8 +323,6 @@ time_samples(const std::string& name, Timer *timer)
 		for (it = samples.begin(); it != samples.end(); ++it)
 			fprintf(stderr, "%s,%ju\n", name.c_str(), *it);
 	}
-
-	timer->reset();
 }
 
 static void
@@ -333,8 +339,6 @@ time_stats(const std::string& name, Timer *timer)
 		microseconds += *it;
 	INFO(log) << name << ": " << microseconds << " total runtime.";
 	INFO(log) << name << ": " << (microseconds / samples.size()) << " mean microseconds/call.";
-
-	timer->reset();
 }
 
 static void
