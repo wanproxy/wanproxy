@@ -95,6 +95,11 @@ public:
 		start_ = (start_ + 1) % XCODEC_SEGMENT_LENGTH;
 	}
 
+	/*
+	 * XXX
+	 * Need to write a compression function for this; get rid of the
+	 * completely non-entropic bits, anyway, and try to mix the others.
+	 */
 	uint64_t mix(void) const
 	{
 		ASSERT(length_ == XCODEC_SEGMENT_LENGTH);
