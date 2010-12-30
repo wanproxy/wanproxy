@@ -8,7 +8,7 @@ public:
 	: name_(name)
 	{ }
 
-	LockClass()
+	~LockClass()
 	{ }
 };
 
