@@ -47,12 +47,13 @@ main(int argc, char *argv[])
 	XCodecCache *cache = XCodecCache::lookup(uuid);
 	XCodec codec(cache);
 
-	unsigned flags;
 	bool samples, verbose;
 	FileAction action;
+	unsigned flags;
 	int ch;
 
 	action = None;
+	flags = 0;
 	samples = false;
 	verbose = false;
 
@@ -116,7 +117,8 @@ main(int argc, char *argv[])
 	case Decompress:
 		process_files(argc, argv, action, &codec, flags, &codec_timer);
 
-		if ((flags & TACK_FLAG_CODEC_TIMING_EACH) == 0) {
+		if ((flags & TACK_FLAG_CODEC_TIMING) != 0 &&
+		    (flags & TACK_FLAG_CODEC_TIMING_EACH) == 0) {
 			if (samples)
 				time_samples(&codec_timer);
 			else
