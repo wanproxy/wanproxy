@@ -5,7 +5,7 @@ class XCodecHash {
 	struct RollingHash {
 		uint32_t sum1_;					/* Really <16-bit.  */
 		uint32_t sum2_;					/* Really <32-bit.  */
-		uint32_t buffer_[XCODEC_SEGMENT_LENGTH];	/* Really 8-bit.  */
+		uint32_t buffer_[XCODEC_SEGMENT_LENGTH];	/* Really >8-bit.  */
 
 		RollingHash(void)
 		: sum1_(0),
@@ -13,7 +13,7 @@ class XCodecHash {
 		  buffer_()
 		{ }
 
-		void add(uint8_t ch, unsigned start)
+		void add(uint32_t ch, unsigned start)
 		{
 			buffer_[start] = ch;
 
@@ -27,9 +27,9 @@ class XCodecHash {
 			sum2_ = 0;
 		}
 
-		void roll(uint8_t ch, unsigned start)
+		void roll(uint32_t ch, unsigned start)
 		{
-			uint8_t dead;
+			uint32_t dead;
 
 			dead = buffer_[start];
 
@@ -61,10 +61,13 @@ public:
 
 	void add(uint8_t ch)
 	{
+		unsigned bit = ffs(ch);
+		unsigned word = (unsigned)ch + 1;
+
 		ASSERT(length_ < XCODEC_SEGMENT_LENGTH);
 
-		bytes_.add(ch + 1, start_);
-		bits_.add(ffs(ch), start_);
+		bytes_.add(word, start_);
+		bits_.add(bit, start_);
 
 		length_++;
 		start_ = (start_ + 1) % XCODEC_SEGMENT_LENGTH;
@@ -81,10 +84,13 @@ public:
 
 	void roll(uint8_t ch)
 	{
+		unsigned bit = ffs(ch);
+		unsigned word = (unsigned)ch + 1;
+
 		ASSERT(length_ == XCODEC_SEGMENT_LENGTH);
 
-		bytes_.roll(ch + 1, start_);
-		bits_.roll(ffs(ch), start_);
+		bytes_.roll(word, start_);
+		bits_.roll(bit, start_);
 
 		start_ = (start_ + 1) % XCODEC_SEGMENT_LENGTH;
 	}
