@@ -17,9 +17,10 @@
 #include <xcodec/xcodec_cache.h>
 #include <xcodec/xcodec_decoder.h>
 #include <xcodec/xcodec_encoder.h>
+#include <xcodec/xcodec_hash.h>
 
 enum FileAction {
-	None, Compress, Decompress
+	None, Compress, Decompress, Hashes
 };
 
 #define	TACK_FLAG_QUIET_OUTPUT		(0x00000001)
@@ -30,6 +31,7 @@ enum FileAction {
 
 static void compress(const std::string&, int, int, XCodec *, unsigned, Timer *);
 static void decompress(const std::string&, int, int, XCodec *, unsigned, Timer *);
+static void hashes(int, int, unsigned, Timer *);
 static bool fill(int, Buffer *);
 static void flush(int, Buffer *);
 static void print_ratio(const std::string&, uint64_t, uint64_t);
@@ -57,13 +59,16 @@ main(int argc, char *argv[])
 	flags = 0;
 	verbose = false;
 
-	while ((ch = getopt(argc, argv, "?cdsvEQST")) != -1) {
+	while ((ch = getopt(argc, argv, "?cdhsvEQST")) != -1) {
 		switch (ch) {
 		case 'c':
 			action = Compress;
 			break;
 		case 'd':
 			action = Decompress;
+			break;
+		case 'h':
+			action = Hashes;
 			break;
 		case 's':
 			flags |= TACK_FLAG_BYTE_STATS;
@@ -94,8 +99,11 @@ main(int argc, char *argv[])
 	if (action == None)
 		usage();
 
+	if (action == Hashes && (flags & TACK_FLAG_BYTE_STATS) != 0)
+		usage();
+
 	if ((flags & TACK_FLAG_CODEC_TIMING) == 0 &&
-	    (flags & TACK_FLAG_CODEC_TIMING_EACH | TACK_FLAG_CODEC_TIMING_SAMPLES) != 0)
+	    (flags & (TACK_FLAG_CODEC_TIMING_EACH | TACK_FLAG_CODEC_TIMING_SAMPLES)) != 0)
 		usage();
 
 	if (verbose) {
@@ -179,6 +187,54 @@ decompress(const std::string& name, int ifd, int ofd, XCodec *codec, unsigned fl
 		print_ratio(name, outbytes, inbytes); /* Reverse order of compress().  */
 }
 
+static void
+hashes(int ifd, int ofd, unsigned flags, Timer *timer)
+{
+	Buffer input, output;
+	BufferSegment *seg;
+	unsigned o;
+
+	while (fill(ifd, &input)) {
+		if ((flags & TACK_FLAG_CODEC_TIMING) != 0)
+			timer->start();
+		XCodecHash xcodec_hash;
+		o = 0;
+		while (!input.empty()) {
+			input.moveout(&seg);
+
+			const uint8_t *p = seg->data();
+			const uint8_t *q = seg->end();
+			for (;;) {
+				while (o < XCODEC_SEGMENT_LENGTH && p != q) {
+					xcodec_hash.add(*p++);
+					o++;
+				}
+				if (o == XCODEC_SEGMENT_LENGTH) {
+					uint64_t hash = xcodec_hash.mix();
+					xcodec_hash.reset();
+					hash = BigEndian::encode(hash);
+					output.append(&hash);
+					o = 0;
+
+					if (p == q)
+						break;
+
+					continue;
+				}
+				ASSERT(p == q);
+				break;
+			}
+
+			seg->unref();
+		}
+		if ((flags & TACK_FLAG_CODEC_TIMING) != 0)
+			timer->stop();
+		flush(ofd, &output);
+	}
+	ASSERT(input.empty());
+	ASSERT(output.empty());
+}
+
 static bool
 fill(int fd, Buffer *input)
 {
@@ -245,6 +301,9 @@ process_file(const std::string& name, int ifd, int ofd, FileAction action, XCode
 		break;
 	case Decompress:
 		decompress(name, ifd, ofd, codec, flags, timer);
+		break;
+	case Hashes:
+		hashes(ifd, ofd, flags, timer);
 		break;
 	default:
 		NOTREACHED();
@@ -346,6 +405,7 @@ usage(void)
 {
 	fprintf(stderr,
 "usage: tack [-svQ] [-T [-ES]] -c [file ...]\n"
-"       tack [-svQ] [-T [-ES]] -d [file ...]\n");
+"       tack [-svQ] [-T [-ES]] -d [file ...]\n"
+"       tack [-vQ] [-T [-ES]] -h [file ...]\n");
 	exit(1);
 }
