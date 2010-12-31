@@ -24,8 +24,8 @@ static std::ostream& operator<< (std::ostream&, const Log::Priority&);
 static std::ostream& operator<< (std::ostream&, const struct timeval&);
 
 void
-Log::log(const Priority& priority, const LogHandle handle,
-	 const std::string message)
+Log::log(const Priority& priority, const LogHandle& handle,
+	 const std::string& message)
 {
 	std::list<LogMask>::const_iterator it;
 	std::string handle_string = (std::string)handle;

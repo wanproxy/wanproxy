@@ -137,7 +137,7 @@ public:
 		Log::log(priority_, handle_, str_.str());
 	}
 
-	static void log(const Priority&, const LogHandle, const std::string);
+	static void log(const Priority&, const LogHandle&, const std::string&);
 	static bool mask(const std::string&, const Priority&);
 };
 
