@@ -1,8 +1,0 @@
-General:
-
-o) A suitable C++ compiler, namely GCC 4 or Clang.
-o) GNU Make.
-
-Ubuntu:
-
-o) A UUID library, uuid-dev.
