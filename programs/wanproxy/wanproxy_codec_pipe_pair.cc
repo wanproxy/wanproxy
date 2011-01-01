@@ -75,6 +75,11 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 		return;
 	}
 
+	/*
+	 * XXX
+	 * I think the incoming Pipes may be in the wrong order.
+	 */
+
 	incoming_pipe_ = pipe_list.front().first;
 	outgoing_pipe_ = pipe_list.front().second;
 	pipe_list.pop_front();
