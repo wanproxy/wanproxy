@@ -99,6 +99,19 @@ public:
 	 * XXX
 	 * Need to write a compression function for this; get rid of the
 	 * completely non-entropic bits, anyway, and try to mix the others.
+	 *
+	 * Need to look at what bits can even possibly be set in sum2_,
+	 * looking at all possible ranges resulting from:
+	 * 	128*data[0] + 127*data[1] + ... 1*data[127]
+	 *
+	 * It seems like since each data[] must have at least 1 bit set,
+	 * there are a great many impossible values, and there is a large
+	 * minimal value.  Should be easy to compress, and would rather
+	 * have the extra bits changing from the normalized (i.e. non-zero)
+	 * input and have to compress than have no bits changing...but
+	 * perhaps those are extensionally-equivalent and that's just
+	 * hocus pocus computer science.  Need to think more clearly and
+	 * fully about it.
 	 */
 	uint64_t mix(void) const
 	{
