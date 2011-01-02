@@ -33,6 +33,8 @@ PipeProducer::input(Buffer *buf, EventCallback *cb)
 		 * delay further input.
 		 */
 		consume(buf);
+		if (error_ && !buf->empty())
+			buf->clear();
 		ASSERT(buf->empty());
 	} else {
 		buf->clear();
