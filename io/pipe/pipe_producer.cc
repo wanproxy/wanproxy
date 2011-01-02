@@ -26,6 +26,7 @@ PipeProducer::~PipeProducer()
 Action *
 PipeProducer::input(Buffer *buf, EventCallback *cb)
 {
+	DEBUG(log_) << "Input data." << std::endl << buf->hexdump();
 	if (!error_) {
 		/*
 		 * XXX
@@ -107,6 +108,8 @@ PipeProducer::produce(Buffer *buf)
 {
 	ASSERT(!error_);
 	ASSERT(!output_eos_);
+
+	DEBUG(log_) << "Produce data." << std::endl << buf->hexdump();
 
 	if (!buf->empty()) {
 		output_buffer_.append(buf);
