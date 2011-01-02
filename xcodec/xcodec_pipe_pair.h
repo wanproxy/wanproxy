@@ -112,9 +112,9 @@ public:
 	{
 		switch (type_) {
 		case XCodecPipePairTypeClient:
-			return (decoder_pipe_);
-		case XCodecPipePairTypeServer:
 			return (encoder_pipe_);
+		case XCodecPipePairTypeServer:
+			return (decoder_pipe_);
 		default:
 			NOTREACHED();
 		}
@@ -124,9 +124,9 @@ public:
 	{
 		switch (type_) {
 		case XCodecPipePairTypeClient:
-			return (encoder_pipe_);
-		case XCodecPipePairTypeServer:
 			return (decoder_pipe_);
+		case XCodecPipePairTypeServer:
+			return (encoder_pipe_);
 		default:
 			NOTREACHED();
 		}
