@@ -66,6 +66,7 @@ InflatePipe::consume(Buffer *in)
 				break;
 			if (error == Z_NEED_DICT || error == Z_DATA_ERROR ||
 			    error == Z_MEM_ERROR) {
+				ERROR(log_) << "inflate(): " << zError(error);
 				produce_error();
 				return;
 			}
@@ -88,6 +89,11 @@ InflatePipe::consume(Buffer *in)
 				if (flush == Z_FINISH && error == Z_STREAM_END) {
 					Buffer eos;
 					produce(&eos);
+				}
+
+				if (!in->empty()) {
+					ERROR(log_) << "Stream ended but more data follows.";
+					produce_error();
 				}
 				return;
 			}
