@@ -136,8 +136,8 @@ ProxyConnector::connect_complete(Event e)
 	remote_socket_ = (Socket *)e.data_;
 	ASSERT(remote_socket_ != NULL);
 
-	incoming_splice_ = new Splice(log_ + "/incoming", remote_socket_, incoming_pipe_, local_socket_);
-	outgoing_splice_ = new Splice(log_ + "/outgoing", local_socket_, outgoing_pipe_, remote_socket_);
+	incoming_splice_ = new Splice(log_ + "/incoming", local_socket_, incoming_pipe_, remote_socket_);
+	outgoing_splice_ = new Splice(log_ + "/outgoing", remote_socket_, outgoing_pipe_, local_socket_);
 
 	splice_pair_ = new SplicePair(outgoing_splice_, incoming_splice_);
 
