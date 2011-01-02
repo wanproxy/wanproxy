@@ -7,6 +7,26 @@
 
 struct iovec;
 
+/*
+ * XXX
+ * At one point BUFFER_SEGMENT_SIZE was equal to XCODEC_SEGMENT_LENGTH.  It
+ * is now much larger.  This means that if we want to store 128 bytes of
+ * data, we have use 2k of memory plus overhead.  If we want to store a
+ * megabyte, we have to store 16megabytes.  This is unacceptable.
+ *
+ * At one point I had code to add a further layer of indirection, BufferData
+ * or something like that, which sat below a BufferSegment as it is today
+ * and held the data buffer.  Then skip() and trim() and friends would
+ * adjust offset and length members in the BufferSegment, but not need to
+ * copy the data.  Then we don't even need to reference count BufferSegments,
+ * just BufferData.  If we did this, then a lot of things would be cleaner
+ * and there would be much less overhead in most cases, and the performance
+ * loss could be minimal.
+ *
+ * It might even make sense to just move the offset/length of the view of
+ * each BufferSegment into the Buffer, or up into some container class and
+ * leave BufferSegment much as it is today.
+ */
 #define	BUFFER_SEGMENT_SIZE		(2048)
 #define	BUFFER_SEGMENT_CACHE_LIMIT	(512)	/* 1MB of data.  */
 
