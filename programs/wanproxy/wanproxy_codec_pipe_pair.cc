@@ -25,24 +25,26 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
   pipe_pairs_(),
   pipe_links_()
 {
-	std::deque<std::pair<Pipe *, Pipe *> > pipe_list;
+	std::deque<Pipe *> incoming_pipe_list, outgoing_pipe_list;
 
 	if (incoming != NULL) {
 		if (incoming->compressor_) {
-			std::pair<Pipe *, Pipe *> pipe_pair(new DeflatePipe(incoming->compressor_level_), new InflatePipe());
+			Pipe *deflate_pipe = new DeflatePipe(incoming->compressor_level_);
+			Pipe *inflate_pipe = new InflatePipe();
 
-			pipes_.insert(pipe_pair.first);
-			pipes_.insert(pipe_pair.second);
+			incoming_pipe_list.push_back(inflate_pipe);
+			outgoing_pipe_list.push_front(deflate_pipe);
 
-			pipe_list.push_back(pipe_pair);
+			pipes_.insert(deflate_pipe);
+			pipes_.insert(inflate_pipe);
 		}
 
 		if (incoming->codec_ != NULL) {
 			PipePair *pair = new XCodecPipePair("/wanproxy/codec/" + incoming->name_, incoming->codec_, XCodecPipePairTypeServer);
 			pipe_pairs_.insert(pair);
 
-			std::pair<Pipe *, Pipe *> pipe_pair(pair->get_incoming(), pair->get_outgoing());
-			pipe_list.push_back(pipe_pair);
+			incoming_pipe_list.push_back(pair->get_incoming());
+			outgoing_pipe_list.push_front(pair->get_outgoing());
 		}
 	}
 
@@ -51,21 +53,25 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 			PipePair *pair = new XCodecPipePair("/wanproxy/codec/" + outgoing->name_, outgoing->codec_, XCodecPipePairTypeClient);
 			pipe_pairs_.insert(pair);
 
-			std::pair<Pipe *, Pipe *> pipe_pair(pair->get_incoming(), pair->get_outgoing());
-			pipe_list.push_back(pipe_pair);
+			incoming_pipe_list.push_back(pair->get_incoming());
+			outgoing_pipe_list.push_front(pair->get_outgoing());
 		}
 
 		if (outgoing->compressor_) {
-			std::pair<Pipe *, Pipe *> pipe_pair(new InflatePipe(), new DeflatePipe(outgoing->compressor_level_));
+			Pipe *deflate_pipe = new DeflatePipe(outgoing->compressor_level_);
+			Pipe *inflate_pipe = new InflatePipe();
 
-			pipes_.insert(pipe_pair.first);
-			pipes_.insert(pipe_pair.second);
+			incoming_pipe_list.push_back(deflate_pipe);
+			outgoing_pipe_list.push_front(inflate_pipe);
 
-			pipe_list.push_back(pipe_pair);
+			pipes_.insert(deflate_pipe);
+			pipes_.insert(inflate_pipe);
 		}
 	}
 
-	if (pipe_list.empty()) {
+	ASSERT(incoming_pipe_list.empty() == outgoing_pipe_list.empty());
+
+	if (incoming_pipe_list.empty() && outgoing_pipe_list.empty()) {
 		incoming_pipe_ = new PipeNull();
 		outgoing_pipe_ = new PipeNull();
 
@@ -75,24 +81,25 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 		return;
 	}
 
-	/*
-	 * XXX
-	 * I think the incoming Pipes may be in the wrong order.
-	 */
+	ASSERT(incoming_pipe_list.size() == outgoing_pipe_list.size());
 
-	incoming_pipe_ = pipe_list.front().first;
-	outgoing_pipe_ = pipe_list.front().second;
-	pipe_list.pop_front();
+	incoming_pipe_ = incoming_pipe_list.front();
+	incoming_pipe_list.pop_front();
 
-	while (!pipe_list.empty()) {
-		incoming_pipe_ = new PipeLink(incoming_pipe_, pipe_list.front().first);
-		outgoing_pipe_ = new PipeLink(outgoing_pipe_, pipe_list.front().second);
+	outgoing_pipe_ = outgoing_pipe_list.front();
+	outgoing_pipe_list.pop_front();
+
+	while (!incoming_pipe_list.empty() && !outgoing_pipe_list.empty()) {
+		incoming_pipe_ = new PipeLink(incoming_pipe_, incoming_pipe_list.front());
+		outgoing_pipe_ = new PipeLink(outgoing_pipe_, outgoing_pipe_list.front());
 
 		pipe_links_.push_front(incoming_pipe_);
 		pipe_links_.push_front(outgoing_pipe_);
 
-		pipe_list.pop_front();
+		incoming_pipe_list.pop_front();
+		outgoing_pipe_list.pop_front();
 	}
+	ASSERT(incoming_pipe_list.empty() && outgoing_pipe_list.empty());
 }
 
 WANProxyCodecPipePair::~WANProxyCodecPipePair()
