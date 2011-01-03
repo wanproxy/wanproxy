@@ -117,9 +117,9 @@ public:
 	{
 		ASSERT(length_ == XCODEC_SEGMENT_LENGTH);
 
-		uint64_t bits_hash = (bits_.sum2_ << 10) | bits_.sum1_;
-		uint64_t bytes_hash = (bytes_.sum2_ << 15) | bytes_.sum1_;
-		return ((bits_hash << 36) | bytes_hash);
+		uint64_t bits_hash = (bits_.sum1_ << 16) + bits_.sum2_;
+		uint64_t bytes_hash = (bytes_.sum1_ << 20) + bytes_.sum2_;
+		return ((bits_hash << 36) + bytes_hash);
 	}
 
 	static uint64_t hash(const uint8_t *data)
