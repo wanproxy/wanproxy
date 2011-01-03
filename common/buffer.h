@@ -26,6 +26,11 @@ struct iovec;
  * It might even make sense to just move the offset/length of the view of
  * each BufferSegment into the Buffer, or up into some container class and
  * leave BufferSegment much as it is today.
+ *
+ * At the very least, it would be nice to allocate big slabs of data to point
+ * BufferSegments at, so that perhaps we could opportunistically use smaller
+ * BufferSegments and not be so unfriendly as to constantly span page
+ * boundaries, making swapping and all kinds of everything worse.
  */
 #define	BUFFER_SEGMENT_SIZE		(2048)
 #define	BUFFER_SEGMENT_CACHE_LIMIT	(512)	/* 1MB of data.  */
