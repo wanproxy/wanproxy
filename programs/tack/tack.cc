@@ -323,6 +323,7 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, unsigned
 {
 	Timer *timer;
 	int ifd, ofd;
+	bool opened;
 
 	if ((flags & TACK_FLAG_CODEC_TIMING) != 0 &&
 	    (flags & TACK_FLAG_CODEC_TIMING_EACH) == 0)
@@ -331,6 +332,8 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, unsigned
 		timer = NULL;
 
 	if (argc == 0) {
+		opened = true;
+
 		ifd = STDIN_FILENO;
 		if ((flags & TACK_FLAG_QUIET_OUTPUT) != 0)
 			ofd = -1;
@@ -338,6 +341,8 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, unsigned
 			ofd = STDOUT_FILENO;
 		process_file("<stdin>", ifd, ofd, action, codec, flags, timer);
 	} else {
+		opened = false;
+
 		while (argc--) {
 			const char *file = *argv++;
 
@@ -346,6 +351,8 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, unsigned
 				ERROR("/tack") << "Could not open: " << file;
 				continue;
 			}
+
+			opened = true;
 
 			if ((flags & TACK_FLAG_QUIET_OUTPUT) != 0)
 				ofd = -1;
@@ -358,14 +365,16 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, unsigned
 		}
 	}
 
-	if ((flags & TACK_FLAG_CODEC_TIMING) != 0 &&
-	    (flags & TACK_FLAG_CODEC_TIMING_EACH) == 0) {
-		ASSERT(timer != NULL);
-		if ((flags & TACK_FLAG_CODEC_TIMING_SAMPLES) != 0)
-			time_samples("", timer);
-		else
-			time_stats("<total>", timer);
-		delete timer;
+	if (opened) {
+		if ((flags & TACK_FLAG_CODEC_TIMING) != 0 &&
+		    (flags & TACK_FLAG_CODEC_TIMING_EACH) == 0) {
+			ASSERT(timer != NULL);
+			if ((flags & TACK_FLAG_CODEC_TIMING_SAMPLES) != 0)
+				time_samples("", timer);
+			else
+				time_stats("<total>", timer);
+			delete timer;
+		}
 	}
 }
 
