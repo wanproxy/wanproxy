@@ -33,7 +33,7 @@ struct iovec;
  * boundaries, making swapping and all kinds of everything worse.
  */
 #define	BUFFER_SEGMENT_SIZE		(2048)
-#define	BUFFER_SEGMENT_CACHE_LIMIT	(512)	/* 1MB of data.  */
+#define	BUFFER_SEGMENT_CACHE_LIMIT	((1024 * 1024) / BUFFER_SEGMENT_SIZE)
 
 typedef	unsigned buffer_segment_size_t;
 
