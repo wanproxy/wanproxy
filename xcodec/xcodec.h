@@ -59,7 +59,7 @@
  */
 #define	XCODEC_OP_BACKREF	((uint8_t)0x03)
 
-#define	XCODEC_SEGMENT_LENGTH	(128)
+#define	XCODEC_SEGMENT_LENGTH	(2048)
 
 class XCodecCache;
 

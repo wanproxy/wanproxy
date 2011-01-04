@@ -12,7 +12,9 @@ struct iovec;
  * At one point BUFFER_SEGMENT_SIZE was equal to XCODEC_SEGMENT_LENGTH.  It
  * is now much larger.  This means that if we want to store 128 bytes of
  * data, we have use 2k of memory plus overhead.  If we want to store a
- * megabyte, we have to store 16megabytes.  This is unacceptable.
+ * megabyte, we have to store 16megabytes.  This is unacceptable.  For now
+ * we've simply made the XCODEC_SEGMENT_LENGTH 2048, too, but it would be
+ * best to be able to handle mismatches.
  *
  * At one point I had code to add a further layer of indirection, BufferData
  * or something like that, which sat below a BufferSegment as it is today
