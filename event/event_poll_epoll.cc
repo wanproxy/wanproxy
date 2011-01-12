@@ -156,6 +156,11 @@ EventPoll::wait(int ms)
 				poll_handler = &read_poll_[ev->data.fd];
 			} else if (write_poll_.find(ev->data.fd) != write_poll_.end()) {
 				poll_handler = &write_poll_[ev->data.fd];
+
+				if ((ev->events & (EPOLLERR | EPOLLHUP)) == EPOLLHUP) {
+					DEBUG(log_) << "Got EPOLLHUP on write poll.";
+					continue;
+				}
 			} else {
 				HALT(log_) << "Unexpected poll fd.";
 				continue;
