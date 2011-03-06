@@ -965,7 +965,7 @@ public:
 			for (i = 0; i < len; i++) {
 				if (set[p[i]] == 0)
 					continue;
-				*offsetp = offset + (p - seg->data());
+				*offsetp = offset + i + (p - seg->data());
 				return (true);
 			}
 			offset += len;
