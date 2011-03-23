@@ -206,6 +206,12 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				 * This hash isn't usable because it collides
 				 * with another, so keep looking for something
 				 * viable.
+				 *
+				 * XXX
+				 * If this is the first hash (i.e.
+				 * !candidate.set_) then we can adjust the
+				 * start of the current window and escape the
+				 * first byte right away.  Does that help?
 				 */
 				oseg->unref();
 				DEBUG(log_) << "Collision in first pass.";
@@ -213,8 +219,8 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			}
 
 			/*
-			 * Not defined before, it's a candidate for declaration if
-			 * we don't already have one.
+			 * Not defined before, it's a candidate for declaration
+			 * if we don't already have one.
 			 */
 			if (candidate.set_) {
 				/*
