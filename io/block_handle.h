@@ -11,7 +11,7 @@ public:
 	BlockHandle(int, size_t);
 	~BlockHandle();
 
-	virtual Action *close(EventCallback *);
+	virtual Action *close(Callback *);
 	virtual Action *read(off_t, EventCallback *);
 	virtual Action *write(off_t, Buffer *, EventCallback *);
 };

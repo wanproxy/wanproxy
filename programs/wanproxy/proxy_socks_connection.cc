@@ -233,21 +233,12 @@ ProxySocksConnection::write_complete(Event e)
 }
 
 void
-ProxySocksConnection::close_complete(Event e)
+ProxySocksConnection::close_complete(void)
 {
 	action_->cancel();
 	action_ = NULL;
 
-	switch (e.type_) {
-	case Event::Done:
-		break;
-	default:
-		/* XXX Never sure what to do here.  */
-		ERROR(log_) << "Unexpected event: " << e;
-		schedule_close();
-		return;
-	}
-
+	ASSERT(client_ != NULL);
 	delete client_;
 	client_ = NULL;
 
@@ -331,6 +322,6 @@ ProxySocksConnection::schedule_close(void)
 	ASSERT(action_ == NULL);
 
 	ASSERT(client_ != NULL);
-	EventCallback *cb = callback(this, &ProxySocksConnection::close_complete);
+	Callback *cb = callback(this, &ProxySocksConnection::close_complete);
 	action_ = client_->close(cb);
 }

@@ -1,8 +1,7 @@
 #include <common/buffer.h>
 #include <common/test.h>
 
-#include <event/action.h>
-#include <event/callback.h>
+#include <event/event_callback.h>
 #include <event/event_main.h>
 
 #include <io/socket/socket.h>
@@ -66,16 +65,12 @@ public:
 		}
 	}
 
-	void close_complete(Event e)
+	void close_complete(void)
 	{
 		action_->cancel();
 		action_ = NULL;
 
-		{
-			Test _(group_, "Socket closed successfully");
-			if (e.type_ == Event::Done)
-				_.pass();
-		}
+		ASSERT(socket_ != NULL);
 		delete socket_;
 		socket_ = NULL;
 	}
@@ -114,7 +109,7 @@ public:
 			return;
 		}
 
-		EventCallback *cb = callback(this, &Connector::close_complete);
+		Callback *cb = callback(this, &Connector::close_complete);
 		action_ = socket_->close(cb);
 	}
 };
@@ -212,20 +207,16 @@ public:
 				_.pass();
 		}
 
-		EventCallback *cb = callback(this, &Listener::close_complete);
+		Callback *cb = callback(this, &Listener::close_complete);
 		action_ = socket_->close(cb);
 	}
 
-	void close_complete(Event e)
+	void close_complete(void)
 	{
 		action_->cancel();
 		action_ = NULL;
 
-		{
-			Test _(group_, "Socket closed successfully");
-			if (e.type_ == Event::Done)
-				_.pass();
-		}
+		ASSERT(socket_ != NULL);
 		delete socket_;
 		socket_ = NULL;
 
@@ -268,20 +259,16 @@ public:
 			if (read_buffer_.equal(data, sizeof data))
 				_.pass();
 		}
-		EventCallback *cb = callback(this, &Listener::client_close);
+		Callback *cb = callback(this, &Listener::client_close);
 		action_ = client_->close(cb);
 	}
 
-	void client_close(Event e)
+	void client_close(void)
 	{
 		action_->cancel();
 		action_ = NULL;
 
-		{
-			Test _(group_, "Client socket closed successfully");
-			if (e.type_ == Event::Done)
-				_.pass();
-		}
+		ASSERT(client_ != NULL);
 		delete client_;
 		client_ = NULL;
 

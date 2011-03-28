@@ -39,7 +39,7 @@ private:
 private:
 	void read_complete(Event);
 	void write_complete(Event);
-	void close_complete(Event);
+	void close_complete(void);
 
 	void schedule_read(size_t);
 	void schedule_write(void);

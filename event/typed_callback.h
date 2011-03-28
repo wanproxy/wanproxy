@@ -5,10 +5,12 @@
 
 template<typename T>
 class TypedCallback : public Callback {
+	bool have_param_;
 	T param_;
 protected:
 	TypedCallback(CallbackScheduler *scheduler)
 	: Callback(scheduler),
+	  have_param_(false),
 	  param_()
 	{ }
 
@@ -21,6 +23,7 @@ protected:
 
 	void operator() (void)
 	{
+		ASSERT(have_param_);
 		(*this)(param_);
 	}
 
@@ -28,6 +31,7 @@ public:
 	void param(T p)
 	{
 		param_ = p;
+		have_param_ = true;
 	}
 };
 

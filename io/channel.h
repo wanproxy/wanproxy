@@ -13,7 +13,15 @@ public:
 	virtual ~Channel()
 	{ }
 
-	virtual Action *close(EventCallback *) = 0;
+	/*
+	 * NB:
+	 * close does not take an EventCallback.  It can
+	 * fail in any meaningful sense, but it absolutely
+	 * must leave the Channel in a state in which it
+	 * can be deleted, which is what callers care about,
+	 * not whether it closed with an error.
+	 */
+	virtual Action *close(Callback *) = 0;
 };
 
 class BlockChannel : public Channel {

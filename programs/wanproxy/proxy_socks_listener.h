@@ -19,7 +19,7 @@ public:
 
 private:
 	void accept_complete(Event);
-	void close_complete(Event);
+	void close_complete(void);
 	void stop(void);
 };
 

@@ -88,7 +88,7 @@ UDPClient::connect_cancel(void)
 	}
 
 	ASSERT(socket_ != NULL);
-	EventCallback *cb = callback(this, &UDPClient::close_complete);
+	Callback *cb = callback(this, &UDPClient::close_complete);
 	close_action_ = socket_->close(cb);
 }
 
@@ -106,18 +106,10 @@ UDPClient::connect_complete(Event e)
 }
 
 void
-UDPClient::close_complete(Event e)
+UDPClient::close_complete(void)
 {
 	close_action_->cancel();
 	close_action_ = NULL;
-
-	switch (e.type_) {
-	case Event::Done:
-		break;
-	default:
-		ERROR(log_) << "Unexpected event: " << e;
-		break;
-	}
 
 	delete this;
 }

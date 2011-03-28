@@ -76,7 +76,7 @@ ProxyConnector::~ProxyConnector()
 }
 
 void
-ProxyConnector::close_complete(Event e, void *channel)
+ProxyConnector::close_complete(void *channel)
 {
 	if (channel == (void *)local_socket_) {
 		local_action_->cancel();
@@ -86,15 +86,6 @@ ProxyConnector::close_complete(Event e, void *channel)
 	if (channel == (void *)remote_socket_) {
 		remote_action_->cancel();
 		remote_action_ = NULL;
-	}
-
-	switch (e.type_) {
-	case Event::Done:
-		break;
-	default:
-		/* XXX Never sure what to do here.  */
-		ERROR(log_) << "Unexpected event: " << e;
-		return;
 	}
 
 	if (channel == (void *)local_socket_) {
@@ -229,13 +220,13 @@ ProxyConnector::schedule_close(void)
 
 	ASSERT(local_action_ == NULL);
 	ASSERT(local_socket_ != NULL);
-	EventCallback *lcb = callback(this, &ProxyConnector::close_complete,
+	Callback *lcb = callback(this, &ProxyConnector::close_complete,
 				      (void *)local_socket_);
 	local_action_ = local_socket_->close(lcb);
 
 	ASSERT(remote_action_ == NULL);
 	if (remote_socket_ != NULL) {
-		EventCallback *rcb = callback(this, &ProxyConnector::close_complete,
+		Callback *rcb = callback(this, &ProxyConnector::close_complete,
 					      (void *)remote_socket_);
 		remote_action_ = remote_socket_->close(rcb);
 	}

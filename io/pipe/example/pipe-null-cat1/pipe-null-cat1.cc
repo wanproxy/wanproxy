@@ -91,10 +91,10 @@ public:
 		} else {
 			ASSERT(e.type_ == Event::EOS);
 
-			EventCallback *icb = callback(this, &Catenate::close_complete, &input_);
+			Callback *icb = callback(this, &Catenate::close_complete, &input_);
 			input_action_ = input_.close(icb);
 
-			EventCallback *ocb = callback(this, &Catenate::close_complete, &output_);
+			Callback *ocb = callback(this, &Catenate::close_complete, &output_);
 			output_action_ = output_.close(ocb);
 		}
 	}
@@ -116,7 +116,7 @@ public:
 		input_action_ = input_.read(0, cb);
 	}
 
-	void close_complete(Event e, StreamHandle *fd)
+	void close_complete(StreamHandle *fd)
 	{
 		if (fd == &input_) {
 			input_action_->cancel();
@@ -126,14 +126,6 @@ public:
 			output_action_ = NULL;
 		} else {
 			NOTREACHED();
-		}
-
-		switch (e.type_) {
-		case Event::Done:
-			break;
-		default:
-			HALT(log_) << "Unexpected event: " << e;
-			return;
 		}
 	}
 };

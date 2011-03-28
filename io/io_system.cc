@@ -61,7 +61,7 @@ IOSystem::Handle::close_callback(void)
 			close_action_ = close_schedule();
 			break;
 		default:
-			close_callback_->param(Event(Event::Error, errno));
+			ERROR(log_) << "Close returned error: " << strerror(errno);
 			Action *a = close_callback_->schedule();
 			close_action_ = a;
 			close_callback_ = NULL;
@@ -70,7 +70,6 @@ IOSystem::Handle::close_callback(void)
 		return;
 	}
 	fd_ = -1;
-	close_callback_->param(Event::Done);
 	Action *a = close_callback_->schedule();
 	close_action_ = a;
 	close_callback_ = NULL;
@@ -494,7 +493,7 @@ IOSystem::detach(int fd, Channel *owner)
 }
 
 Action *
-IOSystem::close(int fd, Channel *owner, EventCallback *cb)
+IOSystem::close(int fd, Channel *owner, Callback *cb)
 {
 	IOSystem::Handle *h;
 

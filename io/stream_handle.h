@@ -11,7 +11,7 @@ public:
 	StreamHandle(int);
 	~StreamHandle();
 
-	virtual Action *close(EventCallback *);
+	virtual Action *close(Callback *);
 	virtual Action *read(size_t, EventCallback *);
 	virtual Action *write(Buffer *, EventCallback *);
 	virtual Action *shutdown(bool, bool, EventCallback *);

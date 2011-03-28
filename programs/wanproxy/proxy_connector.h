@@ -35,7 +35,7 @@ public:
 private:
 	~ProxyConnector();
 
-	void close_complete(Event, void *);
+	void close_complete(void *);
 	void connect_complete(Event);
 	void splice_complete(Event);
 	void stop(void);

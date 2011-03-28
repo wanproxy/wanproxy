@@ -79,19 +79,12 @@ ProxyListener::accept_complete(Event e)
 }
 
 void
-ProxyListener::close_complete(Event e)
+ProxyListener::close_complete(void)
 {
 	close_action_->cancel();
 	close_action_ = NULL;
 
-	switch (e.type_) {
-	case Event::Done:
-		break;
-	default:
-		HALT(log_) << "Unexpected event: " << e;
-		return;
-	}
-
+	ASSERT(server_ != NULL);
 	delete server_;
 	server_ = NULL;
 
@@ -109,6 +102,6 @@ ProxyListener::stop(void)
 
 	ASSERT(close_action_ == NULL);
 
-	EventCallback *cb = callback(this, &ProxyListener::close_complete);
+	Callback *cb = callback(this, &ProxyListener::close_complete);
 	close_action_ = server_->close(cb);
 }

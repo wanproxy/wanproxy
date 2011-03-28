@@ -19,7 +19,7 @@ public:
 		}
 	}
 
-	Action *close(EventCallback *cb)
+	Action *close(Callback *cb)
 	{
 		return (socket_->close(cb));
 	}

@@ -88,7 +88,7 @@ TCPClient::connect_cancel(void)
 	}
 
 	ASSERT(socket_ != NULL);
-	EventCallback *cb = callback(this, &TCPClient::close_complete);
+	Callback *cb = callback(this, &TCPClient::close_complete);
 	close_action_ = socket_->close(cb);
 }
 
@@ -106,18 +106,10 @@ TCPClient::connect_complete(Event e)
 }
 
 void
-TCPClient::close_complete(Event e)
+TCPClient::close_complete(void)
 {
 	close_action_->cancel();
 	close_action_ = NULL;
-
-	switch (e.type_) {
-	case Event::Done:
-		break;
-	default:
-		ERROR(log_) << "Unexpected event: " << e;
-		break;
-	}
 
 	delete this;
 }

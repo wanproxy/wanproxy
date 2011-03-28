@@ -18,7 +18,7 @@ class TCPClient {
 	void connect_cancel(void);
 	void connect_complete(Event);
 
-	void close_complete(Event);
+	void close_complete(void);
 
 public:
 	static Action *connect(SocketAddressFamily, const std::string&, EventCallback *);

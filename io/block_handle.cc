@@ -30,7 +30,7 @@ BlockHandle::~BlockHandle()
 }
 
 Action *
-BlockHandle::close(EventCallback *cb)
+BlockHandle::close(Callback *cb)
 {
 	return (IOSystem::instance()->close(fd_, this, cb));
 }

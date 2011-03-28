@@ -14,7 +14,7 @@ class IOSystem {
 		int fd_;
 		Channel *owner_;
 
-		EventCallback *close_callback_;
+		Callback *close_callback_;
 		Action *close_action_;
 
 		off_t read_offset_;
@@ -65,7 +65,7 @@ public:
 	void attach(int, Channel *);
 	void detach(int, Channel *);
 
-	Action *close(int, Channel *, EventCallback *);
+	Action *close(int, Channel *, Callback *);
 	Action *read(int, Channel *, off_t, size_t, EventCallback *);
 	Action *write(int, Channel *, off_t, Buffer *, EventCallback *);
 

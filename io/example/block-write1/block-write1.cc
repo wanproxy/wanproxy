@@ -54,7 +54,7 @@ public:
 		DEBUG(log_) << "Finished block #" << block_number_ << "/" << block_count_;
 
 		if (++block_number_ == block_count_) {
-			EventCallback *cb = callback(this, &BlockWriter::close_complete);
+			Callback *cb = callback(this, &BlockWriter::close_complete);
 			close_action_ = dev_.close(cb);
 			return;
 		}
@@ -64,18 +64,10 @@ public:
 		write_action_ = dev_.write(block_number_, &buf, cb);
 	}
 
-	void close_complete(Event e)
+	void close_complete(void)
 	{
 		close_action_->cancel();
 		close_action_ = NULL;
-
-		switch (e.type_) {
-		case Event::Done:
-			break;
-		default:
-			HALT(log_) << "Unexpected event: " << e;
-			return;
-		}
 	}
 };
 

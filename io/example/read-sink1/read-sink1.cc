@@ -40,7 +40,7 @@ public:
 		}
 
 		if (e.type_ == Event::EOS) {
-			EventCallback *cb = callback(this, &Sink::close_complete);
+			Callback *cb = callback(this, &Sink::close_complete);
 			action_ = fd_.close(cb);
 			return;
 		}
@@ -49,18 +49,10 @@ public:
 		action_ = fd_.read(0, cb);
 	}
 
-	void close_complete(Event e)
+	void close_complete(void)
 	{
 		action_->cancel();
 		action_ = NULL;
-
-		switch (e.type_) {
-		case Event::Done:
-			break;
-		default:
-			HALT(log_) << "Unexpected event: " << e;
-			return;
-		}
 	}
 };
 

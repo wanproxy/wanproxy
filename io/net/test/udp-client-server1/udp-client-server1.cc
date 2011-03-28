@@ -60,16 +60,12 @@ public:
 		}
 	}
 
-	void close_complete(Event e)
+	void close_complete(void)
 	{
 		action_->cancel();
 		action_ = NULL;
 
-		{
-			Test _(group_, "Socket closed successfully");
-			if (e.type_ == Event::Done)
-				_.pass();
-		}
+		ASSERT(socket_ != NULL);
 		delete socket_;
 		socket_ = NULL;
 	}
@@ -115,7 +111,7 @@ public:
 			return;
 		}
 
-		EventCallback *cb = callback(this, &Connector::close_complete);
+		Callback *cb = callback(this, &Connector::close_complete);
 		action_ = socket_->close(cb);
 	}
 };
@@ -198,20 +194,16 @@ public:
 			if (read_buffer_.equal(data, sizeof data))
 				_.pass();
 		}
-		EventCallback *cb = callback(this, &Listener::close_complete);
+		Callback *cb = callback(this, &Listener::close_complete);
 		action_ = server_->close(cb);
 	}
 
-	void close_complete(Event e)
+	void close_complete(void)
 	{
 		action_->cancel();
 		action_ = NULL;
 
-		{
-			Test _(group_, "Client socket closed successfully");
-			if (e.type_ == Event::Done)
-				_.pass();
-		}
+		ASSERT(server_ != NULL);
 		delete server_;
 		server_ = NULL;
 

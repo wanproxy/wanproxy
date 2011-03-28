@@ -43,7 +43,7 @@ public:
 		}
 
 		if (e.type_ == Event::Error) {
-			EventCallback *cb = callback(this, &Source::close_complete);
+			Callback *cb = callback(this, &Source::close_complete);
 			action_ = fd_.close(cb);
 			return;
 		}
@@ -53,18 +53,10 @@ public:
 		action_ = fd_.write(&tmp, cb);
 	}
 
-	void close_complete(Event e)
+	void close_complete(void)
 	{
 		action_->cancel();
 		action_ = NULL;
-
-		switch (e.type_) {
-		case Event::Done:
-			break;
-		default:
-			HALT(log_) << "Unexpected event: " << e;
-			return;
-		}
 	}
 };
 
