@@ -1,3 +1,3 @@
 SUBDIR+=socket-accept-connect1
 
-include ../../common/subdir.mk
+include ../../../common/subdir.mk

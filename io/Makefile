@@ -1,5 +1,6 @@
 SUBDIR+=net
 SUBDIR+=pipe
+SUBDIR+=socket
 
 SUBDIR+=example
 
