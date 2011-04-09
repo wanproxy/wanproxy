@@ -14,6 +14,9 @@
 #include <xcodec/xcodec_pipe_pair.h>
 
 /*
+ * XXX
+ * This is no longer up-to-date.
+ *
  * And now for something completely different, a note on how end-of-stream
  * indication works with the XCodec.
  *
@@ -23,7 +26,7 @@
  * smoothly.  When you have two connections, a symbol may be defined in the
  * first and referenced in the second, and the reference in the second stream
  * may be decoded before the definition in the first one.  In this case, we
- * have <ASK> and <LEARN> in the <OOB> stream to communicate bidirectionally
+ * have <ASK> and <LEARN> in the stream to communicate bidirectionally
  * to get the reference.  If we're actually going to get the definition soon,
  * that's a bit wasteful, and there are a lot of optimizations we can make,
  * but the basic principle needs to be robust in case, say, the first
@@ -115,7 +118,7 @@
  * 	<FRAME> length[uint16_t] data[uint8_t x length]
  *
  * Effects:
- * 	Frames an encoded chunk.  As distinct to OP_OOB below.
+ * 	Frames an encoded chunk.
  *
  * Side-effects:
  * 	None.
