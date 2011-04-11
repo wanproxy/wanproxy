@@ -1,5 +1,8 @@
 PROGRAM=wanproxy
 
+SRCS+=	monitor_connection.cc
+SRCS+=	monitor_listener.cc
+
 SRCS+=	proxy_connector.cc
 SRCS+=	proxy_listener.cc
 
@@ -14,6 +17,7 @@ SRCS+=	wanproxy_config_class_interface.cc
 SRCS+=	wanproxy_config_class_peer.cc
 SRCS+=	wanproxy_config_class_proxy.cc
 SRCS+=	wanproxy_config_class_proxy_socks.cc
+SRCS+=	wanproxy_config_class_monitor.cc
 SRCS+=	wanproxy_config_type_codec.cc
 SRCS+=	wanproxy_config_type_compressor.cc
 SRCS+=	wanproxy_config_type_proxy_type.cc

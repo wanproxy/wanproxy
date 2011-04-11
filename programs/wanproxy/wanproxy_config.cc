@@ -11,6 +11,7 @@
 #include "wanproxy_config.h"
 #include "wanproxy_config_class_codec.h"
 #include "wanproxy_config_class_interface.h"
+#include "wanproxy_config_class_monitor.h"
 #include "wanproxy_config_class_peer.h"
 #include "wanproxy_config_class_proxy.h"
 #include "wanproxy_config_class_proxy_socks.h"
@@ -127,9 +128,10 @@ WANProxyConfig::configure(const std::string& name)
 
 	config_ = new Config();
 	config_->import(&config_class_log_mask);
-	config_->import(&wanproxy_config_class_interface);
-	config_->import(&wanproxy_config_class_peer);
 	config_->import(&wanproxy_config_class_codec);
+	config_->import(&wanproxy_config_class_interface);
+	config_->import(&wanproxy_config_class_monitor);
+	config_->import(&wanproxy_config_class_peer);
 	config_->import(&wanproxy_config_class_proxy);
 	config_->import(&wanproxy_config_class_proxy_socks);
 
