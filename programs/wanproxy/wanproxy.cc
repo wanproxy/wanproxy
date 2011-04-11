@@ -54,8 +54,10 @@ main(int argc, char *argv[])
 	}
 
 	WANProxyConfig config;
-	if (!config.configure(configfile))
-		HALT("/wanproxy") << "Could not configure proxies.";
+	if (!config.configure(configfile)) {
+		ERROR("/wanproxy") << "Could not configure proxies.";
+		return (1);
+	}
 
 	event_main();
 }
