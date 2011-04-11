@@ -7,6 +7,7 @@
 
 class Config;
 class ConfigClass;
+class ConfigExporter;
 
 class ConfigObject {
 	friend class Config;
@@ -85,6 +86,8 @@ public:
 			return (false);
 		return (true);
 	}
+
+	void marshall(ConfigExporter *) const;
 
 	std::string name(void) const
 	{

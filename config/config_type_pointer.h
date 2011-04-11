@@ -9,7 +9,7 @@
 struct ConfigValue;
 
 class ConfigTypePointer : public ConfigType {
-	std::map<ConfigValue *, ConfigObject *> pointers_;
+	std::map<const ConfigValue *, ConfigObject *> pointers_;
 public:
 	ConfigTypePointer(void)
 	: ConfigType("pointer"),
@@ -22,9 +22,9 @@ public:
 	}
 
 	template<typename T>
-	bool get(ConfigValue *cv, ConfigObject **cop, T **ccp) const
+	bool get(const ConfigValue *cv, ConfigObject **cop, T **ccp) const
 	{
-		std::map<ConfigValue *, ConfigObject *>::const_iterator it;
+		std::map<const ConfigValue *, ConfigObject *>::const_iterator it;
 
 		it = pointers_.find(cv);
 		if (it == pointers_.end()) {
@@ -56,7 +56,9 @@ public:
 		return (true);
 	}
 
-	bool set(ConfigValue *, const std::string&);
+	void marshall(ConfigExporter *, const ConfigValue *) const;
+
+	bool set(const ConfigValue *, const std::string&);
 };
 
 extern ConfigTypePointer config_type_pointer;

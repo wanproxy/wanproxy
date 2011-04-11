@@ -2,6 +2,7 @@
 #define	CONFIG_VALUE_H
 
 class Config;
+class ConfigExporter;
 class ConfigType;
 
 struct ConfigValue {
@@ -17,6 +18,8 @@ struct ConfigValue {
 
 	~ConfigValue()
 	{ }
+
+	void marshall(ConfigExporter *) const;
 };
 
 #endif /* !CONFIG_VALUE_H */

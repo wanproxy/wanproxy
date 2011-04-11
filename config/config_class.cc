@@ -1,4 +1,5 @@
 #include <config/config_class.h>
+#include <config/config_exporter.h>
 #include <config/config_object.h>
 #include <config/config_type.h>
 #include <config/config_value.h>
@@ -43,4 +44,15 @@ ConfigClass::set(ConfigObject *co, const std::string& mname, ConfigType *ct, con
 	}
 
 	return (true);
+}
+
+void
+ConfigClass::marshall(ConfigExporter *exp, const ConfigObject *co) const
+{
+	std::map<std::string, ConfigValue *>::const_iterator it;
+	for (it = co->members_.begin(); it != co->members_.end(); ++it) {
+		const ConfigValue *cv = it->second;
+
+		exp->field(cv, it->first);
+	}
 }

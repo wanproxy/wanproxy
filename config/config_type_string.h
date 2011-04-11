@@ -3,12 +3,13 @@
 
 #include <map>
 
+#include <config/config_exporter.h>
 #include <config/config_type.h>
 
 struct ConfigValue;
 
 class ConfigTypeString : public ConfigType {
-	std::map<ConfigValue *, std::string> strings_;
+	std::map<const ConfigValue *, std::string> strings_;
 public:
 	ConfigTypeString(void)
 	: ConfigType("string"),
@@ -20,17 +21,28 @@ public:
 		strings_.clear();
 	}
 
-	bool get(ConfigValue *cv, std::string *strp)
+	bool get(const ConfigValue *cv, std::string *strp) const
 	{
-		if (strings_.find(cv) == strings_.end()) {
+		std::map<const ConfigValue *, std::string>::const_iterator it;
+		it = strings_.find(cv);
+		if (it == strings_.end()) {
 			ERROR("/config/type/string") << "Value not set.";
 			return (false);
 		}
-		*strp = strings_[cv];
+		*strp = it->second;
 		return (true);
 	}
 
-	bool set(ConfigValue *cv, const std::string& vstr)
+	void marshall(ConfigExporter *exp, const ConfigValue *cv) const
+	{
+		std::string str;
+		if (!get(cv, &str))
+			HALT("/config/type/string") << "Trying to marshall unset value.";
+
+		exp->value(cv, str);
+	}
+
+	bool set(const ConfigValue *cv, const std::string& vstr)
 	{
 		if (strings_.find(cv) != strings_.end()) {
 			ERROR("/config/type/string") << "Value already set.";

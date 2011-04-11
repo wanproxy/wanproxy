@@ -8,8 +8,8 @@ class ConfigObject;
 
 class ConfigClassAddress : public ConfigClass {
 public:
-	ConfigClassAddress(const std::string& name = "address")
-	: ConfigClass(name)
+	ConfigClassAddress(const std::string& xname = "address")
+	: ConfigClass(xname)
 	{
 		add_member("family", &config_type_address_family);
 		add_member("host", &config_type_string);

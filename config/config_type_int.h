@@ -8,7 +8,7 @@
 struct ConfigValue;
 
 class ConfigTypeInt : public ConfigType {
-	std::map<ConfigValue *, intmax_t> ints_;
+	std::map<const ConfigValue *, intmax_t> ints_;
 public:
 	ConfigTypeInt(void)
 	: ConfigType("int"),
@@ -20,17 +20,21 @@ public:
 		ints_.clear();
 	}
 
-	bool get(ConfigValue *cv, intmax_t *intp)
+	bool get(const ConfigValue *cv, intmax_t *intp) const
 	{
-		if (ints_.find(cv) == ints_.end()) {
+		std::map<const ConfigValue *, intmax_t>::const_iterator it;
+		it = ints_.find(cv);
+		if (it == ints_.end()) {
 			ERROR("/config/type/int") << "Value not set.";
 			return (false);
 		}
-		*intp = ints_[cv];
+		*intp = it->second;
 		return (true);
 	}
 
-	bool set(ConfigValue *cv, const std::string& vstr);
+	void marshall(ConfigExporter *, const ConfigValue *) const;
+
+	bool set(const ConfigValue *, const std::string&);
 };
 
 extern ConfigTypeInt config_type_int;

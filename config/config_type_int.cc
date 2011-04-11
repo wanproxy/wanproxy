@@ -3,12 +3,25 @@
 #endif
 #include <stdlib.h>
 
+#include <config/config_exporter.h>
 #include <config/config_type_int.h>
 
 ConfigTypeInt config_type_int;
 
+void
+ConfigTypeInt::marshall(ConfigExporter *exp, const ConfigValue *cv) const
+{
+	intmax_t val;
+	if (!get(cv, &val))
+		HALT("/config/type/int") << "Trying to marshall unset value.";
+
+	char buf[sizeof val * 2 + 2 + 1];
+	snprintf(buf, sizeof buf, "0x%016jx", val);
+	exp->value(cv, buf);
+}
+
 bool
-ConfigTypeInt::set(ConfigValue *cv, const std::string& vstr)
+ConfigTypeInt::set(const ConfigValue *cv, const std::string& vstr)
 {
 	if (ints_.find(cv) != ints_.end()) {
 		ERROR("/config/type/int") << "Value already set.";

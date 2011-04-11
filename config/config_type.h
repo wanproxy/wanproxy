@@ -1,6 +1,7 @@
 #ifndef	CONFIG_TYPE_H
 #define	CONFIG_TYPE_H
 
+class ConfigExporter;
 struct ConfigValue;
 
 class ConfigType {
@@ -13,7 +14,8 @@ protected:
 	virtual ~ConfigType()
 	{ }
 public:
-	virtual bool set(ConfigValue *, const std::string&) = 0;
+	virtual void marshall(ConfigExporter *, const ConfigValue *) const = 0;
+	virtual bool set(const ConfigValue *, const std::string&) = 0;
 };
 
 #endif /* !CONFIG_TYPE_H */

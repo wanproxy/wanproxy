@@ -1,5 +1,6 @@
 #include <config/config.h>
 #include <config/config_class.h>
+#include <config/config_exporter.h>
 #include <config/config_object.h>
 #include <config/config_type.h>
 #include <config/config_value.h>
@@ -121,4 +122,16 @@ Config::import(ConfigClass *cc)
 		return;
 
 	class_map_[cc->name_] = cc;
+}
+
+void
+Config::marshall(ConfigExporter *exp) const
+{
+	std::map<std::string, ConfigObject *>::const_iterator it;
+
+	for (it = object_map_.begin(); it != object_map_.end(); ++it) {
+		const ConfigObject *co = it->second;
+
+		co->marshall(exp);
+	}
 }

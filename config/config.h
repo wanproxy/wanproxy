@@ -5,6 +5,7 @@
 
 class ConfigClass;
 class ConfigObject;
+class ConfigExporter;
 
 class Config {
 	LogHandle log_;
@@ -20,6 +21,8 @@ public:
 	bool set(const std::string&, const std::string&, const std::string&);
 
 	void import(ConfigClass *);
+
+	void marshall(ConfigExporter *) const;
 
 	ConfigObject *lookup(const std::string& oname) const
 	{

@@ -4,6 +4,7 @@
 #include <map>
 
 class Config;
+class ConfigExporter;
 class ConfigObject;
 class ConfigType;
 struct ConfigValue;
@@ -14,8 +15,8 @@ class ConfigClass {
 	std::string name_;
 	std::map<std::string, ConfigType *> members_;
 protected:
-	ConfigClass(const std::string& name)
-	: name_(name),
+	ConfigClass(const std::string& xname)
+	: name_(xname),
 	  members_()
 	{ }
 
@@ -44,6 +45,14 @@ private:
 		if (it == members_.end())
 			return (NULL);
 		return (it->second);
+	}
+
+public:
+	void marshall(ConfigExporter *, const ConfigObject *) const;
+
+	std::string name(void) const
+	{
+		return (name_);
 	}
 };
 
