@@ -79,7 +79,7 @@ main(void)
 	for (i = 0; i < sizeof data_buffer; i++)
 		data_buffer[i] = random();
 
-	int fd = ::open("block_file.128M", O_RDWR | O_CREAT);
+	int fd = ::open("block_file.128M", O_RDWR | O_CREAT, 0700);
 	ASSERT(fd != -1);
 	BlockWriter bw(fd, (128 * 1024 * 1024) / BW_BSIZE);
 
