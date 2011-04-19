@@ -47,6 +47,9 @@ public:
 	: obj_(new RefObj(ptr))
 	{ }
 
+	/*
+	 * XXX Template...  See operator=.
+	 */
 	Ref(const Ref& ref)
 	: obj_(ref.obj_)
 	{
@@ -62,6 +65,11 @@ public:
 		}
 	}
 
+	/*
+	 * XXX
+	 * Template so we can take a pointer from a Ref<> with a compatible
+	 * base class?
+	 */
 	const Ref& operator= (const Ref& ref)
 	{
 		if (obj_ != NULL) {
