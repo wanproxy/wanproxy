@@ -1092,19 +1092,44 @@ public:
 		segment_list_t::const_iterator big = data_.begin();
 		const BufferSegment *bigseg = *big;
 		const uint8_t *q = bigseg->data();
+		const uint8_t *qe = bigseg->end();
+		size_t qlen = qe - q;
 
 		while (pfx != buf->data_.end()) {
 			const BufferSegment *pfxseg = *pfx;
 			const uint8_t *p = pfxseg->data();
-			while (p < pfxseg->end()) {
-				if (q >= bigseg->end()) {
+			const uint8_t *pe = pfxseg->end();
+			size_t plen = pe - p;
+
+			ASSERT(qlen != 0);
+			ASSERT(plen != 0);
+
+			for (;;) {
+				ASSERT(plen != 0);
+				ASSERT(qlen != 0);
+
+				size_t cmplen = std::min(plen, qlen);
+				if (memcmp(q, p, cmplen) != 0)
+					return (false);
+				plen -= cmplen;
+				qlen -= cmplen;
+
+				if (qlen == 0) {
 					big++;
+					if (big == data_.end())
+						break;
 					bigseg = *big;
 					q = bigseg->data();
+					qe = bigseg->end();
+					qlen = qe - q;
+				} else {
+					q += cmplen;
 				}
-				if (*q++ == *p++)
-					continue;
-				return (false);
+
+				if (plen == 0)
+					break;
+
+				p += cmplen;
 			}
 			pfx++;
 		}
