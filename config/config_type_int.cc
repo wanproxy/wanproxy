@@ -1,6 +1,7 @@
 #if !defined(__OPENNT)
 #include <inttypes.h>
 #endif
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <config/config_exporter.h>

@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include <config/config.h>
 #include <config/config_exporter.h>
 #include <config/config_type_pointer.h>
