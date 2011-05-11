@@ -1,3 +1,6 @@
+o) Differentiate Callback so that an EventCallback cannot be passed to an API
+   that is going to call a void callback.  VoidCallback?  SimpleCallback?
+   Will aid in finding problems due to change of the Channel::close API.
 o) Fix any remaining bugs with XCodec EOS support.
 o) Fix remaining woes with XCodec ASK/LEARN.
 o) Make tack use the EventSystem and IOSystem now that the performance of

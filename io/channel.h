@@ -22,6 +22,9 @@ public:
 	 * not whether it closed with an error.
 	 */
 	virtual Action *close(Callback *) = 0;
+
+private:
+	Action *close(EventCallback *);
 };
 
 class BlockChannel : public Channel {
