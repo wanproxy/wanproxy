@@ -58,9 +58,24 @@ IOSystem::Handle::close_callback(void)
 	if (rv == -1) {
 		switch (errno) {
 		case EAGAIN:
+			/*
+			 * XXX
+			 * Is there something we should be polling on?
+			 */
 			close_action_ = close_schedule();
 			break;
 		default:
+			/*
+			 * We display the error here but do not pass it to the
+			 * upper layers because it is almost impossible to get
+			 * handling of close failing correct.
+			 *
+			 * For most errors, close fails because it already was
+			 * closed by a peer or something like that, so it's as
+			 * good as close succeeding.  Only in the case where we
+			 * get an EAGAIN, in which case we loop internally,
+			 * should anything more be done.
+			 */
 			ERROR(log_) << "Close returned error: " << strerror(errno);
 			Action *a = close_callback_->schedule();
 			close_action_ = a;
