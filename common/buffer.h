@@ -867,6 +867,8 @@ public:
 	{
 		if (length() != buf->length())
 			return (false);
+		if (empty())
+			return (true);
 		return (prefix(buf));
 	}
 
@@ -888,8 +890,11 @@ public:
 	 */
 	bool equal(const std::string& str) const
 	{
-		Buffer tmp(str);
-		return (equal(&tmp));
+		if (str.length() != length())
+			return (false);
+		if (empty())
+			return (true);
+		return (equal((const uint8_t *)str.c_str(), str.length()));
 	}
 
 	/*
