@@ -45,7 +45,7 @@ typedef	unsigned buffer_segment_size_t;
  * uses a Buffer.
  */
 class BufferSegment {
-	uint8_t data_[BUFFER_SEGMENT_SIZE];
+	uint8_t *data_;
 	buffer_segment_size_t offset_;
 	buffer_segment_size_t length_;
 	unsigned ref_;
@@ -54,11 +54,14 @@ class BufferSegment {
 	 * Creates a new, empty BufferSegment with a single reference.
 	 */
 	BufferSegment(void)
-	: data_(),
+	: data_(NULL),
 	  offset_(0),
 	  length_(0),
 	  ref_(1)
-	{ }
+	{
+		/* XXX Built-in slab allocator?  */
+		data_ = (uint8_t *)malloc(BUFFER_SEGMENT_SIZE);
+	}
 
 	/*
 	 * Should almost always only be called from unref().
@@ -66,6 +69,11 @@ class BufferSegment {
 	~BufferSegment()
 	{
 		ASSERT(ref_ == 0);
+
+		if (data_ != NULL) {
+			free(data_);
+			data_ = NULL;
+		}
 	}
 
 public:
