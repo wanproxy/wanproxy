@@ -20,10 +20,19 @@ public:
 
 	~TestGroup()
 	{
+		ASSERT(tests_ != 0);
+
 		INFO(log_) << "Test results for group: " << description_;
-		INFO(log_) << passes_ << "/" << tests_ << " tests passed.";
-		if (passes_ != tests_)
-			ERROR(log_) << (tests_ - passes_) << " tests failed.";
+		if (passes_ == tests_) {
+			INFO(log_) << "All tests passed.";
+		} else {
+			if (passes_ == 0) {
+				ERROR(log_) << "All tests failed.";
+			} else {
+				INFO(log_) << passes_ << "/" << tests_ << " tests passed.";
+				ERROR(log_) << (tests_ - passes_) << " tests failed.";
+			}
+		}
 	}
 
 private:
