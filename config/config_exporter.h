@@ -10,7 +10,7 @@ protected:
 	ConfigExporter(void)
 	{ }
 	
-	~ConfigExporter()
+	virtual ~ConfigExporter()
 	{ }
 
 public:
