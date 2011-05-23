@@ -75,14 +75,16 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		 */
 		const uint8_t *p, *q = seg->end();
 		for (p = seg->data(); p < q; p++) {
+			ptrdiff_t resid = q - p;
+
 			/*
 			 * If we cannot acquire a complete hash within this segment.
 			 */
-			if (o + (q - p) < XCODEC_SEGMENT_LENGTH) {
+			if (o + resid < XCODEC_SEGMENT_LENGTH) {
 				/*
 				 * Hash all of the bytes from it and continue.
 				 */
-				o += q - p;
+				o += resid;
 				while (p < q)
 					xcodec_hash.add(*p++);
 				break;
