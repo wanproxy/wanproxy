@@ -398,7 +398,8 @@ public:
 	 */
 	bool equal(const std::string& str) const
 	{
-		ASSERT(!str.empty());
+		if (str.empty())
+			return (length() == 0);
 		return (equal((const uint8_t *)str.c_str(), str.length()));
 	}
 
@@ -902,7 +903,7 @@ public:
 			return (false);
 		if (empty())
 			return (true);
-		return (equal((const uint8_t *)str.c_str(), str.length()));
+		return (prefix(str));
 	}
 
 	/*
@@ -1067,8 +1068,7 @@ public:
 		ASSERT(str.length() > 0);
 		if (str.length() > length())
 			return (false);
-		Buffer tmp(str);
-		return (prefix(&tmp));
+		return (prefix((const uint8_t *)str.c_str(), str.length()));
 	}
 
 	/*
@@ -1079,8 +1079,46 @@ public:
 		ASSERT(len > 0);
 		if (len > length())
 			return (false);
-		Buffer tmp(buf, len);
-		return (prefix(&tmp));
+
+		const uint8_t *p = buf;
+		size_t plen = len;
+
+		segment_list_t::const_iterator big = data_.begin();
+		const BufferSegment *bigseg = *big;
+		const uint8_t *q = bigseg->data();
+		const uint8_t *qe = bigseg->end();
+		size_t qlen = qe - q;
+
+		ASSERT(qlen != 0);
+
+		for (;;) {
+			ASSERT(plen != 0);
+			ASSERT(qlen != 0);
+
+			size_t cmplen = std::min(plen, qlen);
+			if (memcmp(q, p, cmplen) != 0)
+				return (false);
+			plen -= cmplen;
+			qlen -= cmplen;
+
+			if (qlen == 0) {
+				big++;
+				if (big == data_.end())
+					break;
+				bigseg = *big;
+				q = bigseg->data();
+				qe = bigseg->end();
+				qlen = qe - q;
+			} else {
+				q += cmplen;
+			}
+
+			if (plen == 0)
+				break;
+
+			p += cmplen;
+		}
+		return (true);
 	}
 
 	/*

@@ -64,6 +64,36 @@ main(void)
 		}
 	}
 
+	// Long string prefix tests.
+	{
+		std::string pfx((const char *)long_prefix, sizeof long_prefix);
+		{
+			Buffer buf(long_prefix, sizeof long_prefix);
+			buf.append(std::string("ABCD"));
+			{
+				Test _(g, "Long prefix matched by std::string");
+				if (buf.prefix(pfx))
+					_.pass();
+			}
+		}
+		{
+			Buffer buf;
+			buf.append(std::string("ABCD"));
+			buf.append(long_prefix, sizeof long_prefix);
+			{
+				Test _(g, "Long prefix not matched by std::string with leading noise");
+				if (!buf.prefix(pfx))
+					_.pass();
+			}
+			buf.skip(4);
+			{
+				Test _(g, "Long prefix matched by std::string with skipped leading noise");
+				if (buf.prefix(pfx))
+					_.pass();
+			}
+		}
+	}
+
 	// Short prefix tests.
 	{
 		Buffer buf("ABCD");
