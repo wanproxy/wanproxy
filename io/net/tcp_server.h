@@ -24,7 +24,7 @@ public:
 		return (socket_->accept(cb));
 	}
 
-	Action *close(Callback *cb)
+	Action *close(SimpleCallback *cb)
 	{
 		return (socket_->close(cb));
 	}

@@ -1,6 +1,23 @@
-o) Differentiate Callback so that an EventCallback cannot be passed to an API
-   that is going to call a void callback.  VoidCallback?  SimpleCallback?
-   Will aid in finding problems due to change of the Channel::close API.
+Note:
+o) Callbacks are going through a period of major change.  For now, except for
+   the CallbackSchedulers, it is assumed that all callbacks will need to be
+   strongly typed, that is that most interfaces will take a SimpleCallback or
+   an EventCallback or similar, and use it directly.  This will mostly be a
+   problem in the TimeoutQueue.  If some class feels that it ought to be able
+   to schedule a timeout to handle a callback for, say, an EventCallback that
+   has already had its parameter set, we'll have problems.
+
+   NB: Once all extant code is converted in this manner, the CallbackBase
+       class could be named back to Callback, but since few things should be
+       using it directly, the more obtuse name may be desirable as an aid in
+       avoiding foot-shooting.  Or just rename CallbackBase to Schedulable
+       and have done with it.
+
+   XXX Eventually the schedule function could be moved into SimpleCallback,
+       TypedCallback, etc., so that we can in the latter case blow up badly
+       if someone asks to schedule a function whose parameter has not been
+       set.
+
 o) Fix any remaining bugs with XCodec EOS support.
 o) Fix remaining woes with XCodec ASK/LEARN.
 o) Make tack use the EventSystem and IOSystem now that the performance of

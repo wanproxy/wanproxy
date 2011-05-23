@@ -88,7 +88,7 @@ TCPClient::connect_cancel(void)
 	}
 
 	ASSERT(socket_ != NULL);
-	Callback *cb = callback(this, &TCPClient::close_complete);
+	SimpleCallback *cb = callback(this, &TCPClient::close_complete);
 	close_action_ = socket_->close(cb);
 }
 

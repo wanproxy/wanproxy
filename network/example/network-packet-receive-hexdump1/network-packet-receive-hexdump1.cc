@@ -16,7 +16,7 @@ public:
 		EventCallback *cb = callback(this, &PacketDumper::receive_complete);
 		receive_action_ = interface_->receive(cb);
 
-		Callback *scb = callback(this, &PacketDumper::stop);
+		SimpleCallback *scb = callback(this, &PacketDumper::stop);
 		stop_action_ = EventSystem::instance()->register_interest(EventInterestReload, scb);
 	}
 

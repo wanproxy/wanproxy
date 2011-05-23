@@ -10,9 +10,9 @@ class CallbackQueue : public CallbackScheduler {
 	public:
 		CallbackQueue *const queue_;
 		const uint64_t generation_;
-		Callback *callback_;
+		CallbackBase *callback_;
 
-		CallbackAction(CallbackQueue *queue, uint64_t generation, Callback *callback)
+		CallbackAction(CallbackQueue *queue, uint64_t generation, CallbackBase *callback)
 		: Cancellable(),
 		  queue_(queue),
 		  generation_(generation),
@@ -46,7 +46,7 @@ public:
 		ASSERT(queue_.empty());
 	}
 
-	Action *schedule(Callback *cb)
+	Action *schedule(CallbackBase *cb)
 	{
 		CallbackAction *a = new CallbackAction(this, generation_, cb);
 		queue_.push_back(a);

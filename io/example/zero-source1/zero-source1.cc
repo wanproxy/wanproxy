@@ -43,7 +43,7 @@ public:
 		}
 
 		if (e.type_ == Event::Error) {
-			Callback *cb = callback(this, &Source::close_complete);
+			SimpleCallback *cb = callback(this, &Source::close_complete);
 			action_ = fd_.close(cb);
 			return;
 		}

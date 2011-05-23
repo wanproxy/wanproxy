@@ -21,7 +21,7 @@ public:
 	 * can be deleted, which is what callers care about,
 	 * not whether it closed with an error.
 	 */
-	virtual Action *close(Callback *) = 0;
+	virtual Action *close(SimpleCallback *) = 0;
 
 private:
 	Action *close(EventCallback *);

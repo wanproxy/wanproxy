@@ -4,12 +4,12 @@
 #include <event/callback.h>
 
 template<typename T>
-class TypedCallback : public Callback {
+class TypedCallback : public CallbackBase {
 	bool have_param_;
 	T param_;
 protected:
 	TypedCallback(CallbackScheduler *scheduler)
-	: Callback(scheduler),
+	: CallbackBase(scheduler),
 	  have_param_(false),
 	  param_()
 	{ }
@@ -21,13 +21,13 @@ public:
 protected:
 	virtual void operator() (T) = 0;
 
-	void operator() (void)
+public:
+	void execute(void)
 	{
 		ASSERT(have_param_);
 		(*this)(param_);
 	}
 
-public:
 	void param(T p)
 	{
 		param_ = p;

@@ -27,7 +27,7 @@ ProxySocksListener::ProxySocksListener(const std::string& name, SocketAddressFam
 	EventCallback *cb = callback(this, &ProxySocksListener::accept_complete);
 	accept_action_ = server_->accept(cb);
 
-	Callback *scb = callback(this, &ProxySocksListener::stop);
+	SimpleCallback *scb = callback(this, &ProxySocksListener::stop);
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
 
@@ -89,6 +89,6 @@ ProxySocksListener::stop(void)
 
 	ASSERT(close_action_ == NULL);
 
-	Callback *cb = callback(this, &ProxySocksListener::close_complete);
+	SimpleCallback *cb = callback(this, &ProxySocksListener::close_complete);
 	close_action_ = server_->close(cb);
 }

@@ -39,7 +39,7 @@ ProxyListener::ProxyListener(const std::string& name,
 	EventCallback *cb = callback(this, &ProxyListener::accept_complete);
 	accept_action_ = server_->accept(cb);
 
-	Callback *scb = callback(this, &ProxyListener::stop);
+	SimpleCallback *scb = callback(this, &ProxyListener::stop);
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
 
@@ -102,6 +102,6 @@ ProxyListener::stop(void)
 
 	ASSERT(close_action_ == NULL);
 
-	Callback *cb = callback(this, &ProxyListener::close_complete);
+	SimpleCallback *cb = callback(this, &ProxyListener::close_complete);
 	close_action_ = server_->close(cb);
 }

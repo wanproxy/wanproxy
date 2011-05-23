@@ -106,7 +106,7 @@ public:
 		return (true);
 	}
 
-	Action *append(uintmax_t, Callback *);
+	Action *append(uintmax_t, SimpleCallback *);
 	uintmax_t interval(void) const;
 	void perform(void);
 	bool ready(void) const;

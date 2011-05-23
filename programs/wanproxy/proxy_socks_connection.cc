@@ -322,6 +322,6 @@ ProxySocksConnection::schedule_close(void)
 	ASSERT(action_ == NULL);
 
 	ASSERT(client_ != NULL);
-	Callback *cb = callback(this, &ProxySocksConnection::close_complete);
+	SimpleCallback *cb = callback(this, &ProxySocksConnection::close_complete);
 	action_ = client_->close(cb);
 }

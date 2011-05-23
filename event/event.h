@@ -16,7 +16,7 @@
  *
  * Event handlers/callbacks always take a copy of the Event, which is subpar
  * but necessary since the first thing most of those callbacks do is to cancel
- * the Action that called them, which in turn deletes the underlying Callback
+ * the Action that called them, which in turn deletes the underlying SimpleCallback
  * object, which would in turn delete the holder of the associated Event if a
  * reference or pointer were passed.  One can argue that the right thing to do
  * is process the event fully before cancelling the Action, but that is not

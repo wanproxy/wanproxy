@@ -29,7 +29,7 @@ StreamHandle::~StreamHandle()
 }
 
 Action *
-StreamHandle::close(Callback *cb)
+StreamHandle::close(SimpleCallback *cb)
 {
 	return (IOSystem::instance()->close(fd_, this, cb));
 }

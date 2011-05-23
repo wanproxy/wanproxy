@@ -57,6 +57,6 @@ MonitorConnection::schedule_close(void)
 	ASSERT(action_ == NULL);
 
 	ASSERT(client_ != NULL);
-	Callback *cb = callback(this, &MonitorConnection::close_complete);
+	SimpleCallback *cb = callback(this, &MonitorConnection::close_complete);
 	action_ = client_->close(cb);
 }

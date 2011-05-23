@@ -34,7 +34,7 @@ public:
 		EventCallback *cb = callback(this, &SimpleServer::accept_complete);
 		accept_action_ = server_->accept(cb);
 
-		Callback *scb = callback(this, &SimpleServer::stop);
+		SimpleCallback *scb = callback(this, &SimpleServer::stop);
 		stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 	}
 
@@ -97,7 +97,7 @@ private:
 
 		ASSERT(close_action_ == NULL);
 
-		Callback *cb = callback(this, &SimpleServer::close_complete);
+		SimpleCallback *cb = callback(this, &SimpleServer::close_complete);
 		close_action_ = server_->close(cb);
 	}
 };

@@ -54,7 +54,7 @@ public:
 		DEBUG(log_) << "Finished block #" << block_number_ << "/" << block_count_;
 
 		if (++block_number_ == block_count_) {
-			Callback *cb = callback(this, &BlockWriter::close_complete);
+			SimpleCallback *cb = callback(this, &BlockWriter::close_complete);
 			close_action_ = dev_.close(cb);
 			return;
 		}

@@ -88,7 +88,7 @@ UDPClient::connect_cancel(void)
 	}
 
 	ASSERT(socket_ != NULL);
-	Callback *cb = callback(this, &UDPClient::close_complete);
+	SimpleCallback *cb = callback(this, &UDPClient::close_complete);
 	close_action_ = socket_->close(cb);
 }
 

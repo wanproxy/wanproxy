@@ -111,7 +111,7 @@ public:
 			return;
 		}
 
-		Callback *cb = callback(this, &Connector::close_complete);
+		SimpleCallback *cb = callback(this, &Connector::close_complete);
 		action_ = socket_->close(cb);
 	}
 };
@@ -198,7 +198,7 @@ public:
 				_.pass();
 		}
 
-		Callback *cb = callback(this, &Listener::close_complete);
+		SimpleCallback *cb = callback(this, &Listener::close_complete);
 		action_ = server_->close(cb);
 	}
 
@@ -250,7 +250,7 @@ public:
 			if (read_buffer_.equal(data, sizeof data))
 				_.pass();
 		}
-		Callback *cb = callback(this, &Listener::client_close);
+		SimpleCallback *cb = callback(this, &Listener::client_close);
 		action_ = client_->close(cb);
 	}
 

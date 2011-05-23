@@ -40,7 +40,7 @@ public:
 		}
 
 		if (e.type_ == Event::EOS) {
-			Callback *cb = callback(this, &Sink::close_complete);
+			SimpleCallback *cb = callback(this, &Sink::close_complete);
 			action_ = fd_.close(cb);
 			return;
 		}

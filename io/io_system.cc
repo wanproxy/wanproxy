@@ -107,7 +107,7 @@ Action *
 IOSystem::Handle::close_schedule(void)
 {
 	ASSERT(close_action_ == NULL);
-	Callback *cb = callback(this, &IOSystem::Handle::close_callback);
+	SimpleCallback *cb = callback(this, &IOSystem::Handle::close_callback);
 	Action *a = cb->schedule();
 	return (a);
 }
@@ -508,7 +508,7 @@ IOSystem::detach(int fd, Channel *owner)
 }
 
 Action *
-IOSystem::close(int fd, Channel *owner, Callback *cb)
+IOSystem::close(int fd, Channel *owner, SimpleCallback *cb)
 {
 	IOSystem::Handle *h;
 

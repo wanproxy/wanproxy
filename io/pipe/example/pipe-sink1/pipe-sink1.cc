@@ -54,10 +54,10 @@ public:
 
 		ASSERT(e.type_ == Event::EOS);
 
-		Callback *icb = callback(this, &Catenate::close_complete, &input_);
+		SimpleCallback *icb = callback(this, &Catenate::close_complete, &input_);
 		input_action_ = input_.close(icb);
 
-		Callback *ocb = callback(this, &Catenate::close_complete, &output_);
+		SimpleCallback *ocb = callback(this, &Catenate::close_complete, &output_);
 		output_action_ = output_.close(ocb);
 	}
 

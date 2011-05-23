@@ -11,12 +11,12 @@ protected:
 
 public:
 	virtual void signal(void) = 0;
-	virtual Action *wait(Callback *) = 0;
+	virtual Action *wait(SimpleCallback *) = 0;
 };
 
 class ConditionVariable : public Condition {
 	Action *wait_action_;
-	Callback *wait_callback_;
+	SimpleCallback *wait_callback_;
 public:
 	ConditionVariable(void)
 	: wait_action_(NULL),
@@ -38,7 +38,7 @@ public:
 		wait_callback_ = NULL;
 	}
 
-	Action *wait(Callback *cb)
+	Action *wait(SimpleCallback *cb)
 	{
 		ASSERT(wait_action_ == NULL);
 		ASSERT(wait_callback_ == NULL);

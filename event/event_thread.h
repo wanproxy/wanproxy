@@ -29,19 +29,19 @@ public:
 		return (a);
 	}
 
-	Action *register_interest(const EventInterest& interest, Callback *cb)
+	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
 	{
 		Action *a = interest_queue_[interest].schedule(cb);
 		return (a);
 	}
 
-	Action *schedule(Callback *cb)
+	Action *schedule(CallbackBase *cb)
 	{
 		Action *a = queue_.schedule(cb);
 		return (a);
 	}
 
-	Action *timeout(unsigned secs, Callback *cb)
+	Action *timeout(unsigned secs, SimpleCallback *cb)
 	{
 		Action *a = timeout_queue_.append(secs, cb);
 		return (a);

@@ -43,7 +43,7 @@ ProxyConnector::ProxyConnector(const std::string& name,
 	EventCallback *cb = callback(this, &ProxyConnector::connect_complete);
 	remote_action_ = TCPClient::connect(family, remote_name, cb);
 
-	Callback *scb = callback(this, &ProxyConnector::stop);
+	SimpleCallback *scb = callback(this, &ProxyConnector::stop);
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
 
@@ -220,13 +220,13 @@ ProxyConnector::schedule_close(void)
 
 	ASSERT(local_action_ == NULL);
 	ASSERT(local_socket_ != NULL);
-	Callback *lcb = callback(this, &ProxyConnector::close_complete,
+	SimpleCallback *lcb = callback(this, &ProxyConnector::close_complete,
 				      (void *)local_socket_);
 	local_action_ = local_socket_->close(lcb);
 
 	ASSERT(remote_action_ == NULL);
 	if (remote_socket_ != NULL) {
-		Callback *rcb = callback(this, &ProxyConnector::close_complete,
+		SimpleCallback *rcb = callback(this, &ProxyConnector::close_complete,
 					      (void *)remote_socket_);
 		remote_action_ = remote_socket_->close(rcb);
 	}

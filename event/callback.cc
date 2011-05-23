@@ -2,7 +2,7 @@
 #include <event/event_system.h>
 
 Action *
-Callback::schedule(void)
+CallbackBase::schedule(void)
 {
 	if (scheduler_ != NULL)
 		return (scheduler_->schedule(this));

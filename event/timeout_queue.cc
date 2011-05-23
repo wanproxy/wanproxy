@@ -35,7 +35,7 @@ TimeoutQueue::NanoTime::current_time(void)
 }
 
 Action *
-TimeoutQueue::append(uintmax_t ms, Callback *cb)
+TimeoutQueue::append(uintmax_t ms, SimpleCallback *cb)
 {
 	TimeoutQueue::NanoTime now = TimeoutQueue::NanoTime::current_time();
 

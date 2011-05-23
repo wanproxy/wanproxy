@@ -25,17 +25,17 @@ public:
 		return (td_.poll(type, fd, cb));
 	}
 
-	Action *register_interest(const EventInterest& interest, Callback *cb)
+	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
 	{
 		return (td_.register_interest(interest, cb));
 	}
 
-	Action *schedule(Callback *cb)
+	Action *schedule(CallbackBase *cb)
 	{
 		return (td_.schedule(cb));
 	}
 
-	Action *timeout(unsigned ms, Callback *cb)
+	Action *timeout(unsigned ms, SimpleCallback *cb)
 	{
 		return (td_.timeout(ms, cb));
 	}

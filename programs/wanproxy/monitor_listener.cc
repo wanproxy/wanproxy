@@ -27,7 +27,7 @@ MonitorListener::MonitorListener(const std::string& name, SocketAddressFamily fa
 	EventCallback *cb = callback(this, &MonitorListener::accept_complete);
 	accept_action_ = server_->accept(cb);
 
-	Callback *scb = callback(this, &MonitorListener::stop);
+	SimpleCallback *scb = callback(this, &MonitorListener::stop);
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
 
@@ -89,6 +89,6 @@ MonitorListener::stop(void)
 
 	ASSERT(close_action_ == NULL);
 
-	Callback *cb = callback(this, &MonitorListener::close_complete);
+	SimpleCallback *cb = callback(this, &MonitorListener::close_complete);
 	close_action_ = server_->close(cb);
 }
