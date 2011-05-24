@@ -53,6 +53,4 @@ protected:
 	}
 };
 
-#include <event/object_callback.h>
-
 #endif /* !CALLBACK_H */
