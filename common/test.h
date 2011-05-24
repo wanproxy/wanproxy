@@ -79,9 +79,4 @@ public:
 	}
 };
 
-#define	TEST_ASSERT(g, p)						\
-	do {								\
-		Test __test_assert((g), #p, (p));			\
-	} while (0)
-
 #endif /* !TEST_H */
