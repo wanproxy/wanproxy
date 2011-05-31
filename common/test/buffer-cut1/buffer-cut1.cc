@@ -40,7 +40,7 @@ main(void)
 			Buffer clip;
 			Buffer small(big);
 			small.cut(headerlen, FILL_NUMBER * sizeof fill, &clip);
-			{ 
+			{
 				Test _(g, "Cut fill bytes.");
 				if (small.equal("Hello, world!\n"))
 					_.pass();

@@ -53,7 +53,7 @@ Element::serialize(Buffer *out) const
 	}
 
 	out->append(">");
-	
+
 	std::list<Ref<Content> >::const_iterator cit;
 	for (cit = content_.begin(); cit != content_.end(); ++cit) {
 		Ref<Content> content = *cit;
