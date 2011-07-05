@@ -3,7 +3,7 @@
 
 class ConfigClass;
 class ConfigObject;
-class ConfigValue;
+struct ConfigValue;
 
 class ConfigExporter {
 protected:
