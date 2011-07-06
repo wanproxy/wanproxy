@@ -34,4 +34,38 @@ public:
 #define	ASSERT_LOCK_NOT_OWNED(lock)					\
 	((lock)->assert_owned(false, __FILE__, __LINE__, __PRETTY_FUNCTION__))
 
+class ScopedLock {
+	Lock *lock_;
+	bool need_unlock_;
+public:
+	ScopedLock(Lock *lock)
+	: lock_(lock)
+	{
+		ASSERT(lock_ != NULL);
+		lock_->lock();
+	}
+
+	~ScopedLock()
+	{
+		if (lock_ != NULL) {
+			lock_->unlock();
+			lock_ = NULL;
+		}
+	}
+
+	void acquire(Lock *lock)
+	{
+		ASSERT(lock_ == NULL);
+		lock_ = lock;
+		lock_->lock();
+	}
+
+	void drop(void)
+	{
+		ASSERT(lock_ != NULL);
+		lock_->unlock();
+		lock_ = NULL;
+	}
+};
+
 #endif /* !LOCK_H */
