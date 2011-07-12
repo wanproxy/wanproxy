@@ -59,6 +59,14 @@ ProxyConnector::~ProxyConnector()
 	ASSERT(splice_pair_ == NULL);
 	ASSERT(splice_action_ == NULL);
 
+	if (pipe_pair_ != NULL) {
+		delete pipe_pair_;
+		pipe_pair_ = NULL;
+
+		incoming_pipe_ = NULL;
+		outgoing_pipe_ = NULL;
+	}
+
 	if (incoming_pipe_ != NULL) {
 		delete incoming_pipe_;
 		incoming_pipe_ = NULL;
@@ -67,11 +75,6 @@ ProxyConnector::~ProxyConnector()
 	if (outgoing_pipe_ != NULL) {
 		delete outgoing_pipe_;
 		outgoing_pipe_ = NULL;
-	}
-
-	if (pipe_pair_ != NULL) {
-		delete pipe_pair_;
-		pipe_pair_ = NULL;
 	}
 }
 
