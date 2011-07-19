@@ -97,6 +97,15 @@ public:
 		/*
 		 * Since we allow elements within each CallbackQueue to be
 		 * cancelled, we must scan them.
+		 *
+		 * XXX
+		 * We really shouldn't allow this, even if it means we have
+		 * to specialize CallbackQueue for this purpose or add
+		 * virtual methods to it.  As it is, we can return true
+		 * for empty and for ready at the same time.  And in those
+		 * cases we have to call perform to garbage collect the
+		 * unused CallbackQueues.  We'll, quite conveniently,
+		 * never make that call.  Yikes.
 		 */
 		for (it = timeout_queue_.begin(); it != timeout_queue_.end(); ++it) {
 			if (it->second.empty())
