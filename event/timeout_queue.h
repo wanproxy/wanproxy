@@ -3,6 +3,8 @@
 
 #include <map>
 
+#include <common/time/time.h>
+
 class TimeoutQueue {
 	typedef std::map<NanoTime, CallbackQueue> timeout_map_t;
 
