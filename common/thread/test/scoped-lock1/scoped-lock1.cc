@@ -37,7 +37,7 @@ public:
 
 			testSL.drop();
 			ASSERT_LOCK_NOT_OWNED(&test_mtx);
-			
+
 			{
 				ASSERT_LOCK_NOT_OWNED(&test_mtx);
 				ScopedLock testSL2(&test_mtx);
