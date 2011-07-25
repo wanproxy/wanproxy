@@ -20,7 +20,9 @@ class EventThread : public Thread {
 	EventPoll poll_;
 public:
 	EventThread(void);
-	~EventThread();
+
+	~EventThread()
+	{ }
 
 public:
 	Action *poll(const EventPoll::Type& type, int fd, EventCallback *cb)

@@ -5,20 +5,6 @@
 #include <config/config_type.h>
 #include <config/config_value.h>
 
-Config::Config(void)
-: log_("/config"),
-  class_map_(),
-  object_map_()
-{ }
-
-Config::~Config()
-{
-#if 0 /* XXX NOTYET */
-	ASSERT(class_map_.empty());
-	ASSERT(object_map_.empty());
-#endif
-}
-
 bool
 Config::activate(const std::string& oname)
 {

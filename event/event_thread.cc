@@ -20,9 +20,6 @@ EventThread::EventThread(void)
 	signal(SIGHUP, signal_reload);
 }
 
-EventThread::~EventThread()
-{ }
-
 void
 EventThread::main(void)
 {
