@@ -1,6 +1,8 @@
 #ifndef	XCODEC_HASH_H
 #define	XCODEC_HASH_H
 
+#include <strings.h>
+
 class XCodecHash {
 	struct RollingHash {
 		uint32_t sum1_;					/* Really <16-bit.  */
