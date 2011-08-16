@@ -3,10 +3,10 @@
 #include <event/event_callback.h>
 #include <event/event_main.h>
 
-#include <io/socket/socket.h>
-
 #include <io/net/tcp_client.h>
 #include <io/net/tcp_server.h>
+
+#include <io/socket/socket.h>
 
 static uint8_t data[65536];
 

@@ -3,10 +3,10 @@
 #include <event/event_callback.h>
 #include <event/event_main.h>
 
-#include <io/socket/socket.h>
-
 #include <io/net/udp_client.h>
 #include <io/net/udp_server.h>
+
+#include <io/socket/socket.h>
 
 static uint8_t data[1024];
 
