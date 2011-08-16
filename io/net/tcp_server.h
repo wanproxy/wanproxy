@@ -1,6 +1,8 @@
 #ifndef	TCP_SERVER_H
 #define	TCP_SERVER_H
 
+#include <io/socket/socket.h>
+
 class TCPServer {
 	LogHandle log_;
 	Socket *socket_;

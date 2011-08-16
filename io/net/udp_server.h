@@ -1,6 +1,8 @@
 #ifndef	UDP_SERVER_H
 #define	UDP_SERVER_H
 
+#include <io/socket/socket.h>
+
 class UDPServer {
 	LogHandle log_;
 	Socket *socket_;

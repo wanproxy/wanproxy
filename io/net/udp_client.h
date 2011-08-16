@@ -1,6 +1,8 @@
 #ifndef	UDP_CLIENT_H
 #define	UDP_CLIENT_H
 
+#include <io/socket/socket_types.h>
+
 class UDPClient {
 	LogHandle log_;
 	SocketAddressFamily family_;

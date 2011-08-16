@@ -1,6 +1,8 @@
 #ifndef	TCP_CLIENT_H
 #define	TCP_CLIENT_H
 
+#include <io/socket/socket_types.h>
+
 class TCPClient {
 	LogHandle log_;
 	SocketAddressFamily family_;
