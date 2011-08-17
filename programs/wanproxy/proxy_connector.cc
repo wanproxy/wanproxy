@@ -79,25 +79,25 @@ ProxyConnector::~ProxyConnector()
 }
 
 void
-ProxyConnector::close_complete(void *channel)
+ProxyConnector::close_complete(Socket *socket)
 {
-	if (channel == (void *)local_socket_) {
+	if (socket == local_socket_) {
 		local_action_->cancel();
 		local_action_ = NULL;
 	}
 
-	if (channel == (void *)remote_socket_) {
+	if (socket == remote_socket_) {
 		remote_action_->cancel();
 		remote_action_ = NULL;
 	}
 
-	if (channel == (void *)local_socket_) {
+	if (socket == local_socket_) {
 		ASSERT(local_socket_ != NULL);
 		delete local_socket_;
 		local_socket_ = NULL;
 	}
 
-	if (channel == (void *)remote_socket_) {
+	if (socket == remote_socket_) {
 		ASSERT(remote_socket_ != NULL);
 		delete remote_socket_;
 		remote_socket_ = NULL;
@@ -224,13 +224,13 @@ ProxyConnector::schedule_close(void)
 	ASSERT(local_action_ == NULL);
 	ASSERT(local_socket_ != NULL);
 	SimpleCallback *lcb = callback(this, &ProxyConnector::close_complete,
-				      (void *)local_socket_);
+				       local_socket_);
 	local_action_ = local_socket_->close(lcb);
 
 	ASSERT(remote_action_ == NULL);
 	if (remote_socket_ != NULL) {
 		SimpleCallback *rcb = callback(this, &ProxyConnector::close_complete,
-					      (void *)remote_socket_);
+					       remote_socket_);
 		remote_action_ = remote_socket_->close(rcb);
 	}
 }
