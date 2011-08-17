@@ -140,7 +140,7 @@ public:
 
 		INFO(log_) << "Listener created on: " << server_->getsockname();
 
-		EventCallback *cb = callback(this, &ChargenListener::accept_complete);
+		SocketEventCallback *cb = callback(this, &ChargenListener::accept_complete);
 		action_ = server_->accept(cb);
 	}
 
@@ -153,7 +153,7 @@ public:
 		ASSERT(action_ == NULL);
 	}
 
-	void accept_complete(Event e)
+	void accept_complete(Event e, Socket *socket)
 	{
 		action_->cancel();
 		action_ = NULL;
@@ -170,12 +170,11 @@ public:
 		}
 
 		if (e.type_ == Event::Done) {
-			Socket *client = (Socket *)e.data_;
-
-			new ChargenClient(client);
+			ASSERT(socket != NULL);
+			new ChargenClient(socket);
 		}
 
-		EventCallback *cb = callback(this, &ChargenListener::accept_complete);
+		SocketEventCallback *cb = callback(this, &ChargenListener::accept_complete);
 		action_ = server_->accept(cb);
 	}
 };

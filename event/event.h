@@ -33,77 +33,42 @@ struct Event {
 	Type type_;
 	int error_;
 	Buffer buffer_;
-	void *data_;
 
 	Event(void)
 	: type_(Event::Invalid),
 	  error_(0),
-	  buffer_(),
-	  data_(NULL)
+	  buffer_()
 	{ }
 
 	Event(Type type)
 	: type_(type),
 	  error_(0),
-	  buffer_(),
-	  data_(NULL)
+	  buffer_()
 	{ }
 
 	Event(Type type, int error)
 	: type_(type),
 	  error_(error),
-	  buffer_(),
-	  data_(NULL)
+	  buffer_()
 	{ }
 
 
 	Event(Type type, const Buffer& buffer)
 	: type_(type),
 	  error_(0),
-	  buffer_(buffer),
-	  data_(NULL)
-	{ }
-
-	Event(Type type, void *data)
-	: type_(type),
-	  error_(0),
-	  buffer_(),
-	  data_(data)
+	  buffer_(buffer)
 	{ }
 
 	Event(Type type, int error, const Buffer& buffer)
 	: type_(type),
 	  error_(error),
-	  buffer_(buffer),
-	  data_(NULL)
-	{ }
-
-	Event(Type type, int error, void *data)
-	: type_(type),
-	  error_(error),
-	  buffer_(),
-	  data_(data)
-	{ }
-
-	Event(Type type, int error, const Buffer& buffer, void *data)
-	: type_(type),
-	  error_(error),
-	  buffer_(buffer),
-	  data_(data)
-	{ }
-
-	Event(Type type, const Buffer& buffer, void *data)
-	: type_(type),
-	  error_(0),
-	  buffer_(buffer),
-	  data_(data)
+	  buffer_(buffer)
 	{ }
 
 	Event(const Event& e)
 	: type_(e.type_),
 	  error_(e.error_),
-	  buffer_(e.buffer_),
-	  data_(e.data_)
+	  buffer_(e.buffer_)
 	{ }
 
 	Event& operator= (const Event& e)
@@ -111,14 +76,8 @@ struct Event {
 		type_ = e.type_;
 		error_ = e.error_;
 		buffer_ = e.buffer_;
-		data_ = e.data_;
 		return (*this);
 	}
-
-private:
-	/* Prevent accidental void * use.  */
-	Event(Type, const Buffer *);
-	Event(Type, int, const Buffer *);
 };
 
 static inline std::ostream&

@@ -1,6 +1,8 @@
 #ifndef	UNIX_SERVER_H
 #define	UNIX_SERVER_H
 
+#include <io/socket/socket.h>
+
 class UnixServer {
 	LogHandle log_;
 	Socket *socket_;
@@ -19,7 +21,7 @@ public:
 		}
 	}
 
-	Action *accept(EventCallback *cb)
+	Action *accept(SocketEventCallback *cb)
 	{
 		return (socket_->accept(cb));
 	}

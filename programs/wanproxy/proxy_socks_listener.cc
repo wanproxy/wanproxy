@@ -24,7 +24,7 @@ ProxySocksListener::ProxySocksListener(const std::string& name, SocketAddressFam
 		HALT(log_) << "Unable to create listener.";
 	}
 
-	EventCallback *cb = callback(this, &ProxySocksListener::accept_complete);
+	SocketEventCallback *cb = callback(this, &ProxySocksListener::accept_complete);
 	accept_action_ = server_->accept(cb);
 
 	SimpleCallback *scb = callback(this, &ProxySocksListener::stop);
@@ -40,7 +40,7 @@ ProxySocksListener::~ProxySocksListener()
 }
 
 void
-ProxySocksListener::accept_complete(Event e)
+ProxySocksListener::accept_complete(Event e, Socket *socket)
 {
 	accept_action_->cancel();
 	accept_action_ = NULL;
@@ -57,11 +57,10 @@ ProxySocksListener::accept_complete(Event e)
 	}
 
 	if (e.type_ == Event::Done) {
-		Socket *client = (Socket *)e.data_;
-		new ProxySocksConnection(name_, client);
+		new ProxySocksConnection(name_, socket);
 	}
 
-	EventCallback *cb = callback(this, &ProxySocksListener::accept_complete);
+	SocketEventCallback *cb = callback(this, &ProxySocksListener::accept_complete);
 	accept_action_ = server_->accept(cb);
 }
 

@@ -5,6 +5,7 @@
 
 class Pipe;
 class PipePair;
+class Socket;
 class Splice;
 class SplicePair;
 
@@ -36,7 +37,7 @@ private:
 	~ProxyConnector();
 
 	void close_complete(void *);
-	void connect_complete(Event);
+	void connect_complete(Event, Socket *);
 	void splice_complete(Event);
 	void stop(void);
 

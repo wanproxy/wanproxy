@@ -14,4 +14,6 @@ enum SocketType {
 	SocketTypeDatagram,
 };
 
+class Socket;
+
 #endif /* !IO_SOCKET_TYPES_H */

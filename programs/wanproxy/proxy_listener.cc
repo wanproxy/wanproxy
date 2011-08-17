@@ -36,7 +36,7 @@ ProxyListener::ProxyListener(const std::string& name,
 		HALT(log_) << "Unable to create listener.";
 	}
 
-	EventCallback *cb = callback(this, &ProxyListener::accept_complete);
+	SocketEventCallback *cb = callback(this, &ProxyListener::accept_complete);
 	accept_action_ = server_->accept(cb);
 
 	SimpleCallback *scb = callback(this, &ProxyListener::stop);
@@ -52,7 +52,7 @@ ProxyListener::~ProxyListener()
 }
 
 void
-ProxyListener::accept_complete(Event e)
+ProxyListener::accept_complete(Event e, Socket *socket)
 {
 	accept_action_->cancel();
 	accept_action_ = NULL;
@@ -69,12 +69,11 @@ ProxyListener::accept_complete(Event e)
 	}
 
 	if (e.type_ == Event::Done) {
-		Socket *client = (Socket *)e.data_;
 		PipePair *pipe_pair = new WANProxyCodecPipePair(interface_codec_, remote_codec_);
-		new ProxyConnector(name_, pipe_pair, client, remote_family_, remote_name_);
+		new ProxyConnector(name_, pipe_pair, socket, remote_family_, remote_name_);
 	}
 
-	EventCallback *cb = callback(this, &ProxyListener::accept_complete);
+	SocketEventCallback *cb = callback(this, &ProxyListener::accept_complete);
 	accept_action_ = server_->accept(cb);
 }
 

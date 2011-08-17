@@ -283,7 +283,7 @@ Socket::~Socket()
 }
 
 Action *
-Socket::accept(EventCallback *cb)
+Socket::accept(SocketEventCallback *cb)
 {
 	ASSERT(accept_action_ == NULL);
 	ASSERT(accept_callback_ == NULL);
@@ -449,8 +449,10 @@ Socket::accept_callback(Event e)
 	case Event::Done:
 		break;
 	case Event::EOS:
+		DEBUG(log_) << "Got EOS while waiting for accept: " << e;
+		e.type_ = Event::Error;
 	case Event::Error:
-		accept_callback_->param(Event(Event::Error, e.error_));
+		accept_callback_->param(e, NULL);
 		accept_action_ = accept_callback_->schedule();
 		accept_callback_ = NULL;
 		return;
@@ -465,7 +467,7 @@ Socket::accept_callback(Event e)
 			accept_action_ = accept_schedule();
 			return;
 		default:
-			accept_callback_->param(Event(Event::Error, errno));
+			accept_callback_->param(Event(Event::Error, errno), NULL);
 			accept_action_ = accept_callback_->schedule();
 			accept_callback_ = NULL;
 			return;
@@ -473,7 +475,7 @@ Socket::accept_callback(Event e)
 	}
 
 	Socket *child = new Socket(s, domain_, socktype_, protocol_);
-	accept_callback_->param(Event(Event::Done, (void *)child));
+	accept_callback_->param(Event::Done, child);
 	Action *a = accept_callback_->schedule();
 	accept_action_ = a;
 	accept_callback_ = NULL;

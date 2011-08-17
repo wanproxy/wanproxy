@@ -40,7 +40,7 @@ ProxyConnector::ProxyConnector(const std::string& name,
 		outgoing_pipe_ = new PipeNull();
 	}
 
-	EventCallback *cb = callback(this, &ProxyConnector::connect_complete);
+	SocketEventCallback *cb = callback(this, &ProxyConnector::connect_complete);
 	remote_action_ = TCPClient::connect(family, remote_name, cb);
 
 	SimpleCallback *scb = callback(this, &ProxyConnector::stop);
@@ -109,7 +109,7 @@ ProxyConnector::close_complete(void *channel)
 }
 
 void
-ProxyConnector::connect_complete(Event e)
+ProxyConnector::connect_complete(Event e, Socket *socket)
 {
 	remote_action_->cancel();
 	remote_action_ = NULL;
@@ -127,7 +127,7 @@ ProxyConnector::connect_complete(Event e)
 		return;
 	}
 
-	remote_socket_ = (Socket *)e.data_;
+	remote_socket_ = socket;
 	ASSERT(remote_socket_ != NULL);
 
 	incoming_splice_ = new Splice(log_ + "/incoming", local_socket_, incoming_pipe_, remote_socket_);

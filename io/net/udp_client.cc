@@ -26,7 +26,7 @@ UDPClient::~UDPClient()
 }
 
 Action *
-UDPClient::connect(const std::string& iface, const std::string& name, EventCallback *ccb)
+UDPClient::connect(const std::string& iface, const std::string& name, SocketEventCallback *ccb)
 {
 	ASSERT(connect_action_ == NULL);
 	ASSERT(connect_callback_ == NULL);
@@ -34,7 +34,7 @@ UDPClient::connect(const std::string& iface, const std::string& name, EventCallb
 
 	socket_ = Socket::create(family_, SocketTypeDatagram, "udp", name);
 	if (socket_ == NULL) {
-		ccb->param(Event::Error);
+		ccb->param(Event::Error, NULL);
 		Action *a = ccb->schedule();
 
 		delete this;
@@ -43,7 +43,7 @@ UDPClient::connect(const std::string& iface, const std::string& name, EventCallb
 	}
 
 	if (iface != "" && !socket_->bind(iface)) {
-		ccb->param(Event::Error);
+		ccb->param(Event::Error, NULL);
 		Action *a = ccb->schedule();
 
 #if 0
@@ -98,9 +98,7 @@ UDPClient::connect_complete(Event e)
 	connect_action_->cancel();
 	connect_action_ = NULL;
 
-	e.data_ = (void *)socket_;
-
-	connect_callback_->param(e);
+	connect_callback_->param(e, socket_);
 	connect_action_ = connect_callback_->schedule();
 	connect_callback_ = NULL;
 }
@@ -115,14 +113,14 @@ UDPClient::close_complete(void)
 }
 
 Action *
-UDPClient::connect(SocketAddressFamily family, const std::string& name, EventCallback *cb)
+UDPClient::connect(SocketAddressFamily family, const std::string& name, SocketEventCallback *cb)
 {
 	UDPClient *udp = new UDPClient(family);
 	return (udp->connect("", name, cb));
 }
 
 Action *
-UDPClient::connect(SocketAddressFamily family, const std::string& iface, const std::string& name, EventCallback *cb)
+UDPClient::connect(SocketAddressFamily family, const std::string& iface, const std::string& name, SocketEventCallback *cb)
 {
 	UDPClient *udp = new UDPClient(family);
 	return (udp->connect(iface, name, cb));

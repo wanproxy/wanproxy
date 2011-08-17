@@ -152,7 +152,7 @@ public:
 
 		connector_ = new Connector(socket_->getsockname());
 
-		EventCallback *cb = callback(this, &Listener::accept_complete);
+		SocketEventCallback *cb = callback(this, &Listener::accept_complete);
 		action_ = socket_->accept(cb);
 	}
 
@@ -187,7 +187,7 @@ public:
 		}
 	}
 
-	void accept_complete(Event e)
+	void accept_complete(Event e, Socket *socket)
 	{
 		action_->cancel();
 		action_ = NULL;
@@ -202,7 +202,7 @@ public:
 
 		{
 			Test _(group_, "Non-NULL client socket");
-			client_ = (Socket *)e.data_;
+			client_ = socket;
 			if (client_ != NULL)
 				_.pass();
 		}

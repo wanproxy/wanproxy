@@ -1,8 +1,14 @@
 #ifndef	SOCKET_H
 #define	SOCKET_H
 
+#include <event/event.h>
+#include <event/object_callback.h>
+#include <event/typed_pair_callback.h>
+
 #include <io/stream_handle.h>
 #include <io/socket/socket_types.h>
+
+typedef	class TypedPairCallback<Event, Socket *> SocketEventCallback;
 
 class Socket : public StreamHandle {
 	LogHandle log_;
@@ -10,7 +16,7 @@ class Socket : public StreamHandle {
 	int socktype_;
 	int protocol_;
 	Action *accept_action_;
-	EventCallback *accept_callback_;
+	SocketEventCallback *accept_callback_;
 	EventCallback *connect_callback_;
 	Action *connect_action_;
 
@@ -18,7 +24,7 @@ class Socket : public StreamHandle {
 public:
 	~Socket();
 
-	virtual Action *accept(EventCallback *);
+	virtual Action *accept(SocketEventCallback *);
 	bool bind(const std::string&);
 	Action *connect(const std::string&, EventCallback *);
 	bool listen(int=10);

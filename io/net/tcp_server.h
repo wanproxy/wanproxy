@@ -21,7 +21,7 @@ public:
 		}
 	}
 
-	Action *accept(EventCallback *cb)
+	Action *accept(SocketEventCallback *cb)
 	{
 		return (socket_->accept(cb));
 	}

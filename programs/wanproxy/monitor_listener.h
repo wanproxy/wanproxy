@@ -1,6 +1,7 @@
 #ifndef	MONITOR_LISTENER_H
 #define	MONITOR_LISTENER_H
 
+class Socket;
 class TCPServer;
 class XCodec;
 
@@ -18,7 +19,7 @@ public:
 	~MonitorListener();
 
 private:
-	void accept_complete(Event);
+	void accept_complete(Event, Socket *);
 	void close_complete(void);
 	void stop(void);
 };

@@ -24,7 +24,7 @@ MonitorListener::MonitorListener(const std::string& name, SocketAddressFamily fa
 		HALT(log_) << "Unable to create listener.";
 	}
 
-	EventCallback *cb = callback(this, &MonitorListener::accept_complete);
+	SocketEventCallback *cb = callback(this, &MonitorListener::accept_complete);
 	accept_action_ = server_->accept(cb);
 
 	SimpleCallback *scb = callback(this, &MonitorListener::stop);
@@ -40,7 +40,7 @@ MonitorListener::~MonitorListener()
 }
 
 void
-MonitorListener::accept_complete(Event e)
+MonitorListener::accept_complete(Event e, Socket *socket)
 {
 	accept_action_->cancel();
 	accept_action_ = NULL;
@@ -57,11 +57,10 @@ MonitorListener::accept_complete(Event e)
 	}
 
 	if (e.type_ == Event::Done) {
-		Socket *client = (Socket *)e.data_;
-		new MonitorConnection(name_, client);
+		new MonitorConnection(name_, socket);
 	}
 
-	EventCallback *cb = callback(this, &MonitorListener::accept_complete);
+	SocketEventCallback *cb = callback(this, &MonitorListener::accept_complete);
 	accept_action_ = server_->accept(cb);
 }
 

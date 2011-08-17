@@ -26,7 +26,7 @@ TCPClient::~TCPClient()
 }
 
 Action *
-TCPClient::connect(const std::string& iface, const std::string& name, EventCallback *ccb)
+TCPClient::connect(const std::string& iface, const std::string& name, SocketEventCallback *ccb)
 {
 	ASSERT(connect_action_ == NULL);
 	ASSERT(connect_callback_ == NULL);
@@ -34,7 +34,7 @@ TCPClient::connect(const std::string& iface, const std::string& name, EventCallb
 
 	socket_ = Socket::create(family_, SocketTypeStream, "tcp", name);
 	if (socket_ == NULL) {
-		ccb->param(Event::Error);
+		ccb->param(Event::Error, NULL);
 		Action *a = ccb->schedule();
 
 		delete this;
@@ -43,9 +43,17 @@ TCPClient::connect(const std::string& iface, const std::string& name, EventCallb
 	}
 
 	if (iface != "" && !socket_->bind(iface)) {
-		ccb->param(Event::Error);
+		ccb->param(Event::Error, NULL);
 		Action *a = ccb->schedule();
 
+		/*
+		 * XXX
+		 * I think maybe just pass the Socket up to the caller
+		 * and make them close it?
+		 *
+		 * NB:
+		 * Not duplicating this to other similar code.
+		 */
 #if 0
 		/*
 		 * XXX
@@ -98,9 +106,7 @@ TCPClient::connect_complete(Event e)
 	connect_action_->cancel();
 	connect_action_ = NULL;
 
-	e.data_ = (void *)socket_;
-
-	connect_callback_->param(e);
+	connect_callback_->param(e, socket_);
 	connect_action_ = connect_callback_->schedule();
 	connect_callback_ = NULL;
 }
@@ -115,14 +121,14 @@ TCPClient::close_complete(void)
 }
 
 Action *
-TCPClient::connect(SocketAddressFamily family, const std::string& name, EventCallback *cb)
+TCPClient::connect(SocketAddressFamily family, const std::string& name, SocketEventCallback *cb)
 {
 	TCPClient *tcp = new TCPClient(family);
 	return (tcp->connect("", name, cb));
 }
 
 Action *
-TCPClient::connect(SocketAddressFamily family, const std::string& iface, const std::string& name, EventCallback *cb)
+TCPClient::connect(SocketAddressFamily family, const std::string& iface, const std::string& name, SocketEventCallback *cb)
 {
 	TCPClient *tcp = new TCPClient(family);
 	return (tcp->connect(iface, name, cb));

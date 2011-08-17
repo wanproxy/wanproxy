@@ -24,7 +24,7 @@ public:
 	  action_(NULL)
 	{
 		test_ = new Test(group_, "TCPClient::connect");
-		EventCallback *cb =
+		SocketEventCallback *cb =
 			callback(this, &Connector::connect_complete);
 		action_ = TCPClient::connect(family, remote, cb);
 	}
@@ -70,7 +70,7 @@ public:
 		socket_ = NULL;
 	}
 
-	void connect_complete(Event e)
+	void connect_complete(Event e, Socket *socket)
 	{
 		action_->cancel();
 		action_ = NULL;
@@ -89,7 +89,7 @@ public:
 		test_ = NULL;
 
 		Test _(group_, "TCPClient::connect set Socket pointer.");
-		socket_ = (Socket *)e.data_;
+		socket_ = socket;
 		if (socket_ != NULL)
 			_.pass();
 
@@ -143,7 +143,7 @@ public:
 
 		connector_ = new Connector(suffix, family, server_->getsockname());
 
-		EventCallback *cb = callback(this, &Listener::accept_complete);
+		SocketEventCallback *cb = callback(this, &Listener::accept_complete);
 		action_ = server_->accept(cb);
 	}
 
@@ -178,7 +178,7 @@ public:
 		}
 	}
 
-	void accept_complete(Event e)
+	void accept_complete(Event e, Socket *socket)
 	{
 		action_->cancel();
 		action_ = NULL;
@@ -193,7 +193,7 @@ public:
 
 		{
 			Test _(group_, "Non-NULL client socket");
-			client_ = (Socket *)e.data_;
+			client_ = socket;
 			if (client_ != NULL)
 				_.pass();
 		}

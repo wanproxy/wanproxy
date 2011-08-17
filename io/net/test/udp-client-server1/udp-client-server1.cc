@@ -24,7 +24,7 @@ public:
 	  action_(NULL)
 	{
 		test_ = new Test(group_, "UDPClient::connect");
-		EventCallback *cb =
+		SocketEventCallback *cb =
 			callback(this, &Connector::connect_complete);
 		action_ = UDPClient::connect(family, remote, cb);
 	}
@@ -70,7 +70,7 @@ public:
 		socket_ = NULL;
 	}
 
-	void connect_complete(Event e)
+	void connect_complete(Event e, Socket *socket)
 	{
 		action_->cancel();
 		action_ = NULL;
@@ -89,7 +89,7 @@ public:
 		test_ = NULL;
 
 		Test _(group_, "UDPClient::connect set Socket pointer.");
-		socket_ = (Socket *)e.data_;
+		socket_ = socket;
 		if (socket_ != NULL)
 			_.pass();
 
