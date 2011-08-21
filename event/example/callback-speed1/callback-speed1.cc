@@ -1,50 +1,26 @@
 #include <event/event_callback.h>
 #include <event/event_main.h>
 #include <event/event_system.h>
+#include <event/speed_test.h>
 
-#define	TIMER_MS	1000
-
-class CallbackSpeed {
+class CallbackSpeed : SpeedTest {
 	uintmax_t callback_count_;
-	Action *callback_action_;
-	Action *timeout_action_;
 public:
 	CallbackSpeed(void)
-	: callback_count_(0),
-	  callback_action_(NULL),
-	  timeout_action_(NULL)
-	{
-		callback_action_ = callback(this, &CallbackSpeed::callback_complete)->schedule();
-
-		INFO("/example/callback/speed1") << "Arming timer.";
-		timeout_action_ = EventSystem::instance()->timeout(TIMER_MS, callback(this, &CallbackSpeed::timer));
-	}
+	: callback_count_(0)
+	{ }
 
 	~CallbackSpeed()
-	{
-		ASSERT(timeout_action_ == NULL);
-	}
+	{ }
 
 private:
-	void callback_complete(void)
+	void perform(void)
 	{
-		callback_action_->cancel();
-		callback_action_ = NULL;
-
 		callback_count_++;
-
-		callback_action_ = callback(this, &CallbackSpeed::callback_complete)->schedule();
 	}
 
-	void timer(void)
+	void finish(void)
 	{
-		timeout_action_->cancel();
-		timeout_action_ = NULL;
-
-		ASSERT(callback_action_ != NULL);
-		callback_action_->cancel();
-		callback_action_ = NULL;
-
 		INFO("/example/callback/speed1") << "Timer expired; " << callback_count_ << " callbacks.";
 	}
 };
@@ -52,8 +28,6 @@ private:
 int
 main(void)
 {
-	INFO("/example/callback/speed1") << "Timer delay: " << TIMER_MS << "ms";
-
 	CallbackSpeed *cs = new CallbackSpeed();
 
 	event_main();
