@@ -4,6 +4,7 @@
 #include <string.h> /* memmove(3), memcpy(3), etc.  */
 
 #include <deque>
+#include <vector>
 
 struct iovec;
 
@@ -496,6 +497,8 @@ public:
 	: length_(0),
 	  data_()
 	{
+		ASSERT(buf != NULL);
+		ASSERT(len != 0);
 		append(buf, len);
 	}
 
@@ -506,7 +509,8 @@ public:
 	: length_(0),
 	  data_()
 	{
-		append(source);
+		if (!source.empty())
+			append(source);
 	}
 
 	/*
@@ -528,7 +532,8 @@ public:
 	: length_(0),
 	  data_()
 	{
-		append((const uint8_t *)str.c_str(), str.length());
+		if (!str.empty())
+			append((const uint8_t *)str.c_str(), str.length());
 	}
 
 	/*
@@ -1404,6 +1409,60 @@ public:
 			return;
 		ASSERT(length_ > len);
 		trim(length_ - len);
+	}
+
+	/*
+	 * Split this Buffer into a vector of Buffers at each occurrance of the
+	 * specified separator character sep.
+	 */
+	std::vector<Buffer> split(uint8_t ch, bool include_empty = false)
+	{
+		std::vector<Buffer> vec;
+
+		if (empty()) {
+			if (include_empty)
+				vec.push_back(Buffer());
+			return (vec);
+		}
+
+		for (;;) {
+			unsigned off;
+			if (!find(ch, &off)) {
+				/*
+				 * Separator not found.
+				 */
+				if (!empty()) {
+					vec.push_back(*this);
+					clear();
+				} else {
+					if (include_empty)
+						vec.push_back(Buffer());
+				}
+				return (vec);
+			}
+
+			/*
+			 * Extract the data before the separator.
+			 */
+			if (off != 0) {
+				Buffer buf;
+				skip(off, &buf);
+				vec.push_back(buf);
+			} else {
+				/*
+				 * No data before the separator.
+				 */
+				if (include_empty)
+					vec.push_back(Buffer());
+			}
+
+			/*
+			 * Skip the separator.
+			 */
+			skip(1);
+		}
+
+		NOTREACHED();
 	}
 
 	/*
