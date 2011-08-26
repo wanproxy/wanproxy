@@ -1466,6 +1466,40 @@ public:
 	}
 
 	/*
+	 * Merge a vector of Buffers into a single Buffer with the requested
+	 * separator string sep.
+	 *
+	 * XXX Do we need/want include_empty?
+	 */
+	static Buffer join(const std::vector<Buffer>& vec, const std::string& sep = "")
+	{
+		if (vec.empty())
+			return (Buffer());
+
+		if (vec.size() == 1)
+			return (vec.front());
+
+		if (sep == "") {
+			Buffer buf;
+			std::vector<Buffer>::const_iterator it;
+			for (it = vec.begin(); it != vec.end(); ++it)
+				buf.append(*it);
+			return (buf);
+		}
+
+		Buffer delim(sep);
+		Buffer buf;
+		std::vector<Buffer>::const_iterator it = vec.begin();
+		for(;;) {
+			buf.append(*it);
+			if (++it == vec.end())
+				break;
+			buf.append(delim);
+		}
+		return (buf);
+	}
+
+	/*
 	 * Fill a suppled iovec which has at most a specified number of elements
 	 * with the contents of this Buffer and return the number which were
 	 * populated.

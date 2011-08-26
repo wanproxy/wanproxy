@@ -6,5 +6,6 @@ SUBDIR+=buffer-prefix1
 SUBDIR+=buffer-return1
 SUBDIR+=buffer-segment-pullup1
 SUBDIR+=buffer-split1
+SUBDIR+=buffer-split-join1
 
 include ../../common/subdir.mk
