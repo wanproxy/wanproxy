@@ -8,18 +8,16 @@
  * This is just one level up from using macros.  Would be nice to use abstract
  * base classes and something a bit tidier.
  */
-template<typename A, typename C, typename L>
+template<typename L>
 class SimpleServer {
 	LogHandle log_;
-	A arg_;
 	L *server_;
 	Action *accept_action_;
 	Action *close_action_;
 	Action *stop_action_;
 public:
-	SimpleServer(LogHandle log, A arg, SocketAddressFamily family, const std::string& interface)
+	SimpleServer(LogHandle log, SocketAddressFamily family, const std::string& interface)
 	: log_(log),
-	  arg_(arg),
 	  server_(NULL),
 	  accept_action_(NULL),
 	  close_action_(NULL),
@@ -31,7 +29,7 @@ public:
 
 		INFO(log_) << "Listening on: " << server_->getsockname();
 
-		EventCallback *cb = callback(this, &SimpleServer::accept_complete);
+		SocketEventCallback *cb = callback(this, &SimpleServer::accept_complete);
 		accept_action_ = server_->accept(cb);
 
 		SimpleCallback *scb = callback(this, &SimpleServer::stop);
@@ -47,7 +45,7 @@ public:
 	}
 
 private:
-	void accept_complete(Event e)
+	void accept_complete(Event e, Socket *client)
 	{
 		accept_action_->cancel();
 		accept_action_ = NULL;
@@ -64,14 +62,11 @@ private:
 		}
 
 		if (e.type_ == Event::Done) {
-			Socket *client = (Socket *)e.data_;
-
 			INFO(log_) << "Accepted client: " << client->getpeername();
-
-			new C(arg_, client);
+			client_connected(client);
 		}
 
-		EventCallback *cb = callback(this, &SimpleServer::accept_complete);
+		SocketEventCallback *cb = callback(this, &SimpleServer::accept_complete);
 		accept_action_ = server_->accept(cb);
 	}
 
@@ -100,6 +95,8 @@ private:
 		SimpleCallback *cb = callback(this, &SimpleServer::close_complete);
 		close_action_ = server_->close(cb);
 	}
+
+	virtual void client_connected(Socket *) = 0;
 };
 
 #endif /* !IO_SOCKET_SIMPLE_SERVER_H */
