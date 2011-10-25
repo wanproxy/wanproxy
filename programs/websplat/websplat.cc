@@ -15,6 +15,8 @@
 
 #include <io/socket/simple_server.h>
 
+#include <vis.h>
+
 struct WebsplatConfig {
 	std::string root_;
 
@@ -470,7 +472,15 @@ private:
 			return;
 		}
 
-		handle_request(method, uri, message);
+		char uri_decoded[uri.length()];
+		int rv = strunvisx(uri_decoded, uri.c_str(), VIS_HTTPSTYLE);
+		if (rv == -1) {
+			pipe_->send_response(HTTPServerPipe::BadRequest, "Malformed URI encoding.");
+			return;
+		}
+		ASSERT(rv >= 0);
+
+		handle_request(method, std::string(uri_decoded, rv), message);
 	}
 
 	void splice_complete(Event e)
