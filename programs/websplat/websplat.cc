@@ -17,14 +17,6 @@
 
 #include <vis.h>
 
-struct WebsplatConfig {
-	std::string root_;
-
-	WebsplatConfig(void)
-	: root_("")
-	{ }
-};
-
 struct HTTPMessage {
 	Buffer start_line_;
 	std::map<std::string, std::vector<Buffer> > headers_;
@@ -357,17 +349,15 @@ private:
 class WebsplatClient {
 	LogHandle log_;
 	Socket *client_;
-	WebsplatConfig config_;
 	HTTPServerPipe *pipe_;
 	Splice *splice_;
 	Action *splice_action_;
 	Action *close_action_;
 	Action *message_action_;
 public:
-	WebsplatClient(Socket *client, const WebsplatConfig& config)
+	WebsplatClient(Socket *client)
 	: log_("/websplat/server/client/" + client->getpeername()),
 	  client_(client),
-	  config_(config),
 	  pipe_(NULL),
 	  splice_(NULL),
 	  splice_action_(NULL),
@@ -526,18 +516,41 @@ private:
 			return;
 		}
 
+		if (uri.empty() || uri[0] != '/') {
+			pipe_->send_response(HTTPServerPipe::BadRequest, "Invalid URI.");
+			return;
+		}
+
+		std::vector<Buffer> path_components = Buffer(uri).split('/', false);
+		std::vector<Buffer>::const_iterator it;
+		std::vector<Buffer> path_stack;
+		for (it = path_components.begin(); it != path_components.end(); ++it) {
+			Buffer component = *it;
+
+			if (component.equal("."))
+				continue;
+
+			if (component.equal("..")) {
+				if (path_stack.empty()) {
+					pipe_->send_response(HTTPServerPipe::BadRequest, "Gratuitously-invalid URI.");
+					return;
+				}
+				path_stack.pop_back();
+			}
+
+			path_stack.push_back(component);
+		}
+		path_components.clear();
+
 		pipe_->send_response(HTTPServerPipe::OK, "<html><head><title>Websplat - " + uri + "</title></head><body><h1>Welcome to Websplat!</h1><p>Have a nice " + method + "</p></body></html>", "text/html");
 	}
 };
 
 template<typename T>
 class WebsplatServer : public SimpleServer<T> {
-	WebsplatConfig config_;
 public:
-	WebsplatServer(SocketAddressFamily family, const std::string& interface,
-		       const WebsplatConfig& config)
-	: SimpleServer<T>("/websplat/server", family, interface),
-	  config_(config)
+	WebsplatServer(SocketAddressFamily family, const std::string& interface)
+	: SimpleServer<T>("/websplat/server", family, interface)
 	{ }
 
 	~WebsplatServer()
@@ -545,7 +558,7 @@ public:
 
 	void client_connected(Socket *client)
 	{
-		new WebsplatClient(client, config_);
+		new WebsplatClient(client);
 	}
 };
 
@@ -555,7 +568,6 @@ int
 main(int argc, char *argv[])
 {
 	std::string interface("");
-	WebsplatConfig config;
 	bool quiet, verbose;
 	int ch;
 
@@ -566,16 +578,13 @@ main(int argc, char *argv[])
 	INFO("/websplat") << "Copyright (c) 2008-2011 WANProxy.org.";
 	INFO("/websplat") << "All rights reserved.";
 
-	while ((ch = getopt(argc, argv, "i:qr:v")) != -1) {
+	while ((ch = getopt(argc, argv, "i:qv")) != -1) {
 		switch (ch) {
 		case 'i':
 			interface = optarg;
 			break;
 		case 'q':
 			quiet = true;
-			break;
-		case 'r':
-			config.root_ = optarg;
 			break;
 		case 'v':
 			verbose = true;
@@ -586,9 +595,6 @@ main(int argc, char *argv[])
 	}
 
 	if (interface == "")
-		usage();
-
-	if (config.root_ == "")
 		usage();
 
 	if (quiet && verbose)
@@ -602,7 +608,7 @@ main(int argc, char *argv[])
 		Log::mask(".?", Log::Info);
 	}
 
-	new WebsplatServer<TCPServer>(SocketAddressFamilyIP, interface, config);
+	new WebsplatServer<TCPServer>(SocketAddressFamilyIP, interface);
 
 	event_main();
 }
@@ -610,6 +616,6 @@ main(int argc, char *argv[])
 static void
 usage(void)
 {
-	INFO("/websplat/usage") << "wanproxy [-q | -v] -i interface -r root";
+	INFO("/websplat/usage") << "wanproxy [-q | -v] -i interface";
 	exit(1);
 }
