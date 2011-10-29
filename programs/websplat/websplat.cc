@@ -20,6 +20,10 @@
 struct HTTPMessage {
 	Buffer start_line_;
 	std::map<std::string, std::vector<Buffer> > headers_;
+#if 0
+	Buffer body_;
+	std::map<std::string, std::vector<Buffer> > trailers_;
+#endif
 };
 
 typedef class TypedPairCallback<Event, HTTPMessage> HTTPMessageEventCallback;
