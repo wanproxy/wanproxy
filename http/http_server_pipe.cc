@@ -211,12 +211,21 @@ HTTPServerPipe::consume(Buffer *in)
 
 		Buffer line;
 		unsigned pos;
+		uint8_t found;
+		if (!buffer_.find_any("\r\n", &pos, 0, &found)) {
+			DEBUG(log_) << "Waiting for remainder of line.";
+			return;
+		}
+
 		/*
 		 * XXX
-		 * Need a find_any variant that indicates which was
-		 * found.
+		 * We should pick line ending from the start line and require it to
+		 * be consistent for remaining lines, rather than using find_any over
+		 * and over, which is non-trivial.  Handling of the start line can be
+		 * quite easily and cheaply before the loop.
 		 */
-		if (buffer_.find('\r', &pos)) {
+		switch (found) {
+		case '\r':
 			/* CRLF line endings.  */
 			ASSERT(buffer_.length() > pos);
 			if (buffer_.length() == pos + 1) {
@@ -225,15 +234,21 @@ HTTPServerPipe::consume(Buffer *in)
 			}
 			if (pos != 0)
 				buffer_.moveout(&line, pos);
-			buffer_.skip(2);
-		} else {
-			if (!buffer_.find('\n', &pos)) {
-				DEBUG(log_) << "Waiting for remainder of line.";
+			buffer_.skip(1);
+			if (buffer_.peek() != '\n') {
+				ERROR(log_) << "Carriage return not followed by line feed.";
+				send_response(BadRequest, "Line includes embedded carriage return.");
 				return;
 			}
+			buffer_.skip(1);
+			break;
+		case '\n':
 			/* Unix line endings.  */
 			buffer_.moveout(&line, pos);
 			buffer_.skip(1);
+			break;
+		default:
+			NOTREACHED();
 		}
 
 		if (state_ == GetStart) {
