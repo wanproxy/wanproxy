@@ -162,15 +162,22 @@ struct socket_address {
 #endif
 		case AF_INET:
 		{
+			std::string name;
+			std::string service;
+
 			std::string::size_type pos = str.find(']');
-			if (pos == std::string::npos)
-				return (false);
-
-			if (pos < 3 || str[0] != '[' || str[pos + 1] != ':')
-				return (false);
-
-			std::string name = str.substr(1, pos - 1);
-			std::string service = str.substr(pos + 2);
+			if (pos != std::string::npos) {
+				if (pos < 3 || str[0] != '[' || str[pos + 1] != ':')
+					return (false);
+				name = str.substr(1, pos - 1);
+				service = str.substr(pos + 2);
+			} else {
+				pos = str.find(':');
+				if (pos == std::string::npos)
+					return (false);
+				name = str.substr(0, pos);
+				service = str.substr(pos + 1);
+			}
 
 			struct addrinfo hints;
 
