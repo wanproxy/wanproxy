@@ -80,57 +80,32 @@ private:
 		ASSERT(e.type_ == Event::Done);
 
 		ASSERT(!message.start_line_.empty());
-		Buffer line(message.start_line_);
+		std::vector<Buffer> words = message.start_line_.split(' ', false);
+
+		if (words.empty()) {
+			pipe_->send_response(HTTPServerPipe::BadRequest, "Empty request.");
+			return;
+		}
+
+		if (words.size() != 3) {
+			pipe_->send_response(HTTPServerPipe::BadRequest, "Wrong number of parameters in request.");
+			return;
+		}
 
 		std::string method;
-		for (;;) {
-			char ch = line.peek();
-			line.skip(1);
-			if (isspace(ch)) {
-				for (;;) {
-					if (line.empty()) {
-						pipe_->send_response(HTTPServerPipe::BadRequest, "Premature end-of-line after method.");
-						return;
-					}
-					ch = line.peek();
-					if (!isspace(ch))
-						break;
-					line.skip(1);
-				}
-				break;
-			}
-			if (line.empty()) {
-				pipe_->send_response(HTTPServerPipe::BadRequest, "End-of-line inside method.");
-				return;
-			}
-			method += toupper(ch);
-		}
+		words[0].extract(method);
+		ASSERT(!method.empty());
+		std::transform(method.begin(), method.end(), method.begin(), ::toupper);
 
 		std::string uri;
-		for (;;) {
-			char ch = line.peek();
-			line.skip(1);
-			if (isspace(ch)) {
-				for (;;) {
-					if (line.empty()) {
-						pipe_->send_response(HTTPServerPipe::BadRequest, "Premature end-of-line after URI.");
-						return;
-					}
-					ch = line.peek();
-					if (!isspace(ch))
-						break;
-					line.skip(1);
-				}
-				break;
-			}
-			if (line.empty()) {
-				pipe_->send_response(HTTPServerPipe::BadRequest, "End-of-line inside URI.");
-				return;
-			}
-			uri += ch;
-		}
+		words[1].extract(uri);
+		ASSERT(!uri.empty());
 
-		if (!line.equal("HTTP/1.1") && !line.equal("HTTP/1.0")) {
+		std::string version;
+		words[2].extract(version);
+		ASSERT(!version.empty());
+
+		if (version != "HTTP/1.1" && version != "HTTP/1.0") {
 			pipe_->send_response(HTTPServerPipe::VersionNotSupported, "Version not supported.");
 			return;
 		}
