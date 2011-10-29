@@ -244,6 +244,12 @@ HTTPServerPipe::consume(Buffer *in)
 			message_.start_line_ = line;
 			state_ = GetHeaders;
 
+			/*
+			 * XXX
+			 * If we're really doing HTTP and not just something faux HTTP,
+			 * we need to handle HTTP/0.9-style requests here.
+			 */
+
 			if (buffer_.empty())
 				break;
 			continue;
