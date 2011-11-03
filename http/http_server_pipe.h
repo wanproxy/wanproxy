@@ -4,19 +4,12 @@
 #include <event/event.h>
 #include <event/typed_pair_callback.h>
 
+#include <http/http_protocol.h>
+
 #include <io/pipe/pipe.h>
 #include <io/pipe/pipe_producer.h>
 
-struct HTTPMessage {
-	Buffer start_line_;
-	std::map<std::string, std::vector<Buffer> > headers_;
-#if 0
-	Buffer body_;
-	std::map<std::string, std::vector<Buffer> > trailers_;
-#endif
-};
-
-typedef class TypedPairCallback<Event, HTTPMessage> HTTPMessageEventCallback;
+typedef class TypedPairCallback<Event, HTTPProtocol::Message> HTTPMessageEventCallback;
 
 class HTTPServerPipe : public PipeProducer {
 	enum State {
@@ -26,20 +19,11 @@ class HTTPServerPipe : public PipeProducer {
 		GotMessage,
 		Error
 	};
-public:
-	enum Status {
-		OK,
-		BadRequest,
-		NotFound,
-		NotImplemented,
-		VersionNotSupported,
-	};
 
-private:
 	State state_;
 	Buffer buffer_;
 
-	HTTPMessage message_;
+	HTTPProtocol::Message message_;
 	std::string last_header_;
 
 	Action *action_;
@@ -50,9 +34,9 @@ public:
 
 	Action *message(HTTPMessageEventCallback *);
 
-	/* XXX Use HTTPMessage type and add nice constructors for it?  */
-	void send_response(Status, Buffer *, Buffer *);
-	void send_response(Status, const std::string&, const std::string& = "text/plain");
+	/* XXX Use HTTPProtocol::Message type and add nice constructors for it?  */
+	void send_response(HTTPProtocol::Status, Buffer *, Buffer *);
+	void send_response(HTTPProtocol::Status, const std::string&, const std::string& = "text/plain");
 
 private:
 	void cancel(void);

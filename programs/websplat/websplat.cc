@@ -68,7 +68,7 @@ private:
 		delete this;
 	}
 
-	void request(Event e, HTTPMessage message)
+	void request(Event e, HTTPProtocol::Message message)
 	{
 		message_action_->cancel();
 		message_action_ = NULL;
@@ -83,12 +83,12 @@ private:
 		std::vector<Buffer> words = message.start_line_.split(' ', false);
 
 		if (words.empty()) {
-			pipe_->send_response(HTTPServerPipe::BadRequest, "Empty request.");
+			pipe_->send_response(HTTPProtocol::BadRequest, "Empty request.");
 			return;
 		}
 
 		if (words.size() != 3) {
-			pipe_->send_response(HTTPServerPipe::BadRequest, "Wrong number of parameters in request.");
+			pipe_->send_response(HTTPProtocol::BadRequest, "Wrong number of parameters in request.");
 			return;
 		}
 
@@ -106,14 +106,14 @@ private:
 		ASSERT(!version.empty());
 
 		if (version != "HTTP/1.1" && version != "HTTP/1.0") {
-			pipe_->send_response(HTTPServerPipe::VersionNotSupported, "Version not supported.");
+			pipe_->send_response(HTTPProtocol::VersionNotSupported, "Version not supported.");
 			return;
 		}
 
 		char uri_decoded[uri.length()];
 		int rv = strunvisx(uri_decoded, uri.c_str(), VIS_HTTPSTYLE);
 		if (rv == -1) {
-			pipe_->send_response(HTTPServerPipe::BadRequest, "Malformed URI encoding.");
+			pipe_->send_response(HTTPProtocol::BadRequest, "Malformed URI encoding.");
 			return;
 		}
 		ASSERT(rv >= 0);
@@ -157,15 +157,15 @@ private:
 		close_action_ = client_->close(cb);
 	}
 
-	void handle_request(const std::string& method, const std::string& uri, HTTPMessage)
+	void handle_request(const std::string& method, const std::string& uri, HTTPProtocol::Message)
 	{
 		if (method != "GET") {
-			pipe_->send_response(HTTPServerPipe::NotImplemented, "Unsupported method.");
+			pipe_->send_response(HTTPProtocol::NotImplemented, "Unsupported method.");
 			return;
 		}
 
 		if (uri.empty() || uri[0] != '/') {
-			pipe_->send_response(HTTPServerPipe::BadRequest, "Invalid URI.");
+			pipe_->send_response(HTTPProtocol::BadRequest, "Invalid URI.");
 			return;
 		}
 
@@ -180,7 +180,7 @@ private:
 
 			if (component.equal("..")) {
 				if (path_stack.empty()) {
-					pipe_->send_response(HTTPServerPipe::BadRequest, "Gratuitously-invalid URI.");
+					pipe_->send_response(HTTPProtocol::BadRequest, "Gratuitously-invalid URI.");
 					return;
 				}
 				path_stack.pop_back();
@@ -190,7 +190,7 @@ private:
 		}
 		path_components.clear();
 
-		pipe_->send_response(HTTPServerPipe::OK, "<html><head><title>Websplat - " + uri + "</title></head><body><h1>Welcome to Websplat!</h1><p>Have a nice " + method + "</p></body></html>", "text/html");
+		pipe_->send_response(HTTPProtocol::OK, "<html><head><title>Websplat - " + uri + "</title></head><body><h1>Welcome to Websplat!</h1><p>Have a nice " + method + "</p></body></html>", "text/html");
 	}
 };
 

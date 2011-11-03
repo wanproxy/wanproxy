@@ -49,7 +49,7 @@ HTTPServerPipe::message(HTTPMessageEventCallback *cb)
 }
 
 void
-HTTPServerPipe::send_response(Status status, Buffer *body, Buffer *headers)
+HTTPServerPipe::send_response(HTTPProtocol::Status status, Buffer *body, Buffer *headers)
 {
 	if (state_ == GotMessage || state_ == Error) {
 		ASSERT(buffer_.empty());
@@ -57,7 +57,7 @@ HTTPServerPipe::send_response(Status status, Buffer *body, Buffer *headers)
 		if (!buffer_.empty()) {
 			buffer_.clear();
 		} else {
-			ASSERT(status == BadRequest);
+			ASSERT(status == HTTPProtocol::BadRequest);
 			DEBUG(log_) << "Premature end-of-stream.";
 		}
 		state_ = Error; /* Process no more input.  */
@@ -78,19 +78,19 @@ HTTPServerPipe::send_response(Status status, Buffer *body, Buffer *headers)
 	 */
 	Buffer response("HTTP/1.1 ");
 	switch (status) {
-	case OK:
+	case HTTPProtocol::OK:
 		response.append("200 OK");
 		break;
-	case BadRequest:
+	case HTTPProtocol::BadRequest:
 		response.append("400 Bad Request");
 		break;
-	case NotFound:
+	case HTTPProtocol::NotFound:
 		response.append("404 Not Found");
 		break;
-	case NotImplemented:
+	case HTTPProtocol::NotImplemented:
 		response.append("501 Not Implemented");
 		break;
-	case VersionNotSupported:
+	case HTTPProtocol::VersionNotSupported:
 		response.append("505 Version Not Supported");
 		break;
 	default:
@@ -129,7 +129,7 @@ HTTPServerPipe::send_response(Status status, Buffer *body, Buffer *headers)
 }
 
 void
-HTTPServerPipe::send_response(Status status, const std::string& body, const std::string& content_type)
+HTTPServerPipe::send_response(HTTPProtocol::Status status, const std::string& body, const std::string& content_type)
 {
 	Buffer tmp(body);
 	Buffer header("Content-type: " + content_type + "\r\n");
@@ -160,7 +160,7 @@ HTTPServerPipe::schedule_callback(HTTPMessageEventCallback *cb)
 		cb->param(Event::Done, message_);
 		break;
 	case Error:
-		cb->param(Event::Error, HTTPMessage());
+		cb->param(Event::Error, HTTPProtocol::Message());
 		break;
 	default:
 		NOTREACHED();
@@ -199,7 +199,7 @@ HTTPServerPipe::consume(Buffer *in)
 	}
 
 	if (in->empty()) {
-		send_response(BadRequest, "Premature end of request.");
+		send_response(HTTPProtocol::BadRequest, "Premature end of request.");
 		return;
 	}
 
@@ -237,7 +237,7 @@ HTTPServerPipe::consume(Buffer *in)
 			buffer_.skip(1);
 			if (buffer_.peek() != '\n') {
 				ERROR(log_) << "Carriage return not followed by line feed.";
-				send_response(BadRequest, "Line includes embedded carriage return.");
+				send_response(HTTPProtocol::BadRequest, "Line includes embedded carriage return.");
 				return;
 			}
 			buffer_.skip(1);
@@ -252,25 +252,69 @@ HTTPServerPipe::consume(Buffer *in)
 		}
 
 		if (state_ == GetStart) {
+			ASSERT(message_.start_line_.empty());
 			if (line.empty()) {
 				ERROR(log_) << "Premature end of headers.";
 				return;
 			}
 			message_.start_line_ = line;
-			state_ = GetHeaders;
 
 			/*
-			 * XXX
-			 * If we're really doing HTTP and not just something faux HTTP,
-			 * we need to handle HTTP/0.9-style requests here.
+			 * There are two kinds of request line.  The first has two
+			 * words, the second has three.  Anything else is malformed.
+			 *
+			 * The first kind is HTTP/0.9.  The second kind can be
+			 * anything, especially HTTP/1.0 and HTTP/1.1.
 			 */
+			std::vector<Buffer> words = line.split(' ', false);
+			if (words.empty()) {
+				send_response(HTTPProtocol::BadRequest, "Empty start line.");
+				return;
+			}
 
-			if (buffer_.empty())
-				break;
-			continue;
+			if (words.size() == 3) {
+				/*
+				 * HTTP/1.0 or HTTP/1.1.  Get headers.
+				 */
+				state_ = GetHeaders;
+
+				if (buffer_.empty())
+					break;
+				continue;
+			}
+
+			if (words.size() != 2) {
+				/*
+				 * Not HTTP/0.9.
+				 */
+				send_response(HTTPProtocol::BadRequest, "Too many request parameters.");
+				return;
+			}
+
+			/*
+			 * HTTP/0.9.  This is all we should get from the client.
+			 */
+			if (!buffer_.empty()) {
+				send_response(HTTPProtocol::BadRequest, "Garbage after HTTP/0.9-style request.");
+				return;
+			}
+
+			/*
+			 * We have received the full message.  Process any
+			 * pending callback.
+			 */
+			state_ = GotMessage;
+
+			ASSERT(action_ == NULL);
+			if (callback_ != NULL) {
+				action_ = schedule_callback(callback_);
+				callback_ = NULL;
+			}
+			return;
 		}
 
 		ASSERT(state_ == GetHeaders);
+		ASSERT(!message_.start_line_.empty());
 
 		/*
 		 * Process end of headers!
@@ -278,7 +322,7 @@ HTTPServerPipe::consume(Buffer *in)
 		if (line.empty()) {
 			if (!buffer_.empty()) {
 				ERROR(log_) << "Client sent garbage after message.";
-				send_response(BadRequest, "Garbage after message.");
+				send_response(HTTPProtocol::BadRequest, "Garbage after message.");
 				return;
 			}
 
@@ -306,7 +350,7 @@ HTTPServerPipe::consume(Buffer *in)
 			 * XXX Always forget how to handle leading whitespace.
 			 */
 			if (last_header_ == "") {
-				send_response(BadRequest, "Folded header sent before any others.");
+				send_response(HTTPProtocol::BadRequest, "Folded header sent before any others.");
 				return;
 			}
 
@@ -317,7 +361,7 @@ HTTPServerPipe::consume(Buffer *in)
 		}
 
 		if (!line.find(':', &pos)) {
-			send_response(BadRequest, "Empty header name.");
+			send_response(HTTPProtocol::BadRequest, "Empty header name.");
 			return;
 		}
 
