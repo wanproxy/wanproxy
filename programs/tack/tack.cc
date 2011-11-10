@@ -41,6 +41,60 @@ static void time_samples(const std::string&, Timer *);
 static void time_stats(const std::string&, Timer *);
 static void usage(void);
 
+class TackPersistentCache : public XCodecCache {
+	int fd_;
+	XCodecCache *cache_;
+	Buffer new_data_;
+public:
+	TackPersistentCache(const UUID& uuid, int fd)
+	: XCodecCache(uuid),
+	  fd_(fd),
+	  cache_(new XCodecMemoryCache(uuid)),
+	  new_data_()
+	{
+		Buffer input;
+		while (fill(fd_, &input)) {
+			while (!input.empty()) {
+				BufferSegment *seg;
+				input.copyout(&seg, XCODEC_SEGMENT_LENGTH);
+				if (seg->length() != XCODEC_SEGMENT_LENGTH)
+					HALT("/tack/persistent/cache") << "Corrupt persistent cache.";
+				input.skip(XCODEC_SEGMENT_LENGTH);
+
+				uint64_t hash = XCodecHash::hash(seg->data());
+				cache_->enter(hash, seg);
+			}
+		}
+	}
+
+	~TackPersistentCache()
+	{
+		delete cache_;
+		cache_ = NULL;
+
+		if (!new_data_.empty())
+			flush(fd_, &new_data_);
+		close(fd_);
+		fd_ = -1;
+	}
+
+	BufferSegment *lookup(const uint64_t& hash) const
+	{
+		return (cache_->lookup(hash));
+	}
+
+	void enter(const uint64_t& hash, BufferSegment *seg)
+	{
+		cache_->enter(hash, seg);
+		new_data_.append(seg);
+	}
+
+	bool out_of_band(void) const
+	{
+		return (true);
+	}
+};
+
 int
 main(int argc, char *argv[])
 {
@@ -118,10 +172,28 @@ main(int argc, char *argv[])
 	UUID uuid;
 	uuid.generate();
 
-	XCodecCache *cache = new XCodecMemoryCache(uuid);
+	XCodecCache *cache;
+	if (persist == NULL) {
+		cache = new XCodecMemoryCache(uuid);
+	} else {
+		int fd;
+		if (action == Compress) {
+			fd = open(persist, O_RDWR | O_CREAT, 0600);
+		} else {
+			/*
+			 * When decompressing, only allow reads.
+			 */
+			fd = open(persist, O_RDONLY);
+		}
+		if (fd == -1)
+			HALT("/tack") << "Could not open persistent cache.";
+		cache = new TackPersistentCache(uuid, fd);
+	}
 	XCodec codec(cache);
 
 	process_files(argc, argv, action, &codec, flags);
+
+	delete cache;
 
 	return (0);
 }
