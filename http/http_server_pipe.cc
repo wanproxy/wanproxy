@@ -244,7 +244,8 @@ HTTPServerPipe::consume(Buffer *in)
 			break;
 		case '\n':
 			/* Unix line endings.  */
-			buffer_.moveout(&line, pos);
+			if (pos != 0)
+				buffer_.moveout(&line, pos);
 			buffer_.skip(1);
 			break;
 		default:
