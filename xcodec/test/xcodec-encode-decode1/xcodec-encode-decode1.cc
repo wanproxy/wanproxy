@@ -75,6 +75,8 @@ main(void)
 			{
 				Test _(g, "Expected data.", out.equal(&original));
 			}
+
+			delete cache;
 		}
 	}
 
