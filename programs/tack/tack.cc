@@ -41,6 +41,29 @@ static void time_samples(const std::string&, Timer *);
 static void time_stats(const std::string&, Timer *);
 static void usage(void);
 
+class TackNullCache : public XCodecCache {
+public:
+	TackNullCache(const UUID& uuid)
+	: XCodecCache(uuid)
+	{ }
+
+	~TackNullCache()
+	{ }
+
+	BufferSegment *lookup(const uint64_t&) const
+	{
+		return (NULL);
+	}
+
+	void enter(const uint64_t&, BufferSegment *)
+	{ }
+
+	bool out_of_band(void) const
+	{
+		return (true);
+	}
+};
+
 class TackPersistentCache : public XCodecCache {
 	int fd_;
 	XCodecCache *cache_;
@@ -99,6 +122,7 @@ int
 main(int argc, char *argv[])
 {
 	const char *persist;
+	bool nullcache;
 	bool verbose;
 	FileAction action;
 	unsigned flags;
@@ -107,9 +131,10 @@ main(int argc, char *argv[])
 	persist = NULL;
 	action = None;
 	flags = 0;
+	nullcache = false;
 	verbose = false;
 
-	while ((ch = getopt(argc, argv, "?cdhp:svEQST")) != -1) {
+	while ((ch = getopt(argc, argv, "?cdhp:svENQST")) != -1) {
 		switch (ch) {
 		case 'c':
 			action = Compress;
@@ -131,6 +156,9 @@ main(int argc, char *argv[])
 			break;
 		case 'E':
 			flags |= TACK_FLAG_CODEC_TIMING_EACH;
+			break;
+		case 'N':
+			nullcache = true;
 			break;
 		case 'Q':
 			flags |= TACK_FLAG_QUIET_OUTPUT;
@@ -155,9 +183,14 @@ main(int argc, char *argv[])
 	if (action == Hashes) {
 		if ((flags & TACK_FLAG_BYTE_STATS) != 0)
 			usage();
+		if (nullcache)
+			usage();
 		if (persist != NULL)
 			usage();
 	}
+
+	if (persist != NULL && nullcache)
+		usage();
 
 	if ((flags & TACK_FLAG_CODEC_TIMING) == 0 &&
 	    (flags & (TACK_FLAG_CODEC_TIMING_EACH | TACK_FLAG_CODEC_TIMING_SAMPLES)) != 0)
@@ -174,7 +207,10 @@ main(int argc, char *argv[])
 
 	XCodecCache *cache;
 	if (persist == NULL) {
-		cache = new XCodecMemoryCache(uuid);
+		if (nullcache)
+			cache = new TackNullCache(uuid);
+		else
+			cache = new XCodecMemoryCache(uuid);
 	} else {
 		int fd;
 		if (action == Compress) {
@@ -494,8 +530,8 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: tack [-p cache] [-svQ] [-T [-ES]] -c [file ...]\n"
-"       tack [-p cache] [-svQ] [-T [-ES]] -d [file ...]\n"
+"usage: tack [-p cache | -N] [-svQ] [-T [-ES]] -c [file ...]\n"
+"       tack [-p cache | -N] [-svQ] [-T [-ES]] -d [file ...]\n"
 "       tack [-vQ] [-T [-ES]] -h [file ...]\n");
 	exit(1);
 }
