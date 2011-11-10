@@ -15,7 +15,8 @@ struct candidate_symbol {
 XCodecEncoder::XCodecEncoder(XCodecCache *cache)
 : log_("/xcodec/encoder"),
   cache_(cache),
-  window_()
+  window_(),
+  stream_(!cache_->out_of_band())
 { }
 
 XCodecEncoder::~XCodecEncoder()
@@ -290,6 +291,22 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 
 	cache_->enter(hash, nseg);
 
+	if (!stream_) {
+		/*
+		 * Declarations occur out-of-band.
+		 */
+		if (!encode_reference(output, input, 0, hash, nseg)) /* XXX Pass NULL not nseg to skip check?  */
+			NOTREACHED();
+		if (segp == NULL)
+			nseg->unref();
+		else
+			*segp = nseg;
+		return;
+	}
+
+	/*
+	 * Declarations are extracted in-band.
+	 */
 	output->append(XCODEC_MAGIC);
 	output->append(XCODEC_OP_EXTRACT);
 	output->append(nseg);

@@ -9,6 +9,7 @@ class XCodecEncoder {
 	LogHandle log_;
 	XCodecCache *cache_;
 	XCodecWindow window_;
+	bool stream_;
 
 public:
 	XCodecEncoder(XCodecCache *);

@@ -49,12 +49,13 @@ protected:
 	: uuid_(uuid)
 	{ }
 
+public:
 	virtual ~XCodecCache()
 	{ }
 
-public:
 	virtual void enter(const uint64_t&, BufferSegment *) = 0;
 	virtual BufferSegment *lookup(const uint64_t&) const = 0;
+	virtual bool out_of_band(void) const = 0;
 
 	bool uuid_encode(Buffer *buf) const
 	{
@@ -108,6 +109,15 @@ public:
 		ASSERT(segment_hash_map_.find(hash) == segment_hash_map_.end());
 		seg->ref();
 		segment_hash_map_[hash] = seg;
+	}
+
+	bool out_of_band(void) const
+	{
+		/*
+		 * Memory caches are not exchanged out-of-band; references
+		 * must be extracted in-stream.
+		 */
+		return (false);
 	}
 
 	BufferSegment *lookup(const uint64_t& hash) const
