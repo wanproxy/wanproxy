@@ -1,5 +1,6 @@
 VPATH+=	${TOPDIR}/xcodec
 
+SRCS+=	xcodec_cache.cc
 SRCS+=	xcodec_decoder.cc
 SRCS+=	xcodec_encoder.cc
 

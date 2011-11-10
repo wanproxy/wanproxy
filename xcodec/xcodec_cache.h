@@ -42,19 +42,59 @@ namespace __gnu_cxx {
 }
 
 class XCodecCache {
+protected:
+	UUID uuid_;
+
+	XCodecCache(const UUID& uuid)
+	: uuid_(uuid)
+	{ }
+
+	virtual ~XCodecCache()
+	{ }
+
+public:
+	virtual void enter(const uint64_t&, BufferSegment *) = 0;
+	virtual BufferSegment *lookup(const uint64_t&) const = 0;
+
+	bool uuid_encode(Buffer *buf) const
+	{
+		return (uuid_.encode(buf));
+	}
+
+	static void enter(const UUID& uuid, XCodecCache *cache)
+	{
+		ASSERT(cache_map.find(uuid) == cache_map.end());
+		cache_map[uuid] = cache;
+	}
+
+	static XCodecCache *lookup(const UUID& uuid)
+	{
+		std::map<UUID, XCodecCache *>::const_iterator it;
+
+		it = cache_map.find(uuid);
+		if (it == cache_map.end())
+			return (NULL);
+
+		return (it->second);
+	}
+
+private:
+	static std::map<UUID, XCodecCache *> cache_map;
+};
+
+class XCodecMemoryCache : public XCodecCache {
 	typedef __gnu_cxx::hash_map<Hash64, BufferSegment *> segment_hash_map_t;
 
 	LogHandle log_;
-	UUID uuid_;
 	segment_hash_map_t segment_hash_map_;
-
-	XCodecCache(const UUID& uuid)
-	: log_("/xcodec/cache"),
-	  uuid_(uuid),
+public:
+	XCodecMemoryCache(const UUID& uuid)
+	: XCodecCache(uuid),
+	  log_("/xcodec/cache/memory"),
 	  segment_hash_map_()
 	{ }
 
-	~XCodecCache()
+	~XCodecMemoryCache()
 	{
 		segment_hash_map_t::const_iterator it;
 		for (it = segment_hash_map_.begin();
@@ -63,7 +103,6 @@ class XCodecCache {
 		segment_hash_map_.clear();
 	}
 
-public:
 	void enter(const uint64_t& hash, BufferSegment *seg)
 	{
 		ASSERT(segment_hash_map_.find(hash) == segment_hash_map_.end());
@@ -83,29 +122,6 @@ public:
 		seg = it->second;
 		seg->ref();
 		return (seg);
-	}
-
-	bool uuid_encode(Buffer *buf) const
-	{
-		return (uuid_.encode(buf));
-	}
-
-	static XCodecCache *lookup(const UUID& uuid)
-	{
-		static std::map<UUID, XCodecCache *> cache_map;
-
-		std::map<UUID, XCodecCache *>::const_iterator it;
-		it = cache_map.find(uuid);
-		if (it == cache_map.end()) {
-			XCodecCache *cache = new XCodecCache(uuid);
-			cache_map[uuid] = cache;
-
-			/* XXX Associate with a permanent storage unit / cache hierarchy.  */
-
-			return (cache);
-		}
-
-		return (it->second);
 	}
 };
 

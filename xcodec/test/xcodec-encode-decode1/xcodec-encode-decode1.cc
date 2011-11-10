@@ -31,7 +31,7 @@ main(void)
 			UUID uuid;
 			uuid.generate();
 
-			XCodecCache *cache = XCodecCache::lookup(uuid);
+			XCodecCache *cache = new XCodecMemoryCache(uuid);
 			XCodecEncoder encoder(cache);
 
 			Buffer out;

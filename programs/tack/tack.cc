@@ -44,22 +44,18 @@ static void usage(void);
 int
 main(int argc, char *argv[])
 {
-	UUID uuid;
-	uuid.generate();
-
-	XCodecCache *cache = XCodecCache::lookup(uuid);
-	XCodec codec(cache);
-
+	const char *persist;
 	bool verbose;
 	FileAction action;
 	unsigned flags;
 	int ch;
 
+	persist = NULL;
 	action = None;
 	flags = 0;
 	verbose = false;
 
-	while ((ch = getopt(argc, argv, "?cdhsvEQST")) != -1) {
+	while ((ch = getopt(argc, argv, "?cdhp:svEQST")) != -1) {
 		switch (ch) {
 		case 'c':
 			action = Compress;
@@ -69,6 +65,9 @@ main(int argc, char *argv[])
 			break;
 		case 'h':
 			action = Hashes;
+			break;
+		case 'p':
+			persist = optarg;
 			break;
 		case 's':
 			flags |= TACK_FLAG_BYTE_STATS;
@@ -99,8 +98,12 @@ main(int argc, char *argv[])
 	if (action == None)
 		usage();
 
-	if (action == Hashes && (flags & TACK_FLAG_BYTE_STATS) != 0)
-		usage();
+	if (action == Hashes) {
+		if ((flags & TACK_FLAG_BYTE_STATS) != 0)
+			usage();
+		if (persist != NULL)
+			usage();
+	}
 
 	if ((flags & TACK_FLAG_CODEC_TIMING) == 0 &&
 	    (flags & (TACK_FLAG_CODEC_TIMING_EACH | TACK_FLAG_CODEC_TIMING_SAMPLES)) != 0)
@@ -111,6 +114,12 @@ main(int argc, char *argv[])
 	} else {
 		Log::mask(".?", Log::Info);
 	}
+
+	UUID uuid;
+	uuid.generate();
+
+	XCodecCache *cache = new XCodecMemoryCache(uuid);
+	XCodec codec(cache);
 
 	process_files(argc, argv, action, &codec, flags);
 
@@ -413,8 +422,8 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: tack [-svQ] [-T [-ES]] -c [file ...]\n"
-"       tack [-svQ] [-T [-ES]] -d [file ...]\n"
+"usage: tack [-p cache] [-svQ] [-T [-ES]] -c [file ...]\n"
+"       tack [-p cache] [-svQ] [-T [-ES]] -d [file ...]\n"
 "       tack [-vQ] [-T [-ES]] -h [file ...]\n");
 	exit(1);
 }

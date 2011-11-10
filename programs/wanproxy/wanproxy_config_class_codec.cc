@@ -39,6 +39,10 @@ WANProxyConfigClassCodec::activate(ConfigObject *co)
 			uuid.generate();
 
 			XCodecCache *cache = XCodecCache::lookup(uuid);
+			if (cache == NULL) {
+				cache = new XCodecMemoryCache(uuid);
+				XCodecCache::enter(uuid, cache);
+			}
 			XCodec *xcodec = new XCodec(cache);
 
 			wc->codec_ = xcodec;
