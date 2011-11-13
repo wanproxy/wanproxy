@@ -27,6 +27,12 @@ struct iovec;
  * BufferSegments at, so that perhaps we could opportunistically use smaller
  * BufferSegments and not be so unfriendly as to constantly span page
  * boundaries, making swapping and all kinds of everything worse.
+ *
+ * Also at the very least, Buffers could contain their own offset field (and
+ * likewise use their length field) to allow non-destructive skip and trim
+ * within the first and last (respectively) BufferSegments.  Making this work
+ * at the start of the Buffer is perhaps most useful as skip() is much more
+ * likely than trim().
  */
 #define	BUFFER_SEGMENT_SIZE		(2048)
 #define	BUFFER_SEGMENT_CACHE_LIMIT	((1024 * 1024) / BUFFER_SEGMENT_SIZE)
