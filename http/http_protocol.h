@@ -1,6 +1,8 @@
 #ifndef	HTTP_PROTOCOL_H
 #define	HTTP_PROTOCOL_H
 
+#include <map>
+
 namespace HTTPProtocol {
 	struct Message {
 		Buffer start_line_;
@@ -18,6 +20,8 @@ namespace HTTPProtocol {
 		NotImplemented,
 		VersionNotSupported,
 	};
+
+	bool DecodeURI(Buffer *, Buffer *);
 }
 
 #endif /* !HTTP_PROTOCOL_H */

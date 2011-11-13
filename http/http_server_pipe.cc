@@ -1,5 +1,4 @@
 #include <common/buffer.h>
-#include <common/endian.h>
 
 #include <event/action.h>
 #include <event/callback.h>
@@ -16,8 +15,6 @@
 #include <io/pipe/splice.h>
 
 #include <io/socket/simple_server.h>
-
-#include <vis.h>
 
 HTTPServerPipe::HTTPServerPipe(const LogHandle& log)
 : PipeProducer(log),

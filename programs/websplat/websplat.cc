@@ -17,8 +17,6 @@
 
 #include <io/socket/simple_server.h>
 
-#include <vis.h>
-
 class WebsplatClient {
 	LogHandle log_;
 	Socket *client_;
@@ -97,9 +95,14 @@ private:
 		ASSERT(!method.empty());
 		std::transform(method.begin(), method.end(), method.begin(), ::toupper);
 
-		std::string uri;
-		words[1].extract(uri);
-		ASSERT(!uri.empty());
+		Buffer uri_encoded(words[1]);
+		ASSERT(!uri_encoded.empty());
+		Buffer uri_decoded;
+		if (!HTTPProtocol::DecodeURI(&uri_encoded, &uri_decoded)) {
+			pipe_->send_response(HTTPProtocol::BadRequest, "Malformed URI encoding.");
+			return;
+		}
+		ASSERT(!uri_decoded.empty());
 
 		std::string version;
 		words[2].extract(version);
@@ -110,15 +113,11 @@ private:
 			return;
 		}
 
-		char uri_decoded[uri.length()];
-		int rv = strunvisx(uri_decoded, uri.c_str(), VIS_HTTPSTYLE);
-		if (rv == -1) {
-			pipe_->send_response(HTTPProtocol::BadRequest, "Malformed URI encoding.");
-			return;
-		}
-		ASSERT(rv >= 0);
+		std::string uri;
+		uri_decoded.extract(uri);
+		ASSERT(!uri.empty());
 
-		handle_request(method, std::string(uri_decoded, rv), message);
+		handle_request(method, uri, message);
 	}
 
 	void splice_complete(Event e)
