@@ -62,7 +62,7 @@ private:
 		}
 
 		if (e.type_ == Event::Done) {
-			INFO(log_) << "Accepted client: " << client->getpeername();
+			DEBUG(log_) << "Accepted client: " << client->getpeername();
 			client_connected(client);
 		}
 
