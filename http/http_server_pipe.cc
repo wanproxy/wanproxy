@@ -253,6 +253,7 @@ HTTPServerPipe::consume(Buffer *in)
 			ASSERT(message_.start_line_.empty());
 			if (line.empty()) {
 				ERROR(log_) << "Premature end of headers.";
+				send_response(HTTPProtocol::BadRequest, "Empty start line.");
 				return;
 			}
 			message_.start_line_ = line;
