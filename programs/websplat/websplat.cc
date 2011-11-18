@@ -79,14 +79,11 @@ private:
 
 		ASSERT(!message.start_line_.empty());
 		std::vector<Buffer> words = message.start_line_.split(' ', false);
-
-		if (words.empty()) {
-			pipe_->send_response(HTTPProtocol::BadRequest, "Empty request.");
-			return;
-		}
+		ASSERT(!words.empty());
 
 		if (words.size() != 3) {
-			pipe_->send_response(HTTPProtocol::BadRequest, "Wrong number of parameters in request.");
+			ASSERT(words.size() == 2);
+			pipe_->send_response(HTTPProtocol::BadRequest, "HTTP/0.9 request rejected.");
 			return;
 		}
 
