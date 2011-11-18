@@ -117,6 +117,6 @@ main(int argc, char *argv[])
 static void
 usage(void)
 {
-	INFO("/websplat/usage") << "wanproxy [-q | -v] -i interface";
+	INFO("/websplat/usage") << "websplat [-q | -v] -i interface";
 	exit(1);
 }
