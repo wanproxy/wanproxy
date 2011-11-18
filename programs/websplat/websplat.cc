@@ -81,12 +81,6 @@ private:
 		std::vector<Buffer> words = message.start_line_.split(' ', false);
 		ASSERT(!words.empty());
 
-		if (words.size() != 3) {
-			ASSERT(words.size() == 2);
-			pipe_->send_response(HTTPProtocol::BadRequest, "HTTP/0.9 request rejected.");
-			return;
-		}
-
 		std::string method;
 		words[0].extract(method);
 		ASSERT(!method.empty());
@@ -101,13 +95,15 @@ private:
 		}
 		ASSERT(!uri_decoded.empty());
 
-		std::string version;
-		words[2].extract(version);
-		ASSERT(!version.empty());
+		if (words.size() == 3) {
+			std::string version;
+			words[2].extract(version);
+			ASSERT(!version.empty());
 
-		if (version != "HTTP/1.1" && version != "HTTP/1.0") {
-			pipe_->send_response(HTTPProtocol::VersionNotSupported, "Version not supported.");
-			return;
+			if (version != "HTTP/1.1" && version != "HTTP/1.0") {
+				pipe_->send_response(HTTPProtocol::VersionNotSupported, "Version not supported.");
+				return;
+			}
 		}
 
 		std::string uri;
