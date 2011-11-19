@@ -182,17 +182,27 @@ public:
 				_.pass();
 		}
 
-		/*
-		 * Not yet implemented.
-		 */
-#if 0
+		Buffer resp = sink_.get_buffer();
+		HTTPProtocol::Message msg;
 		{
-			Test _(group_, "Expected response.");
-			Buffer resp = sink_.get_buffer();
-			INFO(log_) << "Got response:" << std::endl << resp.hexdump();
-			_.pass();
+			Test _(group_, "Decode response.");
+			if (msg.decode(&resp))
+				_.pass();
 		}
-#endif
+
+		{
+			Test _(group_, "Expected status.");
+			if (msg.start_line_.equal("HTTP/1.1 200 OK"))
+				_.pass();
+		}
+
+		/* XXX Check headers.  */
+
+		{
+			Test _(group_, "Expected body.");
+			if (msg.body_.equal("Successful HTTP/0.9 request."))
+				_.pass();
+		}
 	}
 
 private:

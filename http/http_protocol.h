@@ -7,10 +7,12 @@ namespace HTTPProtocol {
 	struct Message {
 		Buffer start_line_;
 		std::map<std::string, std::vector<Buffer> > headers_;
-#if 0
 		Buffer body_;
+#if 0
 		std::map<std::string, std::vector<Buffer> > trailers_;
 #endif
+
+		bool decode(Buffer *);
 	};
 
 	enum Status {
