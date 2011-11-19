@@ -34,7 +34,7 @@
 	do {								\
 		ASSERT("Should not be reached." == NULL);		\
 		for (;;)						\
-			continue;					\
+			abort();					\
 	} while (0)
 #endif
 
