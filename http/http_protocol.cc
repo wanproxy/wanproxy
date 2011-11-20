@@ -29,7 +29,7 @@ namespace {
 
 		unsigned pos;
 		uint8_t found;
-		if (!input->find_any("\r\n", &pos, 0, &found)) {
+		if (!input->find_any("\r\n", &pos, &found)) {
 			/*
 			 * XXX
 			 * This should be DEBUG once we can indicate that

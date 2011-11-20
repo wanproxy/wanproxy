@@ -209,7 +209,7 @@ HTTPServerPipe::consume(Buffer *in)
 		Buffer line;
 		unsigned pos;
 		uint8_t found;
-		if (!buffer_.find_any("\r\n", &pos, 0, &found)) {
+		if (!buffer_.find_any("\r\n", &pos, &found)) {
 			DEBUG(log_) << "Waiting for remainder of line.";
 			return;
 		}

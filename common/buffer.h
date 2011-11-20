@@ -999,6 +999,16 @@ public:
 	}
 
 	/*
+	 * Finds the first occurance of any character in s in this Buffer's
+	 * data and sets offsetp to the offset it was found at.  It indicates
+	 * via the foundp parameter which of the set was found.
+	 */
+	bool find_any(const std::string& s, unsigned *offsetp, uint8_t *foundp) const
+	{
+		return (find_any(s, offsetp, 0, foundp));
+	}
+
+	/*
 	 * Returns the current amount of data associated with this Buffer.
 	 */
 	size_t length(void) const
