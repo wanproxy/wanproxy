@@ -1,7 +1,6 @@
 PROGRAM=wanproxy
 
-SRCS+=	monitor_connection.cc
-SRCS+=	monitor_listener.cc
+SRCS+=	monitor_client.cc
 
 SRCS+=	proxy_connector.cc
 SRCS+=	proxy_listener.cc
@@ -23,5 +22,5 @@ SRCS+=	wanproxy_config_type_compressor.cc
 SRCS+=	wanproxy_config_type_proxy_type.cc
 
 TOPDIR=../..
-USE_LIBS=common common/thread common/time common/uuid config event io io/net io/pipe io/socket xcodec zlib
+USE_LIBS=common common/thread common/time common/uuid config event http io io/net io/pipe io/socket xcodec zlib
 include ${TOPDIR}/common/program.mk

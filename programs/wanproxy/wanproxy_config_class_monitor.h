@@ -1,16 +1,16 @@
 #ifndef	WANPROXY_CONFIG_CLASS_MONITOR_H
 #define	WANPROXY_CONFIG_CLASS_MONITOR_H
 
+#include <set>
+
 #include <config/config_type_pointer.h>
 
-class MonitorListener;
-
 class WANProxyConfigClassMonitor : public ConfigClass {
-	std::map<ConfigObject *, MonitorListener *> object_listener_map_;
+	std::set<ConfigObject *> object_listener_set_;
 public:
 	WANProxyConfigClassMonitor(void)
 	: ConfigClass("monitor"),
-	  object_listener_map_()
+	  object_listener_set_()
 	{
 		add_member("interface", &config_type_pointer);
 	}

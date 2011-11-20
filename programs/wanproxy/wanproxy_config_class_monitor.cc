@@ -6,10 +6,14 @@
 
 #include <event/action.h>
 #include <event/event.h>
+#include <event/event_callback.h>
+#include <event/event_system.h>
+
+#include <http/http_server.h>
 
 #include <io/socket/socket_types.h>
 
-#include "monitor_listener.h"
+#include "monitor_client.h"
 #include "wanproxy_config_class_interface.h"
 #include "wanproxy_config_class_monitor.h"
 
@@ -18,7 +22,7 @@ WANProxyConfigClassMonitor wanproxy_config_class_monitor;
 bool
 WANProxyConfigClassMonitor::activate(ConfigObject *co)
 {
-	if (object_listener_map_.find(co) != object_listener_map_.end())
+	if (object_listener_set_.find(co) != object_listener_set_.end())
 		return (false);
 
 	/* Extract interface.  */
@@ -60,8 +64,8 @@ WANProxyConfigClassMonitor::activate(ConfigObject *co)
 		return (false);
 
 	std::string interface_address = '[' + interface_hoststr + ']' + ':' + interface_portstr;
-	MonitorListener *listener = new MonitorListener(co->name(), interface_family, interface_address);
-	object_listener_map_[co] = listener;
+	new HTTPServer<TCPServer, MonitorClient, Config *>(interfacecv->config_, interface_family, interface_address);
+	object_listener_set_.insert(co);
 
 	return (true);
 }
