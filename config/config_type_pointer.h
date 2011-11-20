@@ -21,6 +21,27 @@ public:
 		pointers_.clear();
 	}
 
+	bool get(const ConfigValue *cv, ConfigObject **cop) const
+	{
+		std::map<const ConfigValue *, ConfigObject *>::const_iterator it;
+
+		it = pointers_.find(cv);
+		if (it == pointers_.end()) {
+			ERROR("/config/type/pointer") << "Value not set.";
+			return (false);
+		}
+
+		ConfigObject *co = it->second;
+		if (co == NULL) {
+			*cop = NULL;
+			return (true);
+		}
+
+		*cop = co;
+
+		return (true);
+	}
+
 	template<typename T>
 	bool get(const ConfigValue *cv, ConfigObject **cop, T **ccp) const
 	{
