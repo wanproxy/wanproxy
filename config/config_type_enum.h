@@ -19,8 +19,8 @@ private:
 	std::map<const ConfigValue *, E> enums_;
 	std::map<std::string, E> enum_map_;
 public:
-	ConfigTypeEnum(const std::string& name, struct Mapping *mappings)
-	: ConfigType(name),
+	ConfigTypeEnum(const std::string& xname, struct Mapping *mappings)
+	: ConfigType(xname),
 	  enums_(),
 	  enum_map_()
 	{
