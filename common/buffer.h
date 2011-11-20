@@ -955,11 +955,10 @@ public:
 
 	/*
 	 * Finds the first occurance of any character in s in this Buffer's
-	 * data and sets offsetp to the offset it was found at.  If a limit is
-	 * given, at most that many characters will be searched.  It optionally
-	 * indicates via the foundp parameter which of the set was found.
+	 * data and sets offsetp to the offset it was found at.  It indicates
+	 * via the foundp parameter which of the set was found.
 	 */
-	bool find_any(const std::string& s, unsigned *offsetp, size_t limit = 0, uint8_t *foundp = NULL) const
+	bool find_any(const std::string& s, unsigned *offsetp, uint8_t *foundp = NULL) const
 	{
 		uint8_t set[256];
 		segment_list_t::const_iterator it;
@@ -972,13 +971,10 @@ public:
 
 		offset = 0;
 
-		if (limit == 0)
-			limit = length();
-
 		for (it = data_.begin(); it != data_.end(); ++it) {
 			const BufferSegment *seg = *it;
 			const uint8_t *p = seg->data();
-			size_t len = limit < seg->length() ? limit : seg->length();
+			size_t len = seg->length();
 			unsigned i;
 
 			for (i = 0; i < len; i++) {
@@ -990,22 +986,8 @@ public:
 				return (true);
 			}
 			offset += len;
-			limit -= len;
-
-			if (limit == 0)
-				break;
 		}
 		return (false);
-	}
-
-	/*
-	 * Finds the first occurance of any character in s in this Buffer's
-	 * data and sets offsetp to the offset it was found at.  It indicates
-	 * via the foundp parameter which of the set was found.
-	 */
-	bool find_any(const std::string& s, unsigned *offsetp, uint8_t *foundp) const
-	{
-		return (find_any(s, offsetp, 0, foundp));
 	}
 
 	/*
