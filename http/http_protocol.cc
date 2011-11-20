@@ -83,13 +83,14 @@ namespace {
 }
 
 bool
-HTTPProtocol::Message::decode(Buffer *input)
+HTTPProtocol::Message::decode(Buffer *input, Type type)
 {
 	if (start_line_.empty()) {
 		start_line_.clear();
 		headers_.clear();
 		body_.clear();
 	}
+	type_ = type;
 
 	Buffer line;
 	if (!extract_line(&line, input)) {
@@ -102,29 +103,36 @@ HTTPProtocol::Message::decode(Buffer *input)
 	}
 	start_line_ = line;
 
-	/*
-	 * There are two kinds of request line.  The first has two
-	 * words, the second has three.  Anything else is malformed.
-	 *
-	 * The first kind is HTTP/0.9.  The second kind can be
-	 * anything, especially HTTP/1.0 and HTTP/1.1.
-	 */
-	std::vector<Buffer> words = line.split(' ', false);
-	if (words.empty()) {
-		ERROR("/http/protocol/message") << "Empty start line.";
-		return (false);
-	}
-
-	if (words.size() == 2) {
+	if (type == Request) {
 		/*
-		 * HTTP/0.9.  This is all we should get from the client.
+		 * There are two kinds of request line.  The first has two
+		 * words, the second has three.  Anything else is malformed.
+		 *
+		 * The first kind is HTTP/0.9.  The second kind can be
+		 * anything, especially HTTP/1.0 and HTTP/1.1.
 		 */
-		return (true);
-	}
+		std::vector<Buffer> words = line.split(' ', false);
+		if (words.empty()) {
+			ERROR("/http/protocol/message") << "Empty start line.";
+			return (false);
+		}
+		if (words.size() == 2) {
+			/*
+			 * HTTP/0.9.  This is all we should get from the client.
+			 */
+			return (true);
+		}
 
-	if (words.size() != 3) {
-		ERROR("/http/protocol/message") << "Too many request parameters.";
-		return (false);
+		if (words.size() != 3) {
+			ERROR("/http/protocol/message") << "Too many request parameters.";
+			return (false);
+		}
+	} else {
+		ASSERT(type == Response);
+		/*
+		 * No parsing behavior is conditional for responses.
+		 */
+		line.clear();
 	}
 
 	/*

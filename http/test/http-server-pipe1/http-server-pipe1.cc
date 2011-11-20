@@ -186,7 +186,7 @@ public:
 		HTTPProtocol::Message msg;
 		{
 			Test _(group_, "Decode response.");
-			if (msg.decode(&resp))
+			if (msg.decode(&resp, HTTPProtocol::Message::Response))
 				_.pass();
 		}
 

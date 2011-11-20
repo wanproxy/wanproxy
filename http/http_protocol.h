@@ -5,6 +5,12 @@
 
 namespace HTTPProtocol {
 	struct Message {
+		enum Type {
+			Request,
+			Response,
+		};
+
+		Type type_;
 		Buffer start_line_;
 		std::map<std::string, std::vector<Buffer> > headers_;
 		Buffer body_;
@@ -12,7 +18,7 @@ namespace HTTPProtocol {
 		std::map<std::string, std::vector<Buffer> > trailers_;
 #endif
 
-		bool decode(Buffer *);
+		bool decode(Buffer *, Type);
 	};
 
 	enum Status {
