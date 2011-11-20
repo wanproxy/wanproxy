@@ -32,8 +32,26 @@ private:
 	virtual void handle_request(const std::string&, const std::string&, HTTPProtocol::Message) = 0;
 };
 
-template<typename T, typename Th>
+template<typename T, typename Th, typename Ta = void>
 class HTTPServer : public SimpleServer<T> {
+	Ta arg_;
+public:
+	HTTPServer(Ta arg, SocketAddressFamily family, const std::string& interface)
+	: SimpleServer<T>("/http/server", family, interface),
+	  arg_(arg)
+	{ }
+
+	~HTTPServer()
+	{ }
+
+	void client_connected(Socket *client)
+	{
+		new Th(arg_, client);
+	}
+};
+
+template<typename T, typename Th>
+class HTTPServer<T, Th, void> : public SimpleServer<T> {
 public:
 	HTTPServer(SocketAddressFamily family, const std::string& interface)
 	: SimpleServer<T>("/http/server", family, interface)
