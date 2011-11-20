@@ -7,8 +7,8 @@ struct ConfigValue;
 class ConfigType {
 	std::string name_;
 protected:
-	ConfigType(const std::string& name)
-	: name_(name)
+	ConfigType(const std::string& xname)
+	: name_(xname)
 	{ }
 
 	virtual ~ConfigType()
@@ -16,6 +16,11 @@ protected:
 public:
 	virtual void marshall(ConfigExporter *, const ConfigValue *) const = 0;
 	virtual bool set(const ConfigValue *, const std::string&) = 0;
+
+	std::string name(void) const
+	{
+		return (name_);
+	}
 };
 
 #endif /* !CONFIG_TYPE_H */
