@@ -37,31 +37,26 @@ public:
 		if (select_ == "")
 			os_ << "<h1>Configuration</h1>";
 		else
-			os_ << "<h1>Configuration - " + select_ + "</h1>";
+			os_ << "<h1>Configuration - " << select_ << " [<a href=\"/\">up</a>]</h1>";
+		os_ << "<table>";
+		os_ << "<tr><th>object</th><th>class</th><th>field</th><th>type</th><th>value</th></tr>";
 		c->marshall(this);
-		os_ << "<hr />";
+		os_ << "</table>";
 	}
 
 	void field(const ConfigValue *cv, const std::string& name)
 	{
-		os_ << "<table>";
-		os_ << "<tr><th>field</th><th>type</th><th>value</th></tr>";
-		os_ << "<tr><td>" << name << "</td><td>" << cv->type_->name() << "</td><td>";
+		os_ << "<tr><td colspan=\"2\" /><td>" << name << "</td><td>" << cv->type_->name() << "</td><td>";
 		cv->marshall(this);
 		os_ << "</td></tr>";
-		os_ << "</table>";
 	}
 
 	void object(const ConfigClass *cc, const ConfigObject *co)
 	{
 		if (select_ != "" && select_ != co->name())
 			return;
-		os_ << "<table>";
-		os_ << "<tr><th>object</th><th>class</th><th>value</th></tr>";
-		os_ << "<tr><td><a href=\"/" << co->name() << "\">" << co->name() << "</a></td><td>" << cc->name() << "</td><td>";
+		os_ << "<tr><td><a href=\"/object/" << co->name() << "\">" << co->name() << "</a></td><td>" << cc->name() << "</td><td colspan=\"3\" /></tr>";
 		cc->marshall(this, co);
-		os_ << "</td></tr>";
-		os_ << "</table>";
 	}
 
 	void value(const ConfigValue *cv, const std::string& val)
@@ -73,7 +68,7 @@ public:
 				if (co == NULL)
 					os_ << "<tt>None</tt>";
 				else
-					os_ << "<a href=\"/" << co->name() << "\">" << co->name() << "</a>";
+					os_ << "<a href=\"/object/" << co->name() << "\">" << co->name() << "</a>";
 				return;
 			}
 		}
@@ -98,11 +93,18 @@ MonitorClient::handle_request(const std::string& method, const std::string& uri,
 	std::vector<Buffer> path_components = Buffer(uri).split('/', false);
 	std::string select;
 	if (!path_components.empty()) {
-		if (path_components.size() != 1) {
-			pipe_->send_response(HTTPProtocol::NotFound, "Too many path components in URI.");
+		switch (path_components.size()) {
+		case 2:
+			if (!path_components[0].equal("object")) {
+				pipe_->send_response(HTTPProtocol::NotFound, "Unsupported URI class.");
+				return;
+			}
+			path_components[1].extract(select);
+			break;
+		default:
+			pipe_->send_response(HTTPProtocol::NotFound, "Wrong number of path components in URI.");
 			return;
 		}
-		path_components[0].extract(select);
 	}
 
 	HTMLConfigExporter exporter(select);
