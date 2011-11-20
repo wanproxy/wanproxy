@@ -12,7 +12,9 @@ class UUIDGenerateSpeed : SpeedTest {
 public:
 	UUIDGenerateSpeed(void)
 	: uuids_(0)
-	{ }
+	{
+		perform();
+	}
 
 	~UUIDGenerateSpeed()
 	{ }
@@ -23,6 +25,8 @@ private:
 		UUID uuid;
 		uuid.generate();
 		uuids_++;
+
+		schedule();
 	}
 
 	void finish(void)

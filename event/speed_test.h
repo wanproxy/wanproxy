@@ -14,12 +14,12 @@ public:
 	: callback_action_(NULL),
 	  timeout_action_(NULL)
 	{
-		callback_action_ = callback(this, &SpeedTest::callback_complete)->schedule();
 		timeout_action_ = EventSystem::instance()->timeout(SPEED_TEST_TIMER_MS, callback(this, &SpeedTest::timer));
 	}
 
 	~SpeedTest()
 	{
+		ASSERT(callback_action_ == NULL);
 		ASSERT(timeout_action_ == NULL);
 	}
 
@@ -30,8 +30,6 @@ private:
 		callback_action_ = NULL;
 
 		perform();
-
-		callback_action_ = callback(this, &SpeedTest::callback_complete)->schedule();
 	}
 
 	void timer(void)
@@ -39,14 +37,21 @@ private:
 		timeout_action_->cancel();
 		timeout_action_ = NULL;
 
-		ASSERT(callback_action_ != NULL);
-		callback_action_->cancel();
-		callback_action_ = NULL;
+		if (callback_action_ != NULL) {
+			callback_action_->cancel();
+			callback_action_ = NULL;
+		}
 
 		finish();
 	}
 
 protected:
+	void schedule(void)
+	{
+		ASSERT(callback_action_ == NULL);
+		callback_action_ = callback(this, &SpeedTest::callback_complete)->schedule();
+	}
+
 	virtual void perform(void)
 	{ }
 

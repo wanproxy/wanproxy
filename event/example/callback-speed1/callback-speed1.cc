@@ -8,7 +8,9 @@ class CallbackSpeed : SpeedTest {
 public:
 	CallbackSpeed(void)
 	: callback_count_(0)
-	{ }
+	{
+		perform();
+	}
 
 	~CallbackSpeed()
 	{ }
@@ -17,6 +19,8 @@ private:
 	void perform(void)
 	{
 		callback_count_++;
+
+		schedule();
 	}
 
 	void finish(void)

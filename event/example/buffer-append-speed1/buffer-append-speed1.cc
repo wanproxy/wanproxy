@@ -11,7 +11,7 @@ public:
 	BufferSpeed(void)
 	: bytes_(0)
 	{
-		INFO("/example/buffer/append/speed1") << "Arming timer.";
+		perform();
 	}
 
 	~BufferSpeed()
@@ -23,6 +23,8 @@ private:
 		Buffer tmp;
 		tmp.append(zbuf, sizeof zbuf);
 		bytes_ += tmp.length();
+
+		schedule();
 	}
 
 	void finish(void)
