@@ -4,6 +4,12 @@
 #include <map>
 
 namespace HTTPProtocol {
+	enum ParseStatus {
+		ParseSuccess,
+		ParseFailure,
+		ParseIncomplete,
+	};
+
 	struct Message {
 		enum Type {
 			Request,
@@ -30,7 +36,7 @@ namespace HTTPProtocol {
 	};
 
 	bool DecodeURI(Buffer *, Buffer *);
-	bool ExtractLine(Buffer *, Buffer *);
+	ParseStatus ExtractLine(Buffer *, Buffer *);
 }
 
 #endif /* !HTTP_PROTOCOL_H */

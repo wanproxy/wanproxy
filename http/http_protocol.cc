@@ -32,7 +32,7 @@ HTTPProtocol::Message::decode(Buffer *input, Type type)
 	type_ = type;
 
 	Buffer line;
-	if (!ExtractLine(&line, input)) {
+	if (ExtractLine(&line, input) != ParseSuccess) {
 		ERROR("/http/protocol/message") << "Could not get start line.";
 		return (false);
 	}
@@ -80,7 +80,7 @@ HTTPProtocol::Message::decode(Buffer *input, Type type)
 	std::string last_header;
 	for (;;) {
 		ASSERT(line.empty());
-		if (!ExtractLine(&line, input)) {
+		if (ExtractLine(&line, input) != ParseSuccess) {
 			ERROR("/http/protocol/message") << "Could not extract line for headers.";
 			return (false);
 		}
@@ -174,24 +174,21 @@ HTTPProtocol::DecodeURI(Buffer *encoded, Buffer *decoded)
 	}
 }
 
-bool
+HTTPProtocol::ParseStatus
 HTTPProtocol::ExtractLine(Buffer *line, Buffer *input)
 {
+	ASSERT(line->empty());
+
 	if (input->empty()) {
-		ERROR("/http/protocol/extract/line") << "Empty buffer.";
-		return (false);
+		DEBUG("/http/protocol/extract/line") << "Empty buffer.";
+		return (ParseIncomplete);
 	}
 
 	unsigned pos;
 	uint8_t found;
 	if (!input->find_any("\r\n", &pos, &found)) {
-		/*
-		 * XXX
-		 * This should be DEBUG once we can indicate that
-		 * this is a recoverable error.
-		 */
-		ERROR("/http/protocol/extract/line") << "Incomplete line.";
-		return (false);
+		DEBUG("/http/protocol/extract/line") << "Incomplete line.";
+		return (ParseIncomplete);
 	}
 
 	/*
@@ -206,20 +203,15 @@ HTTPProtocol::ExtractLine(Buffer *line, Buffer *input)
 		/* CRLF line endings.  */
 		ASSERT(input->length() > pos);
 		if (input->length() == pos + 1) {
-			/*
-			 * XXX
-			 * This should be DEBUG once we can indicate that
-			 * this is a recoverable error.
-			 */
-			ERROR("/http/protocol/extract/line") << "Carriage return at end of buffer, need following line feed.";
-			return (false);
+			DEBUG("/http/protocol/extract/line") << "Carriage return at end of buffer, need following line feed.";
+			return (ParseIncomplete);
 		}
 		if (pos != 0)
 			input->moveout(line, pos);
 		input->skip(1);
 		if (input->peek() != '\n') {
 			ERROR("/http/protocol/extract/line") << "Carriage return not followed by line feed.";
-			return (false);
+			return (ParseFailure);
 		}
 		input->skip(1);
 		break;
@@ -233,5 +225,5 @@ HTTPProtocol::ExtractLine(Buffer *line, Buffer *input)
 		NOTREACHED();
 	}
 
-	return (true);
+	return (ParseSuccess);
 }

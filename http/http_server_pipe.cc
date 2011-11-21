@@ -207,46 +207,15 @@ HTTPServerPipe::consume(Buffer *in)
 		ASSERT(!buffer_.empty());
 
 		Buffer line;
-		unsigned pos;
-		uint8_t found;
-		if (!buffer_.find_any("\r\n", &pos, &found)) {
-			DEBUG(log_) << "Waiting for remainder of line.";
+		switch (HTTPProtocol::ExtractLine(&line, &buffer_)) {
+		case HTTPProtocol::ParseSuccess:
+			break;
+		case HTTPProtocol::ParseIncomplete:
+			DEBUG(log_) << "Could not completely parse input, waiting for more.";
 			return;
-		}
-
-		/*
-		 * XXX
-		 * We should pick line ending from the start line and require it to
-		 * be consistent for remaining lines, rather than using find_any over
-		 * and over, which is non-trivial.  Handling of the start line can be
-		 * quite easily and cheaply before the loop.
-		 */
-		switch (found) {
-		case '\r':
-			/* CRLF line endings.  */
-			ASSERT(buffer_.length() > pos);
-			if (buffer_.length() == pos + 1) {
-				DEBUG(log_) << "Carriage return at end of buffer, waiting for line feed.";
-				return;
-			}
-			if (pos != 0)
-				buffer_.moveout(&line, pos);
-			buffer_.skip(1);
-			if (buffer_.peek() != '\n') {
-				ERROR(log_) << "Carriage return not followed by line feed.";
-				send_response(HTTPProtocol::BadRequest, "Line includes embedded carriage return.");
-				return;
-			}
-			buffer_.skip(1);
-			break;
-		case '\n':
-			/* Unix line endings.  */
-			if (pos != 0)
-				buffer_.moveout(&line, pos);
-			buffer_.skip(1);
-			break;
-		default:
-			NOTREACHED();
+		case HTTPProtocol::ParseFailure:
+			send_response(HTTPProtocol::BadRequest, "Could not parse input line.");
+			return;
 		}
 
 		if (state_ == GetStart) {
@@ -359,6 +328,7 @@ HTTPServerPipe::consume(Buffer *in)
 			continue;
 		}
 
+		unsigned pos;
 		if (!line.find(':', &pos)) {
 			send_response(HTTPProtocol::BadRequest, "Empty header name.");
 			return;
