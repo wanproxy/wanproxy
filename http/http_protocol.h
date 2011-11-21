@@ -30,6 +30,7 @@ namespace HTTPProtocol {
 	};
 
 	bool DecodeURI(Buffer *, Buffer *);
+	bool ExtractLine(Buffer *, Buffer *);
 }
 
 #endif /* !HTTP_PROTOCOL_H */
