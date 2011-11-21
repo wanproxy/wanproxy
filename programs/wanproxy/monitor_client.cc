@@ -39,7 +39,6 @@ public:
 		else
 			os_ << "<h1>Configuration - " << select_ << " [<a href=\"/\">up</a>]</h1>";
 		os_ << "<table>";
-		os_ << "<tr><th>object</th><th>class</th><th>field</th><th>type</th><th>value</th></tr>";
 		c->marshall(this);
 		os_ << "</table>";
 	}
@@ -55,6 +54,7 @@ public:
 	{
 		if (select_ != "" && select_ != co->name())
 			return;
+		os_ << "<tr><th>object</th><th>class</th><th>field</th><th>type</th><th>value</th></tr>";
 		os_ << "<tr><td><a href=\"/object/" << co->name() << "\">" << co->name() << "</a></td><td>" << cc->name() << "</td><td colspan=\"3\" /></tr>";
 		cc->marshall(this, co);
 	}
