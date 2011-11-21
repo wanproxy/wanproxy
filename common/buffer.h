@@ -774,14 +774,14 @@ public:
 	}
 
 	/*
-	 * Append at most len bytes from the start of this Buffer to a
-	 * specified BufferSegment.
+	 * Take a reference to the BufferSegment at the start of this Buffer.
 	 */
-	void copyout(BufferSegment *seg, size_t len) const
+	void copyout(BufferSegment **segp) const
 	{
-		ASSERT(seg->avail() >= len);
-		copyout(seg->tail(), len);
-		seg->set_length(seg->length() + len);
+		ASSERT(!empty());
+		BufferSegment *src = data_.front();
+		src->ref();
+		*segp = src;
 	}
 
 	/*
@@ -791,6 +791,9 @@ public:
 	 */
 	void copyout(BufferSegment **segp, size_t len) const
 	{
+		ASSERT(len != 0);
+		ASSERT(len <= BUFFER_SEGMENT_SIZE);
+		ASSERT(length() >= len);
 		BufferSegment *src = data_.front();
 		if (src->length() == len) {
 			src->ref();
@@ -802,9 +805,9 @@ public:
 			*segp = src->truncate(len);
 			return;
 		}
-		BufferSegment *seg = BufferSegment::create();
+		BufferSegment *seg = src->copy();
+		copyout(seg->tail(), seg->length(), len - seg->length());
 		*segp = seg;
-		copyout(seg, len);
 	}
 
 	/*
