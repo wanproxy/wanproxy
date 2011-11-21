@@ -19,8 +19,8 @@ private:
 	std::map<const ConfigValue *, T> flags_;
 	std::map<std::string, T> flag_map_;
 public:
-	ConfigTypeFlags(const std::string& name, struct Mapping *mappings)
-	: ConfigType(name),
+	ConfigTypeFlags(const std::string& xname, struct Mapping *mappings)
+	: ConfigType(xname),
 	  flags_(),
 	  flag_map_()
 	{
