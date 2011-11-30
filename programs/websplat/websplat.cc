@@ -26,7 +26,7 @@ public:
 	{ }
 
 private:
-	void handle_request(const std::string& method, const std::string& uri, HTTPProtocol::Message)
+	void handle_request(const std::string& method, const std::string& uri, HTTPProtocol::Request)
 	{
 		if (method != "GET") {
 			pipe_->send_response(HTTPProtocol::NotImplemented, "Unsupported method.");
