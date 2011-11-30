@@ -1,27 +1,21 @@
 #ifndef	PROXY_SOCKS_LISTENER_H
 #define	PROXY_SOCKS_LISTENER_H
 
+#include <io/socket/simple_server.h>
+
 class Socket;
 class TCPServer;
 class XCodec;
 
-class ProxySocksListener {
-	LogHandle log_;
+class ProxySocksListener : public SimpleServer<TCPServer> {
 	std::string name_;
-	TCPServer *server_;
-	Action *accept_action_;
-	Action *close_action_;
-	Action *stop_action_;
-	std::string interface_;
 
 public:
 	ProxySocksListener(const std::string&, SocketAddressFamily, const std::string&);
 	~ProxySocksListener();
 
 private:
-	void accept_complete(Event, Socket *);
-	void close_complete(void);
-	void stop(void);
+	void client_connected(Socket *);
 };
 
 #endif /* !PROXY_SOCKS_LISTENER_H */

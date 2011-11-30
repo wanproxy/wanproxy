@@ -11,83 +11,15 @@
 #include "proxy_socks_listener.h"
 
 ProxySocksListener::ProxySocksListener(const std::string& name, SocketAddressFamily family, const std::string& interface)
-: log_("/wanproxy/proxy/" + name + "/socks/listener"),
-  name_(name),
-  server_(NULL),
-  accept_action_(NULL),
-  close_action_(NULL),
-  stop_action_(NULL),
-  interface_(interface)
-{
-	server_ = TCPServer::listen(family, interface);
-	if (server_ == NULL) {
-		HALT(log_) << "Unable to create listener.";
-	}
-
-	SocketEventCallback *cb = callback(this, &ProxySocksListener::accept_complete);
-	accept_action_ = server_->accept(cb);
-
-	SimpleCallback *scb = callback(this, &ProxySocksListener::stop);
-	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
-}
+: SimpleServer<TCPServer>("/wanproxy/proxy/" + name + "/socks/listener", family, interface),
+  name_(name)
+{ }
 
 ProxySocksListener::~ProxySocksListener()
-{
-	ASSERT(server_ == NULL);
-	ASSERT(accept_action_ == NULL);
-	ASSERT(close_action_ == NULL);
-	ASSERT(stop_action_ == NULL);
-}
+{ }
 
 void
-ProxySocksListener::accept_complete(Event e, Socket *socket)
+ProxySocksListener::client_connected(Socket *socket)
 {
-	accept_action_->cancel();
-	accept_action_ = NULL;
-
-	switch (e.type_) {
-	case Event::Done:
-		break;
-	case Event::Error:
-		INFO(log_) << "Accept failed: " << e;
-		break;
-	default:
-		ERROR(log_) << "Unexpected event: " << e;
-		return;
-	}
-
-	if (e.type_ == Event::Done) {
-		new ProxySocksConnection(name_, socket);
-	}
-
-	SocketEventCallback *cb = callback(this, &ProxySocksListener::accept_complete);
-	accept_action_ = server_->accept(cb);
-}
-
-void
-ProxySocksListener::close_complete(void)
-{
-	close_action_->cancel();
-	close_action_ = NULL;
-
-	ASSERT(server_ != NULL);
-	delete server_;
-	server_ = NULL;
-
-	delete this;
-}
-
-void
-ProxySocksListener::stop(void)
-{
-	stop_action_->cancel();
-	stop_action_ = NULL;
-
-	accept_action_->cancel();
-	accept_action_ = NULL;
-
-	ASSERT(close_action_ == NULL);
-
-	SimpleCallback *cb = callback(this, &ProxySocksListener::close_complete);
-	close_action_ = server_->close(cb);
+	new ProxySocksConnection(name_, socket);
 }
