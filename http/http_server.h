@@ -18,7 +18,7 @@ private:
 	Splice *splice_;
 	Action *splice_action_;
 	Action *close_action_;
-	Action *message_action_;
+	Action *request_action_;
 public:
 	HTTPServerHandler(Socket *);
 protected:
@@ -26,10 +26,10 @@ protected:
 
 private:
 	void close_complete(void);
-	void request(Event, HTTPProtocol::Message);
+	void request(Event, HTTPProtocol::Request);
 	void splice_complete(Event);
 
-	virtual void handle_request(const std::string&, const std::string&, HTTPProtocol::Message) = 0;
+	virtual void handle_request(const std::string&, const std::string&, HTTPProtocol::Request) = 0;
 };
 
 template<typename T, typename Th, typename Ta = void>

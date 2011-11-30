@@ -19,11 +19,11 @@ HTTPServerHandler::HTTPServerHandler(Socket *client)
   splice_(NULL),
   splice_action_(NULL),
   close_action_(NULL),
-  message_action_(NULL)
+  request_action_(NULL)
 {
 	pipe_ = new HTTPServerPipe(log_ + "/pipe");
-	HTTPMessageEventCallback *hcb = callback(this, &HTTPServerHandler::request);
-	message_action_ = pipe_->message(hcb);
+	HTTPRequestEventCallback *hcb = callback(this, &HTTPServerHandler::request);
+	request_action_ = pipe_->request(hcb);
 
 	splice_ = new Splice(log_, client_, pipe_, client_);
 	EventCallback *scb = callback(this, &HTTPServerHandler::splice_complete);
@@ -36,7 +36,7 @@ HTTPServerHandler::~HTTPServerHandler()
 	ASSERT(splice_ == NULL);
 	ASSERT(splice_action_ == NULL);
 	ASSERT(close_action_ == NULL);
-	ASSERT(message_action_ == NULL);
+	ASSERT(request_action_ == NULL);
 }
 
 void
@@ -53,19 +53,19 @@ HTTPServerHandler::close_complete(void)
 }
 
 void
-HTTPServerHandler::request(Event e, HTTPProtocol::Message message)
+HTTPServerHandler::request(Event e, HTTPProtocol::Request req)
 {
-	message_action_->cancel();
-	message_action_ = NULL;
+	request_action_->cancel();
+	request_action_ = NULL;
 
 	if (e.type_ == Event::Error) {
-		ERROR(log_) << "Error while waiting for request message: " << e;
+		ERROR(log_) << "Error while waiting for request: " << e;
 		return;
 	}
 	ASSERT(e.type_ == Event::Done);
 
-	ASSERT(!message.start_line_.empty());
-	std::vector<Buffer> words = message.start_line_.split(' ', false);
+	ASSERT(!req.start_line_.empty());
+	std::vector<Buffer> words = req.start_line_.split(' ', false);
 	ASSERT(!words.empty());
 
 	std::string method;
@@ -97,7 +97,7 @@ HTTPServerHandler::request(Event e, HTTPProtocol::Message message)
 	uri_decoded.extract(uri);
 	ASSERT(!uri.empty());
 
-	handle_request(method, uri, message);
+	handle_request(method, uri, req);
 }
 
 void
@@ -122,10 +122,10 @@ HTTPServerHandler::splice_complete(Event e)
 	delete splice_;
 	splice_ = NULL;
 
-	if (message_action_ != NULL) {
-		ERROR(log_) << "Splice exited before message was received.";
-		message_action_->cancel();
-		message_action_ = NULL;
+	if (request_action_ != NULL) {
+		ERROR(log_) << "Splice exited before request was received.";
+		request_action_->cancel();
+		request_action_ = NULL;
 	}
 
 	ASSERT(pipe_ != NULL);
