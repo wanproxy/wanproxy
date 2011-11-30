@@ -2,8 +2,11 @@
 
 #include <event/event_callback.h>
 #include <event/event_main.h>
+#include <event/event_system.h>
 
 #include <io/net/tcp_server.h>
+
+#include <io/socket/simple_server.h>
 
 /*
  * XXX
@@ -125,57 +128,18 @@ public:
 	}
 };
 
-class ChargenListener {
-	LogHandle log_;
-	TCPServer *server_;
-	Action *action_;
+class ChargenListener : public SimpleServer<TCPServer> {
 public:
 	ChargenListener(void)
-	: log_("/chargen/listener"),
-	  server_(NULL),
-	  action_(NULL)
-	{
-		server_ = TCPServer::listen(SocketAddressFamilyIP, "[0.0.0.0]:0");
-		ASSERT(server_ != NULL);
-
-		INFO(log_) << "Listener created on: " << server_->getsockname();
-
-		SocketEventCallback *cb = callback(this, &ChargenListener::accept_complete);
-		action_ = server_->accept(cb);
-	}
+	: SimpleServer<TCPServer>("/chargen/listener", SocketAddressFamilyIP, "[::]:0")
+	{ }
 
 	~ChargenListener()
+	{ }
+
+	void client_connected(Socket *socket)
 	{
-		ASSERT(server_ != NULL);
-		delete server_;
-		server_ = NULL;
-
-		ASSERT(action_ == NULL);
-	}
-
-	void accept_complete(Event e, Socket *socket)
-	{
-		action_->cancel();
-		action_ = NULL;
-
-		switch (e.type_) {
-		case Event::Done:
-			break;
-		case Event::Error:
-			ERROR(log_) << "Error in accept: " << e;
-			break;
-		default:
-			HALT(log_) << "Unexpected event: " << e;
-			return;
-		}
-
-		if (e.type_ == Event::Done) {
-			ASSERT(socket != NULL);
-			new ChargenClient(socket);
-		}
-
-		SocketEventCallback *cb = callback(this, &ChargenListener::accept_complete);
-		action_ = server_->accept(cb);
+		new ChargenClient(socket);
 	}
 };
 
@@ -183,7 +147,7 @@ public:
 int
 main(void)
 {
-	ChargenListener listener;
+	new ChargenListener();
 
 	event_main();
 }
