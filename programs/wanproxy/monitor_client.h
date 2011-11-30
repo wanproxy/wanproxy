@@ -17,7 +17,7 @@ public:
 	{ }
 
 private:
-	void handle_request(const std::string&, const std::string&, HTTPProtocol::Message);
+	void handle_request(const std::string&, const std::string&, HTTPProtocol::Request);
 };
 
 #endif /* !MONITOR_CLIENT_H */
