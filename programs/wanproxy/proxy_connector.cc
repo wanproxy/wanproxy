@@ -35,9 +35,6 @@ ProxyConnector::ProxyConnector(const std::string& name,
 	if (pipe_pair_ != NULL) {
 		incoming_pipe_ = pipe_pair_->get_incoming();
 		outgoing_pipe_ = pipe_pair_->get_outgoing();
-	} else {
-		incoming_pipe_ = new PipeNull();
-		outgoing_pipe_ = new PipeNull();
 	}
 
 	SocketEventCallback *cb = callback(this, &ProxyConnector::connect_complete);

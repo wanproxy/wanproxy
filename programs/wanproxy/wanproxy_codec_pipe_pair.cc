@@ -72,12 +72,6 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 	ASSERT(incoming_pipe_list.empty() == outgoing_pipe_list.empty());
 
 	if (incoming_pipe_list.empty() && outgoing_pipe_list.empty()) {
-		incoming_pipe_ = new PipeNull();
-		outgoing_pipe_ = new PipeNull();
-
-		pipes_.insert(incoming_pipe_);
-		pipes_.insert(outgoing_pipe_);
-
 		return;
 	}
 

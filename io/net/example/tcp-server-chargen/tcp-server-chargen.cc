@@ -8,11 +8,6 @@
 
 #include <io/socket/simple_server.h>
 
-/*
- * XXX
- * Register stop interest.
- */
-
 #define	RFC864_STRING	"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ "
 #define	RFC864_LEN	(sizeof RFC864_STRING - 1)
 #define	WIDTH		72

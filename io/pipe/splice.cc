@@ -26,7 +26,6 @@ Splice::Splice(const LogHandle& log, StreamChannel *source, Pipe *pipe, StreamCh
 	log_ = log + "/splice";
 
 	ASSERT(source_ != NULL);
-	ASSERT(pipe_ != NULL);
 	ASSERT(sink_ != NULL);
 }
 
@@ -50,8 +49,10 @@ Splice::start(EventCallback *cb)
 	EventCallback *scb = callback(this, &Splice::read_complete);
 	read_action_ = source_->read(0, scb);
 
-	EventCallback *pcb = callback(this, &Splice::output_complete);
-	output_action_ = pipe_->output(pcb);
+	if (pipe_ != NULL) {
+		EventCallback *pcb = callback(this, &Splice::output_complete);
+		output_action_ = pipe_->output(pcb);
+	}
 
 	return (cancellation(this, &Splice::cancel));
 }
@@ -156,9 +157,21 @@ Splice::read_complete(Event e)
 		read_eos_ = true;
 	}
 
-	ASSERT(input_action_ == NULL);
-	EventCallback *cb = callback(this, &Splice::input_complete);
-	input_action_ = pipe_->input(&e.buffer_, cb);
+	if (pipe_ != NULL) {
+		ASSERT(input_action_ == NULL);
+		EventCallback *cb = callback(this, &Splice::input_complete);
+		input_action_ = pipe_->input(&e.buffer_, cb);
+	} else {
+		if (e.type_ == Event::EOS && e.buffer_.empty()) {
+			EventCallback *cb = callback(this, &Splice::shutdown_complete);
+			shutdown_action_ = sink_->shutdown(false, true, cb);
+			return;
+		}
+
+		ASSERT(write_action_ == NULL);
+		EventCallback *cb = callback(this, &Splice::write_complete);
+		write_action_ = sink_->write(&e.buffer_, cb);
+	}
 }
 
 void
@@ -227,9 +240,22 @@ Splice::write_complete(Event e)
 		return;
 	}
 
-	ASSERT(output_action_ == NULL);
-	EventCallback *cb = callback(this, &Splice::output_complete);
-	output_action_ = pipe_->output(cb);
+	if (pipe_ != NULL) {
+		ASSERT(output_action_ == NULL);
+		EventCallback *cb = callback(this, &Splice::output_complete);
+		output_action_ = pipe_->output(cb);
+	} else {
+		if (read_eos_) {
+			if (shutdown_action_ == NULL) {
+				EventCallback *cb = callback(this, &Splice::shutdown_complete);
+				shutdown_action_ = sink_->shutdown(false, true, cb);
+				return;
+			}
+		} else {
+			EventCallback *cb = callback(this, &Splice::read_complete);
+			read_action_ = source_->read(0, cb);
+		}
+	}
 }
 
 void
