@@ -20,7 +20,7 @@ HTTPServerPipe::HTTPServerPipe(const LogHandle& log)
 : PipeProducer(log),
   state_(GetStart),
   buffer_(),
-  message_(),
+  request_(),
   last_header_(),
   action_(NULL),
   callback_(NULL)
@@ -33,12 +33,12 @@ HTTPServerPipe::~HTTPServerPipe()
 }
 
 Action *
-HTTPServerPipe::message(HTTPMessageEventCallback *cb)
+HTTPServerPipe::request(HTTPRequestEventCallback *cb)
 {
 	ASSERT(action_ == NULL);
 	ASSERT(callback_ == NULL);
 
-	if (state_ == GotMessage || state_ == Error)
+	if (state_ == GotRequest || state_ == Error)
 		return (schedule_callback(cb));
 
 	callback_ = cb;
@@ -48,7 +48,7 @@ HTTPServerPipe::message(HTTPMessageEventCallback *cb)
 void
 HTTPServerPipe::send_response(HTTPProtocol::Status status, Buffer *body, Buffer *headers)
 {
-	if (state_ == GotMessage || state_ == Error) {
+	if (state_ == GotRequest || state_ == Error) {
 		ASSERT(buffer_.empty());
 	} else {
 		if (!buffer_.empty()) {
@@ -150,14 +150,14 @@ HTTPServerPipe::cancel(void)
 }
 
 Action *
-HTTPServerPipe::schedule_callback(HTTPMessageEventCallback *cb)
+HTTPServerPipe::schedule_callback(HTTPRequestEventCallback *cb)
 {
 	switch (state_) {
-	case GotMessage:
-		cb->param(Event::Done, message_);
+	case GotRequest:
+		cb->param(Event::Done, request_);
 		break;
 	case Error:
-		cb->param(Event::Error, HTTPProtocol::Message());
+		cb->param(Event::Error, HTTPProtocol::Request());
 		break;
 	default:
 		NOTREACHED();
@@ -169,7 +169,7 @@ HTTPServerPipe::schedule_callback(HTTPMessageEventCallback *cb)
 void
 HTTPServerPipe::consume(Buffer *in)
 {
-	if (state_ == GotMessage || state_ == Error) {
+	if (state_ == GotRequest || state_ == Error) {
 		ASSERT(buffer_.empty());
 		if (in->empty()) {
 			DEBUG(log_) << "Got end-of-stream.";
@@ -180,13 +180,13 @@ HTTPServerPipe::consume(Buffer *in)
 		 * XXX
 		 * Really want a way to shut down input.
 		 */
-		if (state_ == GotMessage) {
+		if (state_ == GotRequest) {
 			ERROR(log_) << "Client sent unexpected additional data after request.";
 			state_ = Error;
 
 			/*
 			 * No need to schedule a callback for this state
-			 * change, the change to GotMessage already did.
+			 * change, the change to GotRequest already did.
 			 */
 		} else {
 			ERROR(log_) << "Client continuing to send gibberish.";
@@ -219,13 +219,13 @@ HTTPServerPipe::consume(Buffer *in)
 		}
 
 		if (state_ == GetStart) {
-			ASSERT(message_.start_line_.empty());
+			ASSERT(request_.start_line_.empty());
 			if (line.empty()) {
 				ERROR(log_) << "Premature end of headers.";
 				send_response(HTTPProtocol::BadRequest, "Empty start line.");
 				return;
 			}
-			message_.start_line_ = line;
+			request_.start_line_ = line;
 
 			/*
 			 * There are two kinds of request line.  The first has two
@@ -271,7 +271,7 @@ HTTPServerPipe::consume(Buffer *in)
 			 * We have received the full message.  Process any
 			 * pending callback.
 			 */
-			state_ = GotMessage;
+			state_ = GotRequest;
 
 			ASSERT(action_ == NULL);
 			if (callback_ != NULL) {
@@ -282,7 +282,7 @@ HTTPServerPipe::consume(Buffer *in)
 		}
 
 		ASSERT(state_ == GetHeaders);
-		ASSERT(!message_.start_line_.empty());
+		ASSERT(!request_.start_line_.empty());
 
 		/*
 		 * Process end of headers!
@@ -298,7 +298,7 @@ HTTPServerPipe::consume(Buffer *in)
 			 * We have received the full message.  Process any
 			 * pending callback.
 			 */
-			state_ = GotMessage;
+			state_ = GotRequest;
 
 			ASSERT(action_ == NULL);
 			if (callback_ != NULL) {
@@ -322,7 +322,7 @@ HTTPServerPipe::consume(Buffer *in)
 				return;
 			}
 
-			message_.headers_[last_header_].back().append(line);
+			request_.headers_[last_header_].back().append(line);
 			if (buffer_.empty())
 				break;
 			continue;
@@ -346,7 +346,7 @@ HTTPServerPipe::consume(Buffer *in)
 		std::string header;
 		key.extract(header);
 
-		message_.headers_[header].push_back(value);
+		request_.headers_[header].push_back(value);
 		last_header_ = header;
 
 		if (buffer_.empty())

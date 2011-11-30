@@ -119,7 +119,7 @@ private:
 	Action *splice_action_;
 	Test splice_success_;
 protected:
-	Action *message_action_;
+	Action *request_action_;
 public:
 	HTTPServerPipeTest(const LogHandle& log, TestGroup& group, const Buffer& source)
 	: log_(log),
@@ -130,10 +130,10 @@ public:
 	  splice_(NULL),
 	  splice_action_(NULL),
 	  splice_success_(group, "Splice success."),
-	  message_action_(NULL)
+	  request_action_(NULL)
 	{
-		HTTPMessageEventCallback *mcb = callback(this, &HTTPServerPipeTest::request);
-		message_action_ = pipe_.message(mcb);
+		HTTPRequestEventCallback *rcb = callback(this, &HTTPServerPipeTest::request);
+		request_action_ = pipe_.request(rcb);
 
 		splice_ = new Splice(log_ + "/splice", &source_, &pipe_, &sink_);
 		EventCallback *cb = callback(this, &HTTPServerPipeTest::splice_complete);
@@ -145,15 +145,15 @@ public:
 		ASSERT(splice_ == NULL);
 		ASSERT(splice_action_ == NULL);
 
-		if (message_action_ != NULL) {
-			DEBUG(log_) << "Test exited without receiving a message.";
-			message_action_->cancel();
-			message_action_ = NULL;
+		if (request_action_ != NULL) {
+			DEBUG(log_) << "Test exited without receiving a request.";
+			request_action_->cancel();
+			request_action_ = NULL;
 		}
 	}
 
 private:
-	virtual void request(Event, HTTPProtocol::Message) = 0;
+	virtual void request(Event, HTTPProtocol::Request) = 0;
 
 	void splice_complete(Event e)
 	{
@@ -178,21 +178,22 @@ public:
 	{
 		{
 			Test _(group_, "Request received.");
-			if (message_action_ == NULL)
+			if (request_action_ == NULL)
 				_.pass();
 		}
 
-		Buffer resp = sink_.get_buffer();
-		HTTPProtocol::Message msg;
+		HTTPProtocol::Response resp;
 		{
 			Test _(group_, "Decode response.");
-			if (msg.decode(&resp, HTTPProtocol::Message::Response))
+
+			Buffer buf = sink_.get_buffer();
+			if (resp.decode(&buf))
 				_.pass();
 		}
 
 		{
 			Test _(group_, "Expected status.");
-			if (msg.start_line_.equal("HTTP/1.1 200 OK"))
+			if (resp.start_line_.equal("HTTP/1.1 200 OK"))
 				_.pass();
 		}
 
@@ -200,17 +201,17 @@ public:
 
 		{
 			Test _(group_, "Expected body.");
-			if (msg.body_.equal("Successful HTTP/0.9 request."))
+			if (resp.body_.equal("Successful HTTP/0.9 request."))
 				_.pass();
 		}
 	}
 
 private:
-	void request(Event e, HTTPProtocol::Message msg)
+	void request(Event e, HTTPProtocol::Request msg)
 	{
-		ASSERT(message_action_ != NULL);
-		message_action_->cancel();
-		message_action_ = NULL;
+		ASSERT(request_action_ != NULL);
+		request_action_->cancel();
+		request_action_ = NULL;
 
 		{
 			Test _(group_, "Successfully got request.");

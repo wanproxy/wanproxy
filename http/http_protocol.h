@@ -24,7 +24,35 @@ namespace HTTPProtocol {
 		std::map<std::string, std::vector<Buffer> > trailers_;
 #endif
 
-		bool decode(Buffer *, Type);
+		Message(Type type)
+		: type_(type),
+		  start_line_(),
+		  headers_(),
+		  body_()
+		{ }
+
+		~Message()
+		{ }
+
+		bool decode(Buffer *);
+	};
+
+	struct Request : public Message {
+		Request(void)
+		: Message(Message::Request)
+		{ }
+
+		~Request()
+		{ }
+	};
+
+	struct Response : public Message {
+		Response(void)
+		: Message(Message::Response)
+		{ }
+
+		~Response()
+		{ }
 	};
 
 	enum Status {

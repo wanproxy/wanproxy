@@ -22,14 +22,13 @@ namespace {
 }
 
 bool
-HTTPProtocol::Message::decode(Buffer *input, Type type)
+HTTPProtocol::Message::decode(Buffer *input)
 {
 	if (start_line_.empty()) {
 		start_line_.clear();
 		headers_.clear();
 		body_.clear();
 	}
-	type_ = type;
 
 	Buffer line;
 	if (ExtractLine(&line, input) != ParseSuccess) {
@@ -42,7 +41,7 @@ HTTPProtocol::Message::decode(Buffer *input, Type type)
 	}
 	start_line_ = line;
 
-	if (type == Request) {
+	if (type_ == Request) {
 		/*
 		 * There are two kinds of request line.  The first has two
 		 * words, the second has three.  Anything else is malformed.
@@ -67,7 +66,7 @@ HTTPProtocol::Message::decode(Buffer *input, Type type)
 			return (false);
 		}
 	} else {
-		ASSERT(type == Response);
+		ASSERT(type_ == Response);
 		/*
 		 * No parsing behavior is conditional for responses.
 		 */

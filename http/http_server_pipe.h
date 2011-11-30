@@ -9,39 +9,39 @@
 #include <io/pipe/pipe.h>
 #include <io/pipe/pipe_producer.h>
 
-typedef class TypedPairCallback<Event, HTTPProtocol::Message> HTTPMessageEventCallback;
+typedef class TypedPairCallback<Event, HTTPProtocol::Request> HTTPRequestEventCallback;
 
 class HTTPServerPipe : public PipeProducer {
 	enum State {
 		GetStart,
 		GetHeaders,
 
-		GotMessage,
+		GotRequest,
 		Error
 	};
 
 	State state_;
 	Buffer buffer_;
 
-	HTTPProtocol::Message message_;
+	HTTPProtocol::Request request_;
 	std::string last_header_;
 
 	Action *action_;
-	HTTPMessageEventCallback *callback_;
+	HTTPRequestEventCallback *callback_;
 public:
 	HTTPServerPipe(const LogHandle&);
 	~HTTPServerPipe();
 
-	Action *message(HTTPMessageEventCallback *);
+	Action *request(HTTPRequestEventCallback *);
 
-	/* XXX Use HTTPProtocol::Message type and add nice constructors for it?  */
+	/* XXX Use HTTPProtocol::Response type and add nice constructors for it?  */
 	void send_response(HTTPProtocol::Status, Buffer *, Buffer *);
 	void send_response(HTTPProtocol::Status, const std::string&, const std::string& = "text/plain");
 
 private:
 	void cancel(void);
 
-	Action *schedule_callback(HTTPMessageEventCallback *);
+	Action *schedule_callback(HTTPRequestEventCallback *);
 
 	void consume(Buffer *);
 };
