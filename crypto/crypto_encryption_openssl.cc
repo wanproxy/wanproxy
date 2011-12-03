@@ -89,6 +89,7 @@ public:
 		OpenSSL_add_all_algorithms();
 
 		factory<CryptoEncryptionSessionEVP> evp_factory;
+		cipher_map_.enter(CryptoCipher(Crypto3DES, CryptoModeCBC), evp_factory(EVP_des_ede3_cbc()));
 		cipher_map_.enter(CryptoCipher(CryptoAES128, CryptoModeCBC), evp_factory(EVP_aes_128_cbc()));
 		cipher_map_.enter(CryptoCipher(CryptoAES192, CryptoModeCBC), evp_factory(EVP_aes_192_cbc()));
 		cipher_map_.enter(CryptoCipher(CryptoAES256, CryptoModeCBC), evp_factory(EVP_aes_256_cbc()));
@@ -107,5 +108,7 @@ public:
 	}
 };
 
-static CryptoEncryptionMethodOpenSSL crypto_encryption_method_openssl;
+namespace {
+	static CryptoEncryptionMethodOpenSSL crypto_encryption_method_openssl;
+}
 const CryptoEncryptionMethod *CryptoEncryptionMethod::default_method = &crypto_encryption_method_openssl; /* XXX */

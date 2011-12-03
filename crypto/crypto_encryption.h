@@ -6,6 +6,7 @@
 class CryptoEncryptionMethod;
 
 enum CryptoEncryptionAlgorithm {
+	Crypto3DES,
 	CryptoAES128,
 	CryptoAES192,
 	CryptoAES256,
