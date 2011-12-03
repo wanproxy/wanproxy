@@ -5,6 +5,7 @@ SUBDIR+=event
 SUBDIR+=http
 SUBDIR+=io
 SUBDIR+=programs
+SUBDIR+=ssh
 SUBDIR+=xcodec
 SUBDIR+=xml
 SUBDIR+=zlib

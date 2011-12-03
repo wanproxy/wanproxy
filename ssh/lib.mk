@@ -1,0 +1,3 @@
+VPATH+=	${TOPDIR}/ssh
+
+SRCS+=
