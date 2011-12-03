@@ -1,3 +1,6 @@
+o) PipeProducer::input_do; PipeProducer::input_cork(), partial consume() ->
+   require input_cork().
+
 Note:
 o) Callbacks are going through a period of major change.  For now, except for
    the CallbackSchedulers, it is assumed that all callbacks will need to be
