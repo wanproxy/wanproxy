@@ -269,7 +269,8 @@ private:
 				/* Because msg is a uint8_t, it will always be <= SSH::Message::LocalExtensionRangeEnd.  */
 				DEBUG(log_) << "Using default handler for local extension message.";
 			} else {
-				HALT(log_) << "Message in unknown range.  That's unpossible.";
+				ASSERT(msg == 0);
+				ERROR(log_) << "Message outside of protocol range received.  Passing to default handler, but not expecting much.";
 			}
 
 			receive_callback_->param(Event(Event::Done, packet));
