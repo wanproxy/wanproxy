@@ -4,7 +4,7 @@
 #include <common/endian.h>
 
 namespace SSH {
-	namespace Protocol {
+	namespace Message {
 		static const uint8_t
 			TransportRangeBegin = 1,
 			TransportDisconnectMessage = 1,
@@ -33,50 +33,50 @@ namespace SSH {
 			UserAuthenticationMethodRangeBegin = 60,
 			UserAuthenticationMethodRangeEnd = 79,
 
-			ConnectionProtocolGenericRangeBegin = 80,
+			ConnectionProtocolGlobalRangeBegin = 80,
 			ConnectionProtocolGlobalRequestMessage = 80,
 			ConnectionProtocolGlobalRequestSuccessMessage = 81,
 			ConnectionProtocolGlobalRequestFailureMessage = 82,
-			ConnectionProtocolGenericRangeEnd = 89,
+			ConnectionProtocolGlobalRangeEnd = 89,
 
-			ConnectionChannelMessageRangeBegin = 90,
-			ConnectionChannelOpenMessage = 90,
-			ConnectionChannelOpenConfirmationMessage = 91,
-			ConnectionChannelOpenFailureMessage = 92,
-			ConnectionChannelWindowAdjustMessage = 93,
-			ConnectionChannelDataMessage = 94,
-			ConnectionChannelExtendedDataMessage = 95,
-			ConnectionChannelEndOfFileMessage = 96,
-			ConnectionChannelCloseMessage = 97,
-			ConnectionChannelRequestMessage = 98,
-			ConnectionChannelRequestSuccessMessage = 99,
-			ConnectionChannelRequestFailureMessage = 100,
-			ConnectionChannelMessageRangeEnd = 127,
+			ConnectionChannelRangeBegin = 90,
+			ConnectionChannelOpen = 90,
+			ConnectionChannelOpenConfirmation = 91,
+			ConnectionChannelOpenFailure = 92,
+			ConnectionChannelWindowAdjust = 93,
+			ConnectionChannelData = 94,
+			ConnectionChannelExtendedData = 95,
+			ConnectionChannelEndOfFile = 96,
+			ConnectionChannelClose = 97,
+			ConnectionChannelRequest = 98,
+			ConnectionChannelRequestSuccess = 99,
+			ConnectionChannelRequestFailure = 100,
+			ConnectionChannelRangeEnd = 127,
 
 			ClientProtocolReservedRangeBegin = 128,
 			ClientProtocolReservedRangeEnd = 191,
 
 			LocalExtensionRangeBegin = 192,
 			LocalExtensionRangeEnd = 255;
+	}
 
-		namespace Disconnect {
-			static const uint8_t
-				HostNotallowedToConnect = 1,
-				ProtocolError = 2,
-				KeyExchangeFailed = 3,
-				Reserved = 4,
-				MACError = 5,
-				CompressionError = 6,
-				ServiceNotAvailable = 7,
-				ProtocolVersionNotSupported = 8,
-				HostKeyNotVerifiable = 9,
-				ConnectionLost = 10,
-				ByApplication = 11,
-				TooManyConnections = 12,
-				AuthenticationCancelledByUser = 13,
-				NoMoreAuthenticationMethodsAvailable = 14,
-				IllegalUserName = 15;
-		}
+	namespace Disconnect {
+		static const uint8_t
+			HostNotallowedToConnect = 1,
+			ProtocolError = 2,
+			KeyExchangeFailed = 3,
+			Reserved = 4,
+			MACError = 5,
+			CompressionError = 6,
+			ServiceNotAvailable = 7,
+			ProtocolVersionNotSupported = 8,
+			HostKeyNotVerifiable = 9,
+			ConnectionLost = 10,
+			ByApplication = 11,
+			TooManyConnections = 12,
+			AuthenticationCancelledByUser = 13,
+			NoMoreAuthenticationMethodsAvailable = 14,
+			IllegalUserName = 15;
 	}
 }
 

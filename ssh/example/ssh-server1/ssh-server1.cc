@@ -187,6 +187,7 @@ private:
 			Buffer mac;
 			uint32_t packet_len;
 			uint8_t padding_len;
+			uint8_t msg;
 
 			if (input_buffer_.length() <= sizeof packet_len) {
 				DEBUG(log_) << "Waiting for packet length.";
@@ -229,12 +230,47 @@ private:
 			}
 
 			/*
-			 * TODO
 			 * Pass by range to registered handlers for each range.
 			 * Unhandled messages go to the receive_callback_, and
 			 * the caller can register key exchange mechanisms,
 			 * and handle (or discard) whatever they don't handle.
+			 *
+			 * NB: The caller could do all this, but it's assumed
+			 *     that they usually have better things to do.  If
+			 *     they register no handlers, they can certainly do
+			 *     so by hand.
 			 */
+			msg = packet.peek();
+			if (msg >= SSH::Message::TransportRangeBegin &&
+			    msg <= SSH::Message::TransportRangeEnd) {
+				DEBUG(log_) << "Using default handler for transport message.";
+			} else if (msg >= SSH::Message::AlgorithmNegotiationRangeBegin &&
+				   msg <= SSH::Message::AlgorithmNegotiationRangeEnd) {
+				DEBUG(log_) << "Using default handler for algorithm negotiation message.";
+			} else if (msg >= SSH::Message::KeyExchangeMethodRangeBegin &&
+				   msg <= SSH::Message::KeyExchangeMethodRangeEnd) {
+				DEBUG(log_) << "Using default handler for key exchange method message.";
+			} else if (msg >= SSH::Message::UserAuthenticationGenericRangeBegin &&
+				   msg <= SSH::Message::UserAuthenticationGenericRangeEnd) {
+				DEBUG(log_) << "Using default handler for generic user authentication message.";
+			} else if (msg >= SSH::Message::UserAuthenticationMethodRangeBegin &&
+				   msg <= SSH::Message::UserAuthenticationMethodRangeEnd) {
+				DEBUG(log_) << "Using default handler for user authentication method message.";
+			} else if (msg >= SSH::Message::ConnectionProtocolGlobalRangeBegin &&
+				   msg <= SSH::Message::ConnectionProtocolGlobalRangeEnd) {
+				DEBUG(log_) << "Using default handler for generic connection protocol message.";
+			} else if (msg >= SSH::Message::ConnectionChannelRangeBegin &&
+				   msg <= SSH::Message::ConnectionChannelRangeEnd) {
+				DEBUG(log_) << "Using default handler for connection channel message.";
+			} else if (msg >= SSH::Message::ClientProtocolReservedRangeBegin &&
+				   msg <= SSH::Message::ClientProtocolReservedRangeEnd) {
+				DEBUG(log_) << "Using default handler for client protocol message.";
+			} else if (msg >= SSH::Message::LocalExtensionRangeBegin) {
+				/* Because msg is a uint8_t, it will always be <= SSH::Message::LocalExtensionRangeEnd.  */
+				DEBUG(log_) << "Using default handler for local extension message.";
+			} else {
+				HALT(log_) << "Message in unknown range.  That's unpossible.";
+			}
 
 			receive_callback_->param(Event(Event::Done, packet));
 			receive_action_ = receive_callback_->schedule();
@@ -301,15 +337,6 @@ private:
 		 * SSH Echo!
 		 */
 		pipe_->send(&e.buffer_);
-#if 0
-		switch (e.buffer_.peek()) {
-		case SSH::Protocol::KeyExchangeInitializationMessage:
-			break;
-		default:
-			DEBUG(log_) << "Received packet:" << std::endl << e.buffer_.hexdump();
-			break;
-		}
-#endif
 
 		EventCallback *rcb = callback(this, &SSHConnection::receive_complete);
 		receive_action_ = pipe_->receive(rcb);
