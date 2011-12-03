@@ -229,8 +229,11 @@ private:
 			}
 
 			/*
-			 * XXX
-			 * Handle Transport messages internally?
+			 * TODO
+			 * Pass by range to registered handlers for each range.
+			 * Unhandled messages go to the receive_callback_, and
+			 * the caller can register key exchange mechanisms,
+			 * and handle (or discard) whatever they don't handle.
 			 */
 
 			receive_callback_->param(Event(Event::Done, packet));
