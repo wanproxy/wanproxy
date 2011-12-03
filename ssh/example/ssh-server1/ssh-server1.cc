@@ -16,6 +16,10 @@
 
 #include <ssh/ssh_protocol.h>
 
+namespace {
+	static uint8_t zero_padding[255];
+}
+
 class SSHTransportPipe : public PipeProducer {
 	enum State {
 		GetIdentificationString,
@@ -24,6 +28,9 @@ class SSHTransportPipe : public PipeProducer {
 
 	State state_;
 	Buffer input_buffer_;
+
+	/* XXX These parameters are different for receive and send.  */
+	size_t block_size_;
 	size_t mac_length_;
 
 	EventCallback *receive_callback_;
@@ -32,6 +39,7 @@ public:
 	SSHTransportPipe(void)
 	: PipeProducer("/ssh/transport/pipe"),
 	  state_(GetIdentificationString),
+	  block_size_(8),
 	  mac_length_(0),
 	  receive_callback_(NULL),
 	  receive_action_(NULL)
@@ -70,6 +78,36 @@ public:
 		Action *a = receive_action_;
 		receive_action_ = NULL;
 		return (a);
+	}
+
+	/*
+	 * Because this is primarily for WAN optimization we always use minimal
+	 * padding and zero padding.  Quick and dirty.  Perhaps revisit later,
+	 * although it makes send() asynchronous unless we add a blocking
+	 * RNG interface.
+	 */
+	void send(Buffer *payload)
+	{
+		Buffer packet;
+		uint8_t padding_len;
+		uint32_t packet_len;
+
+		packet_len = sizeof padding_len + payload->length();
+		padding_len = 4 + (block_size_ - ((sizeof packet_len + packet_len + 4) % block_size_));
+		packet_len += padding_len;
+
+		packet_len = BigEndian::encode(packet_len);
+		packet.append(&packet_len);
+		packet.append(padding_len);
+		packet.append(payload);
+		packet.append(zero_padding, padding_len);
+
+		if (mac_length_ != 0)
+			NOTREACHED();
+
+		payload->clear();
+
+		produce(&packet);
 	}
 
 private:
@@ -256,6 +294,11 @@ private:
 
 		ASSERT(!e.buffer_.empty());
 
+		/*
+		 * SSH Echo!
+		 */
+		pipe_->send(&e.buffer_);
+#if 0
 		switch (e.buffer_.peek()) {
 		case SSH::Protocol::KeyExchangeInitializationMessage:
 			break;
@@ -263,6 +306,7 @@ private:
 			DEBUG(log_) << "Received packet:" << std::endl << e.buffer_.hexdump();
 			break;
 		}
+#endif
 
 		EventCallback *rcb = callback(this, &SSHConnection::receive_complete);
 		receive_action_ = pipe_->receive(rcb);
