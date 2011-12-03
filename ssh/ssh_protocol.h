@@ -58,6 +58,25 @@ namespace SSH {
 
 			LocalExtensionRangeBegin = 192,
 			LocalExtensionRangeEnd = 255;
+
+		namespace Disconnect {
+			static const uint8_t
+				HostNotallowedToConnect = 1,
+				ProtocolError = 2,
+				KeyExchangeFailed = 3,
+				Reserved = 4,
+				MACError = 5,
+				CompressionError = 6,
+				ServiceNotAvailable = 7,
+				ProtocolVersionNotSupported = 8,
+				HostKeyNotVerifiable = 9,
+				ConnectionLost = 10,
+				ByApplication = 11,
+				TooManyConnections = 12,
+				AuthenticationCancelledByUser = 13,
+				NoMoreAuthenticationMethodsAvailable = 14,
+				IllegalUserName = 15;
+		}
 	}
 }
 
