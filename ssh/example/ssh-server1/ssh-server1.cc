@@ -1,10 +1,6 @@
-#include <common/endian.h>
-
 #include <event/event_callback.h>
 #include <event/event_main.h>
 #include <event/event_system.h>
-
-#include <http/http_protocol.h>
 
 #include <io/net/tcp_server.h>
 
@@ -14,11 +10,6 @@
 
 #include <io/socket/simple_server.h>
 
-namespace {
-	static uint8_t zero_padding[255];
-}
-
-#include <ssh/ssh_algorithm_negotiation.h>
 #include <ssh/ssh_protocol.h>
 #include <ssh/ssh_transport_pipe.h>
 

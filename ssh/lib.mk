@@ -1,3 +1,3 @@
 VPATH+=	${TOPDIR}/ssh
 
-SRCS+=
+SRCS+=	ssh_transport_pipe.cc
