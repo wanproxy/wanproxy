@@ -74,11 +74,7 @@ DeflatePipe::consume(Buffer *in)
 				return;
 			}
 			if (flush == Z_FINISH && error == Z_STREAM_END) {
-				if (!out.empty())
-					produce(&out);
-
-				Buffer eos;
-				produce(&eos);
+				produce_eos(&out);
 				return;
 			}
 			/* More data to output.  */

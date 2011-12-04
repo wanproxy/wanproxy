@@ -139,7 +139,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 			ERROR(log_) << "Remote encoder closed connection with frame data outstanding.";
 		if (!decoder_sent_eos_) {
 			decoder_sent_eos_ = true;
-			decoder_produce(buf);
+			decoder_produce_eos();
 		}
 		return;
 	}
@@ -375,8 +375,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 
 	if (decoder_received_eos_ && !decoder_sent_eos_) {
 		DEBUG(log_) << "Decoder finished, got <EOS>, shutting down decoder output channel.";
-		Buffer eos;
-		decoder_produce(&eos);
+		decoder_produce_eos();
 		decoder_sent_eos_ = true;
 	}
 
@@ -386,8 +385,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 
 		DEBUG(log_) << "Decoder finished, got <EOS_ACK>, shutting down encoder output channel.";
 
-		Buffer eos;
-		encoder_produce(&eos);
+		encoder_produce_eos();
 	}
 }
 

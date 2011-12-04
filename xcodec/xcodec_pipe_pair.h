@@ -94,6 +94,11 @@ private:
 		decoder_pipe_->produce(buf);
 	}
 
+	void decoder_produce_eos(Buffer *buf = NULL)
+	{
+		decoder_pipe_->produce_eos(buf);
+	}
+
 	void encoder_consume(Buffer *);
 
 	void encoder_error(void)
@@ -105,6 +110,11 @@ private:
 	void encoder_produce(Buffer *buf)
 	{
 		encoder_pipe_->produce(buf);
+	}
+
+	void encoder_produce_eos(Buffer *buf = NULL)
+	{
+		encoder_pipe_->produce_eos(buf);
 	}
 
 public:

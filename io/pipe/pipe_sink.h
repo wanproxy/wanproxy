@@ -16,7 +16,7 @@ private:
 	void consume(Buffer *buf)
 	{
 		if (buf->empty())
-			produce(buf);
+			produce_eos();
 		else
 			buf->clear();
 	}

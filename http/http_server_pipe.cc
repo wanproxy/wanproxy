@@ -115,14 +115,9 @@ HTTPServerPipe::send_response(HTTPProtocol::Status status, Buffer *body, Buffer 
 
 	/*
 	 * Output response and EOS.
-	 *
-	 * XXX Really want produce_eos(&response);
 	 */
-	produce(&response);
+	produce_eos(&response);
 	ASSERT(response.empty());
-
-	Buffer eos;
-	produce(&eos);
 }
 
 void

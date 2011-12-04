@@ -112,8 +112,32 @@ PipeProducer::produce(Buffer *buf)
 		output_buffer_.append(buf);
 		buf->clear();
 	} else {
+		DEBUG(log_) << "Consider using produce_eos instead.";
 		output_eos_ = true;
 	}
+
+	if (output_callback_ != NULL) {
+		ASSERT(output_action_ == NULL);
+
+		Action *a = output_do(output_callback_);
+		if (a != NULL) {
+			output_action_ = a;
+			output_callback_ = NULL;
+		}
+	}
+}
+
+void
+PipeProducer::produce_eos(Buffer *buf)
+{
+	ASSERT(!error_);
+	ASSERT(!output_eos_);
+
+	if (buf != NULL && !buf->empty()) {
+		output_buffer_.append(buf);
+		buf->clear();
+	}
+	output_eos_ = true;
 
 	if (output_callback_ != NULL) {
 		ASSERT(output_action_ == NULL);

@@ -27,6 +27,7 @@ private:
 
 public:
 	void produce(Buffer *);
+	void produce_eos(Buffer * = NULL);
 	void produce_error(void);
 
 protected:

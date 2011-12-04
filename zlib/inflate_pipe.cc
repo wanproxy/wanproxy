@@ -83,12 +83,10 @@ InflatePipe::consume(Buffer *in)
 			if (flush == Z_NO_FLUSH)
 				break;
 			if (error == Z_OK || error == Z_STREAM_END) {
-				if (!out.empty())
-					produce(&out);
-
 				if (flush == Z_FINISH && error == Z_STREAM_END) {
-					Buffer eos;
-					produce(&eos);
+					produce_eos(&out);
+				} else {
+					produce(&out);
 				}
 
 				if (!in->empty()) {

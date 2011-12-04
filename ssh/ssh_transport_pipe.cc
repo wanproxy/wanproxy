@@ -99,8 +99,7 @@ SSHTransportPipe::consume(Buffer *in)
 	if (in->empty()) {
 		if (!input_buffer_.empty())
 			DEBUG(log_) << "Received EOS with data outstanding.";
-		Buffer eos;
-		produce(&eos);
+		produce_eos();
 		return;
 	}
 
