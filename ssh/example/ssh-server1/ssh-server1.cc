@@ -20,6 +20,213 @@ namespace {
 	static uint8_t zero_padding[255];
 }
 
+/*
+ * XXX
+ * Need to split up instances of algorithms from algorithm
+ * descriptions.
+ */
+
+class SSHAlgorithmNegotiation;
+class SSHKeyExchange;
+class SSHServerHostKey;
+class SSHEncryption;
+class SSHMAC;
+class SSHCompression;
+class SSHLanguage;
+
+class SSHKeyExchange {
+	std::string name_;
+protected:
+	SSHKeyExchange(const std::string& xname)
+	: name_(xname)
+	{ }
+
+public:
+	~SSHKeyExchange()
+	{ }
+
+	std::string name(void) const
+	{
+		return (name_);
+	}
+
+	virtual bool input(Buffer *) = 0;
+};
+
+class SSHServerHostKey {
+	std::string name_;
+protected:
+	SSHServerHostKey(const std::string& xname)
+	: name_(xname)
+	{ }
+
+public:
+	~SSHServerHostKey()
+	{ }
+
+	std::string name(void) const
+	{
+		return (name_);
+	}
+
+	virtual bool input(Buffer *) = 0;
+};
+
+class SSHEncryption {
+	std::string name_;
+protected:
+	SSHEncryption(const std::string& xname)
+	: name_(xname)
+	{ }
+
+public:
+	~SSHEncryption()
+	{ }
+
+	std::string name(void) const
+	{
+		return (name_);
+	}
+
+	virtual bool input(Buffer *) = 0;
+};
+
+class SSHMAC {
+	std::string name_;
+protected:
+	SSHMAC(const std::string& xname)
+	: name_(xname)
+	{ }
+
+public:
+	~SSHMAC()
+	{ }
+
+	std::string name(void) const
+	{
+		return (name_);
+	}
+
+	virtual bool input(Buffer *) = 0;
+};
+
+class SSHCompression {
+	std::string name_;
+protected:
+	SSHCompression(const std::string& xname)
+	: name_(xname)
+	{ }
+
+public:
+	~SSHCompression()
+	{ }
+
+	std::string name(void) const
+	{
+		return (name_);
+	}
+
+	virtual bool input(Buffer *) = 0;
+};
+
+class SSHLanguage {
+	std::string name_;
+protected:
+	SSHLanguage(const std::string& xname)
+	: name_(xname)
+	{ }
+
+public:
+	~SSHLanguage()
+	{ }
+
+	std::string name(void) const
+	{
+		return (name_);
+	}
+
+	virtual bool input(Buffer *) = 0;
+};
+
+class SSHAlgorithmNegotiation {
+	std::map<std::string, SSHKeyExchange *> key_exchange_map_;
+	std::map<std::string, SSHServerHostKey *> server_host_key_map_;
+	std::map<std::string, SSHEncryption *> encryption_client_to_server_map_;
+	std::map<std::string, SSHEncryption *> encryption_server_to_client_map_;
+	std::map<std::string, SSHMAC *> mac_client_to_server_map_;
+	std::map<std::string, SSHMAC *> mac_server_to_client_map_;
+	std::map<std::string, SSHCompression *> compression_client_to_server_map_;
+	std::map<std::string, SSHCompression *> compression_server_to_client_map_;
+	std::map<std::string, SSHLanguage *> language_client_to_server_map_;
+	std::map<std::string, SSHLanguage *> language_server_to_client_map_;
+public:
+	SSHAlgorithmNegotiation(std::vector<SSHKeyExchange *> key_exchange_list,
+				std::vector<SSHServerHostKey *> server_host_key_list,
+				std::vector<SSHEncryption *> encryption_client_to_server_list,
+				std::vector<SSHEncryption *> encryption_server_to_client_list,
+				std::vector<SSHMAC *> mac_client_to_server_list,
+				std::vector<SSHMAC *> mac_server_to_client_list,
+				std::vector<SSHCompression *> compression_client_to_server_list,
+				std::vector<SSHCompression *> compression_server_to_client_list,
+				std::vector<SSHLanguage *> language_client_to_server_list,
+				std::vector<SSHLanguage *> language_server_to_client_list)
+	: key_exchange_map_(list_to_map(key_exchange_list)),
+	  server_host_key_map_(list_to_map(server_host_key_list)),
+	  encryption_client_to_server_map_(list_to_map(encryption_client_to_server_list)),
+	  encryption_server_to_client_map_(list_to_map(encryption_server_to_client_list)),
+	  mac_client_to_server_map_(list_to_map(mac_client_to_server_list)),
+	  mac_server_to_client_map_(list_to_map(mac_server_to_client_list)),
+	  compression_client_to_server_map_(list_to_map(compression_client_to_server_list)),
+	  compression_server_to_client_map_(list_to_map(compression_server_to_client_list)),
+	  language_client_to_server_map_(list_to_map(language_client_to_server_list)),
+	  language_server_to_client_map_(list_to_map(language_server_to_client_list))
+	{ }
+
+	SSHAlgorithmNegotiation(std::vector<SSHKeyExchange *> key_exchange_list,
+				std::vector<SSHServerHostKey *> server_host_key_list,
+				std::vector<SSHEncryption *> encryption_list,
+				std::vector<SSHMAC *> mac_list,
+				std::vector<SSHCompression *> compression_list,
+				std::vector<SSHLanguage *> language_list)
+	: key_exchange_map_(list_to_map(key_exchange_list)),
+	  server_host_key_map_(list_to_map(server_host_key_list)),
+	  encryption_client_to_server_map_(list_to_map(encryption_list)),
+	  encryption_server_to_client_map_(list_to_map(encryption_list)),
+	  mac_client_to_server_map_(list_to_map(mac_list)),
+	  mac_server_to_client_map_(list_to_map(mac_list)),
+	  compression_client_to_server_map_(list_to_map(compression_list)),
+	  compression_server_to_client_map_(list_to_map(compression_list)),
+	  language_client_to_server_map_(list_to_map(language_list)),
+	  language_server_to_client_map_(list_to_map(language_list))
+	{ }
+
+	/* XXX Add a variant that takes only server_host_key_list and fills in suitable defaults.  */
+
+	~SSHAlgorithmNegotiation()
+	{ }
+
+	bool input(Buffer *)
+	{
+		return (false);
+	}
+
+private:
+	template<typename T>
+	std::map<std::string, typename T::value_type> list_to_map(const T& list)
+	{
+		std::map<std::string, typename T::value_type> map;
+		typename T::const_iterator it;
+
+		for (it = list.begin(); it != list.end(); ++it) {
+			typename T::value_type p = *it;
+
+			map[p->name()] = p;
+		}
+
+		return (map);
+	}
+};
+
 class SSHTransportPipe : public PipeProducer {
 	enum State {
 		GetIdentificationString,
@@ -33,6 +240,8 @@ class SSHTransportPipe : public PipeProducer {
 	size_t block_size_;
 	size_t mac_length_;
 
+	SSHAlgorithmNegotiation *algorithm_negotiation_;
+
 	EventCallback *receive_callback_;
 	Action *receive_action_;
 public:
@@ -41,6 +250,7 @@ public:
 	  state_(GetIdentificationString),
 	  block_size_(8),
 	  mac_length_(0),
+	  algorithm_negotiation_(NULL),
 	  receive_callback_(NULL),
 	  receive_action_(NULL)
 	{
@@ -246,6 +456,10 @@ private:
 				DEBUG(log_) << "Using default handler for transport message.";
 			} else if (msg >= SSH::Message::AlgorithmNegotiationRangeBegin &&
 				   msg <= SSH::Message::AlgorithmNegotiationRangeEnd) {
+				if (algorithm_negotiation_ != NULL) {
+					if (algorithm_negotiation_->input(&packet))
+						continue;
+				}
 				DEBUG(log_) << "Using default handler for algorithm negotiation message.";
 			} else if (msg >= SSH::Message::KeyExchangeMethodRangeBegin &&
 				   msg <= SSH::Message::KeyExchangeMethodRangeEnd) {
