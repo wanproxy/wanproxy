@@ -16,7 +16,7 @@
 class SSHConnection {
 	LogHandle log_;
 	Socket *peer_;
-	SSHTransportPipe *pipe_;
+	SSH::TransportPipe *pipe_;
 	Action *receive_action_;
 	Splice *splice_;
 	Action *splice_action_;
@@ -30,7 +30,7 @@ public:
 	  splice_action_(NULL),
 	  close_action_(NULL)
 	{
-		pipe_ = new SSHTransportPipe();
+		pipe_ = new SSH::TransportPipe();
 		EventCallback *rcb = callback(this, &SSHConnection::receive_complete);
 		receive_action_ = pipe_->receive(rcb);
 

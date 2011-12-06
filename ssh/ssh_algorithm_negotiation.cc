@@ -35,7 +35,7 @@ namespace {
 }
 
 bool
-SSHAlgorithmNegotiation::input(Buffer *in)
+SSH::AlgorithmNegotiation::input(Buffer *in)
 {
 	switch (in->peek()) {
 	case SSH::Message::KeyExchangeInitializationMessage:
@@ -48,7 +48,7 @@ SSHAlgorithmNegotiation::input(Buffer *in)
 }
 
 bool
-SSHAlgorithmNegotiation::output(Buffer *out)
+SSH::AlgorithmNegotiation::output(Buffer *out)
 {
 	ASSERT(out->empty());
 

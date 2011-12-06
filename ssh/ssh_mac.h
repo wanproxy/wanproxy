@@ -1,23 +1,25 @@
 #ifndef	SSH_MAC_H
 #define	SSH_MAC_H
 
-class SSHMAC {
-	std::string name_;
-protected:
-	SSHMAC(const std::string& xname)
-	: name_(xname)
-	{ }
+namespace SSH {
+	class MAC {
+		std::string name_;
+	protected:
+		MAC(const std::string& xname)
+		: name_(xname)
+		{ }
 
-public:
-	~SSHMAC()
-	{ }
+	public:
+		~MAC()
+		{ }
 
-	std::string name(void) const
-	{
-		return (name_);
-	}
+		std::string name(void) const
+		{
+			return (name_);
+		}
 
-	virtual bool input(Buffer *) = 0;
-};
+		virtual bool input(Buffer *) = 0;
+	};
+}
 
 #endif /* !SSH_MAC_H */

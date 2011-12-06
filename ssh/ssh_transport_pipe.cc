@@ -15,7 +15,7 @@ namespace {
 	static uint8_t zero_padding[255];
 }
 
-SSHTransportPipe::SSHTransportPipe(void)
+SSH::TransportPipe::TransportPipe(void)
 : PipeProducer("/ssh/transport/pipe"),
   state_(GetIdentificationString),
   block_size_(8),
@@ -28,14 +28,14 @@ SSHTransportPipe::SSHTransportPipe(void)
 	produce(&identification_string);
 }
 
-SSHTransportPipe::~SSHTransportPipe()
+SSH::TransportPipe::~TransportPipe()
 {
 	ASSERT(receive_callback_ == NULL);
 	ASSERT(receive_action_ == NULL);
 }
 
 Action *
-SSHTransportPipe::receive(EventCallback *cb)
+SSH::TransportPipe::receive(EventCallback *cb)
 {
 	ASSERT(receive_callback_ == NULL);
 	ASSERT(receive_action_ == NULL);
@@ -53,7 +53,7 @@ SSHTransportPipe::receive(EventCallback *cb)
 	receive_do();
 
 	if (receive_callback_ != NULL)
-		return (cancellation(this, &SSHTransportPipe::receive_cancel));
+		return (cancellation(this, &SSH::TransportPipe::receive_cancel));
 
 	ASSERT(receive_action_ != NULL);
 	Action *a = receive_action_;
@@ -68,7 +68,7 @@ SSHTransportPipe::receive(EventCallback *cb)
  * RNG interface.
  */
 void
-SSHTransportPipe::send(Buffer *payload)
+SSH::TransportPipe::send(Buffer *payload)
 {
 	Buffer packet;
 	uint8_t padding_len;
@@ -95,7 +95,7 @@ SSHTransportPipe::send(Buffer *payload)
 }
 
 void
-SSHTransportPipe::consume(Buffer *in)
+SSH::TransportPipe::consume(Buffer *in)
 {
 	/* XXX XXX XXX */
 	if (in->empty()) {
@@ -154,7 +154,7 @@ SSHTransportPipe::consume(Buffer *in)
 }
 
 void
-SSHTransportPipe::receive_cancel(void)
+SSH::TransportPipe::receive_cancel(void)
 {
 	if (receive_action_ != NULL) {
 		receive_action_->cancel();
@@ -168,7 +168,7 @@ SSHTransportPipe::receive_cancel(void)
 }
 
 void
-SSHTransportPipe::receive_do(void)
+SSH::TransportPipe::receive_do(void)
 {
 	ASSERT(receive_action_ == NULL);
 	ASSERT(receive_callback_ != NULL);

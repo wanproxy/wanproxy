@@ -1,23 +1,25 @@
 #ifndef	SSH_LANGUAGE_H
 #define	SSH_LANGUAGE_H
 
-class SSHLanguage {
-	std::string name_;
-protected:
-	SSHLanguage(const std::string& xname)
-	: name_(xname)
-	{ }
+namespace SSH {
+	class Language {
+		std::string name_;
+	protected:
+		Language(const std::string& xname)
+		: name_(xname)
+		{ }
 
-public:
-	~SSHLanguage()
-	{ }
+	public:
+		~Language()
+		{ }
 
-	std::string name(void) const
-	{
-		return (name_);
-	}
+		std::string name(void) const
+		{
+			return (name_);
+		}
 
-	virtual bool input(Buffer *) = 0;
-};
+		virtual bool input(Buffer *) = 0;
+	};
+}
 
 #endif /* !SSH_LANGUAGE_H */

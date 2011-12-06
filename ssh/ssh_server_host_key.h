@@ -1,23 +1,25 @@
 #ifndef	SSH_SERVER_HOST_KEY_H
 #define	SSH_SERVER_HOST_KEY_H
 
-class SSHServerHostKey {
-	std::string name_;
-protected:
-	SSHServerHostKey(const std::string& xname)
-	: name_(xname)
-	{ }
+namespace SSH {
+	class ServerHostKey {
+		std::string name_;
+	protected:
+		ServerHostKey(const std::string& xname)
+		: name_(xname)
+		{ }
 
-public:
-	~SSHServerHostKey()
-	{ }
+	public:
+		~ServerHostKey()
+		{ }
 
-	std::string name(void) const
-	{
-		return (name_);
-	}
+		std::string name(void) const
+		{
+			return (name_);
+		}
 
-	virtual bool input(Buffer *) = 0;
-};
+		virtual bool input(Buffer *) = 0;
+	};
+}
 
 #endif /* !SSH_SERVER_HOST_KEY_H */
