@@ -74,6 +74,8 @@ SSHTransportPipe::send(Buffer *payload)
 	uint8_t padding_len;
 	uint32_t packet_len;
 
+	ASSERT(state_ == GetPacket);
+
 	packet_len = sizeof padding_len + payload->length();
 	padding_len = 4 + (block_size_ - ((sizeof packet_len + packet_len + 4) % block_size_));
 	packet_len += padding_len;
@@ -134,6 +136,15 @@ SSHTransportPipe::consume(Buffer *in)
 			}
 
 			state_ = GetPacket;
+			/*
+			 * XXX
+			 * Should have a callback here?
+			 */
+			if (algorithm_negotiation_ != NULL) {
+				Buffer packet;
+				if (algorithm_negotiation_->output(&packet))
+					send(&packet);
+			}
 			break;
 		}
 	}

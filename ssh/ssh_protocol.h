@@ -60,6 +60,12 @@ namespace SSH {
 			LocalExtensionRangeEnd = 255;
 	}
 
+	namespace Boolean {
+		static const uint8_t
+			True = 1,
+			False = 0;
+	}
+
 	namespace Disconnect {
 		static const uint8_t
 			HostNotallowedToConnect = 1,

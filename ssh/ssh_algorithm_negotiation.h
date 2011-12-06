@@ -9,6 +9,7 @@
 #include <ssh/ssh_server_host_key.h>
 
 class SSHAlgorithmNegotiation {
+	LogHandle log_;
 	std::map<std::string, SSHKeyExchange *> key_exchange_map_;
 	std::map<std::string, SSHServerHostKey *> server_host_key_map_;
 	std::map<std::string, SSHEncryption *> encryption_client_to_server_map_;
@@ -30,7 +31,8 @@ public:
 				std::vector<SSHCompression *> compression_server_to_client_list,
 				std::vector<SSHLanguage *> language_client_to_server_list,
 				std::vector<SSHLanguage *> language_server_to_client_list)
-	: key_exchange_map_(list_to_map(key_exchange_list)),
+	: log_("/ssh/algorithm/negotiation"),
+	  key_exchange_map_(list_to_map(key_exchange_list)),
 	  server_host_key_map_(list_to_map(server_host_key_list)),
 	  encryption_client_to_server_map_(list_to_map(encryption_client_to_server_list)),
 	  encryption_server_to_client_map_(list_to_map(encryption_server_to_client_list)),
@@ -48,7 +50,8 @@ public:
 				std::vector<SSHMAC *> mac_list,
 				std::vector<SSHCompression *> compression_list,
 				std::vector<SSHLanguage *> language_list)
-	: key_exchange_map_(list_to_map(key_exchange_list)),
+	: log_("/ssh/algorithm/negotiation"),
+	  key_exchange_map_(list_to_map(key_exchange_list)),
 	  server_host_key_map_(list_to_map(server_host_key_list)),
 	  encryption_client_to_server_map_(list_to_map(encryption_list)),
 	  encryption_server_to_client_map_(list_to_map(encryption_list)),
@@ -65,10 +68,8 @@ public:
 	~SSHAlgorithmNegotiation()
 	{ }
 
-	bool input(Buffer *)
-	{
-		return (false);
-	}
+	bool input(Buffer *);
+	bool output(Buffer *);
 
 private:
 	template<typename T>
