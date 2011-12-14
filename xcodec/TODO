@@ -17,5 +17,3 @@ o) Decide whether to keep a std::set (or something fancier) of hashes associated
 o) Do lookups in the peer's dictionary and ours at the same time.
 o) Put a generation number in the hashes so that if the remote side recycles a
    hash, we can do something about it.
-o) Add a flag to the XCodecEncoder to insert references instead of declarations
-   so we can add declarations out-of-band to a database.
