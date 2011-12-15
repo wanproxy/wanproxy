@@ -105,8 +105,7 @@ SSH::TransportPipe::consume(Buffer *in)
 		return;
 	}
 
-	input_buffer_.append(in);
-	in->clear();
+	in->moveout(&input_buffer_);
 
 	if (state_ == GetIdentificationString) {
 		HTTPProtocol::ParseStatus status;

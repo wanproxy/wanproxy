@@ -144,8 +144,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 		return;
 	}
 
-	decoder_buffer_.append(buf);
-	buf->clear();
+	buf->moveout(&decoder_buffer_);
 
 	while (!decoder_buffer_.empty()) {
 		uint8_t op = decoder_buffer_.peek();

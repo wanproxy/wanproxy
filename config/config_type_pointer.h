@@ -60,12 +60,7 @@ public:
 			return (true);
 		}
 
-#if !defined(__OpenBSD__)
 		T *cc = co->coerce<T>();
-#else
-		T *cc;
-		co->coerce(&cc);
-#endif
 		if (cc == NULL) {
 			ERROR("/config/type/pointer") << "Pointer to object of wrong type.";
 			return (false);

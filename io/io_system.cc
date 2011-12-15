@@ -579,8 +579,7 @@ IOSystem::write(int fd, Channel *owner, off_t offset, Buffer *buffer, EventCallb
 	ASSERT(h->write_buffer_.empty());
 
 	ASSERT(!buffer->empty());
-	h->write_buffer_.append(buffer);
-	buffer->clear();
+	buffer->moveout(&h->write_buffer_);
 
 	h->write_offset_ = offset;
 	h->write_callback_ = cb;

@@ -41,9 +41,7 @@ public:
 
 	Action *write(Buffer *buf, EventCallback *cb)
 	{
-		buffer_.append(buf);
-		buf->clear();
-
+		buf->moveout(&buffer_);
 		cb->param(Event::Done);
 		return (cb->schedule());
 	}
@@ -85,8 +83,8 @@ public:
 	Action *read(size_t amt, EventCallback *cb)
 	{
 		if (amt == 0 || amt >= buffer_.length()) {
-			Buffer tmp(buffer_);
-			buffer_.clear();
+			Buffer tmp;
+			buffer_.moveout(&tmp);
 			cb->param(Event(Event::EOS, tmp));
 		} else {
 			Buffer tmp;

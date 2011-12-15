@@ -101,17 +101,14 @@ HTTPServerPipe::send_response(HTTPProtocol::Status status, Buffer *body, Buffer 
 	response.append("Server: " + (std::string)log_ + "\r\n");
 	response.append("Transfer-encoding: identity\r\n");
 	response.append("Connection: close\r\n");
-	if (headers != NULL) {
-		response.append(headers);
-		headers->clear();
-	}
+	if (headers != NULL)
+		headers->moveout(&response);
 	response.append("\r\n");
 
 	/*
 	 * Append body.  No encodings supported yet.
 	 */
-	response.append(body);
-	body->clear();
+	body->moveout(&response);
 
 	/*
 	 * Output response and EOS.
@@ -195,8 +192,7 @@ HTTPServerPipe::consume(Buffer *in)
 		return;
 	}
 
-	buffer_.append(in);
-	in->clear();
+	in->moveout(&buffer_);
 
 	for (;;) {
 		ASSERT(!buffer_.empty());

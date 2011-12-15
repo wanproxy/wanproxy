@@ -55,8 +55,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		 */
 		if (o + input->length() < XCODEC_SEGMENT_LENGTH) {
 			DEBUG(log_) << "Buffer couldn't yield a hash.";
-			outq.append(input);
-			input->clear();
+			input->moveout(&outq);
 			break;
 		}
 

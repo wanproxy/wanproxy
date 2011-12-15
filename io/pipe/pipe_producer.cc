@@ -109,8 +109,7 @@ PipeProducer::produce(Buffer *buf)
 	ASSERT(!output_eos_);
 
 	if (!buf->empty()) {
-		output_buffer_.append(buf);
-		buf->clear();
+		buf->moveout(&output_buffer_);
 	} else {
 		DEBUG(log_) << "Consider using produce_eos instead.";
 		output_eos_ = true;
@@ -134,8 +133,7 @@ PipeProducer::produce_eos(Buffer *buf)
 	ASSERT(!output_eos_);
 
 	if (buf != NULL && !buf->empty()) {
-		output_buffer_.append(buf);
-		buf->clear();
+		buf->moveout(&output_buffer_);
 	}
 	output_eos_ = true;
 

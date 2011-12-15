@@ -92,10 +92,8 @@ HTTPProtocol::Message::decode(Buffer *input)
 			 * XXX
 			 * Use Content-Length, Transfer-Encoding, etc.
 			 */
-			if (!input->empty()) {
-				body_.append(input);
-				input->clear();
-			}
+			if (!input->empty())
+				input->moveout(&body_);
 			return (true);
 		}
 
@@ -113,8 +111,7 @@ HTTPProtocol::Message::decode(Buffer *input)
 				return (false);
 			}
 
-			headers_[last_header].back().append(line);
-			line.clear();
+			line.moveout(&headers_[last_header].back());
 			continue;
 		}
 
@@ -152,8 +149,7 @@ HTTPProtocol::DecodeURI(Buffer *encoded, Buffer *decoded)
 	for (;;) {
 		unsigned pos;
 		if (!encoded->find('%', &pos)) {
-			decoded->append(encoded);
-			encoded->clear();
+			encoded->moveout(decoded);
 			return (true);
 		}
 		if (pos != 0)

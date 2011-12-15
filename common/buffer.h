@@ -1041,7 +1041,35 @@ public:
 	 */
 	void moveout(Buffer *dst, size_t dstsize)
 	{
+		ASSERT(dstsize != 0);
+		ASSERT(length() >= dstsize);
+		if (dstsize == length()) {
+			moveout(dst);
+			return;
+		}
 		moveout(dst, 0, dstsize);
+	}
+
+	/*
+	 * Move everything from this Buffer and into a suppled Buffer.
+	 */
+	void moveout(Buffer *dst)
+	{
+		if (dst->empty()) {
+			dst->data_ = data_;
+			data_.clear();
+
+			dst->length_ = length_;
+			length_ = 0;
+
+			return;
+		}
+
+		dst->data_.insert(dst->data_.end(), data_.begin(), data_.end());
+		data_.clear();
+
+		dst->length_ += length_;
+		length_ = 0;
 	}
 
 	/*
@@ -1203,8 +1231,10 @@ public:
 		ASSERT(!empty());
 
 		if (bytes == length()) {
-			if (clip != NULL)
-				clip->append(this);
+			if (clip != NULL) {
+				moveout(clip);
+				return;
+			}
 			clear();
 			return;
 		}
@@ -1257,8 +1287,10 @@ public:
 		ASSERT(!empty());
 
 		if (bytes == length()) {
-			if (clip != NULL)
-				clip->append(this);
+			if (clip != NULL) {
+				moveout(clip);
+				return;
+			}
 			clear();
 			return;
 		}

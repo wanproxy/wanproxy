@@ -44,9 +44,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input, std::set<uint64_t>& unknown
 	while (!input->empty()) {
 		unsigned off;
 		if (!input->find(XCODEC_MAGIC, &off)) {
-			output->append(input);
-			input->clear();
-
+			input->moveout(output);
 			break;
 		}
 

@@ -49,8 +49,7 @@ main(void)
 				Test _(g, "Reduction in size.", out.length() < original.length());
 			}
 
-			in = out;
-			out.clear();
+			out.moveout(&in);
 
 			XCodecDecoder decoder(cache);
 			std::set<uint64_t> unknown_hashes;
