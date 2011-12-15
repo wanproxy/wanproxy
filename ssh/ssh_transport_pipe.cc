@@ -83,13 +83,11 @@ SSH::TransportPipe::send(Buffer *payload)
 	packet_len = BigEndian::encode(packet_len);
 	packet.append(&packet_len);
 	packet.append(padding_len);
-	packet.append(payload);
+	payload->moveout(&packet);
 	packet.append(zero_padding, padding_len);
 
 	if (mac_length_ != 0)
 		NOTREACHED();
-
-	payload->clear();
 
 	produce(&packet);
 }
