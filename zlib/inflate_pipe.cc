@@ -86,7 +86,13 @@ InflatePipe::consume(Buffer *in)
 				if (flush == Z_FINISH && error == Z_STREAM_END) {
 					produce_eos(&out);
 				} else {
-					produce(&out);
+					/*
+					 * XXX
+					 * How can it happen that we get nothing
+					 * here?
+					 */
+					if (!out.empty())
+						produce(&out);
 				}
 
 				if (!in->empty()) {
