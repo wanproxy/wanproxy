@@ -106,6 +106,7 @@ public:
 
 	void enter(const uint64_t& hash, BufferSegment *seg)
 	{
+		ASSERT(seg->length() == XCODEC_SEGMENT_LENGTH);
 		ASSERT(segment_hash_map_.find(hash) == segment_hash_map_.end());
 		seg->ref();
 		segment_hash_map_[hash] = seg;
