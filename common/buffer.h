@@ -807,6 +807,7 @@ public:
 		}
 		BufferSegment *seg = src->copy();
 		copyout(seg->tail(), seg->length(), len - seg->length());
+		seg->set_length(len);
 		*segp = seg;
 	}
 
