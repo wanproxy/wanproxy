@@ -17,7 +17,7 @@ public:
 		timeout_action_ = EventSystem::instance()->timeout(SPEED_TEST_TIMER_MS, callback(this, &SpeedTest::timer));
 	}
 
-	~SpeedTest()
+	virtual ~SpeedTest()
 	{
 		ASSERT(callback_action_ == NULL);
 		ASSERT(timeout_action_ == NULL);

@@ -10,7 +10,7 @@ namespace SSH {
 		{ }
 
 	public:
-		~ServerHostKey()
+		virtual ~ServerHostKey()
 		{ }
 
 		std::string name(void) const

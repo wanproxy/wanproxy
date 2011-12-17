@@ -138,7 +138,7 @@ public:
 		splice_action_ = splice_->start(cb);
 	}
 
-	~HTTPServerPipeTest()
+	virtual ~HTTPServerPipeTest()
 	{
 		ASSERT(splice_ == NULL);
 		ASSERT(splice_action_ == NULL);

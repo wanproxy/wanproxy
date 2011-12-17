@@ -10,7 +10,7 @@ namespace SSH {
 		{ }
 
 	public:
-		~KeyExchange()
+		virtual ~KeyExchange()
 		{ }
 
 		std::string name(void) const

@@ -68,6 +68,7 @@ CFLAGS+=-Wno-system-headers
 CFLAGS+=-Wno-uninitialized
 CFLAGS+=-Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts -Wreorder
 #CFLAGS+=-Winline
+CXXFLAGS+=-Wnon-virtual-dtor
 
 $(foreach _lib, ${USE_LIBS}, $(eval include ${TOPDIR}/$(strip ${_lib})/lib.mk))
 

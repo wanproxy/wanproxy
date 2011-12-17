@@ -36,7 +36,7 @@ public:
 		stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 	}
 
-	~SimpleServer()
+	virtual ~SimpleServer()
 	{
 		ASSERT(server_ == NULL);
 		ASSERT(accept_action_ == NULL);

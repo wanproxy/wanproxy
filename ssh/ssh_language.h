@@ -10,7 +10,7 @@ namespace SSH {
 		{ }
 
 	public:
-		~Language()
+		virtual ~Language()
 		{ }
 
 		std::string name(void) const

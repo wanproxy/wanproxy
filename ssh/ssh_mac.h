@@ -10,7 +10,7 @@ namespace SSH {
 		{ }
 
 	public:
-		~MAC()
+		virtual ~MAC()
 		{ }
 
 		std::string name(void) const

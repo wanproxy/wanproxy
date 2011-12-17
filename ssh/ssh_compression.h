@@ -10,7 +10,7 @@ namespace SSH {
 		{ }
 
 	public:
-		~Compression()
+		virtual ~Compression()
 		{ }
 
 		std::string name(void) const

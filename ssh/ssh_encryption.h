@@ -10,7 +10,7 @@ namespace SSH {
 		{ }
 
 	public:
-		~Encryption()
+		virtual ~Encryption()
 		{ }
 
 		std::string name(void) const
