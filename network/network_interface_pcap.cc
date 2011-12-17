@@ -146,16 +146,17 @@ NetworkInterfacePCAP::open(const std::string& ifname)
 		return (NULL);
 	}
 
-	if (pcap_get_selectable_fd(pcap) == -1) {
-		ERROR("/networ/pcap") << "Unable to get selectable file desciptor for " << ifname;
-		pcap_close(pcap);
-		return (NULL);
-	}
-
 	errbuf[0] = '\0';
 	rv = pcap_setnonblock(pcap, 1, errbuf);
 	if (rv == -1) {
 		ERROR("/network/pcap") << "Could not set " << ifname << " to non-blocking mode: " << errbuf;
+		pcap_close(pcap);
+		return (NULL);
+	}
+
+	rv = pcap_set_snaplen(pcap, 65535);
+	if (rv != 0) {
+		ERROR("/network/pcap") << "Could not set snap length for " << ifname << ": " << pcap_geterr(pcap);
 		pcap_close(pcap);
 		return (NULL);
 	}
@@ -167,12 +168,25 @@ NetworkInterfacePCAP::open(const std::string& ifname)
 		return (NULL);
 	}
 
+	rv = pcap_set_timeout(pcap, 1 /* ms */);
+	if (rv != 0) {
+		ERROR("/network/pcap") << "Could not set timeout for " << ifname << ": " << pcap_geterr(pcap);
+		pcap_close(pcap);
+		return (NULL);
+	}
+
 	rv = pcap_set_buffer_size(pcap, 65536);
 	ASSERT(rv == 0);
 
 	rv = pcap_activate(pcap);
 	if (rv != 0) {
 		ERROR("/network/pcap") << "Could not activate " << ifname << ": " << pcap_geterr(pcap);
+		pcap_close(pcap);
+		return (NULL);
+	}
+
+	if (pcap_get_selectable_fd(pcap) == -1) {
+		ERROR("/networ/pcap") << "Unable to get selectable file desciptor for " << ifname;
 		pcap_close(pcap);
 		return (NULL);
 	}
