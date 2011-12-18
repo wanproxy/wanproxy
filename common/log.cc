@@ -30,6 +30,11 @@ Log::log(const Priority& priority, const LogHandle& handle,
 	std::list<LogMask>::const_iterator it;
 	std::string handle_string = (std::string)handle;
 
+	/*
+	 * XXX
+	 * Skip this all if we're in a HALT or NOTREACHED, since we can
+	 * generate those here.  Critical logs cannot ever be masked, right?
+	 */
 	for (it = log_masks.begin(); it != log_masks.end(); ++it) {
 		const LogMask& mask = *it;
 		int rv;
@@ -46,7 +51,7 @@ Log::log(const Priority& priority, const LogHandle& handle,
 			HALT("/log") << "Could not match regex: " << rv;
 			return;
 		}
-		NOTREACHED();
+		NOTREACHED("/log");
 	}
 
 done:

@@ -2,17 +2,17 @@
 #define	DEBUG_H
 
 #if defined(NDEBUG)
-#define	ASSERT(p)							\
+#define	ASSERT(log, p)							\
 	do {								\
 		if (false)						\
 			(void)(p);					\
 	} while (0)
 #else
-#define	ASSERT(p)							\
+#define	ASSERT(log, p)							\
 	do {								\
 		if (!(p))						\
-			HALT("/assert") << "Assertion ("		\
-					<< #p << ") failed at "		\
+			HALT((log)) << "Assertion (" << #p <<		\
+					") failed at "			\
 					<< __FILE__ << ':' << __LINE__	\
 					<< " in function " 		\
 					<< __PRETTY_FUNCTION__		\
@@ -27,12 +27,12 @@
  * infinite loop here to help.
  */
 #if defined(NDEBUG)
-#define	NOTREACHED()							\
+#define	NOTREACHED(log)							\
 	abort()
 #else
-#define	NOTREACHED()							\
+#define	NOTREACHED(log)							\
 	do {								\
-		ASSERT("Should not be reached." == NULL);		\
+		ASSERT(log, "Should not be reached." == NULL);		\
 		for (;;)						\
 			abort();					\
 	} while (0)

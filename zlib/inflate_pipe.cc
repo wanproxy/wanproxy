@@ -107,5 +107,5 @@ InflatePipe::consume(Buffer *in)
 		if (seg != NULL)
 			in->skip(seg->length() - stream_.avail_in);
 	}
-	NOTREACHED();
+	NOTREACHED(log_);
 }

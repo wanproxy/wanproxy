@@ -15,9 +15,9 @@ UDPClient::UDPClient(SocketAddressFamily family)
 
 UDPClient::~UDPClient()
 {
-	ASSERT(connect_action_ == NULL);
-	ASSERT(connect_callback_ == NULL);
-	ASSERT(close_action_ == NULL);
+	ASSERT(log_, connect_action_ == NULL);
+	ASSERT(log_, connect_callback_ == NULL);
+	ASSERT(log_, close_action_ == NULL);
 
 	if (socket_ != NULL) {
 		delete socket_;
@@ -28,9 +28,9 @@ UDPClient::~UDPClient()
 Action *
 UDPClient::connect(const std::string& iface, const std::string& name, SocketEventCallback *ccb)
 {
-	ASSERT(connect_action_ == NULL);
-	ASSERT(connect_callback_ == NULL);
-	ASSERT(socket_ == NULL);
+	ASSERT(log_, connect_action_ == NULL);
+	ASSERT(log_, connect_callback_ == NULL);
+	ASSERT(log_, socket_ == NULL);
 
 	socket_ = Socket::create(family_, SocketTypeDatagram, "udp", name);
 	if (socket_ == NULL) {
@@ -69,8 +69,8 @@ UDPClient::connect(const std::string& iface, const std::string& name, SocketEven
 void
 UDPClient::connect_cancel(void)
 {
-	ASSERT(close_action_ == NULL);
-	ASSERT(connect_action_ != NULL);
+	ASSERT(log_, close_action_ == NULL);
+	ASSERT(log_, connect_action_ != NULL);
 
 	connect_action_->cancel();
 	connect_action_ = NULL;
@@ -87,7 +87,7 @@ UDPClient::connect_cancel(void)
 		return;
 	}
 
-	ASSERT(socket_ != NULL);
+	ASSERT(log_, socket_ != NULL);
 	SimpleCallback *cb = callback(this, &UDPClient::close_complete);
 	close_action_ = socket_->close(cb);
 }

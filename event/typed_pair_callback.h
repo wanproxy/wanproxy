@@ -30,7 +30,7 @@ protected:
 public:
 	void execute(void)
 	{
-		ASSERT(have_param_);
+		ASSERT("/typed/pair/callback", have_param_);
 		(*this)(param_.first, param_.second);
 	}
 

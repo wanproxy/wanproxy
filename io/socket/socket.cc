@@ -53,7 +53,7 @@ getaddrinfo(const char *host, const char *serv, const struct addrinfo *hints,
 	ai->_ai_inet.sin_family = AF_INET;
 	/* XXX _ai_inet.sin_addr on non-__OPENNT */
 
-	ASSERT(he->h_length == sizeof ai->_ai_inet.sin_addr);
+	ASSERT(log_, he->h_length == sizeof ai->_ai_inet.sin_addr);
 	memcpy(&ai->_ai_inet.sin_addr, he->h_addr_list[0], he->h_length);
 
 	if (serv != NULL) {
@@ -98,7 +98,7 @@ gai_strerror(int rv)
 	case 3:
 		return "could not look up service";
 	default:
-		NOTREACHED();
+		NOTREACHED(log_);
 		return "internal error";
 	}
 }
@@ -278,22 +278,22 @@ Socket::Socket(int fd, int domain, int socktype, int protocol)
   connect_callback_(NULL),
   connect_action_(NULL)
 {
-	ASSERT(fd_ != -1);
+	ASSERT(log_, fd_ != -1);
 }
 
 Socket::~Socket()
 {
-	ASSERT(accept_action_ == NULL);
-	ASSERT(accept_callback_ == NULL);
-	ASSERT(connect_callback_ == NULL);
-	ASSERT(connect_action_ == NULL);
+	ASSERT(log_, accept_action_ == NULL);
+	ASSERT(log_, accept_callback_ == NULL);
+	ASSERT(log_, connect_callback_ == NULL);
+	ASSERT(log_, connect_action_ == NULL);
 }
 
 Action *
 Socket::accept(SocketEventCallback *cb)
 {
-	ASSERT(accept_action_ == NULL);
-	ASSERT(accept_callback_ == NULL);
+	ASSERT(log_, accept_action_ == NULL);
+	ASSERT(log_, accept_callback_ == NULL);
 
 	accept_callback_ = cb;
 	accept_action_ = accept_schedule();
@@ -328,8 +328,8 @@ Socket::bind(const std::string& name)
 Action *
 Socket::connect(const std::string& name, EventCallback *cb)
 {
-	ASSERT(connect_callback_ == NULL);
-	ASSERT(connect_action_ == NULL);
+	ASSERT(log_, connect_callback_ == NULL);
+	ASSERT(log_, connect_action_ == NULL);
 
 	socket_address addr;
 
@@ -401,7 +401,7 @@ Socket::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 	else if (shut_write)
 		how = SHUT_WR;
 	else {
-		NOTREACHED();
+		NOTREACHED(log_);
 		return (NULL);
 	}
 
@@ -491,7 +491,7 @@ Socket::accept_callback(Event e)
 void
 Socket::accept_cancel(void)
 {
-	ASSERT(accept_action_ != NULL);
+	ASSERT(log_, accept_action_ != NULL);
 	accept_action_->cancel();
 	accept_action_ = NULL;
 
@@ -534,7 +534,7 @@ Socket::connect_callback(Event e)
 void
 Socket::connect_cancel(void)
 {
-	ASSERT(connect_action_ != NULL);
+	ASSERT(log_, connect_action_ != NULL);
 	connect_action_->cancel();
 	connect_action_ = NULL;
 

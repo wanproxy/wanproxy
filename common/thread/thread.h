@@ -38,7 +38,7 @@ public:
 private:
 	void main(void)
 	{
-		NOTREACHED();
+		NOTREACHED("/thread/null");
 	}
 };
 

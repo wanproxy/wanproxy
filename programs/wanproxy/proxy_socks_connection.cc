@@ -23,7 +23,7 @@ ProxySocksConnection::ProxySocksConnection(const std::string& name, Socket *clie
 
 ProxySocksConnection::~ProxySocksConnection()
 {
-	ASSERT(action_ == NULL);
+	ASSERT(log_, action_ == NULL);
 }
 
 void
@@ -193,10 +193,10 @@ ProxySocksConnection::write_complete(Event e)
 	}
 
 	if (state_ == GetSOCKS5Auth) {
-		ASSERT(!socks5_authenticated_);
-		ASSERT(socks5_remote_name_ == "");
-		ASSERT(network_address_ == 0);
-		ASSERT(network_port_ == 0);
+		ASSERT(log_, !socks5_authenticated_);
+		ASSERT(log_, socks5_remote_name_ == "");
+		ASSERT(log_, network_address_ == 0);
+		ASSERT(log_, network_port_ == 0);
 
 		socks5_authenticated_ = true;
 		state_ = GetSOCKSVersion;
@@ -208,8 +208,8 @@ ProxySocksConnection::write_complete(Event e)
 
 	SocketAddressFamily family;
 	if (state_ == GetSOCKS5Port && socks5_remote_name_ != "") {
-		ASSERT(socks5_authenticated_);
-		ASSERT(network_address_ == 0);
+		ASSERT(log_, socks5_authenticated_);
+		ASSERT(log_, network_address_ == 0);
 
 		remote_name << '[' << socks5_remote_name_ << ']' << ':' << network_port_;
 
@@ -238,7 +238,7 @@ ProxySocksConnection::close_complete(void)
 	action_->cancel();
 	action_ = NULL;
 
-	ASSERT(client_ != NULL);
+	ASSERT(log_, client_ != NULL);
 	delete client_;
 	client_ = NULL;
 
@@ -249,9 +249,9 @@ ProxySocksConnection::close_complete(void)
 void
 ProxySocksConnection::schedule_read(size_t amount)
 {
-	ASSERT(action_ == NULL);
+	ASSERT(log_, action_ == NULL);
 
-	ASSERT(client_ != NULL);
+	ASSERT(log_, client_ != NULL);
 	EventCallback *cb = callback(this, &ProxySocksConnection::read_complete);
 	action_ = client_->read(amount, cb);
 }
@@ -259,7 +259,7 @@ ProxySocksConnection::schedule_read(size_t amount)
 void
 ProxySocksConnection::schedule_write(void)
 {
-	ASSERT(action_ == NULL);
+	ASSERT(log_, action_ == NULL);
 
 	static const uint8_t socks4_connected[] = {
 		0x00,
@@ -308,10 +308,10 @@ ProxySocksConnection::schedule_write(void)
 		break;
 	}
 	default:
-		NOTREACHED();
+		NOTREACHED(log_);
 	}
 
-	ASSERT(client_ != NULL);
+	ASSERT(log_, client_ != NULL);
 	EventCallback *cb = callback(this, &ProxySocksConnection::write_complete);
 	action_ = client_->write(&response, cb);
 }
@@ -319,9 +319,9 @@ ProxySocksConnection::schedule_write(void)
 void
 ProxySocksConnection::schedule_close(void)
 {
-	ASSERT(action_ == NULL);
+	ASSERT(log_, action_ == NULL);
 
-	ASSERT(client_ != NULL);
+	ASSERT(log_, client_ != NULL);
 	SimpleCallback *cb = callback(this, &ProxySocksConnection::close_complete);
 	action_ = client_->close(cb);
 }

@@ -41,12 +41,12 @@ public:
 
 	~SSHConnection()
 	{
-		ASSERT(close_action_ == NULL);
-		ASSERT(splice_action_ == NULL);
-		ASSERT(splice_ == NULL);
-		ASSERT(receive_action_ == NULL);
-		ASSERT(pipe_ == NULL);
-		ASSERT(peer_ == NULL);
+		ASSERT(log_, close_action_ == NULL);
+		ASSERT(log_, splice_action_ == NULL);
+		ASSERT(log_, splice_ == NULL);
+		ASSERT(log_, receive_action_ == NULL);
+		ASSERT(log_, pipe_ == NULL);
+		ASSERT(log_, peer_ == NULL);
 	}
 
 private:
@@ -63,7 +63,7 @@ private:
 			return;
 		}
 
-		ASSERT(!e.buffer_.empty());
+		ASSERT(log_, !e.buffer_.empty());
 
 		/*
 		 * SSH Echo!
@@ -79,7 +79,7 @@ private:
 		close_action_->cancel();
 		close_action_ = NULL;
 
-		ASSERT(peer_ != NULL);
+		ASSERT(log_, peer_ != NULL);
 		delete peer_;
 		peer_ = NULL;
 
@@ -103,7 +103,7 @@ private:
 			break;
 		}
 
-	        ASSERT(splice_ != NULL);
+	        ASSERT(log_, splice_ != NULL);
 		delete splice_;
 		splice_ = NULL;
 
@@ -114,11 +114,11 @@ private:
 			receive_action_ = NULL;
 		}
 
-		ASSERT(pipe_ != NULL);
+		ASSERT(log_, pipe_ != NULL);
 		delete pipe_;
 		pipe_ = NULL;
 
-		ASSERT(close_action_ == NULL);
+		ASSERT(log_, close_action_ == NULL);
 		SimpleCallback *cb = callback(this, &SSHConnection::close_complete);
 		close_action_ = peer_->close(cb);
 	}

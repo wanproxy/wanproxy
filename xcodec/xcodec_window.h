@@ -50,12 +50,12 @@ public:
 
 		uint64_t old = window_[cursor_];
 		if (old != 0) {
-			ASSERT(present_[old] == cursor_);
+			ASSERT("/xcodec/window", present_[old] == cursor_);
 			present_.erase(old);
 
 			std::map<uint64_t, BufferSegment *>::iterator it;
 			it = segments_.find(old);
-			ASSERT(it != segments_.end());
+			ASSERT("/xcodec/window", it != segments_.end());
 			BufferSegment *oseg = it->second;
 			oseg->unref();
 			segments_.erase(it);
@@ -74,7 +74,7 @@ public:
 			return (NULL);
 		std::map<uint64_t, BufferSegment *>::const_iterator it;
 		it = segments_.find(window_[c]);
-		ASSERT(it != segments_.end());
+		ASSERT("/xcodec/window", it != segments_.end());
 		BufferSegment *seg = it->second;
 		seg->ref();
 		return (seg);
@@ -85,7 +85,7 @@ public:
 		std::map<uint64_t, unsigned>::const_iterator it = present_.find(hash);
 		if (it == present_.end())
 			return (false);
-		ASSERT(window_[it->second] == hash);
+		ASSERT("/xcodec/window", window_[it->second] == hash);
 		*c = it->second;
 		return (true);
 	}

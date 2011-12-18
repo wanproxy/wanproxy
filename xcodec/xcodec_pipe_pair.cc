@@ -185,7 +185,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 					XCodecCache::enter(uuid, decoder_cache_);
 				}
 
-				ASSERT(decoder_ == NULL);
+				ASSERT(log_, decoder_ == NULL);
 				decoder_ = new XCodecDecoder(decoder_cache_);
 
 				DEBUG(log_) << "Peer connected with UUID: " << uuid.string_;
@@ -354,7 +354,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 			 * simplify length checking within the decoder
 			 * considerably.)
 			 */
-			ASSERT(!decoder_frame_buffer_.empty() || !decoder_unknown_hashes_.empty());
+			ASSERT(log_, !decoder_frame_buffer_.empty() || !decoder_unknown_hashes_.empty());
 		}
 
 		Buffer ask;
@@ -379,8 +379,8 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 	}
 
 	if (encoder_sent_eos_ack_ && decoder_received_eos_ack_) {
-		ASSERT(decoder_buffer_.empty());
-		ASSERT(decoder_frame_buffer_.empty());
+		ASSERT(log_, decoder_buffer_.empty());
+		ASSERT(log_, decoder_frame_buffer_.empty());
 
 		DEBUG(log_) << "Decoder finished, got <EOS_ACK>, shutting down encoder output channel.";
 
@@ -391,7 +391,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 void
 XCodecPipePair::encoder_consume(Buffer *buf)
 {
-	ASSERT(!encoder_sent_eos_);
+	ASSERT(log_, !encoder_sent_eos_);
 
 	Buffer output;
 
@@ -404,13 +404,13 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 		}
 
 		uint8_t len = extra.length();
-		ASSERT(len == UUID_SIZE);
+		ASSERT(log_, len == UUID_SIZE);
 
 		output.append(XCODEC_PIPE_OP_HELLO);
 		output.append(len);
 		output.append(extra);
 
-		ASSERT(output.length() == 2 + UUID_SIZE);
+		ASSERT(log_, output.length() == 2 + UUID_SIZE);
 
 		encoder_ = new XCodecEncoder(codec_->cache());
 	}
@@ -418,10 +418,10 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 	if (!buf->empty()) {
 		Buffer encoded;
 		encoder_->encode(&encoded, buf);
-		ASSERT(!encoded.empty());
+		ASSERT(log_, !encoded.empty());
 
 		encode_frame(&output, &encoded);
-		ASSERT(!output.empty());
+		ASSERT(log_, !output.empty());
 	} else {
 		output.append(XCODEC_PIPE_OP_EOS);
 		encoder_sent_eos_ = true;

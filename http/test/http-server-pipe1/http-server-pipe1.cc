@@ -36,7 +36,7 @@ public:
 
 	Action *read(size_t, EventCallback *)
 	{
-		NOTREACHED();
+		NOTREACHED("/sink/stream");
 	}
 
 	Action *write(Buffer *buf, EventCallback *cb)
@@ -48,8 +48,8 @@ public:
 
 	Action *shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 	{
-		ASSERT(!shut_read);
-		ASSERT(shut_write);
+		ASSERT("/sink/stream", !shut_read);
+		ASSERT("/sink/stream", shut_write);
 
 		cb->param(Event::Done);
 		return (cb->schedule());
@@ -96,12 +96,12 @@ public:
 
 	Action *write(Buffer *, EventCallback *)
 	{
-		NOTREACHED();
+		NOTREACHED("/source/stream");
 	}
 
 	Action *shutdown(bool, bool, EventCallback *)
 	{
-		NOTREACHED();
+		NOTREACHED("/source/stream");
 	}
 };
 
@@ -140,8 +140,8 @@ public:
 
 	virtual ~HTTPServerPipeTest()
 	{
-		ASSERT(splice_ == NULL);
-		ASSERT(splice_action_ == NULL);
+		ASSERT(log_, splice_ == NULL);
+		ASSERT(log_, splice_action_ == NULL);
 
 		if (request_action_ != NULL) {
 			DEBUG(log_) << "Test exited without receiving a request.";
@@ -207,7 +207,7 @@ public:
 private:
 	void request(Event e, HTTPProtocol::Request msg)
 	{
-		ASSERT(request_action_ != NULL);
+		ASSERT(log_, request_action_ != NULL);
 		request_action_->cancel();
 		request_action_ = NULL;
 

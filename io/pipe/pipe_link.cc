@@ -24,14 +24,14 @@ PipeLink::PipeLink(Pipe *incoming_pipe, Pipe *outgoing_pipe)
 PipeLink::~PipeLink()
 {
 	if (pipe_splice_ != NULL) {
-		ASSERT(pipe_splice_action_ != NULL);
+		ASSERT(log_, pipe_splice_action_ != NULL);
 		pipe_splice_action_->cancel();
 		pipe_splice_action_ = NULL;
 
 		delete pipe_splice_;
 		pipe_splice_ = NULL;
 	} else {
-		ASSERT(pipe_splice_action_ == NULL);
+		ASSERT(log_, pipe_splice_action_ == NULL);
 	}
 }
 

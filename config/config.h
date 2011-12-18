@@ -22,8 +22,8 @@ public:
 	~Config()
 	{
 #if 0 /* XXX NOTYET */
-		ASSERT(class_map_.empty());
-		ASSERT(object_map_.empty());
+		ASSERT(log_, class_map_.empty());
+		ASSERT(log_, object_map_.empty());
 #endif
 	}
 

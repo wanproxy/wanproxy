@@ -31,8 +31,8 @@ UUID::generate(void)
 
 	uuid_create(&uuid, NULL);
 	uuid_to_string(&uuid, &p, NULL);
-	ASSERT(p != NULL);
+	ASSERT("/uuid/libc", p != NULL);
 	string_ = p;
 	free(p);
-	ASSERT(string_.length() == UUID_SIZE);
+	ASSERT("/uuid/libc", string_.length() == UUID_SIZE);
 }

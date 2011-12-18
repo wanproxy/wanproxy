@@ -15,7 +15,7 @@ ConfigClass::~ConfigClass()
 bool
 ConfigClass::set(ConfigObject *co, const std::string& mname, ConfigType *ct, const std::string& vstr)
 {
-	ASSERT(co->class_ == this);
+	ASSERT("/config/class", co->class_ == this);
 
 	ConfigType *type = member(mname);
 	if (type == NULL) {

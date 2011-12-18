@@ -16,29 +16,29 @@ EventPoll::EventPoll(void)
 
 EventPoll::~EventPoll()
 {
-	ASSERT(read_poll_.empty());
-	ASSERT(write_poll_.empty());
+	ASSERT(log_, read_poll_.empty());
+	ASSERT(log_, write_poll_.empty());
 }
 
 Action *
 EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 {
-	ASSERT(fd != -1);
+	ASSERT(log_, fd != -1);
 
 	EventPoll::PollHandler *poll_handler;
 	switch (type) {
 	case EventPoll::Readable:
-		ASSERT(read_poll_.find(fd) == read_poll_.end());
+		ASSERT(log_, read_poll_.find(fd) == read_poll_.end());
 		poll_handler = &read_poll_[fd];
 		break;
 	case EventPoll::Writable:
-		ASSERT(write_poll_.find(fd) == write_poll_.end());
+		ASSERT(log_, write_poll_.find(fd) == write_poll_.end());
 		poll_handler = &write_poll_[fd];
 		break;
 	default:
-		NOTREACHED();
+		NOTREACHED(log_);
 	}
-	ASSERT(poll_handler->action_ == NULL);
+	ASSERT(log_, poll_handler->action_ == NULL);
 	poll_handler->callback_ = cb;
 	Action *a = new EventPoll::PollAction(this, type, fd);
 	return (a);
@@ -51,13 +51,13 @@ EventPoll::cancel(const Type& type, int fd)
 
 	switch (type) {
 	case EventPoll::Readable:
-		ASSERT(read_poll_.find(fd) != read_poll_.end());
+		ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
 		poll_handler = &read_poll_[fd];
 		poll_handler->cancel();
 		read_poll_.erase(fd);
 		break;
 	case EventPoll::Writable:
-		ASSERT(write_poll_.find(fd) != write_poll_.end());
+		ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
 		poll_handler = &write_poll_[fd];
 		poll_handler->cancel();
 		write_poll_.erase(fd);
@@ -100,11 +100,11 @@ EventPoll::wait(int ms)
 			int rv;
 
 			rv = usleep(ms * 1000);
-			ASSERT(rv != -1);
+			ASSERT(log_, rv != -1);
 		}
 		return;
 	}
-	ASSERT(maxfd != -1);
+	ASSERT(log_, maxfd != -1);
 
 	struct timeval tv, *tvp;
 
@@ -128,18 +128,18 @@ EventPoll::wait(int ms)
 	int fd;
 	for (fd = 0; fdcnt != 0 && fd <= maxfd; fd++) {
 		if (FD_ISSET(fd, &read_set)) {
-			ASSERT(read_poll_.find(fd) != read_poll_.end());
+			ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
 			read_poll_[fd].callback(Event::Done);
 
-			ASSERT(fdcnt != 0);
+			ASSERT(log_, fdcnt != 0);
 			fdcnt--;
 		}
 
 		if (FD_ISSET(fd, &write_set)) {
-			ASSERT(write_poll_.find(fd) != write_poll_.end());
+			ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
 			write_poll_[fd].callback(Event::Done);
 
-			ASSERT(fdcnt != 0);
+			ASSERT(log_, fdcnt != 0);
 			fdcnt--;
 		}
 	}

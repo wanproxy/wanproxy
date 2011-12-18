@@ -32,8 +32,8 @@ public:
 
 	~Catenate()
 	{
-		ASSERT(input_action_ == NULL);
-		ASSERT(output_action_ == NULL);
+		ASSERT(log_, input_action_ == NULL);
+		ASSERT(log_, output_action_ == NULL);
 	}
 
 	void read_complete(Event e)
@@ -89,7 +89,7 @@ public:
 			EventCallback *cb = callback(this, &Catenate::write_complete);
 			output_action_ = output_.write(&e.buffer_, cb);
 		} else {
-			ASSERT(e.type_ == Event::EOS);
+			ASSERT(log_, e.type_ == Event::EOS);
 
 			SimpleCallback *icb = callback(this, &Catenate::close_complete, &input_);
 			input_action_ = input_.close(icb);
@@ -125,7 +125,7 @@ public:
 			output_action_->cancel();
 			output_action_ = NULL;
 		} else {
-			NOTREACHED();
+			NOTREACHED(log_);
 		}
 	}
 };

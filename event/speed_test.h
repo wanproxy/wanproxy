@@ -19,8 +19,8 @@ public:
 
 	virtual ~SpeedTest()
 	{
-		ASSERT(callback_action_ == NULL);
-		ASSERT(timeout_action_ == NULL);
+		ASSERT("/speed/test", callback_action_ == NULL);
+		ASSERT("/speed/test", timeout_action_ == NULL);
 	}
 
 private:
@@ -48,7 +48,7 @@ private:
 protected:
 	void schedule(void)
 	{
-		ASSERT(callback_action_ == NULL);
+		ASSERT("/speed/test", callback_action_ == NULL);
 		callback_action_ = callback(this, &SpeedTest::callback_complete)->schedule();
 	}
 

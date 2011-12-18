@@ -81,7 +81,7 @@ Thread::start(void)
 
 	thread_start_sleepq.wait();
 
-	ASSERT(td == state_->td_);
+	ASSERT("/thread/posix", td == state_->td_);
 
 	running_threads.insert(state_);
 
@@ -93,7 +93,7 @@ Thread::self(void)
 {
 	if (!thread_posix_initialized)
 		thread_posix_init();
-	ASSERT(thread_posix_initialized);
+	ASSERT("/thread/posix", thread_posix_initialized);
 
 	void *ptr = pthread_getspecific(thread_posix_key);
 	if (ptr == NULL)
@@ -104,7 +104,7 @@ Thread::self(void)
 static void
 thread_posix_init(void)
 {
-	ASSERT(!thread_posix_initialized);
+	ASSERT("/thread/posix", !thread_posix_initialized);
 
 	signal(SIGINT, thread_posix_signal_stop);
 	signal(SIGUSR1, thread_posix_signal_ignore);

@@ -24,15 +24,15 @@ public:
 	virtual ~Lock()
 	{ }
 
-	virtual void assert_owned(bool, const std::string&, unsigned, const std::string&) = 0;
+	virtual void assert_owned(bool, const LogHandle&, const std::string&, unsigned, const std::string&) = 0;
 	virtual void lock(void) = 0;
 	virtual void unlock(void) = 0;
 };
 
-#define	ASSERT_LOCK_OWNED(lock)						\
-	((lock)->assert_owned(true, __FILE__, __LINE__, __PRETTY_FUNCTION__))
-#define	ASSERT_LOCK_NOT_OWNED(lock)					\
-	((lock)->assert_owned(false, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+#define	ASSERT_LOCK_OWNED(log, lock)					\
+	((lock)->assert_owned(true, log, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+#define	ASSERT_LOCK_NOT_OWNED(log, lock)				\
+	((lock)->assert_owned(false, log, __FILE__, __LINE__, __PRETTY_FUNCTION__))
 
 class ScopedLock {
 	Lock *lock_;
@@ -41,7 +41,7 @@ public:
 	ScopedLock(Lock *lock)
 	: lock_(lock)
 	{
-		ASSERT(lock_ != NULL);
+		ASSERT("/scoped/lock", lock_ != NULL);
 		lock_->lock();
 	}
 
@@ -55,14 +55,14 @@ public:
 
 	void acquire(Lock *lock)
 	{
-		ASSERT(lock_ == NULL);
+		ASSERT("/scoped/lock", lock_ == NULL);
 		lock_ = lock;
 		lock_->lock();
 	}
 
 	void drop(void)
 	{
-		ASSERT(lock_ != NULL);
+		ASSERT("/scoped/lock", lock_ != NULL);
 		lock_->unlock();
 		lock_ = NULL;
 	}

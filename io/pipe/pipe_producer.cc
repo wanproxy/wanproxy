@@ -19,8 +19,8 @@ PipeProducer::PipeProducer(const LogHandle& log)
 
 PipeProducer::~PipeProducer()
 {
-	ASSERT(output_action_ == NULL);
-	ASSERT(output_callback_ == NULL);
+	ASSERT(log_, output_action_ == NULL);
+	ASSERT(log_, output_callback_ == NULL);
 }
 
 Action *
@@ -35,7 +35,7 @@ PipeProducer::input(Buffer *buf, EventCallback *cb)
 		consume(buf);
 		if (error_ && !buf->empty())
 			buf->clear();
-		ASSERT(buf->empty());
+		ASSERT(log_, buf->empty());
 	} else {
 		buf->clear();
 	}
@@ -50,8 +50,8 @@ PipeProducer::input(Buffer *buf, EventCallback *cb)
 Action *
 PipeProducer::output(EventCallback *cb)
 {
-	ASSERT(output_action_ == NULL);
-	ASSERT(output_callback_ == NULL);
+	ASSERT(log_, output_action_ == NULL);
+	ASSERT(log_, output_callback_ == NULL);
 
 	Action *a = output_do(cb);
 	if (a != NULL)
@@ -66,7 +66,7 @@ void
 PipeProducer::output_cancel(void)
 {
 	if (output_action_ != NULL) {
-		ASSERT(output_callback_ == NULL);
+		ASSERT(log_, output_callback_ == NULL);
 
 		output_action_->cancel();
 		output_action_ = NULL;
@@ -82,7 +82,7 @@ Action *
 PipeProducer::output_do(EventCallback *cb)
 {
 	if (error_) {
-		ASSERT(output_buffer_.empty());
+		ASSERT(log_, output_buffer_.empty());
 
 		cb->param(Event::Error);
 		return (cb->schedule());
@@ -105,8 +105,8 @@ PipeProducer::output_do(EventCallback *cb)
 void
 PipeProducer::produce(Buffer *buf)
 {
-	ASSERT(!error_);
-	ASSERT(!output_eos_);
+	ASSERT(log_, !error_);
+	ASSERT(log_, !output_eos_);
 
 	if (!buf->empty()) {
 		buf->moveout(&output_buffer_);
@@ -116,7 +116,7 @@ PipeProducer::produce(Buffer *buf)
 	}
 
 	if (output_callback_ != NULL) {
-		ASSERT(output_action_ == NULL);
+		ASSERT(log_, output_action_ == NULL);
 
 		Action *a = output_do(output_callback_);
 		if (a != NULL) {
@@ -129,8 +129,8 @@ PipeProducer::produce(Buffer *buf)
 void
 PipeProducer::produce_eos(Buffer *buf)
 {
-	ASSERT(!error_);
-	ASSERT(!output_eos_);
+	ASSERT(log_, !error_);
+	ASSERT(log_, !output_eos_);
 
 	if (buf != NULL && !buf->empty()) {
 		buf->moveout(&output_buffer_);
@@ -138,7 +138,7 @@ PipeProducer::produce_eos(Buffer *buf)
 	output_eos_ = true;
 
 	if (output_callback_ != NULL) {
-		ASSERT(output_action_ == NULL);
+		ASSERT(log_, output_action_ == NULL);
 
 		Action *a = output_do(output_callback_);
 		if (a != NULL) {
@@ -151,14 +151,14 @@ PipeProducer::produce_eos(Buffer *buf)
 void
 PipeProducer::produce_error(void)
 {
-	ASSERT(!error_);
-	ASSERT(!output_eos_);
+	ASSERT(log_, !error_);
+	ASSERT(log_, !output_eos_);
 
 	error_ = true;
 	output_buffer_.clear();
 
 	if (output_callback_ != NULL) {
-		ASSERT(output_action_ == NULL);
+		ASSERT(log_, output_action_ == NULL);
 
 		Action *a = output_do(output_callback_);
 		if (a != NULL) {

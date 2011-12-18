@@ -46,15 +46,15 @@ ProxyConnector::ProxyConnector(const std::string& name,
 
 ProxyConnector::~ProxyConnector()
 {
-	ASSERT(stop_action_ == NULL);
-	ASSERT(local_action_ == NULL);
-	ASSERT(local_socket_ == NULL);
-	ASSERT(remote_action_ == NULL);
-	ASSERT(remote_socket_ == NULL);
-	ASSERT(incoming_splice_ == NULL);
-	ASSERT(outgoing_splice_ == NULL);
-	ASSERT(splice_pair_ == NULL);
-	ASSERT(splice_action_ == NULL);
+	ASSERT(log_, stop_action_ == NULL);
+	ASSERT(log_, local_action_ == NULL);
+	ASSERT(log_, local_socket_ == NULL);
+	ASSERT(log_, remote_action_ == NULL);
+	ASSERT(log_, remote_socket_ == NULL);
+	ASSERT(log_, incoming_splice_ == NULL);
+	ASSERT(log_, outgoing_splice_ == NULL);
+	ASSERT(log_, splice_pair_ == NULL);
+	ASSERT(log_, splice_action_ == NULL);
 
 	if (pipe_pair_ != NULL) {
 		delete pipe_pair_;
@@ -89,13 +89,13 @@ ProxyConnector::close_complete(Socket *socket)
 	}
 
 	if (socket == local_socket_) {
-		ASSERT(local_socket_ != NULL);
+		ASSERT(log_, local_socket_ != NULL);
 		delete local_socket_;
 		local_socket_ = NULL;
 	}
 
 	if (socket == remote_socket_) {
-		ASSERT(remote_socket_ != NULL);
+		ASSERT(log_, remote_socket_ != NULL);
 		delete remote_socket_;
 		remote_socket_ = NULL;
 	}
@@ -125,7 +125,7 @@ ProxyConnector::connect_complete(Event e, Socket *socket)
 	}
 
 	remote_socket_ = socket;
-	ASSERT(remote_socket_ != NULL);
+	ASSERT(log_, remote_socket_ != NULL);
 
 	incoming_splice_ = new Splice(log_ + "/incoming", local_socket_, incoming_pipe_, remote_socket_);
 	outgoing_splice_ = new Splice(log_ + "/outgoing", remote_socket_, outgoing_pipe_, local_socket_);
@@ -205,8 +205,8 @@ ProxyConnector::schedule_close(void)
 			splice_action_ = NULL;
 		}
 
-		ASSERT(outgoing_splice_ != NULL);
-		ASSERT(incoming_splice_ != NULL);
+		ASSERT(log_, outgoing_splice_ != NULL);
+		ASSERT(log_, incoming_splice_ != NULL);
 
 		delete splice_pair_;
 		splice_pair_ = NULL;
@@ -218,13 +218,13 @@ ProxyConnector::schedule_close(void)
 		incoming_splice_ = NULL;
 	}
 
-	ASSERT(local_action_ == NULL);
-	ASSERT(local_socket_ != NULL);
+	ASSERT(log_, local_action_ == NULL);
+	ASSERT(log_, local_socket_ != NULL);
 	SimpleCallback *lcb = callback(this, &ProxyConnector::close_complete,
 				       local_socket_);
 	local_action_ = local_socket_->close(lcb);
 
-	ASSERT(remote_action_ == NULL);
+	ASSERT(log_, remote_action_ == NULL);
 	if (remote_socket_ != NULL) {
 		SimpleCallback *rcb = callback(this, &ProxyConnector::close_complete,
 					       remote_socket_);

@@ -24,7 +24,7 @@ public:
 	  enums_(),
 	  enum_map_()
 	{
-		ASSERT(mappings != NULL);
+		ASSERT("/config/type/enum", mappings != NULL);
 		while (mappings->string_ != NULL) {
 			enum_map_[mappings->string_] = mappings->enum_;
 			mappings++;

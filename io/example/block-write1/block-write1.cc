@@ -34,8 +34,8 @@ public:
 
 	~BlockWriter()
 	{
-		ASSERT(write_action_ == NULL);
-		ASSERT(close_action_ == NULL);
+		ASSERT(log_, write_action_ == NULL);
+		ASSERT(log_, close_action_ == NULL);
 	}
 
 	void write_complete(Event e)
@@ -80,7 +80,7 @@ main(void)
 		data_buffer[i] = random();
 
 	int fd = ::open("block_file.128M", O_RDWR | O_CREAT, 0700);
-	ASSERT(fd != -1);
+	ASSERT("/example/io/block/write1", fd != -1);
 	BlockWriter bw(fd, (128 * 1024 * 1024) / BW_BSIZE);
 
 	event_main();

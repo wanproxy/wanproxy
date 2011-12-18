@@ -66,7 +66,7 @@ HTTPProtocol::Message::decode(Buffer *input)
 			return (false);
 		}
 	} else {
-		ASSERT(type_ == Response);
+		ASSERT("/http/protocol/message", type_ == Response);
 		/*
 		 * No parsing behavior is conditional for responses.
 		 */
@@ -78,7 +78,7 @@ HTTPProtocol::Message::decode(Buffer *input)
 	 */
 	std::string last_header;
 	for (;;) {
-		ASSERT(line.empty());
+		ASSERT("/http/protocol/message", line.empty());
 		if (ExtractLine(&line, input) != ParseSuccess) {
 			ERROR("/http/protocol/message") << "Could not extract line for headers.";
 			return (false);
@@ -172,7 +172,7 @@ HTTPProtocol::DecodeURI(Buffer *encoded, Buffer *decoded)
 HTTPProtocol::ParseStatus
 HTTPProtocol::ExtractLine(Buffer *line, Buffer *input)
 {
-	ASSERT(line->empty());
+	ASSERT("/http/protocol/extract/line", line->empty());
 
 	if (input->empty()) {
 		DEBUG("/http/protocol/extract/line") << "Empty buffer.";
@@ -196,7 +196,7 @@ HTTPProtocol::ExtractLine(Buffer *line, Buffer *input)
 	switch (found) {
 	case '\r':
 		/* CRLF line endings.  */
-		ASSERT(input->length() > pos);
+		ASSERT("/http/protocol/extract/line", input->length() > pos);
 		if (input->length() == pos + 1) {
 			DEBUG("/http/protocol/extract/line") << "Carriage return at end of buffer, need following line feed.";
 			return (ParseIncomplete);
@@ -217,7 +217,7 @@ HTTPProtocol::ExtractLine(Buffer *line, Buffer *input)
 		input->skip(1);
 		break;
 	default:
-		NOTREACHED();
+		NOTREACHED("/http/protocol/extract/line");
 	}
 
 	return (ParseSuccess);

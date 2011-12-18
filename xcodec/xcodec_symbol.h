@@ -21,7 +21,7 @@ union XCodecSymbol {
 
 	void extract(Buffer *buf, unsigned offset = 0)
 	{
-		ASSERT(buf->length() >= sizeof word_ + offset);
+		ASSERT(log_, buf->length() >= sizeof word_ + offset);
 
 		uint64_t word;
 
@@ -31,7 +31,7 @@ union XCodecSymbol {
 
 	void moveout(Buffer *buf, unsigned offset = 0)
 	{
-		ASSERT(buf->length() >= sizeof word_ + offset);
+		ASSERT(log_, buf->length() >= sizeof word_ + offset);
 		if (offset != 0)
 			buf->skip(offset);
 		buf->extract(buf);

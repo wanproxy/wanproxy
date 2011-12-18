@@ -10,7 +10,7 @@ protected:
 
 	virtual ~Action()
 	{
-		ASSERT(cancelled_);
+		ASSERT("/action", cancelled_);
 	}
 
 private:
@@ -19,7 +19,7 @@ private:
 public:
 	void cancel(void)
 	{
-		ASSERT(!cancelled_);
+		ASSERT("/action", !cancelled_);
 		do_cancel();
 		cancelled_ = true;
 		delete this;

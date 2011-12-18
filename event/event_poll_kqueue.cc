@@ -18,13 +18,13 @@ EventPoll::EventPoll(void)
   state_(new EventPollState())
 {
 	state_->kq_ = kqueue();
-	ASSERT(state_->kq_ != -1);
+	ASSERT(log_, state_->kq_ != -1);
 }
 
 EventPoll::~EventPoll()
 {
-	ASSERT(read_poll_.empty());
-	ASSERT(write_poll_.empty());
+	ASSERT(log_, read_poll_.empty());
+	ASSERT(log_, write_poll_.empty());
 
 	if (state_ != NULL) {
 		if (state_->kq_ != -1) {
@@ -39,29 +39,29 @@ EventPoll::~EventPoll()
 Action *
 EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 {
-	ASSERT(fd != -1);
+	ASSERT(log_, fd != -1);
 
 	EventPoll::PollHandler *poll_handler;
 	struct kevent kev;
 	switch (type) {
 	case EventPoll::Readable:
-		ASSERT(read_poll_.find(fd) == read_poll_.end());
+		ASSERT(log_, read_poll_.find(fd) == read_poll_.end());
 		poll_handler = &read_poll_[fd];
 		EV_SET(&kev, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 		break;
 	case EventPoll::Writable:
-		ASSERT(write_poll_.find(fd) == write_poll_.end());
+		ASSERT(log_, write_poll_.find(fd) == write_poll_.end());
 		poll_handler = &write_poll_[fd];
 		EV_SET(&kev, fd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
 		break;
 	default:
-		NOTREACHED();
+		NOTREACHED(log_);
 	}
 	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
 	if (evcnt == -1)
 		HALT(log_) << "Could not add event to kqueue.";
-	ASSERT(evcnt == 0);
-	ASSERT(poll_handler->action_ == NULL);
+	ASSERT(log_, evcnt == 0);
+	ASSERT(log_, poll_handler->action_ == NULL);
 	poll_handler->callback_ = cb;
 	Action *a = new EventPoll::PollAction(this, type, fd);
 	return (a);
@@ -75,14 +75,14 @@ EventPoll::cancel(const Type& type, int fd)
 	struct kevent kev;
 	switch (type) {
 	case EventPoll::Readable:
-		ASSERT(read_poll_.find(fd) != read_poll_.end());
+		ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
 		poll_handler = &read_poll_[fd];
 		poll_handler->cancel();
 		read_poll_.erase(fd);
 		EV_SET(&kev, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 		break;
 	case EventPoll::Writable:
-		ASSERT(write_poll_.find(fd) != write_poll_.end());
+		ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
 		poll_handler = &write_poll_[fd];
 		poll_handler->cancel();
 		write_poll_.erase(fd);
@@ -92,7 +92,7 @@ EventPoll::cancel(const Type& type, int fd)
 	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
 	if (evcnt == -1)
 		HALT(log_) << "Could not delete event from kqueue.";
-	ASSERT(evcnt == 0);
+	ASSERT(log_, evcnt == 0);
 }
 
 void
@@ -109,7 +109,7 @@ EventPoll::wait(int ms)
 			int rv;
 
 			rv = nanosleep(&ts, NULL);
-			ASSERT(rv != -1);
+			ASSERT(log_, rv != -1);
 		}
 		return;
 	}
@@ -130,16 +130,16 @@ EventPoll::wait(int ms)
 		EventPoll::PollHandler *poll_handler;
 		switch (ev->filter) {
 		case EVFILT_READ:
-			ASSERT(read_poll_.find(ev->ident) != read_poll_.end());
+			ASSERT(log_, read_poll_.find(ev->ident) != read_poll_.end());
 			poll_handler = &read_poll_[ev->ident];
 			break;
 		case EVFILT_WRITE:
-			ASSERT(write_poll_.find(ev->ident) !=
+			ASSERT(log_, write_poll_.find(ev->ident) !=
 			       write_poll_.end());
 			poll_handler = &write_poll_[ev->ident];
 			break;
 		default:
-			NOTREACHED();
+			NOTREACHED(log_);
 		}
 		if ((ev->flags & EV_ERROR) != 0) {
 			poll_handler->callback(Event(Event::Error, ev->fflags));

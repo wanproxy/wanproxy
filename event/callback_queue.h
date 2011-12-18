@@ -43,7 +43,7 @@ public:
 
 	~CallbackQueue()
 	{
-		ASSERT(queue_.empty());
+		ASSERT("/callback/queue", queue_.empty());
 	}
 
 	Action *schedule(CallbackBase *cb)
@@ -67,7 +67,7 @@ public:
 		generation_++;
 		while (!queue_.empty()) {
 			CallbackAction *a = queue_.front();
-			ASSERT(a->queue_ == this);
+			ASSERT("/callback/queue", a->queue_ == this);
 			if (a->generation_ >= generation_)
 				return (true);
 			a->callback_->execute();
@@ -85,7 +85,7 @@ public:
 		if (queue_.empty())
 			return;
 		CallbackAction *a = queue_.front();
-		ASSERT(a->queue_ == this);
+		ASSERT("/callback/queue", a->queue_ == this);
 		a->callback_->execute();
 	}
 
@@ -100,7 +100,7 @@ private:
 			queue_.erase(it);
 			return;
 		}
-		NOTREACHED();
+		NOTREACHED("/callback/queue");
 	}
 };
 

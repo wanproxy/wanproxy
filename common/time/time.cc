@@ -15,7 +15,7 @@ NanoTime::current_time(void)
 	struct timespec ts;
 
 	rv = ::clock_gettime(CLOCK_MONOTONIC, &ts);
-	ASSERT(rv != -1);
+	ASSERT("/nano/time/posix", rv != -1);
 
 	nt.seconds_ = ts.tv_sec;
 	nt.nanoseconds_ = ts.tv_nsec;
@@ -23,7 +23,7 @@ NanoTime::current_time(void)
 	struct timeval tv;
 
 	rv = ::gettimeofday(&tv, NULL);
-	ASSERT(rv != -1);
+	ASSERT("/nano/time/gtod", rv != -1);
 	nt.seconds_ = tv.tv_sec;
 	nt.nanoseconds_ = tv.tv_usec * 1000;
 #endif

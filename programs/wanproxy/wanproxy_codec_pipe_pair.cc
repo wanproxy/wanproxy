@@ -69,13 +69,13 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 		}
 	}
 
-	ASSERT(incoming_pipe_list.empty() == outgoing_pipe_list.empty());
+	ASSERT("/wanproxy/codec/pipe/pair/config", incoming_pipe_list.empty() == outgoing_pipe_list.empty());
 
 	if (incoming_pipe_list.empty() && outgoing_pipe_list.empty()) {
 		return;
 	}
 
-	ASSERT(incoming_pipe_list.size() == outgoing_pipe_list.size());
+	ASSERT("/wanproxy/codec/pipe/pair/config", incoming_pipe_list.size() == outgoing_pipe_list.size());
 
 	incoming_pipe_ = incoming_pipe_list.front();
 	incoming_pipe_list.pop_front();
@@ -93,7 +93,7 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 		incoming_pipe_list.pop_front();
 		outgoing_pipe_list.pop_front();
 	}
-	ASSERT(incoming_pipe_list.empty() && outgoing_pipe_list.empty());
+	ASSERT("/wanproxy/codec/pipe/pair/config", incoming_pipe_list.empty() && outgoing_pipe_list.empty());
 }
 
 WANProxyCodecPipePair::~WANProxyCodecPipePair()

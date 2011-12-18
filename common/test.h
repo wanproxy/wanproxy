@@ -20,7 +20,7 @@ public:
 
 	~TestGroup()
 	{
-		ASSERT(tests_ != 0);
+		ASSERT(log_, tests_ != 0);
 
 		INFO(log_) << "Test results for group: " << description_;
 		if (passes_ == tests_) {
@@ -74,7 +74,7 @@ public:
 
 	void pass(void)
 	{
-		ASSERT(!passed_);
+		ASSERT("/test", !passed_);
 		passed_ = true;
 	}
 };

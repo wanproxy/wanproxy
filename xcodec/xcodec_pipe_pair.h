@@ -126,7 +126,7 @@ public:
 		case XCodecPipePairTypeServer:
 			return (decoder_pipe_);
 		default:
-			NOTREACHED();
+			NOTREACHED(log_);
 		}
 	}
 
@@ -138,7 +138,7 @@ public:
 		case XCodecPipePairTypeServer:
 			return (encoder_pipe_);
 		default:
-			NOTREACHED();
+			NOTREACHED(log_);
 		}
 	}
 };

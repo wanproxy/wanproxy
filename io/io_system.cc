@@ -35,16 +35,16 @@ IOSystem::Handle::Handle(int fd, Channel *owner)
 
 IOSystem::Handle::~Handle()
 {
-	ASSERT(fd_ == -1);
+	ASSERT(log_, fd_ == -1);
 
-	ASSERT(close_action_ == NULL);
-	ASSERT(close_callback_ == NULL);
+	ASSERT(log_, close_action_ == NULL);
+	ASSERT(log_, close_callback_ == NULL);
 
-	ASSERT(read_action_ == NULL);
-	ASSERT(read_callback_ == NULL);
+	ASSERT(log_, read_action_ == NULL);
+	ASSERT(log_, read_callback_ == NULL);
 
-	ASSERT(write_action_ == NULL);
-	ASSERT(write_callback_ == NULL);
+	ASSERT(log_, write_action_ == NULL);
+	ASSERT(log_, write_callback_ == NULL);
 }
 
 void
@@ -53,7 +53,7 @@ IOSystem::Handle::close_callback(void)
 	close_action_->cancel();
 	close_action_ = NULL;
 
-	ASSERT(fd_ != -1);
+	ASSERT(log_, fd_ != -1);
 	int rv = ::close(fd_);
 	if (rv == -1) {
 		if (errno == EAGAIN) {
@@ -87,7 +87,7 @@ IOSystem::Handle::close_callback(void)
 void
 IOSystem::Handle::close_cancel(void)
 {
-	ASSERT(close_action_ != NULL);
+	ASSERT(log_, close_action_ != NULL);
 	close_action_->cancel();
 	close_action_ = NULL;
 
@@ -100,7 +100,7 @@ IOSystem::Handle::close_cancel(void)
 Action *
 IOSystem::Handle::close_schedule(void)
 {
-	ASSERT(close_action_ == NULL);
+	ASSERT(log_, close_action_ == NULL);
 	SimpleCallback *cb = callback(this, &IOSystem::Handle::close_callback);
 	Action *a = cb->schedule();
 	return (a);
@@ -131,13 +131,13 @@ IOSystem::Handle::read_callback(Event e)
 	read_action_ = read_do();
 	if (read_action_ == NULL)
 		read_action_ = read_schedule();
-	ASSERT(read_action_ != NULL);
+	ASSERT(log_, read_action_ != NULL);
 }
 
 void
 IOSystem::Handle::read_cancel(void)
 {
-	ASSERT(read_action_ != NULL);
+	ASSERT(log_, read_action_ != NULL);
 	read_action_->cancel();
 	read_action_ = NULL;
 
@@ -150,7 +150,7 @@ IOSystem::Handle::read_cancel(void)
 Action *
 IOSystem::Handle::read_do(void)
 {
-	ASSERT(read_action_ == NULL);
+	ASSERT(log_, read_action_ == NULL);
 
 	if (!read_buffer_.empty() && read_buffer_.length() >= read_amount_) {
 		if (read_amount_ == 0)
@@ -225,7 +225,7 @@ IOSystem::Handle::read_do(void)
 			read_amount_ = 0;
 			return (a);
 		}
-		NOTREACHED();
+		NOTREACHED(log_);
 	}
 
 	/*
@@ -275,7 +275,7 @@ IOSystem::Handle::read_do(void)
 Action *
 IOSystem::Handle::read_schedule(void)
 {
-	ASSERT(read_action_ == NULL);
+	ASSERT(log_, read_action_ == NULL);
 
 	EventCallback *cb = callback(this, &IOSystem::Handle::read_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Readable, fd_, cb);
@@ -306,13 +306,13 @@ IOSystem::Handle::write_callback(Event e)
 	write_action_ = write_do();
 	if (write_action_ == NULL)
 		write_action_ = write_schedule();
-	ASSERT(write_action_ != NULL);
+	ASSERT(log_, write_action_ != NULL);
 }
 
 void
 IOSystem::Handle::write_cancel(void)
 {
-	ASSERT(write_action_ != NULL);
+	ASSERT(log_, write_action_ != NULL);
 	write_action_->cancel();
 	write_action_ = NULL;
 
@@ -338,7 +338,7 @@ IOSystem::Handle::write_do(void)
 	 */
 	struct iovec iov[IOV_MAX];
 	size_t iovcnt = write_buffer_.fill_iovec(iov, IOV_MAX);
-	ASSERT(iovcnt != 0);
+	ASSERT(log_, iovcnt != 0);
 
 	ssize_t len;
 	if (write_offset_ == -1) {
@@ -377,7 +377,7 @@ IOSystem::Handle::write_do(void)
 		for (i = 0; i < iovcnt; i++) {
 			struct iovec *iovp = &iov[i];
 
-			ASSERT(iovp->iov_len != 0);
+			ASSERT(log_, iovp->iov_len != 0);
 
 			len = ::pwrite(fd_, iovp->iov_base, iovp->iov_len,
 				       write_offset_);
@@ -405,7 +405,7 @@ IOSystem::Handle::write_do(void)
 			write_callback_ = NULL;
 			return (a);
 		}
-		NOTREACHED();
+		NOTREACHED(log_);
 	}
 
 	write_buffer_.skip(len);
@@ -422,7 +422,7 @@ IOSystem::Handle::write_do(void)
 Action *
 IOSystem::Handle::write_schedule(void)
 {
-	ASSERT(write_action_ == NULL);
+	ASSERT(log_, write_action_ == NULL);
 	EventCallback *cb = callback(this, &IOSystem::Handle::write_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Writable, fd_, cb);
 	return (a);
@@ -474,13 +474,13 @@ IOSystem::IOSystem(void)
 
 IOSystem::~IOSystem()
 {
-	ASSERT(handle_map_.empty());
+	ASSERT(log_, handle_map_.empty());
 }
 
 void
 IOSystem::attach(int fd, Channel *owner)
 {
-	ASSERT(handle_map_.find(handle_key_t(fd, owner)) == handle_map_.end());
+	ASSERT(log_, handle_map_.find(handle_key_t(fd, owner)) == handle_map_.end());
 	handle_map_[handle_key_t(fd, owner)] = new IOSystem::Handle(fd, owner);
 }
 
@@ -491,11 +491,11 @@ IOSystem::detach(int fd, Channel *owner)
 	IOSystem::Handle *h;
 
 	it = handle_map_.find(handle_key_t(fd, owner));
-	ASSERT(it != handle_map_.end());
+	ASSERT(log_, it != handle_map_.end());
 
 	h = it->second;
-	ASSERT(h != NULL);
-	ASSERT(h->owner_ == owner);
+	ASSERT(log_, h != NULL);
+	ASSERT(log_, h->owner_ == owner);
 
 	handle_map_.erase(it);
 	delete h;
@@ -507,18 +507,18 @@ IOSystem::close(int fd, Channel *owner, SimpleCallback *cb)
 	IOSystem::Handle *h;
 
 	h = handle_map_[handle_key_t(fd, owner)];
-	ASSERT(h != NULL);
+	ASSERT(log_, h != NULL);
 
-	ASSERT(h->close_callback_ == NULL);
-	ASSERT(h->close_action_ == NULL);
+	ASSERT(log_, h->close_callback_ == NULL);
+	ASSERT(log_, h->close_action_ == NULL);
 
-	ASSERT(h->read_callback_ == NULL);
-	ASSERT(h->read_action_ == NULL);
+	ASSERT(log_, h->read_callback_ == NULL);
+	ASSERT(log_, h->read_action_ == NULL);
 
-	ASSERT(h->write_callback_ == NULL);
-	ASSERT(h->write_action_ == NULL);
+	ASSERT(log_, h->write_callback_ == NULL);
+	ASSERT(log_, h->write_action_ == NULL);
 
-	ASSERT(h->fd_ != -1);
+	ASSERT(log_, h->fd_ != -1);
 
 	h->close_callback_ = cb;
 	h->close_action_ = h->close_schedule();
@@ -531,16 +531,16 @@ IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, EventCallbac
 	IOSystem::Handle *h;
 
 	h = handle_map_[handle_key_t(fd, owner)];
-	ASSERT(h != NULL);
+	ASSERT(log_, h != NULL);
 
-	ASSERT(h->read_callback_ == NULL);
-	ASSERT(h->read_action_ == NULL);
+	ASSERT(log_, h->read_callback_ == NULL);
+	ASSERT(log_, h->read_action_ == NULL);
 
 	/*
 	 * Reads without an offset may be 0 length, but reads with
 	 * an offset must have a specified length.
 	 */
-	ASSERT(offset == -1 || amount != 0);
+	ASSERT(log_, offset == -1 || amount != 0);
 
 	/*
 	 * If we have an offset, we must invalidate any outstanding
@@ -555,14 +555,14 @@ IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, EventCallbac
 	h->read_amount_ = amount;
 	h->read_callback_ = cb;
 	Action *a = h->read_do();
-	ASSERT(h->read_action_ == NULL);
+	ASSERT(log_, h->read_action_ == NULL);
 	if (a == NULL) {
-		ASSERT(h->read_callback_ != NULL);
+		ASSERT(log_, h->read_callback_ != NULL);
 		h->read_action_ = h->read_schedule();
-		ASSERT(h->read_action_ != NULL);
+		ASSERT(log_, h->read_action_ != NULL);
 		return (cancellation(h, &IOSystem::Handle::read_cancel));
 	}
-	ASSERT(h->read_callback_ == NULL);
+	ASSERT(log_, h->read_callback_ == NULL);
 	return (a);
 }
 
@@ -572,25 +572,25 @@ IOSystem::write(int fd, Channel *owner, off_t offset, Buffer *buffer, EventCallb
 	IOSystem::Handle *h;
 
 	h = handle_map_[handle_key_t(fd, owner)];
-	ASSERT(h != NULL);
+	ASSERT(log_, h != NULL);
 
-	ASSERT(h->write_callback_ == NULL);
-	ASSERT(h->write_action_ == NULL);
-	ASSERT(h->write_buffer_.empty());
+	ASSERT(log_, h->write_callback_ == NULL);
+	ASSERT(log_, h->write_action_ == NULL);
+	ASSERT(log_, h->write_buffer_.empty());
 
-	ASSERT(!buffer->empty());
+	ASSERT(log_, !buffer->empty());
 	buffer->moveout(&h->write_buffer_);
 
 	h->write_offset_ = offset;
 	h->write_callback_ = cb;
 	Action *a = h->write_do();
-	ASSERT(h->write_action_ == NULL);
+	ASSERT(log_, h->write_action_ == NULL);
 	if (a == NULL) {
-		ASSERT(h->write_callback_ != NULL);
+		ASSERT(log_, h->write_callback_ != NULL);
 		h->write_action_ = h->write_schedule();
-		ASSERT(h->write_action_ != NULL);
+		ASSERT(log_, h->write_action_ != NULL);
 		return (cancellation(h, &IOSystem::Handle::write_cancel));
 	}
-	ASSERT(h->write_callback_ == NULL);
+	ASSERT(log_, h->write_callback_ == NULL);
 	return (a);
 }

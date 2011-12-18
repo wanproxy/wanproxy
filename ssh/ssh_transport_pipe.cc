@@ -30,15 +30,15 @@ SSH::TransportPipe::TransportPipe(void)
 
 SSH::TransportPipe::~TransportPipe()
 {
-	ASSERT(receive_callback_ == NULL);
-	ASSERT(receive_action_ == NULL);
+	ASSERT(log_, receive_callback_ == NULL);
+	ASSERT(log_, receive_action_ == NULL);
 }
 
 Action *
 SSH::TransportPipe::receive(EventCallback *cb)
 {
-	ASSERT(receive_callback_ == NULL);
-	ASSERT(receive_action_ == NULL);
+	ASSERT(log_, receive_callback_ == NULL);
+	ASSERT(log_, receive_action_ == NULL);
 
 	/*
 	 * XXX
@@ -55,7 +55,7 @@ SSH::TransportPipe::receive(EventCallback *cb)
 	if (receive_callback_ != NULL)
 		return (cancellation(this, &SSH::TransportPipe::receive_cancel));
 
-	ASSERT(receive_action_ != NULL);
+	ASSERT(log_, receive_action_ != NULL);
 	Action *a = receive_action_;
 	receive_action_ = NULL;
 	return (a);
@@ -74,7 +74,7 @@ SSH::TransportPipe::send(Buffer *payload)
 	uint8_t padding_len;
 	uint32_t packet_len;
 
-	ASSERT(state_ == GetPacket);
+	ASSERT(log_, state_ == GetPacket);
 
 	packet_len = sizeof padding_len + payload->length();
 	padding_len = 4 + (block_size_ - ((sizeof packet_len + packet_len + 4) % block_size_));
@@ -87,7 +87,7 @@ SSH::TransportPipe::send(Buffer *payload)
 	packet.append(zero_padding, padding_len);
 
 	if (mac_length_ != 0)
-		NOTREACHED();
+		NOTREACHED(log_);
 
 	produce(&packet);
 }
@@ -167,8 +167,8 @@ SSH::TransportPipe::receive_cancel(void)
 void
 SSH::TransportPipe::receive_do(void)
 {
-	ASSERT(receive_action_ == NULL);
-	ASSERT(receive_callback_ != NULL);
+	ASSERT(log_, receive_action_ == NULL);
+	ASSERT(log_, receive_callback_ != NULL);
 
 	if (state_ != GetPacket)
 		return;
@@ -264,7 +264,7 @@ SSH::TransportPipe::receive_do(void)
 			/* Because msg is a uint8_t, it will always be <= SSH::Message::LocalExtensionRangeEnd.  */
 			DEBUG(log_) << "Using default handler for local extension message.";
 		} else {
-			ASSERT(msg == 0);
+			ASSERT(log_, msg == 0);
 			ERROR(log_) << "Message outside of protocol range received.  Passing to default handler, but not expecting much.";
 		}
 

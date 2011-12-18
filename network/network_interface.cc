@@ -14,7 +14,7 @@ NetworkInterface::open(const std::string& ifname)
 		return (interface);
 #endif
 
-	ASSERT(interface == NULL);
+	ASSERT(log_, interface == NULL);
 	ERROR("/network/interface") << "Unsupported network interface: " << ifname;
 	return (NULL);
 }

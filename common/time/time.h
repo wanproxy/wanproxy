@@ -60,7 +60,7 @@ struct NanoTime {
 
 	NanoTime& operator-= (const NanoTime& b)
 	{
-		ASSERT(*this >= b);
+		ASSERT("/nano/time", *this >= b);
 
 		if (nanoseconds_ < b.nanoseconds_) {
 			nanoseconds_ += 1000000000;

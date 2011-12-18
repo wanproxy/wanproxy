@@ -38,10 +38,10 @@ public:
 
 	virtual ~SimpleServer()
 	{
-		ASSERT(server_ == NULL);
-		ASSERT(accept_action_ == NULL);
-		ASSERT(close_action_ == NULL);
-		ASSERT(stop_action_ == NULL);
+		ASSERT(log_, server_ == NULL);
+		ASSERT(log_, accept_action_ == NULL);
+		ASSERT(log_, close_action_ == NULL);
+		ASSERT(log_, stop_action_ == NULL);
 	}
 
 private:
@@ -75,7 +75,7 @@ private:
 		close_action_->cancel();
 		close_action_ = NULL;
 
-		ASSERT(server_ != NULL);
+		ASSERT(log_, server_ != NULL);
 		delete server_;
 		server_ = NULL;
 
@@ -90,7 +90,7 @@ private:
 		accept_action_->cancel();
 		accept_action_ = NULL;
 
-		ASSERT(close_action_ == NULL);
+		ASSERT(log_, close_action_ == NULL);
 
 		SimpleCallback *cb = callback(this, &SimpleServer::close_complete);
 		close_action_ = server_->close(cb);

@@ -30,15 +30,15 @@ public:
 
 	~TypedConditionVariable()
 	{
-		ASSERT(wait_action_ == NULL);
-		ASSERT(wait_callback_ == NULL);
+		ASSERT("/typed/condition/variable", wait_action_ == NULL);
+		ASSERT("/typed/condition/variable", wait_callback_ == NULL);
 	}
 
 	void signal(T p)
 	{
 		if (wait_callback_ == NULL)
 			return;
-		ASSERT(wait_action_ == NULL);
+		ASSERT("/typed/condition/variable", wait_action_ == NULL);
 		wait_callback_->param(p);
 		wait_action_ = wait_callback_->schedule();
 		wait_callback_ = NULL;
@@ -46,8 +46,8 @@ public:
 
 	Action *wait(TypedCallback<T> *cb)
 	{
-		ASSERT(wait_action_ == NULL);
-		ASSERT(wait_callback_ == NULL);
+		ASSERT("/typed/condition/variable", wait_action_ == NULL);
+		ASSERT("/typed/condition/variable", wait_callback_ == NULL);
 
 		wait_callback_ = cb;
 
@@ -58,12 +58,12 @@ private:
 	void wait_cancel(void)
 	{
 		if (wait_callback_ != NULL) {
-			ASSERT(wait_action_ == NULL);
+			ASSERT("/typed/condition/variable", wait_action_ == NULL);
 
 			delete wait_callback_;
 			wait_callback_ = NULL;
 		} else {
-			ASSERT(wait_action_ != NULL);
+			ASSERT("/typed/condition/variable", wait_action_ != NULL);
 
 			wait_action_->cancel();
 			wait_action_ = NULL;

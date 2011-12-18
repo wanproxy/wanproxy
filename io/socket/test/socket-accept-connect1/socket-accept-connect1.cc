@@ -70,7 +70,7 @@ public:
 		action_->cancel();
 		action_ = NULL;
 
-		ASSERT(socket_ != NULL);
+		ASSERT(log_, socket_ != NULL);
 		delete socket_;
 		socket_ = NULL;
 	}
@@ -216,7 +216,7 @@ public:
 		action_->cancel();
 		action_ = NULL;
 
-		ASSERT(socket_ != NULL);
+		ASSERT(log_, socket_ != NULL);
 		delete socket_;
 		socket_ = NULL;
 
@@ -268,7 +268,7 @@ public:
 		action_->cancel();
 		action_ = NULL;
 
-		ASSERT(client_ != NULL);
+		ASSERT(log_, client_ != NULL);
 		delete client_;
 		client_ = NULL;
 

@@ -32,11 +32,11 @@ HTTPServerHandler::HTTPServerHandler(Socket *client)
 
 HTTPServerHandler::~HTTPServerHandler()
 {
-	ASSERT(pipe_ == NULL);
-	ASSERT(splice_ == NULL);
-	ASSERT(splice_action_ == NULL);
-	ASSERT(close_action_ == NULL);
-	ASSERT(request_action_ == NULL);
+	ASSERT(log_, pipe_ == NULL);
+	ASSERT(log_, splice_ == NULL);
+	ASSERT(log_, splice_action_ == NULL);
+	ASSERT(log_, close_action_ == NULL);
+	ASSERT(log_, request_action_ == NULL);
 }
 
 void
@@ -45,7 +45,7 @@ HTTPServerHandler::close_complete(void)
 	close_action_->cancel();
 	close_action_ = NULL;
 
-	ASSERT(client_ != NULL);
+	ASSERT(log_, client_ != NULL);
 	delete client_;
 	client_ = NULL;
 
@@ -62,30 +62,30 @@ HTTPServerHandler::request(Event e, HTTPProtocol::Request req)
 		ERROR(log_) << "Error while waiting for request: " << e;
 		return;
 	}
-	ASSERT(e.type_ == Event::Done);
+	ASSERT(log_, e.type_ == Event::Done);
 
-	ASSERT(!req.start_line_.empty());
+	ASSERT(log_, !req.start_line_.empty());
 	std::vector<Buffer> words = req.start_line_.split(' ', false);
-	ASSERT(!words.empty());
+	ASSERT(log_, !words.empty());
 
 	std::string method;
 	words[0].extract(method);
-	ASSERT(!method.empty());
+	ASSERT(log_, !method.empty());
 	std::transform(method.begin(), method.end(), method.begin(), ::toupper);
 
 	Buffer uri_encoded(words[1]);
-	ASSERT(!uri_encoded.empty());
+	ASSERT(log_, !uri_encoded.empty());
 	Buffer uri_decoded;
 	if (!HTTPProtocol::DecodeURI(&uri_encoded, &uri_decoded)) {
 		pipe_->send_response(HTTPProtocol::BadRequest, "Malformed URI encoding.");
 		return;
 	}
-	ASSERT(!uri_decoded.empty());
+	ASSERT(log_, !uri_decoded.empty());
 
 	if (words.size() == 3) {
 		std::string version;
 		words[2].extract(version);
-		ASSERT(!version.empty());
+		ASSERT(log_, !version.empty());
 
 		if (version != "HTTP/1.1" && version != "HTTP/1.0") {
 			pipe_->send_response(HTTPProtocol::VersionNotSupported, "Version not supported.");
@@ -95,7 +95,7 @@ HTTPServerHandler::request(Event e, HTTPProtocol::Request req)
 
 	std::string uri;
 	uri_decoded.extract(uri);
-	ASSERT(!uri.empty());
+	ASSERT(log_, !uri.empty());
 
 	handle_request(method, uri, req);
 }
@@ -118,7 +118,7 @@ HTTPServerHandler::splice_complete(Event e)
 		break;
 	}
 
-	ASSERT(splice_ != NULL);
+	ASSERT(log_, splice_ != NULL);
 	delete splice_;
 	splice_ = NULL;
 
@@ -128,11 +128,11 @@ HTTPServerHandler::splice_complete(Event e)
 		request_action_ = NULL;
 	}
 
-	ASSERT(pipe_ != NULL);
+	ASSERT(log_, pipe_ != NULL);
 	delete pipe_;
 	pipe_ = NULL;
 
-	ASSERT(close_action_ == NULL);
+	ASSERT(log_, close_action_ == NULL);
 	SimpleCallback *cb = callback(this, &HTTPServerHandler::close_complete);
 	close_action_ = client_->close(cb);
 }

@@ -28,15 +28,15 @@ HTTPServerPipe::HTTPServerPipe(const LogHandle& log)
 
 HTTPServerPipe::~HTTPServerPipe()
 {
-	ASSERT(action_ == NULL);
-	ASSERT(callback_ == NULL);
+	ASSERT(log_, action_ == NULL);
+	ASSERT(log_, callback_ == NULL);
 }
 
 Action *
 HTTPServerPipe::request(HTTPRequestEventCallback *cb)
 {
-	ASSERT(action_ == NULL);
-	ASSERT(callback_ == NULL);
+	ASSERT(log_, action_ == NULL);
+	ASSERT(log_, callback_ == NULL);
 
 	if (state_ == GotRequest || state_ == Error)
 		return (schedule_callback(cb));
@@ -49,12 +49,12 @@ void
 HTTPServerPipe::send_response(HTTPProtocol::Status status, Buffer *body, Buffer *headers)
 {
 	if (state_ == GotRequest || state_ == Error) {
-		ASSERT(buffer_.empty());
+		ASSERT(log_, buffer_.empty());
 	} else {
 		if (!buffer_.empty()) {
 			buffer_.clear();
 		} else {
-			ASSERT(status == HTTPProtocol::BadRequest);
+			ASSERT(log_, status == HTTPProtocol::BadRequest);
 			DEBUG(log_) << "Premature end-of-stream.";
 		}
 		state_ = Error; /* Process no more input.  */
@@ -63,7 +63,7 @@ HTTPServerPipe::send_response(HTTPProtocol::Status status, Buffer *body, Buffer 
 		 * For state change to Error, we must schedule a
 		 * callback.
 		 */
-		ASSERT(action_ == NULL);
+		ASSERT(log_, action_ == NULL);
 		if (callback_ != NULL) {
 			action_ = schedule_callback(callback_);
 			callback_ = NULL;
@@ -91,7 +91,7 @@ HTTPServerPipe::send_response(HTTPProtocol::Status status, Buffer *body, Buffer 
 		response.append("505 Version Not Supported");
 		break;
 	default:
-		NOTREACHED();
+		NOTREACHED(log_);
 	}
 	response.append("\r\n");
 
@@ -114,7 +114,7 @@ HTTPServerPipe::send_response(HTTPProtocol::Status status, Buffer *body, Buffer 
 	 * Output response and EOS.
 	 */
 	produce_eos(&response);
-	ASSERT(response.empty());
+	ASSERT(log_, response.empty());
 }
 
 void
@@ -123,7 +123,7 @@ HTTPServerPipe::send_response(HTTPProtocol::Status status, const std::string& bo
 	Buffer tmp(body);
 	Buffer header("Content-type: " + content_type + "\r\n");
 	send_response(status, &tmp, &header);
-	ASSERT(tmp.empty());
+	ASSERT(log_, tmp.empty());
 }
 
 void
@@ -133,9 +133,9 @@ HTTPServerPipe::cancel(void)
 		action_->cancel();
 		action_ = NULL;
 
-		ASSERT(callback_ == NULL);
+		ASSERT(log_, callback_ == NULL);
 	} else {
-		ASSERT(callback_ != NULL);
+		ASSERT(log_, callback_ != NULL);
 		delete callback_;
 		callback_ = NULL;
 	}
@@ -152,7 +152,7 @@ HTTPServerPipe::schedule_callback(HTTPRequestEventCallback *cb)
 		cb->param(Event::Error, HTTPProtocol::Request());
 		break;
 	default:
-		NOTREACHED();
+		NOTREACHED(log_);
 	}
 
 	return (cb->schedule());
@@ -162,7 +162,7 @@ void
 HTTPServerPipe::consume(Buffer *in)
 {
 	if (state_ == GotRequest || state_ == Error) {
-		ASSERT(buffer_.empty());
+		ASSERT(log_, buffer_.empty());
 		if (in->empty()) {
 			DEBUG(log_) << "Got end-of-stream.";
 			return;
@@ -195,7 +195,7 @@ HTTPServerPipe::consume(Buffer *in)
 	in->moveout(&buffer_);
 
 	for (;;) {
-		ASSERT(!buffer_.empty());
+		ASSERT(log_, !buffer_.empty());
 
 		Buffer line;
 		switch (HTTPProtocol::ExtractLine(&line, &buffer_)) {
@@ -210,7 +210,7 @@ HTTPServerPipe::consume(Buffer *in)
 		}
 
 		if (state_ == GetStart) {
-			ASSERT(request_.start_line_.empty());
+			ASSERT(log_, request_.start_line_.empty());
 			if (line.empty()) {
 				ERROR(log_) << "Premature end of headers.";
 				send_response(HTTPProtocol::BadRequest, "Empty start line.");
@@ -264,7 +264,7 @@ HTTPServerPipe::consume(Buffer *in)
 			 */
 			state_ = GotRequest;
 
-			ASSERT(action_ == NULL);
+			ASSERT(log_, action_ == NULL);
 			if (callback_ != NULL) {
 				action_ = schedule_callback(callback_);
 				callback_ = NULL;
@@ -272,8 +272,8 @@ HTTPServerPipe::consume(Buffer *in)
 			return;
 		}
 
-		ASSERT(state_ == GetHeaders);
-		ASSERT(!request_.start_line_.empty());
+		ASSERT(log_, state_ == GetHeaders);
+		ASSERT(log_, !request_.start_line_.empty());
 
 		/*
 		 * Process end of headers!
@@ -291,7 +291,7 @@ HTTPServerPipe::consume(Buffer *in)
 			 */
 			state_ = GotRequest;
 
-			ASSERT(action_ == NULL);
+			ASSERT(log_, action_ == NULL);
 			if (callback_ != NULL) {
 				action_ = schedule_callback(callback_);
 				callback_ = NULL;

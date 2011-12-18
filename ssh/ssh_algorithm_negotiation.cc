@@ -50,7 +50,7 @@ SSH::AlgorithmNegotiation::input(Buffer *in)
 bool
 SSH::AlgorithmNegotiation::output(Buffer *out)
 {
-	ASSERT(out->empty());
+	ASSERT(log_, out->empty());
 
 	out->append(SSH::Message::KeyExchangeInitializationMessage);
 	out->append(constant_cookie, sizeof constant_cookie); /* XXX Synchronous random byte generation?  */

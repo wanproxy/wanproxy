@@ -22,13 +22,13 @@ EventPoll::EventPoll(void)
   state_(new EventPollState())
 {
 	state_->ep_ = epoll_create(EPOLL_EVENT_COUNT);
-	ASSERT(state_->ep_ != -1);
+	ASSERT(log_, state_->ep_ != -1);
 }
 
 EventPoll::~EventPoll()
 {
-	ASSERT(read_poll_.empty());
-	ASSERT(write_poll_.empty());
+	ASSERT(log_, read_poll_.empty());
+	ASSERT(log_, write_poll_.empty());
 
 	if (state_ != NULL) {
 		if (state_->ep_ != -1) {
@@ -43,7 +43,7 @@ EventPoll::~EventPoll()
 Action *
 EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 {
-	ASSERT(fd != -1);
+	ASSERT(log_, fd != -1);
 
 	EventPoll::PollHandler *poll_handler;
 	struct epoll_event eev;
@@ -51,25 +51,25 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 	eev.data.fd = fd;
 	switch (type) {
 	case EventPoll::Readable:
-		ASSERT(read_poll_.find(fd) == read_poll_.end());
+		ASSERT(log_, read_poll_.find(fd) == read_poll_.end());
 		unique = write_poll_.find(fd) == write_poll_.end();
 		poll_handler = &read_poll_[fd];
 		eev.events = EPOLLIN | (unique ? 0 : EPOLLOUT);
 		break;
 	case EventPoll::Writable:
-		ASSERT(write_poll_.find(fd) == write_poll_.end());
+		ASSERT(log_, write_poll_.find(fd) == write_poll_.end());
 		unique = read_poll_.find(fd) == read_poll_.end();
 		poll_handler = &write_poll_[fd];
 		eev.events = EPOLLOUT | (unique ? 0 : EPOLLIN);
 		break;
 	default:
-		NOTREACHED();
+		NOTREACHED(log_);
 	}
 	int rv = ::epoll_ctl(state_->ep_, unique ? EPOLL_CTL_ADD : EPOLL_CTL_MOD, fd, &eev);
 	if (rv == -1)
 		HALT(log_) << "Could not add event to epoll.";
-	ASSERT(rv == 0);
-	ASSERT(poll_handler->action_ == NULL);
+	ASSERT(log_, rv == 0);
+	ASSERT(log_, poll_handler->action_ == NULL);
 	poll_handler->callback_ = cb;
 	Action *a = new EventPoll::PollAction(this, type, fd);
 	return (a);
@@ -85,7 +85,7 @@ EventPoll::cancel(const Type& type, int fd)
 	eev.data.fd = fd;
 	switch (type) {
 	case EventPoll::Readable:
-		ASSERT(read_poll_.find(fd) != read_poll_.end());
+		ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
 		unique = write_poll_.find(fd) == write_poll_.end();
 		poll_handler = &read_poll_[fd];
 		poll_handler->cancel();
@@ -93,7 +93,7 @@ EventPoll::cancel(const Type& type, int fd)
 		eev.events = unique ? 0 : EPOLLOUT;
 		break;
 	case EventPoll::Writable:
-		ASSERT(write_poll_.find(fd) != write_poll_.end());
+		ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
 		unique = read_poll_.find(fd) == read_poll_.end();
 		poll_handler = &write_poll_[fd];
 		poll_handler->cancel();
@@ -104,7 +104,7 @@ EventPoll::cancel(const Type& type, int fd)
 	int rv = ::epoll_ctl(state_->ep_, unique ? EPOLL_CTL_DEL : EPOLL_CTL_MOD, fd, &eev);
 	if (rv == -1)
 		HALT(log_) << "Could not delete event from epoll.";
-	ASSERT(rv == 0);
+	ASSERT(log_, rv == 0);
 }
 
 void
@@ -120,7 +120,7 @@ EventPoll::wait(int ms)
 			int rv;
 
 			rv = nanosleep(&ts, NULL);
-			ASSERT(rv != -1);
+			ASSERT(log_, rv != -1);
 		}
 		return;
 	}
@@ -140,13 +140,13 @@ EventPoll::wait(int ms)
 		struct epoll_event *ev = &eev[i];
 		EventPoll::PollHandler *poll_handler;
 		if ((ev->events & EPOLLIN) != 0) {
-			ASSERT(read_poll_.find(ev->data.fd) != read_poll_.end());
+			ASSERT(log_, read_poll_.find(ev->data.fd) != read_poll_.end());
 			poll_handler = &read_poll_[ev->data.fd];
 			poll_handler->callback(Event::Done);
 		}
 
 		if ((ev->events & EPOLLOUT) != 0) {
-			ASSERT(write_poll_.find(ev->data.fd) != write_poll_.end());
+			ASSERT(log_, write_poll_.find(ev->data.fd) != write_poll_.end());
 			poll_handler = &write_poll_[ev->data.fd];
 			poll_handler->callback(Event::Done);
 		}

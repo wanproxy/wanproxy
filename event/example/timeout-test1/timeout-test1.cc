@@ -17,7 +17,7 @@ public:
 
 	~TimeoutTest()
 	{
-		ASSERT(action_ == NULL);
+		ASSERT("/example/timeout/test1", action_ == NULL);
 	}
 
 private:

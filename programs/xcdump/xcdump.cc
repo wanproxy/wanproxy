@@ -184,8 +184,8 @@ dump(int ifd, int ofd)
 
 		flush(ofd, &output);
 	}
-	ASSERT(input.empty());
-	ASSERT(output.empty());
+	ASSERT("/dump", input.empty());
+	ASSERT("/dump", output.empty());
 }
 
 static bool
@@ -225,7 +225,7 @@ flush(int fd, Buffer *output)
 			HALT("/output") << "write failed.";
 		output->skip((size_t)len);
 	}
-	ASSERT(output->empty());
+	ASSERT("/flush", output->empty());
 }
 
 static void
@@ -243,7 +243,7 @@ process_files(int argc, char *argv[])
 			const char *file = *argv++;
 
 			ifd = open(file, O_RDONLY);
-			ASSERT(ifd != -1);
+			ASSERT("/process/files", ifd != -1);
 			ofd = STDOUT_FILENO;
 
 			dump(ifd, ofd);

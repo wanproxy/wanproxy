@@ -19,50 +19,50 @@ EventPoll::EventPoll(void)
   write_poll_(),
   port_(port_create())
 {
-	ASSERT(port_ != -1);
+	ASSERT(log_, port_ != -1);
 }
 
 EventPoll::~EventPoll()
 {
-	ASSERT(read_poll_.empty());
-	ASSERT(write_poll_.empty());
+	ASSERT(log_, read_poll_.empty());
+	ASSERT(log_, write_poll_.empty());
 }
 
 Action *
 EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 {
-	ASSERT(fd != -1);
+	ASSERT(log_, fd != -1);
 
 	EventPoll::PollHandler *poll_handler;
 	bool dissociate = false;
 	int events;
 	switch (type) {
 	case EventPoll::Readable:
-		ASSERT(read_poll_.find(fd) == read_poll_.end());
+		ASSERT(log_, read_poll_.find(fd) == read_poll_.end());
 		dissociate = write_poll_.find(fd) != write_poll_.end();
 		poll_handler = &read_poll_[fd];
 		events = POLLIN | (dissociate ? POLLOUT : 0);
 		break;
 	case EventPoll::Writable:
-		ASSERT(write_poll_.find(fd) == write_poll_.end());
+		ASSERT(log_, write_poll_.find(fd) == write_poll_.end());
 		dissociate = read_poll_.find(fd) != read_poll_.end();
 		poll_handler = &write_poll_[fd];
 		events = POLLOUT | (dissociate ? POLLIN : 0);
 		break;
 	default:
-		NOTREACHED();
+		NOTREACHED(log_);
 	}
 	if (dissociate) {
 		int rv = ::port_dissociate(port_, PORT_SOURCE_FD, fd);
 		if (rv == -1)
 			HALT(log_) << "Could not dissociate from port.";
 	}
-	ASSERT(events != 0);
+	ASSERT(log_, events != 0);
 	int rv = ::port_associate(port_, PORT_SOURCE_FD, fd, events, NULL);
 	if (rv == -1)
 		HALT(log_) << "Could not associate to port.";
-	ASSERT(rv == 0);
-	ASSERT(poll_handler->action_ == NULL);
+	ASSERT(log_, rv == 0);
+	ASSERT(log_, poll_handler->action_ == NULL);
 	poll_handler->callback_ = cb;
 	Action *a = new EventPoll::PollAction(this, type, fd);
 	return (a);
@@ -77,7 +77,7 @@ EventPoll::cancel(const Type& type, int fd)
 	int events = 0;
 	switch (type) {
 	case EventPoll::Readable:
-		ASSERT(read_poll_.find(fd) != read_poll_.end());
+		ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
 		poll_handler = &read_poll_[fd];
 		poll_handler->cancel();
 		read_poll_.erase(fd);
@@ -88,7 +88,7 @@ EventPoll::cancel(const Type& type, int fd)
 		}
 		break;
 	case EventPoll::Writable:
-		ASSERT(write_poll_.find(fd) != write_poll_.end());
+		ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
 		poll_handler = &write_poll_[fd];
 		poll_handler->cancel();
 		write_poll_.erase(fd);
@@ -102,9 +102,9 @@ EventPoll::cancel(const Type& type, int fd)
 	int rv = ::port_dissociate(port_, PORT_SOURCE_FD, fd);
 	if (rv == -1)
 		HALT(log_) << "Could not disassociate from port.";
-	ASSERT(rv == 0);
+	ASSERT(log_, rv == 0);
 	if (associate) {
-		ASSERT(events != 0);
+		ASSERT(log_, events != 0);
 		rv = ::port_associate(port_, PORT_SOURCE_FD, fd, events, NULL);
 		if (rv == -1)
 			HALT(log_) << "Could not associate to port.";
@@ -125,7 +125,7 @@ EventPoll::wait(int ms)
 			int rv;
 
 			rv = nanosleep(&ts, NULL);
-			ASSERT(rv != -1);
+			ASSERT(log_, rv != -1);
 		}
 		return;
 	}
@@ -166,13 +166,13 @@ EventPoll::wait(int ms)
 
 		EventPoll::PollHandler *poll_handler;
 		if ((ev->portev_events & POLLIN) != 0) {
-			ASSERT(read_poll_.find(fd) != read_poll_.end());
+			ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
 			poll_handler = &read_poll_[fd];
 			poll_handler->callback(Event::Done);
 		}
 
 		if ((ev->portev_events & POLLOUT) != 0) {
-			ASSERT(write_poll_.find(fd) != write_poll_.end());
+			ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
 			poll_handler = &write_poll_[fd];
 			poll_handler->callback(Event::Done);
 		}

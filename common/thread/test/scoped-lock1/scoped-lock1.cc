@@ -28,36 +28,36 @@ public:
 	{
 		test_main_->pass();
 
-		ASSERT_LOCK_NOT_OWNED(&test_mtx);
+		ASSERT_LOCK_NOT_OWNED("/test/thread", &test_mtx);
 		{
-			ASSERT_LOCK_NOT_OWNED(&test_mtx);
+			ASSERT_LOCK_NOT_OWNED("/test/thread", &test_mtx);
 
 			ScopedLock testSL(&test_mtx);
-			ASSERT_LOCK_OWNED(&test_mtx);
+			ASSERT_LOCK_OWNED("/test/thread", &test_mtx);
 
 			testSL.drop();
-			ASSERT_LOCK_NOT_OWNED(&test_mtx);
+			ASSERT_LOCK_NOT_OWNED("/test/thread", &test_mtx);
 
 			{
-				ASSERT_LOCK_NOT_OWNED(&test_mtx);
+				ASSERT_LOCK_NOT_OWNED("/test/thread", &test_mtx);
 				ScopedLock testSL2(&test_mtx);
-				ASSERT_LOCK_OWNED(&test_mtx);
+				ASSERT_LOCK_OWNED("/test/thread", &test_mtx);
 			}
 
 			{
-				ASSERT_LOCK_NOT_OWNED(&test_mtx);
+				ASSERT_LOCK_NOT_OWNED("/test/thread", &test_mtx);
 				ScopedLock testSL3(&test_mtx);
-				ASSERT_LOCK_OWNED(&test_mtx);
+				ASSERT_LOCK_OWNED("/test/thread", &test_mtx);
 
 				testSL3.drop();
-				ASSERT_LOCK_NOT_OWNED(&test_mtx);
+				ASSERT_LOCK_NOT_OWNED("/test/thread", &test_mtx);
 			}
 
-			ASSERT_LOCK_NOT_OWNED(&test_mtx);
+			ASSERT_LOCK_NOT_OWNED("/test/thread", &test_mtx);
 			testSL.acquire(&test_mtx);
-			ASSERT_LOCK_OWNED(&test_mtx);
+			ASSERT_LOCK_OWNED("/test/thread", &test_mtx);
 		}
-		ASSERT_LOCK_NOT_OWNED(&test_mtx);
+		ASSERT_LOCK_NOT_OWNED("/test/thread", &test_mtx);
 	}
 };
 

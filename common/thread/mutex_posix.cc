@@ -19,10 +19,10 @@ Mutex::~Mutex()
 }
 
 void
-Mutex::assert_owned(bool owned, const std::string& file, unsigned line, const std::string& function)
+Mutex::assert_owned(bool owned, const LogHandle& log, const std::string& file, unsigned line, const std::string& function)
 {
 	Thread *self = Thread::self();
-	ASSERT(self != NULL);
+	ASSERT("/mutex/posix", self != NULL);
 
 	state_->lock();
 	if (state_->owner_ == NULL) {
@@ -30,7 +30,7 @@ Mutex::assert_owned(bool owned, const std::string& file, unsigned line, const st
 			state_->unlock();
 			return;
 		}
-		HALT("/mutex") << "Lock at " << file << ":" << line << " is not owned; in function " << function;
+		HALT(log) << "Lock at " << file << ":" << line << " is not owned; in function " << function;
 		state_->unlock();
 		return;
 	}
@@ -39,7 +39,7 @@ Mutex::assert_owned(bool owned, const std::string& file, unsigned line, const st
 			state_->unlock();
 			return;
 		}
-		HALT("/mutex") << "Lock at " << file << ":" << line << " is owned; in function " << function;
+		HALT(log) << "Lock at " << file << ":" << line << " is owned; in function " << function;
 		state_->unlock();
 		return;
 	}
@@ -47,7 +47,7 @@ Mutex::assert_owned(bool owned, const std::string& file, unsigned line, const st
 		state_->unlock();
 		return;
 	}
-	HALT("/mutex") << "Lock at " << file << ":" << line << " is owned by another thread; in function " << function;
+	HALT(log) << "Lock at " << file << ":" << line << " is owned by another thread; in function " << function;
 	state_->unlock();
 }
 

@@ -22,32 +22,32 @@ NetworkInterfacePCAP::~NetworkInterfacePCAP()
 		pcap_ = NULL;
 	}
 
-	ASSERT(receive_callback_ == NULL);
-	ASSERT(receive_action_ == NULL);
+	ASSERT(log_, receive_callback_ == NULL);
+	ASSERT(log_, receive_action_ == NULL);
 }
 
 Action *
 NetworkInterfacePCAP::receive(EventCallback *cb)
 {
-	ASSERT(receive_action_ == NULL);
-	ASSERT(receive_callback_ == NULL);
+	ASSERT(log_, receive_action_ == NULL);
+	ASSERT(log_, receive_callback_ == NULL);
 
 	receive_callback_ = cb;
 	Action *a = receive_do();
 	if (a == NULL) {
-		ASSERT(receive_callback_ != NULL);
+		ASSERT(log_, receive_callback_ != NULL);
 		receive_action_ = receive_schedule();
-		ASSERT(receive_action_ != NULL);
+		ASSERT(log_, receive_action_ != NULL);
 		return (cancellation(this, &NetworkInterfacePCAP::receive_cancel));
 	}
-	ASSERT(receive_callback_ == NULL);
+	ASSERT(log_, receive_callback_ == NULL);
 	return (a);
 }
 
 Action *
 NetworkInterfacePCAP::transmit(Buffer *buffer, EventCallback *cb)
 {
-	ASSERT(!buffer->empty());
+	ASSERT(log_, !buffer->empty());
 	buffer->clear();
 
 	cb->param(Event::Error);
@@ -79,7 +79,7 @@ NetworkInterfacePCAP::receive_callback(Event e)
 	receive_action_ = receive_do();
 	if (receive_action_ == NULL)
 		receive_action_ = receive_schedule();
-	ASSERT(receive_action_ != NULL);
+	ASSERT(log_, receive_action_ != NULL);
 }
 
 void
@@ -89,7 +89,7 @@ NetworkInterfacePCAP::receive_cancel(void)
 		delete receive_callback_;
 		receive_callback_ = NULL;
 
-		ASSERT(receive_action_ != NULL);
+		ASSERT(log_, receive_action_ != NULL);
 	}
 
 	if (receive_action_ != NULL) {
@@ -114,7 +114,7 @@ NetworkInterfacePCAP::receive_do(void)
 		return (NULL);
 	}
 
-	ASSERT(cnt == 1);
+	ASSERT(log_, cnt == 1);
 
 	receive_callback_->param(Event(Event::Done, packet));
 	Action *a = receive_callback_->schedule();
@@ -125,7 +125,7 @@ NetworkInterfacePCAP::receive_do(void)
 Action *
 NetworkInterfacePCAP::receive_schedule(void)
 {
-	ASSERT(receive_action_ == NULL);
+	ASSERT(log_, receive_action_ == NULL);
 
 	EventCallback *cb = callback(this, &NetworkInterfacePCAP::receive_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Readable, pcap_get_selectable_fd(pcap_), cb);
@@ -176,7 +176,7 @@ NetworkInterfacePCAP::open(const std::string& ifname)
 	}
 
 	rv = pcap_set_buffer_size(pcap, 65536);
-	ASSERT(rv == 0);
+	ASSERT(log_, rv == 0);
 
 	rv = pcap_activate(pcap);
 	if (rv != 0) {
@@ -198,7 +198,7 @@ static void
 network_interface_pcap_dispatch(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
 {
 	Buffer *packet = (Buffer *)user;
-	ASSERT(packet->empty());
+	ASSERT(log_, packet->empty());
 
 	packet->append(bytes, h->caplen);
 }

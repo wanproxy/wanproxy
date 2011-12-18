@@ -16,22 +16,22 @@ SplicePair::SplicePair(Splice *left, Splice *right)
   left_action_(NULL),
   right_action_(NULL)
 {
-	ASSERT(left_ != NULL);
-	ASSERT(right_ != NULL);
+	ASSERT(log_, left_ != NULL);
+	ASSERT(log_, right_ != NULL);
 }
 
 SplicePair::~SplicePair()
 {
-	ASSERT(callback_ == NULL);
-	ASSERT(callback_action_ == NULL);
-	ASSERT(left_action_ == NULL);
-	ASSERT(right_action_ == NULL);
+	ASSERT(log_, callback_ == NULL);
+	ASSERT(log_, callback_action_ == NULL);
+	ASSERT(log_, left_action_ == NULL);
+	ASSERT(log_, right_action_ == NULL);
 }
 
 Action *
 SplicePair::start(EventCallback *cb)
 {
-	ASSERT(callback_ == NULL && callback_action_ == NULL);
+	ASSERT(log_, callback_ == NULL && callback_action_ == NULL);
 	callback_ = cb;
 
 	EventCallback *lcb = callback(this, &SplicePair::splice_complete, left_);
@@ -50,7 +50,7 @@ SplicePair::cancel(void)
 		delete callback_;
 		callback_ = NULL;
 
-		ASSERT(callback_action_ == NULL);
+		ASSERT(log_, callback_action_ == NULL);
 
 		if (left_action_ != NULL) {
 			left_action_->cancel();
@@ -62,7 +62,7 @@ SplicePair::cancel(void)
 			right_action_ = NULL;
 		}
 	} else {
-		ASSERT(callback_action_ != NULL);
+		ASSERT(log_, callback_action_ != NULL);
 		callback_action_->cancel();
 		callback_action_ = NULL;
 	}
@@ -71,7 +71,7 @@ SplicePair::cancel(void)
 void
 SplicePair::splice_complete(Event e, Splice *splice)
 {
-	ASSERT(callback_ != NULL && callback_action_ == NULL);
+	ASSERT(log_, callback_ != NULL && callback_action_ == NULL);
 
 	if (splice == left_) {
 		left_action_->cancel();
@@ -80,7 +80,7 @@ SplicePair::splice_complete(Event e, Splice *splice)
 		right_action_->cancel();
 		right_action_ = NULL;
 	} else {
-		NOTREACHED();
+		NOTREACHED(log_);
 	}
 
 	switch (e.type_) {
@@ -102,11 +102,11 @@ SplicePair::splice_complete(Event e, Splice *splice)
 	if (left_action_ != NULL || right_action_ != NULL)
 		return;
 
-	ASSERT(e.buffer_.empty());
+	ASSERT(log_, e.buffer_.empty());
 	if (e.type_ == Event::EOS) {
 		callback_->param(Event::Done);
 	} else {
-		ASSERT(e.type_ != Event::Done);
+		ASSERT(log_, e.type_ != Event::Done);
 		callback_->param(e);
 	}
 	callback_action_ = callback_->schedule();

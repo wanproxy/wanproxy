@@ -25,7 +25,7 @@ public:
 
 	~CallbackManySpeed()
 	{
-		ASSERT(timeout_action_ == NULL);
+		ASSERT("/example/callback/manyspeed1", timeout_action_ == NULL);
 	}
 
 private:
@@ -46,7 +46,7 @@ private:
 
 		unsigned i;
 		for (i = 0; i < CALLBACK_NUMBER; i++) {
-			ASSERT(callback_action_[i] != NULL);
+			ASSERT("/example/callback/manyspeed1", callback_action_[i] != NULL);
 			callback_action_[i]->cancel();
 			callback_action_[i] = NULL;
 		}

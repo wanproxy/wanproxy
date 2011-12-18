@@ -16,13 +16,13 @@ struct MutexState {
 		int rv;
 
 		rv = pthread_mutexattr_init(&mutex_attr_);
-		ASSERT(rv != -1);
+		ASSERT("/mutex/posix/state", rv != -1);
 
 		rv = pthread_mutexattr_settype(&mutex_attr_, PTHREAD_MUTEX_RECURSIVE);
-		ASSERT(rv != -1);
+		ASSERT("/mutex/posix/state", rv != -1);
 
 		rv = pthread_mutex_init(&mutex_, &mutex_attr_);
-		ASSERT(rv != -1);
+		ASSERT("/mutex/posix/state", rv != -1);
 
 		rv = pthread_cond_init(&cond_, NULL);
 	}
@@ -32,18 +32,18 @@ struct MutexState {
 		int rv;
 
 		rv = pthread_mutex_destroy(&mutex_);
-		ASSERT(rv != -1);
+		ASSERT("/mutex/posix/state", rv != -1);
 
 		rv = pthread_mutexattr_destroy(&mutex_attr_);
-		ASSERT(rv != -1);
+		ASSERT("/mutex/posix/state", rv != -1);
 
 		rv = pthread_cond_destroy(&cond_);
-		ASSERT(rv != -1);
+		ASSERT("/mutex/posix/state", rv != -1);
 
 #if 0 /* XXX What about extern Mutexes?  */
 		Thread *self = Thread::self();
-		ASSERT(self != NULL);
-		ASSERT(owner_ == self);
+		ASSERT("/mutex/posix/state", self != NULL);
+		ASSERT("/mutex/posix/state", owner_ == self);
 #endif
 	}
 
@@ -55,7 +55,7 @@ struct MutexState {
 		int rv;
 
 		rv = pthread_mutex_lock(&mutex_);
-		ASSERT(rv != -1);
+		ASSERT("/mutex/posix/state", rv != -1);
 	}
 
 	/*
@@ -64,7 +64,7 @@ struct MutexState {
 	void lock_acquire(void)
 	{
 		Thread *self = Thread::self();
-		ASSERT(self != NULL);
+		ASSERT("/mutex/posix/state", self != NULL);
 
 		while (owner_ != NULL)
 			pthread_cond_wait(&cond_, &mutex_);
@@ -79,7 +79,7 @@ struct MutexState {
 		int rv;
 
 		rv = pthread_mutex_unlock(&mutex_);
-		ASSERT(rv != -1);
+		ASSERT("/mutex/posix/state", rv != -1);
 	}
 
 	/*
@@ -88,13 +88,13 @@ struct MutexState {
 	void lock_release(void)
 	{
 		Thread *self = Thread::self();
-		ASSERT(self != NULL);
+		ASSERT("/mutex/posix/state", self != NULL);
 
 		if (owner_ == NULL) {
-			HALT("/mutex") << "Attempt to unlock already-unlocked mutex.";
+			HALT("/mutex/posix/state") << "Attempt to unlock already-unlocked mutex.";
 			return;
 		}
-		ASSERT(owner_ == self);
+		ASSERT("/mutex/posix/state", owner_ == self);
 		owner_ = NULL;
 
 		pthread_cond_signal(&cond_);

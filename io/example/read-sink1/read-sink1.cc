@@ -22,7 +22,7 @@ public:
 
 	~Sink()
 	{
-		ASSERT(action_ == NULL);
+		ASSERT(log_, action_ == NULL);
 	}
 
 	void read_complete(Event e)

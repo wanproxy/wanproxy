@@ -34,7 +34,7 @@ public:
 
 	~CryptoSpeed()
 	{
-		ASSERT(timeout_action_ == NULL);
+		ASSERT("/example/aes128-cbc/speed1", timeout_action_ == NULL);
 	}
 
 private:
@@ -54,7 +54,7 @@ private:
 		callback_action_->cancel();
 		callback_action_ = NULL;
 
-		ASSERT(e.type_ == Event::Done);
+		ASSERT("/example/aes128-cbc/speed1", e.type_ == Event::Done);
 		bytes_ += e.buffer_.length();
 
 		callback_action_ = callback(this, &CryptoSpeed::callback_complete)->schedule();
@@ -65,7 +65,7 @@ private:
 		timeout_action_->cancel();
 		timeout_action_ = NULL;
 
-		ASSERT(callback_action_ != NULL);
+		ASSERT("/example/aes128-cbc/speed1", callback_action_ != NULL);
 		callback_action_->cancel();
 		callback_action_ = NULL;
 

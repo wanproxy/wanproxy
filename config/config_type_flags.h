@@ -24,7 +24,7 @@ public:
 	  flags_(),
 	  flag_map_()
 	{
-		ASSERT(mappings != NULL);
+		ASSERT("/config/type/flags", mappings != NULL);
 		while (mappings->string_ != NULL) {
 			flag_map_[mappings->string_] = mappings->flag_;
 			mappings++;

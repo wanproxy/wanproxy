@@ -14,7 +14,7 @@ public:
 	Mutex(LockClass *, const std::string&);
 	~Mutex();
 
-	void assert_owned(bool, const std::string&, unsigned, const std::string&);
+	void assert_owned(bool, const LogHandle&, const std::string&, unsigned, const std::string&);
 	void lock(void);
 	void unlock(void);
 };

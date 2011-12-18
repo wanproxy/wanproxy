@@ -18,7 +18,7 @@ public:
 
 	~ReloadTest()
 	{
-		ASSERT(action_ == NULL);
+		ASSERT("/example/callback/manyspeed1", action_ == NULL);
 	}
 
 private:

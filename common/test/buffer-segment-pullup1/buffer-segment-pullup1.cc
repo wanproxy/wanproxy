@@ -66,7 +66,7 @@ main(void)
 			Test _(g, "BufferSegment append-to-full");
 			while (seg->avail() > 0) {
 				BufferSegment *seg2 = seg->append('X');
-				ASSERT(seg == seg2);
+				ASSERT("/test/buffer/pullup1", seg == seg2);
 			}
 			_.pass();
 		}
@@ -87,7 +87,7 @@ main(void)
 			Test _(g, "BufferSegment append-to-full 2");
 			while (seg->avail() > 0) {
 				BufferSegment *seg2 = seg->append('X');
-				ASSERT(seg == seg2);
+				ASSERT("/test/buffer/pullup1", seg == seg2);
 			}
 			_.pass();
 		}

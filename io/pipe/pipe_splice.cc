@@ -18,15 +18,15 @@ PipeSplice::PipeSplice(Pipe *source, Pipe *sink)
 
 PipeSplice::~PipeSplice()
 {
-	ASSERT(action_ == NULL);
-	ASSERT(callback_ == NULL);
+	ASSERT(log_, action_ == NULL);
+	ASSERT(log_, callback_ == NULL);
 }
 
 Action *
 PipeSplice::start(EventCallback *scb)
 {
-	ASSERT(action_ == NULL);
-	ASSERT(callback_ == NULL);
+	ASSERT(log_, action_ == NULL);
+	ASSERT(log_, callback_ == NULL);
 
 	EventCallback *cb = callback(this, &PipeSplice::output_complete);
 	action_ = source_->output(cb);
@@ -66,7 +66,7 @@ PipeSplice::output_complete(Event e)
 		return;
 	}
 
-	ASSERT(!source_eos_);
+	ASSERT(log_, !source_eos_);
 
 	if (e.type_ == Event::Error) {
 		callback_->param(e);
@@ -77,10 +77,10 @@ PipeSplice::output_complete(Event e)
 	}
 
 	if (e.type_ == Event::EOS) {
-		ASSERT(e.buffer_.empty());
+		ASSERT(log_, e.buffer_.empty());
 		source_eos_ = true;
 	} else {
-		ASSERT(!e.buffer_.empty());
+		ASSERT(log_, !e.buffer_.empty());
 	}
 
 	EventCallback *cb = callback(this, &PipeSplice::input_complete);

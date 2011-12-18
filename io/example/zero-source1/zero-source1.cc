@@ -25,7 +25,7 @@ public:
 
 	~Source()
 	{
-		ASSERT(action_ == NULL);
+		ASSERT(log_, action_ == NULL);
 	}
 
 	void write_complete(Event e)

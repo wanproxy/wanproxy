@@ -52,7 +52,7 @@ XCodecDecoder::decode(Buffer *output, Buffer *input, std::set<uint64_t>& unknown
 			output->append(input, off);
 			input->skip(off);
 		}
-		ASSERT(!input->empty());
+		ASSERT(log_, !input->empty());
 
 		/*
 		 * Need the following byte at least.

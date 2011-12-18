@@ -32,9 +32,9 @@ public:
 
 	~Catenate()
 	{
-		ASSERT(input_action_ == NULL);
-		ASSERT(output_action_ == NULL);
-		ASSERT(splice_action_ == NULL);
+		ASSERT(log_, input_action_ == NULL);
+		ASSERT(log_, output_action_ == NULL);
+		ASSERT(log_, splice_action_ == NULL);
 	}
 
 	void splice_complete(Event e)
@@ -50,7 +50,7 @@ public:
 			return;
 		}
 
-		ASSERT(e.type_ == Event::EOS);
+		ASSERT(log_, e.type_ == Event::EOS);
 
 		SimpleCallback *icb = callback(this, &Catenate::close_complete, &input_);
 		input_action_ = input_.close(icb);
@@ -68,7 +68,7 @@ public:
 			output_action_->cancel();
 			output_action_ = NULL;
 		} else {
-			NOTREACHED();
+			NOTREACHED(log_);
 		}
 	}
 };

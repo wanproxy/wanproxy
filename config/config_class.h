@@ -25,7 +25,7 @@ protected:
 protected:
 	void add_member(const std::string& mname, ConfigType *type)
 	{
-		ASSERT(members_.find(mname) == members_.end());
+		ASSERT("/config/class/" + name_, members_.find(mname) == members_.end());
 		members_[mname] = type;
 	}
 

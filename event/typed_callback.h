@@ -24,7 +24,7 @@ protected:
 public:
 	void execute(void)
 	{
-		ASSERT(have_param_);
+		ASSERT("/typed/callback", have_param_);
 		(*this)(param_);
 	}
 

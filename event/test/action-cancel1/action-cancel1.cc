@@ -22,7 +22,7 @@ struct Cancelled {
 
 	void cancel(void)
 	{
-		ASSERT(!cancelled_);
+		ASSERT("/cancelled", !cancelled_);
 		cancelled_ = true;
 	}
 };
@@ -46,14 +46,14 @@ struct NotCancelled {
 			if (action_ != NULL) {
 				action_->cancel();
 				action_ = NULL;
-				ASSERT(cancelled_);
+				ASSERT("/not/cancelled", cancelled_);
 			}
 		}
 	}
 
 	void cancel(void)
 	{
-		ASSERT(!cancelled_);
+		ASSERT("/not/cancelled", !cancelled_);
 		cancelled_ = true;
 		test_.pass();
 	}

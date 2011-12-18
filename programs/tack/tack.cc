@@ -258,8 +258,8 @@ compress(const std::string& name, int ifd, int ofd, XCodec *codec, unsigned flag
 		}
 		flush(ofd, &output);
 	}
-	ASSERT(input.empty());
-	ASSERT(output.empty());
+	ASSERT("/compress", input.empty());
+	ASSERT("/compress", output.empty());
 
 	if ((flags & TACK_FLAG_BYTE_STATS) != 0)
 		print_ratio(name, inbytes, outbytes);
@@ -297,8 +297,8 @@ decompress(const std::string& name, int ifd, int ofd, XCodec *codec, unsigned fl
 		}
 		flush(ofd, &output);
 	}
-	ASSERT(input.empty());
-	ASSERT(output.empty());
+	ASSERT("/decompress", input.empty());
+	ASSERT("/decompress", output.empty());
 
 	if ((flags & TACK_FLAG_BYTE_STATS) != 0)
 		print_ratio(name, outbytes, inbytes); /* Reverse order of compress().  */
@@ -338,7 +338,7 @@ hashes(int ifd, int ofd, unsigned flags, Timer *timer)
 
 					continue;
 				}
-				ASSERT(p == q);
+				ASSERT("/hashes", p == q);
 				break;
 			}
 
@@ -348,8 +348,8 @@ hashes(int ifd, int ofd, unsigned flags, Timer *timer)
 			timer->stop();
 		flush(ofd, &output);
 	}
-	ASSERT(input.empty());
-	ASSERT(output.empty());
+	ASSERT("/hashes", input.empty());
+	ASSERT("/hashes", output.empty());
 }
 
 static bool
@@ -389,7 +389,7 @@ flush(int fd, Buffer *output)
 			HALT("/output") << "write failed.";
 		output->skip((size_t)len);
 	}
-	ASSERT(output->empty());
+	ASSERT("/flush", output->empty());
 }
 
 static void
@@ -407,7 +407,7 @@ static void
 process_file(const std::string& name, int ifd, int ofd, FileAction action, XCodec *codec, unsigned flags, Timer *timer)
 {
 	if ((flags & TACK_FLAG_CODEC_TIMING_EACH) != 0) {
-		ASSERT(timer == NULL);
+		ASSERT("/process/file", timer == NULL);
 
 		timer = new Timer();
 	}
@@ -423,7 +423,7 @@ process_file(const std::string& name, int ifd, int ofd, FileAction action, XCode
 		hashes(ifd, ofd, flags, timer);
 		break;
 	default:
-		NOTREACHED();
+		NOTREACHED("/process/file");
 	}
 
 	if ((flags & TACK_FLAG_CODEC_TIMING_EACH) != 0) {
@@ -485,7 +485,7 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, unsigned
 	if (opened) {
 		if ((flags & TACK_FLAG_CODEC_TIMING) != 0 &&
 		    (flags & TACK_FLAG_CODEC_TIMING_EACH) == 0) {
-			ASSERT(timer != NULL);
+			ASSERT("/process/files", timer != NULL);
 			if ((flags & TACK_FLAG_CODEC_TIMING_SAMPLES) != 0)
 				time_samples("", timer);
 			else

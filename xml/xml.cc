@@ -25,7 +25,7 @@ Element::Content::serialize(Buffer *out) const
 		XML::escape(out, &buffer_);
 		break;
 	case ElementContentType:
-		ASSERT(!element_.null());
+		ASSERT("/xml/element/content", !element_.null());
 		element_->serialize(out);
 		break;
 	}
@@ -41,7 +41,7 @@ Element::serialize(Buffer *out) const
 	for (ait = attributes_.begin(); ait != attributes_.end(); ++ait) {
 		Ref<Attribute> attribute = *ait;
 
-		ASSERT(!attribute.null());
+		ASSERT("/xml/element", !attribute.null());
 
 		out->append(" ");
 		attribute->serialize(out);
@@ -57,7 +57,7 @@ Element::serialize(Buffer *out) const
 	std::list<Ref<Content> >::const_iterator cit;
 	for (cit = content_.begin(); cit != content_.end(); ++cit) {
 		Ref<Content> content = *cit;
-		ASSERT(!content.null());
+		ASSERT("/xml/element", !content.null());
 		content->serialize(out);
 	}
 
@@ -73,7 +73,7 @@ Document::serialize(Buffer *out) const
 
 	/* XXX Encoding, doctype, etc.  */
 
-	ASSERT(!root_.null());
+	ASSERT("/xml/document", !root_.null());
 
 	root_->serialize(out);
 }
@@ -102,7 +102,7 @@ XML::escape(Buffer *out, const Buffer *in)
 			out->append("&amp;");
 			break;
 		default:
-			NOTREACHED();
+			NOTREACHED("/xml");
 		}
 		tmp.skip(1);
 	}

@@ -17,7 +17,7 @@ UUID::decode(Buffer *buf)
 	int rv = uuid_parse(string_.c_str(), uuid);
 	if (rv == -1)
 		return (false);
-	ASSERT(rv == 0);
+	ASSERT("/uuid/libuuid", rv == 0);
 
 	return (true);
 }
@@ -32,5 +32,5 @@ UUID::generate(void)
 	uuid_generate(uuid);
 	uuid_unparse(uuid, str);
 	string_ = str;
-	ASSERT(string_.length() == UUID_SIZE);
+	ASSERT("/uuid/libuuid", string_.length() == UUID_SIZE);
 }

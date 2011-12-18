@@ -18,7 +18,7 @@ struct UUID {
 
 	bool encode(Buffer *buf) const
 	{
-		ASSERT(string_.length() == UUID_SIZE);
+		ASSERT("/uuid", string_.length() == UUID_SIZE);
 		buf->append(string_);
 
 		return (true);

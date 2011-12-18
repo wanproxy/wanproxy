@@ -111,7 +111,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 					 */
 					p++;
 				}
-				ASSERT(o == XCODEC_SEGMENT_LENGTH);
+				ASSERT(log_, o == XCODEC_SEGMENT_LENGTH);
 			} else {
 				/*
 				 * Roll it into the rolling hash.
@@ -120,8 +120,8 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				o++;
 			}
 
-			ASSERT(o >= XCODEC_SEGMENT_LENGTH);
-			ASSERT(p != q);
+			ASSERT(log_, o >= XCODEC_SEGMENT_LENGTH);
+			ASSERT(log_, p != q);
 
 			/*
 			 * And then mix the hash's internal state into a
@@ -231,7 +231,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				 * covered by this hash, so don't remember it
 				 * and keep going.
 				 */
-				ASSERT(candidate.offset_ + XCODEC_SEGMENT_LENGTH > start);
+				ASSERT(log_, candidate.offset_ + XCODEC_SEGMENT_LENGTH > start);
 				continue;
 			}
 
@@ -260,7 +260,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	 * There's a hash we can declare, do it.
 	 */
 	if (candidate.set_) {
-		ASSERT(!outq.empty());
+		ASSERT(log_, !outq.empty());
 		encode_declaration(output, &outq, candidate.offset_, candidate.symbol_, NULL);
 		candidate.set_ = false;
 	}
@@ -273,9 +273,9 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 		encode_escape(output, &outq, outq.length());
 	}
 
-	ASSERT(!candidate.set_);
-	ASSERT(outq.empty());
-	ASSERT(input->empty());
+	ASSERT(log_, !candidate.set_);
+	ASSERT(log_, outq.empty());
+	ASSERT(log_, input->empty());
 }
 
 void
@@ -295,7 +295,7 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 		 * Declarations occur out-of-band.
 		 */
 		if (!encode_reference(output, input, 0, hash, nseg)) /* XXX Pass NULL not nseg to skip check?  */
-			NOTREACHED();
+			NOTREACHED(log_);
 		if (segp == NULL)
 			nseg->unref();
 		else
@@ -326,7 +326,7 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 void
 XCodecEncoder::encode_escape(Buffer *output, Buffer *input, unsigned length)
 {
-	ASSERT(length != 0);
+	ASSERT(log_, length != 0);
 
 	do {
 		unsigned offset;

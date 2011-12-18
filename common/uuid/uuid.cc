@@ -31,7 +31,7 @@ UUID::decode(Buffer *buf)
 	int rv = uuid_parse(string_.c_str(), uuid);
 	if (rv == -1)
 		return (false);
-	ASSERT(rv == 0);
+	ASSERT("/uuid/libuuid", rv == 0);
 #else
 	uint32_t status;
 	uuid_from_string(string_.c_str(), &uuid, &status);
@@ -45,7 +45,7 @@ UUID::decode(Buffer *buf)
 bool
 UUID::encode(Buffer *buf) const
 {
-	ASSERT(string_.length() == UUID_SIZE);
+	ASSERT("/uuid", string_.length() == UUID_SIZE);
 	buf->append(string_);
 
 	return (true);
@@ -67,9 +67,9 @@ UUID::generate(void)
 
 	uuid_create(&uuid, NULL);
 	uuid_to_string(&uuid, &p, NULL);
-	ASSERT(p != NULL);
+	ASSERT("/uuid/libc", p != NULL);
 	string_ = p;
 	free(p);
 #endif
-	ASSERT(string_.length() == UUID_SIZE);
+	ASSERT("/uuid", string_.length() == UUID_SIZE);
 }
