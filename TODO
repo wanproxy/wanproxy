@@ -1,3 +1,9 @@
+o) Do a pass with Log taking a LogHandle& not a const LogHandle& so I can
+   find places using hard-coded strings to move into LogHandles.  Using a
+   LogHandle is vastly superior since it probably means doing the right
+   thing in virtual classes so that errors in the base class caused by the
+   subclass make it clear where the problem might be.
+
 o) PipeProducer::input_do; PipeProducer::input_cork(), partial consume() ->
    require input_cork().
 
