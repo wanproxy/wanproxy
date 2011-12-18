@@ -53,7 +53,7 @@ private:
 		stop_action_->cancel();
 		stop_action_ = NULL;
 
-		ASSERT(log_, receive_action_ != NULL);
+		ASSERT("/packet/dumper", receive_action_ != NULL);
 		receive_action_->cancel();
 		receive_action_ = NULL;
 	}
