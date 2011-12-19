@@ -4,4 +4,3 @@ o) Hash infrastructure.
 o) DH infrastructure.
 o) BIGNUM infrastructure?
 o) Lots more algorithms.
-o) Some kind of sane registration interface.
