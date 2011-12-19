@@ -39,9 +39,9 @@ public:
 };
 
 class CryptoEncryptionMethod {
+	std::string name_;
 protected:
-	CryptoEncryptionMethod(void)
-	{ }
+	CryptoEncryptionMethod(const std::string&);
 
 	virtual ~CryptoEncryptionMethod()
 	{ }
@@ -49,8 +49,11 @@ public:
 	virtual std::set<CryptoCipher> ciphers(void) const = 0;
 	virtual CryptoEncryptionSession *session(CryptoCipher) const = 0;
 
-	/* XXX Registration API somehow.  */
-	static const CryptoEncryptionMethod *default_method;
+	static const CryptoEncryptionMethod *method(CryptoCipher);
 };
+
+std::ostream& operator<< (std::ostream&, CryptoEncryptionAlgorithm);
+std::ostream& operator<< (std::ostream&, CryptoEncryptionMode);
+std::ostream& operator<< (std::ostream&, CryptoCipher);
 
 #endif /* !CRYPTO_ENCRYPTION_H */

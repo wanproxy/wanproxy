@@ -22,7 +22,11 @@ public:
 	  callback_action_(NULL),
 	  timeout_action_(NULL)
 	{
-		session_ = CryptoEncryptionMethod::default_method->session(cipher);
+		const CryptoEncryptionMethod *method = CryptoEncryptionMethod::method(cipher);
+		if (method == NULL)
+			HALT("/example/aes128-cbc/speed1") << "Could not find a suitable method.";
+
+		session_ = method->session(cipher);
 		if (!session_->initialize(CryptoEncrypt, &key, &iv))
 			HALT("/example/aes128-cbc/speed1") << "Failed to initialize session.";
 

@@ -83,7 +83,8 @@ class CryptoEncryptionMethodOpenSSL : public CryptoEncryptionMethod {
 	FactoryMap<CryptoCipher, CryptoEncryptionSession> cipher_map_;
 public:
 	CryptoEncryptionMethodOpenSSL(void)
-	: log_("/crypto/encryption/openssl"),
+	: CryptoEncryptionMethod("OpenSSL"),
+	  log_("/crypto/encryption/openssl"),
 	  cipher_map_()
 	{
 		OpenSSL_add_all_algorithms();
@@ -116,4 +117,3 @@ public:
 namespace {
 	static CryptoEncryptionMethodOpenSSL crypto_encryption_method_openssl;
 }
-const CryptoEncryptionMethod *CryptoEncryptionMethod::default_method = &crypto_encryption_method_openssl; /* XXX */

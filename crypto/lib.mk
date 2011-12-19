@@ -1,5 +1,7 @@
 VPATH+=	${TOPDIR}/crypto
 
+SRCS+=	crypto_encryption.cc
+
 SRCS+=	crypto_encryption_openssl.cc
 SRCS+=	crypto_random_openssl.cc
 

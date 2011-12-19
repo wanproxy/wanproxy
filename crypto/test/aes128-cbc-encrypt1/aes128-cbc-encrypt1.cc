@@ -22,7 +22,11 @@ public:
 	{
 		Buffer tmp(plaintext);
 
-		session_ = CryptoEncryptionMethod::default_method->session(cipher);
+		const CryptoEncryptionMethod *method = CryptoEncryptionMethod::method(cipher);
+		if (method == NULL)
+			HALT("/test/crypto/aes128-cbc/encrypt1") << "Could not find a suitable method.";
+
+		session_ = method->session(cipher);
 		{
 			Test _(group_, "Session initialize.");
 			if (session_->initialize(CryptoEncrypt, &key, &iv))
