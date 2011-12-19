@@ -2,6 +2,7 @@
 #define	FACTORY_H
 
 #include <map>
+#include <set>
 
 template<class C>
 class Factory {
@@ -128,6 +129,17 @@ public:
 	void enter(const K& key, Factory<S> *factory)
 	{
 		enter(key, new SubclassFactory<C, S>(factory));
+	}
+
+	std::set<K> keys(void) const
+	{
+		typename map_type::const_iterator it;
+		std::set<K> key_set;
+
+		for (it = map_.begin(); it != map_.end(); ++it)
+			key_set.insert(it->first);
+
+		return (key_set);
 	}
 };
 

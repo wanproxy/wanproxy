@@ -102,6 +102,11 @@ public:
 		/* XXX Unregister.  */
 	}
 
+	std::set<CryptoCipher> ciphers(void) const
+	{
+		return (cipher_map_.keys());
+	}
+
 	CryptoEncryptionSession *session(CryptoCipher cipher) const
 	{
 		return (cipher_map_.create(cipher));

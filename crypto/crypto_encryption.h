@@ -1,6 +1,8 @@
 #ifndef	CRYPTO_ENCRYPTION_H
 #define	CRYPTO_ENCRYPTION_H
 
+#include <set>
+
 #include <event/event_callback.h>
 
 class CryptoEncryptionMethod;
@@ -44,6 +46,7 @@ protected:
 	virtual ~CryptoEncryptionMethod()
 	{ }
 public:
+	virtual std::set<CryptoCipher> ciphers(void) const = 0;
 	virtual CryptoEncryptionSession *session(CryptoCipher) const = 0;
 
 	/* XXX Registration API somehow.  */
