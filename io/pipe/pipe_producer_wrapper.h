@@ -1,5 +1,5 @@
-#ifndef	IO_PIPE_PRODUCER_WRAPPER_H
-#define	IO_PIPE_PRODUCER_WRAPPER_H
+#ifndef	IO_PIPE_PIPE_PRODUCER_WRAPPER_H
+#define	IO_PIPE_PIPE_PRODUCER_WRAPPER_H
 
 template<typename T>
 class PipeProducerWrapper : public PipeProducer {
@@ -24,4 +24,4 @@ public:
 	}
 };
 
-#endif /* !IO_PIPE_PRODUCER_WRAPPER_H */
+#endif /* !IO_PIPE_PIPE_PRODUCER_WRAPPER_H */

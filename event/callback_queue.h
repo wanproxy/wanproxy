@@ -1,5 +1,5 @@
-#ifndef	CALLBACK_QUEUE_H
-#define	CALLBACK_QUEUE_H
+#ifndef	EVENT_CALLBACK_QUEUE_H
+#define	EVENT_CALLBACK_QUEUE_H
 
 #include <deque>
 
@@ -104,4 +104,4 @@ private:
 	}
 };
 
-#endif /* !CALLBACK_QUEUE_H */
+#endif /* !EVENT_CALLBACK_QUEUE_H */

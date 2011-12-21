@@ -1,5 +1,5 @@
-#ifndef	SPLICE_H
-#define	SPLICE_H
+#ifndef	IO_PIPE_SPLICE_H
+#define	IO_PIPE_SPLICE_H
 
 class StreamChannel;
 class Pipe;
@@ -42,4 +42,4 @@ public:
 	static Action *create(Splice **, StreamChannel *, Pipe *, StreamChannel *);
 };
 
-#endif /* !SPLICE_H */
+#endif /* !IO_PIPE_SPLICE_H */

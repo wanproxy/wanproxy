@@ -1,5 +1,5 @@
-#ifndef	BLOCK_DEVICE_H
-#define	BLOCK_DEVICE_H
+#ifndef	IO_BLOCK_HANDLE_H
+#define	IO_BLOCK_HANDLE_H
 
 #include <io/channel.h>
 
@@ -16,4 +16,4 @@ public:
 	virtual Action *write(off_t, Buffer *, EventCallback *);
 };
 
-#endif /* !BLOCK_DEVICE_H */
+#endif /* !IO_BLOCK_HANDLE_H */

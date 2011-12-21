@@ -1,5 +1,5 @@
-#ifndef	COMMON_TIME_H
-#define	COMMON_TIME_H /* 4/4 */
+#ifndef	COMMON_TIME_TIME_H
+#define	COMMON_TIME_TIME_H
 
 #include <map>
 
@@ -76,4 +76,4 @@ struct NanoTime {
 	static NanoTime current_time(void);
 };
 
-#endif /* !COMMON_TIME_H */
+#endif /* !COMMON_TIME_TIME_H */

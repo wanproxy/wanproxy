@@ -1,5 +1,5 @@
-#ifndef	CONFIG_TYPE_STRING_H
-#define	CONFIG_TYPE_STRING_H
+#ifndef	CONFIG_CONFIG_TYPE_STRING_H
+#define	CONFIG_CONFIG_TYPE_STRING_H
 
 #include <map>
 
@@ -71,4 +71,4 @@ public:
 
 extern ConfigTypeString config_type_string;
 
-#endif /* !CONFIG_TYPE_STRING_H */
+#endif /* !CONFIG_CONFIG_TYPE_STRING_H */

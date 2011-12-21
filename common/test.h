@@ -1,5 +1,5 @@
-#ifndef	TEST_H
-#define	TEST_H
+#ifndef	COMMON_TEST_H
+#define	COMMON_TEST_H
 
 class TestGroup {
 	friend class Test;
@@ -79,4 +79,4 @@ public:
 	}
 };
 
-#endif /* !TEST_H */
+#endif /* !COMMON_TEST_H */

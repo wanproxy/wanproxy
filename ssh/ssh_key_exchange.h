@@ -1,5 +1,5 @@
-#ifndef	SSH_KEY_EXCHANGE_H
-#define	SSH_KEY_EXCHANGE_H
+#ifndef	SSH_SSH_KEY_EXCHANGE_H
+#define	SSH_SSH_KEY_EXCHANGE_H
 
 namespace SSH {
 	class KeyExchange {
@@ -22,4 +22,4 @@ namespace SSH {
 	};
 }
 
-#endif /* !SSH_KEY_EXCHANGE_H */
+#endif /* !SSH_SSH_KEY_EXCHANGE_H */

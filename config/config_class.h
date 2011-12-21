@@ -1,5 +1,5 @@
-#ifndef	CONFIG_CLASS_H
-#define	CONFIG_CLASS_H
+#ifndef	CONFIG_CONFIG_CLASS_H
+#define	CONFIG_CONFIG_CLASS_H
 
 #include <map>
 
@@ -56,4 +56,4 @@ public:
 	}
 };
 
-#endif /* !CONFIG_CLASS_H */
+#endif /* !CONFIG_CONFIG_CLASS_H */

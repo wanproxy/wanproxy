@@ -1,5 +1,5 @@
-#ifndef	THREAD_H
-#define	THREAD_H
+#ifndef	COMMON_THREAD_THREAD_H
+#define	COMMON_THREAD_THREAD_H
 
 struct ThreadState;
 
@@ -42,4 +42,4 @@ private:
 	}
 };
 
-#endif /* !THREAD_H */
+#endif /* !COMMON_THREAD_THREAD_H */

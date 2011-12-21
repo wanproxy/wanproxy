@@ -1,5 +1,5 @@
-#ifndef	XCODEC_SYMBOL_H
-#define	XCODEC_SYMBOL_H
+#ifndef	XCODEC_XCODEC_SYMBOL_H
+#define	XCODEC_XCODEC_SYMBOL_H
 
 union XCodecSymbol {
 	struct {
@@ -38,4 +38,4 @@ union XCodecSymbol {
 	}
 };
 
-#endif /* !XCODEC_SYMBOL_H */
+#endif /* !XCODEC_XCODEC_SYMBOL_H */

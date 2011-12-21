@@ -1,5 +1,5 @@
-#ifndef	HTTP_PROTOCOL_H
-#define	HTTP_PROTOCOL_H
+#ifndef	HTTP_HTTP_PROTOCOL_H
+#define	HTTP_HTTP_PROTOCOL_H
 
 #include <map>
 
@@ -67,4 +67,4 @@ namespace HTTPProtocol {
 	ParseStatus ExtractLine(Buffer *, Buffer *);
 }
 
-#endif /* !HTTP_PROTOCOL_H */
+#endif /* !HTTP_HTTP_PROTOCOL_H */

@@ -1,5 +1,5 @@
-#ifndef	EVENT_CALLBACK_H
-#define	EVENT_CALLBACK_H
+#ifndef	EVENT_EVENT_CALLBACK_H
+#define	EVENT_EVENT_CALLBACK_H
 
 #include <event/event.h>
 #include <event/object_callback.h>
@@ -7,4 +7,4 @@
 
 typedef	class TypedCallback<Event> EventCallback;
 
-#endif /* !EVENT_CALLBACK_H */
+#endif /* !EVENT_EVENT_CALLBACK_H */

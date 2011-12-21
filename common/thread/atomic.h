@@ -1,5 +1,5 @@
-#ifndef	ATOMIC_H
-#define	ATOMIC_H
+#ifndef	COMMON_THREAD_ATOMIC_H
+#define	COMMON_THREAD_ATOMIC_H
 
 template<typename T>
 class Atomic {
@@ -63,4 +63,4 @@ public:
 #endif
 };
 
-#endif /* !ATOMIC_H */
+#endif /* !COMMON_THREAD_ATOMIC_H */

@@ -1,5 +1,5 @@
-#ifndef	WANPROXY_CONFIG_CLASS_PEER_H
-#define	WANPROXY_CONFIG_CLASS_PEER_H
+#ifndef	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_PEER_H
+#define	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_PEER_H
 
 #include <config/config_class_address.h>
 
@@ -15,4 +15,4 @@ public:
 
 extern WANProxyConfigClassPeer wanproxy_config_class_peer;
 
-#endif /* !WANPROXY_CONFIG_CLASS_PEER_H */
+#endif /* !PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_PEER_H */

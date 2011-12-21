@@ -1,5 +1,5 @@
-#ifndef	CONFIG_EXPORTER_H
-#define	CONFIG_EXPORTER_H
+#ifndef	CONFIG_CONFIG_EXPORTER_H
+#define	CONFIG_CONFIG_EXPORTER_H
 
 class ConfigClass;
 class ConfigObject;
@@ -19,4 +19,4 @@ public:
 	virtual void value(const ConfigValue *, const std::string&) = 0;
 };
 
-#endif /* !CONFIG_EXPORTER_H */
+#endif /* !CONFIG_CONFIG_EXPORTER_H */

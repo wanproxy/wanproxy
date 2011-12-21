@@ -1,5 +1,5 @@
-#ifndef	IO_PIPE_PAIR_PRODUCER_H
-#define	IO_PIPE_PAIR_PRODUCER_H
+#ifndef	IO_PIPE_PIPE_PAIR_PRODUCER_H
+#define	IO_PIPE_PIPE_PAIR_PRODUCER_H
 
 #include <io/pipe/pipe_producer.h>
 #include <io/pipe/pipe_producer_wrapper.h>
@@ -55,4 +55,4 @@ public:
 	}
 };
 
-#endif /* !IO_PIPE_PAIR_PRODUCER_H */
+#endif /* !IO_PIPE_PIPE_PAIR_PRODUCER_H */

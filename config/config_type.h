@@ -1,5 +1,5 @@
-#ifndef	CONFIG_TYPE_H
-#define	CONFIG_TYPE_H
+#ifndef	CONFIG_CONFIG_TYPE_H
+#define	CONFIG_CONFIG_TYPE_H
 
 class ConfigExporter;
 struct ConfigValue;
@@ -23,4 +23,4 @@ public:
 	}
 };
 
-#endif /* !CONFIG_TYPE_H */
+#endif /* !CONFIG_CONFIG_TYPE_H */

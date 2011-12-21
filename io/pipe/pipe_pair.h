@@ -1,5 +1,5 @@
-#ifndef	IO_PIPE_PAIR_H
-#define	IO_PIPE_PAIR_H
+#ifndef	IO_PIPE_PIPE_PAIR_H
+#define	IO_PIPE_PIPE_PAIR_H
 
 class Pipe;
 
@@ -21,4 +21,4 @@ public:
 	virtual Pipe *get_outgoing(void) = 0;
 };
 
-#endif /* !IO_PIPE_PAIR_H */
+#endif /* !IO_PIPE_PIPE_PAIR_H */

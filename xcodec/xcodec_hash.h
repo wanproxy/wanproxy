@@ -1,5 +1,5 @@
-#ifndef	XCODEC_HASH_H
-#define	XCODEC_HASH_H
+#ifndef	XCODEC_XCODEC_HASH_H
+#define	XCODEC_XCODEC_HASH_H
 
 #include <strings.h>
 
@@ -135,4 +135,4 @@ public:
 	}
 };
 
-#endif /* !XCODEC_HASH_H */
+#endif /* !XCODEC_XCODEC_HASH_H */

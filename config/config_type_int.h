@@ -1,5 +1,5 @@
-#ifndef	CONFIG_TYPE_INT_H
-#define	CONFIG_TYPE_INT_H
+#ifndef	CONFIG_CONFIG_TYPE_INT_H
+#define	CONFIG_CONFIG_TYPE_INT_H
 
 #include <map>
 
@@ -39,4 +39,4 @@ public:
 
 extern ConfigTypeInt config_type_int;
 
-#endif /* !CONFIG_TYPE_INT_H */
+#endif /* !CONFIG_CONFIG_TYPE_INT_H */

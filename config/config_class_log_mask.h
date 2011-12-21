@@ -1,5 +1,5 @@
-#ifndef	CONFIG_CLASS_LOG_MASK_H
-#define	CONFIG_CLASS_LOG_MASK_H
+#ifndef	CONFIG_CONFIG_CLASS_LOG_MASK_H
+#define	CONFIG_CONFIG_CLASS_LOG_MASK_H
 
 #include <config/config_type_log_level.h>
 #include <config/config_type_string.h>
@@ -23,4 +23,4 @@ public:
 
 extern ConfigClassLogMask config_class_log_mask;
 
-#endif /* !CONFIG_CLASS_LOG_MASK_H */
+#endif /* !CONFIG_CONFIG_CLASS_LOG_MASK_H */

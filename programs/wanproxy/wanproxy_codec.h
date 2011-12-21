@@ -1,5 +1,5 @@
-#ifndef	WANPROXY_CODEC_H
-#define	WANPROXY_CODEC_H
+#ifndef	PROGRAMS_WANPROXY_WANPROXY_CODEC_H
+#define	PROGRAMS_WANPROXY_WANPROXY_CODEC_H
 
 class XCodec;
 
@@ -17,4 +17,4 @@ struct WANProxyCodec {
 	{ }
 };
 
-#endif /* !WANPROXY_CODEC_H */
+#endif /* !PROGRAMS_WANPROXY_WANPROXY_CODEC_H */

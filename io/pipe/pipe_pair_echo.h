@@ -1,5 +1,5 @@
-#ifndef	IO_PIPE_PAIR_ECHO_H
-#define	IO_PIPE_PAIR_ECHO_H
+#ifndef	IO_PIPE_PIPE_PAIR_ECHO_H
+#define	IO_PIPE_PIPE_PAIR_ECHO_H
 
 #include <io/pipe/pipe_pair_producer.h>
 
@@ -23,4 +23,4 @@ public:
 	}
 };
 
-#endif /* !IO_PIPE_PAIR_ECHO_H */
+#endif /* !IO_PIPE_PIPE_PAIR_ECHO_H */

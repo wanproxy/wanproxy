@@ -1,5 +1,5 @@
-#ifndef	SLEEP_QUEUE_H
-#define	SLEEP_QUEUE_H
+#ifndef	COMMON_THREAD_SLEEP_QUEUE_H
+#define	COMMON_THREAD_SLEEP_QUEUE_H
 
 /*
  * We don't call this a condition variable because that name is in use in the
@@ -22,4 +22,4 @@ public:
 	void wait(void);
 };
 
-#endif /* !SLEEP_QUEUE_H */
+#endif /* !COMMON_THREAD_SLEEP_QUEUE_H */

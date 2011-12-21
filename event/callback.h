@@ -1,5 +1,5 @@
-#ifndef	CALLBACK_H
-#define	CALLBACK_H
+#ifndef	EVENT_CALLBACK_H
+#define	EVENT_CALLBACK_H
 
 #include <event/action.h>
 
@@ -53,4 +53,4 @@ protected:
 	}
 };
 
-#endif /* !CALLBACK_H */
+#endif /* !EVENT_CALLBACK_H */

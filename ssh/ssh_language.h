@@ -1,5 +1,5 @@
-#ifndef	SSH_LANGUAGE_H
-#define	SSH_LANGUAGE_H
+#ifndef	SSH_SSH_LANGUAGE_H
+#define	SSH_SSH_LANGUAGE_H
 
 namespace SSH {
 	class Language {
@@ -22,4 +22,4 @@ namespace SSH {
 	};
 }
 
-#endif /* !SSH_LANGUAGE_H */
+#endif /* !SSH_SSH_LANGUAGE_H */

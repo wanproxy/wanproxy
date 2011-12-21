@@ -1,5 +1,5 @@
-#ifndef	OBJECT_CALLBACK_H
-#define	OBJECT_CALLBACK_H
+#ifndef	EVENT_OBJECT_CALLBACK_H
+#define	EVENT_OBJECT_CALLBACK_H
 
 #include <event/callback.h>
 
@@ -85,4 +85,4 @@ SimpleCallback *callback(CallbackScheduler *scheduler, C *obj, void (C::*const m
 	return (cb);
 }
 
-#endif /* !OBJECT_CALLBACK_H */
+#endif /* !EVENT_OBJECT_CALLBACK_H */

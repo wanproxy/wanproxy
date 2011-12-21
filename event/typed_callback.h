@@ -1,5 +1,5 @@
-#ifndef	TYPED_CALLBACK_H
-#define	TYPED_CALLBACK_H
+#ifndef	EVENT_TYPED_CALLBACK_H
+#define	EVENT_TYPED_CALLBACK_H
 
 #include <event/callback.h>
 
@@ -117,4 +117,4 @@ TypedCallback<T> *callback(CallbackScheduler *scheduler, C *obj, void (C::*const
 	return (cb);
 }
 
-#endif /* !TYPED_CALLBACK_H */
+#endif /* !EVENT_TYPED_CALLBACK_H */

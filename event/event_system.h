@@ -1,5 +1,5 @@
-#ifndef	EVENT_SYSTEM_H
-#define	EVENT_SYSTEM_H
+#ifndef	EVENT_EVENT_SYSTEM_H
+#define	EVENT_EVENT_SYSTEM_H
 
 #include <event/event_thread.h>
 
@@ -60,4 +60,4 @@ public:
 	}
 };
 
-#endif /* !EVENT_SYSTEM_H */
+#endif /* !EVENT_EVENT_SYSTEM_H */

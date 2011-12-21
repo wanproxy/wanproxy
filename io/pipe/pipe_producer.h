@@ -1,5 +1,5 @@
-#ifndef	IO_PIPE_PRODUCER_H
-#define	IO_PIPE_PRODUCER_H
+#ifndef	IO_PIPE_PIPE_PRODUCER_H
+#define	IO_PIPE_PIPE_PRODUCER_H
 
 class Action;
 
@@ -34,4 +34,4 @@ protected:
 	virtual void consume(Buffer *) = 0;
 };
 
-#endif /* !IO_PIPE_PRODUCER_H */
+#endif /* !IO_PIPE_PIPE_PRODUCER_H */

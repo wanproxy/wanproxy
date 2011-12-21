@@ -1,5 +1,5 @@
-#ifndef	IO_SYSTEM_H
-#define	IO_SYSTEM_H
+#ifndef	IO_IO_SYSTEM_H
+#define	IO_IO_SYSTEM_H
 
 #include <map>
 
@@ -79,4 +79,4 @@ public:
 	}
 };
 
-#endif /* !IO_SYSTEM_H */
+#endif /* !IO_IO_SYSTEM_H */

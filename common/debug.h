@@ -1,5 +1,5 @@
-#ifndef	DEBUG_H
-#define	DEBUG_H
+#ifndef	COMMON_DEBUG_H
+#define	COMMON_DEBUG_H
 
 #if defined(NDEBUG)
 #define	ASSERT(log, p)							\
@@ -38,4 +38,4 @@
 	} while (0)
 #endif
 
-#endif /* !DEBUG_H */
+#endif /* !COMMON_DEBUG_H */

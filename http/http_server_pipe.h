@@ -1,5 +1,5 @@
-#ifndef	HTTP_SERVER_PIPE_H
-#define	HTTP_SERVER_PIPE_H
+#ifndef	HTTP_HTTP_SERVER_PIPE_H
+#define	HTTP_HTTP_SERVER_PIPE_H
 
 #include <event/event.h>
 #include <event/typed_pair_callback.h>
@@ -46,4 +46,4 @@ private:
 	void consume(Buffer *);
 };
 
-#endif /* !HTTP_SERVER_PIPE_H */
+#endif /* !HTTP_HTTP_SERVER_PIPE_H */

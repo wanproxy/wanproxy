@@ -1,5 +1,5 @@
-#ifndef	IO_PIPE_SINK_H
-#define	IO_PIPE_SINK_H
+#ifndef	IO_PIPE_PIPE_SINK_H
+#define	IO_PIPE_PIPE_SINK_H
 
 #include <io/pipe/pipe_producer.h>
 
@@ -22,4 +22,4 @@ private:
 	}
 };
 
-#endif /* !IO_PIPE_SINK_H */
+#endif /* !IO_PIPE_PIPE_SINK_H */

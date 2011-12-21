@@ -1,5 +1,5 @@
-#ifndef	SSH_TRANSPORT_PIPE_H
-#define	SSH_TRANSPORT_PIPE_H
+#ifndef	SSH_SSH_TRANSPORT_PIPE_H
+#define	SSH_SSH_TRANSPORT_PIPE_H
 
 namespace SSH {
 	class AlgorithmNegotiation;
@@ -36,4 +36,4 @@ namespace SSH {
 	};
 }
 
-#endif /* !SSH_TRANSPORT_PIPE_H */
+#endif /* !SSH_SSH_TRANSPORT_PIPE_H */

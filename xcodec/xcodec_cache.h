@@ -1,5 +1,5 @@
-#ifndef	XCODEC_CACHE_H
-#define	XCODEC_CACHE_H
+#ifndef	XCODEC_XCODEC_CACHE_H
+#define	XCODEC_XCODEC_CACHE_H
 
 #include <ext/hash_map>
 #include <map>
@@ -136,4 +136,4 @@ public:
 	}
 };
 
-#endif /* !XCODEC_CACHE_H */
+#endif /* !XCODEC_XCODEC_CACHE_H */

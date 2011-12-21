@@ -1,5 +1,5 @@
-#ifndef	MUTEX_H
-#define	MUTEX_H
+#ifndef	COMMON_THREAD_MUTEX_H
+#define	COMMON_THREAD_MUTEX_H
 
 #include <common/thread/lock.h>
 
@@ -19,4 +19,4 @@ public:
 	void unlock(void);
 };
 
-#endif /* !MUTEX_H */
+#endif /* !COMMON_THREAD_MUTEX_H */

@@ -1,5 +1,5 @@
-#ifndef	CRYPTO_ENCRYPTION_H
-#define	CRYPTO_ENCRYPTION_H
+#ifndef	CRYPTO_CRYPTO_ENCRYPTION_H
+#define	CRYPTO_CRYPTO_ENCRYPTION_H
 
 #include <set>
 
@@ -56,4 +56,4 @@ std::ostream& operator<< (std::ostream&, CryptoEncryptionAlgorithm);
 std::ostream& operator<< (std::ostream&, CryptoEncryptionMode);
 std::ostream& operator<< (std::ostream&, CryptoCipher);
 
-#endif /* !CRYPTO_ENCRYPTION_H */
+#endif /* !CRYPTO_CRYPTO_ENCRYPTION_H */

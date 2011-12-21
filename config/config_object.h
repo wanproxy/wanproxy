@@ -1,5 +1,5 @@
-#ifndef	CONFIG_OBJECT_H
-#define	CONFIG_OBJECT_H
+#ifndef	CONFIG_CONFIG_OBJECT_H
+#define	CONFIG_CONFIG_OBJECT_H
 
 #include <map>
 
@@ -87,4 +87,4 @@ public:
 	}
 };
 
-#endif /* !CONFIG_OBJECT_H */
+#endif /* !CONFIG_CONFIG_OBJECT_H */

@@ -1,5 +1,5 @@
-#ifndef	SPLICE_PAIR_H
-#define	SPLICE_PAIR_H
+#ifndef	IO_PIPE_SPLICE_PAIR_H
+#define	IO_PIPE_SPLICE_PAIR_H
 
 class Splice;
 
@@ -25,4 +25,4 @@ private:
 	void splice_complete(Event, Splice *);
 };
 
-#endif /* !SPLICE_PAIR_H */
+#endif /* !IO_PIPE_SPLICE_PAIR_H */

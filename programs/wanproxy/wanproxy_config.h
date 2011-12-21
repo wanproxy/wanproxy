@@ -1,5 +1,5 @@
-#ifndef	WANPROXY_CONFIG_H
-#define	WANPROXY_CONFIG_H
+#ifndef	PROGRAMS_WANPROXY_WANPROXY_CONFIG_H
+#define	PROGRAMS_WANPROXY_WANPROXY_CONFIG_H
 
 class Config;
 
@@ -21,4 +21,4 @@ public:
 	bool configure(const std::string&);
 };
 
-#endif /* !WANPROXY_CONFIG_H */
+#endif /* !PROGRAMS_WANPROXY_WANPROXY_CONFIG_H */

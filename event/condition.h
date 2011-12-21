@@ -1,5 +1,5 @@
-#ifndef	CONDITION_H
-#define	CONDITION_H
+#ifndef	EVENT_CONDITION_H
+#define	EVENT_CONDITION_H
 
 class Condition {
 protected:
@@ -65,4 +65,4 @@ private:
 	}
 };
 
-#endif /* !CONDITION_H */
+#endif /* !EVENT_CONDITION_H */

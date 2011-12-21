@@ -1,5 +1,5 @@
-#ifndef	WANPROXY_CODEC_PIPE_H
-#define	WANPROXY_CODEC_PIPE_H
+#ifndef	PROGRAMS_WANPROXY_WANPROXY_CODEC_PIPE_PAIR_H
+#define	PROGRAMS_WANPROXY_WANPROXY_CODEC_PIPE_PAIR_H
 
 #include <list>
 #include <set>
@@ -24,4 +24,4 @@ public:
 	Pipe *get_outgoing(void);
 };
 
-#endif /* !WANPROXY_CODEC_PIPE_H */
+#endif /* !PROGRAMS_WANPROXY_WANPROXY_CODEC_PIPE_PAIR_H */

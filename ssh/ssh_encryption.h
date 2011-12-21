@@ -1,5 +1,5 @@
-#ifndef	SSH_ENCRYPTION_H
-#define	SSH_ENCRYPTION_H
+#ifndef	SSH_SSH_ENCRYPTION_H
+#define	SSH_SSH_ENCRYPTION_H
 
 #include <crypto/crypto_encryption.h>
 
@@ -26,4 +26,4 @@ namespace SSH {
 	};
 }
 
-#endif /* !SSH_ENCRYPTION_H */
+#endif /* !SSH_SSH_ENCRYPTION_H */

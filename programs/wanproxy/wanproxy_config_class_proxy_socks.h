@@ -1,5 +1,5 @@
-#ifndef	WANPROXY_CONFIG_CLASS_PROXY_SOCKS_H
-#define	WANPROXY_CONFIG_CLASS_PROXY_SOCKS_H
+#ifndef	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_PROXY_SOCKS_H
+#define	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_PROXY_SOCKS_H
 
 #include <config/config_type_pointer.h>
 
@@ -24,4 +24,4 @@ public:
 
 extern WANProxyConfigClassProxySocks wanproxy_config_class_proxy_socks;
 
-#endif /* !WANPROXY_CONFIG_CLASS_PROXY_SOCKS_H */
+#endif /* !PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_PROXY_SOCKS_H */

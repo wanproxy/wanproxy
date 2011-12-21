@@ -1,5 +1,5 @@
-#ifndef	TYPED_CONDITION_H
-#define	TYPED_CONDITION_H
+#ifndef	EVENT_TYPED_CONDITION_H
+#define	EVENT_TYPED_CONDITION_H
 
 #include <event/condition.h>
 #include <event/typed_callback.h>
@@ -71,4 +71,4 @@ private:
 	}
 };
 
-#endif /* !TYPED_CONDITION_H */
+#endif /* !EVENT_TYPED_CONDITION_H */

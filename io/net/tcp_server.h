@@ -1,5 +1,5 @@
-#ifndef	TCP_SERVER_H
-#define	TCP_SERVER_H
+#ifndef	IO_NET_TCP_SERVER_H
+#define	IO_NET_TCP_SERVER_H
 
 #include <io/socket/socket.h>
 
@@ -39,4 +39,4 @@ public:
 	static TCPServer *listen(SocketAddressFamily, const std::string&);
 };
 
-#endif /* !TCP_SERVER_H */
+#endif /* !IO_NET_TCP_SERVER_H */

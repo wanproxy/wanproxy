@@ -1,5 +1,5 @@
-#ifndef	FILE_DESCRIPTOR_H
-#define	FILE_DESCRIPTOR_H
+#ifndef	IO_STREAM_HANDLE_H
+#define	IO_STREAM_HANDLE_H
 
 #include <io/channel.h>
 
@@ -17,4 +17,4 @@ public:
 	virtual Action *shutdown(bool, bool, EventCallback *);
 };
 
-#endif /* !FILE_DESCRIPTOR_H */
+#endif /* !IO_STREAM_HANDLE_H */

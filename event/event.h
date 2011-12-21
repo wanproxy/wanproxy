@@ -1,5 +1,5 @@
-#ifndef	EVENT_H
-#define	EVENT_H
+#ifndef	EVENT_EVENT_H
+#define	EVENT_EVENT_H
 
 #include <common/buffer.h>
 
@@ -106,4 +106,4 @@ operator<< (std::ostream& os, Event e)
 		strerror(e.error_) << "]");
 }
 
-#endif /* !EVENT_H */
+#endif /* !EVENT_EVENT_H */

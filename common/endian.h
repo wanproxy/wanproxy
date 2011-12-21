@@ -1,5 +1,5 @@
-#ifndef	ENDIAN_H
-#define	ENDIAN_H
+#ifndef	COMMON_ENDIAN_H
+#define	COMMON_ENDIAN_H
 
 #if !defined(BYTE_ORDER) && !defined(LITTLE_ENDIAN) && !defined(BIG_ENDIAN)
 #define	LITTLE_ENDIAN	1234
@@ -86,4 +86,4 @@ typedef	SwapEndian	LittleEndian;
 typedef	HostEndian	BigEndian;
 #endif
 
-#endif /* !ENDIAN_H */
+#endif /* !COMMON_ENDIAN_H */

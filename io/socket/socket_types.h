@@ -1,5 +1,5 @@
-#ifndef	IO_SOCKET_TYPES_H
-#define	IO_SOCKET_TYPES_H
+#ifndef	IO_SOCKET_SOCKET_TYPES_H
+#define	IO_SOCKET_SOCKET_TYPES_H
 
 enum SocketAddressFamily {
 	SocketAddressFamilyIP,
@@ -16,4 +16,4 @@ enum SocketType {
 
 class Socket;
 
-#endif /* !IO_SOCKET_TYPES_H */
+#endif /* !IO_SOCKET_SOCKET_TYPES_H */

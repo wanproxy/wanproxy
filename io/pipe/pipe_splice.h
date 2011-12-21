@@ -1,5 +1,5 @@
-#ifndef	PIPE_SPLICE_H
-#define	PIPE_SPLICE_H
+#ifndef	IO_PIPE_PIPE_SPLICE_H
+#define	IO_PIPE_PIPE_SPLICE_H
 
 class PipeSplice {
 	LogHandle log_;
@@ -20,4 +20,4 @@ private:
 	void input_complete(Event);
 };
 
-#endif /* !PIPE_SPLICE_H */
+#endif /* !IO_PIPE_PIPE_SPLICE_H */

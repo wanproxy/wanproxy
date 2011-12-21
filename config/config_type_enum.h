@@ -1,5 +1,5 @@
-#ifndef	CONFIG_TYPE_ENUM_H
-#define	CONFIG_TYPE_ENUM_H
+#ifndef	CONFIG_CONFIG_TYPE_ENUM_H
+#define	CONFIG_CONFIG_TYPE_ENUM_H
 
 #include <map>
 
@@ -82,4 +82,4 @@ public:
 	}
 };
 
-#endif /* !CONFIG_TYPE_ENUM_H */
+#endif /* !CONFIG_CONFIG_TYPE_ENUM_H */

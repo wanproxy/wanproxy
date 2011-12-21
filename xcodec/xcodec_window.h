@@ -1,5 +1,5 @@
-#ifndef	XCODEC_WINDOW_H
-#define	XCODEC_WINDOW_H
+#ifndef	XCODEC_XCODEC_WINDOW_H
+#define	XCODEC_XCODEC_WINDOW_H
 
 #include <map>
 
@@ -91,4 +91,4 @@ public:
 	}
 };
 
-#endif /* !XCODEC_WINDOW_H */
+#endif /* !XCODEC_XCODEC_WINDOW_H */

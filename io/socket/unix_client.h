@@ -1,8 +1,8 @@
-#ifndef	UNIX_CLIENT_H
-#define	UNIX_CLIENT_H
+#ifndef	IO_SOCKET_UNIX_CLIENT_H
+#define	IO_SOCKET_UNIX_CLIENT_H
 
 struct UnixClient {
 	static Action *connect(Socket **, const std::string&, EventCallback *);
 };
 
-#endif /* !UNIX_CLIENT_H */
+#endif /* !IO_SOCKET_UNIX_CLIENT_H */

@@ -1,5 +1,5 @@
-#ifndef	SSH_COMPRESSION_H
-#define	SSH_COMPRESSION_H
+#ifndef	SSH_SSH_COMPRESSION_H
+#define	SSH_SSH_COMPRESSION_H
 
 namespace SSH {
 	class Compression {
@@ -22,4 +22,4 @@ namespace SSH {
 	};
 }
 
-#endif /* !SSH_COMPRESSION_H */
+#endif /* !SSH_SSH_COMPRESSION_H */

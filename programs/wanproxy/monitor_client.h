@@ -1,5 +1,5 @@
-#ifndef	MONITOR_CLIENT_H
-#define	MONITOR_CLIENT_H
+#ifndef	PROGRAMS_WANPROXY_MONITOR_CLIENT_H
+#define	PROGRAMS_WANPROXY_MONITOR_CLIENT_H
 
 #include <http/http_server.h>
 
@@ -20,4 +20,4 @@ private:
 	void handle_request(const std::string&, const std::string&, HTTPProtocol::Request);
 };
 
-#endif /* !MONITOR_CLIENT_H */
+#endif /* !PROGRAMS_WANPROXY_MONITOR_CLIENT_H */

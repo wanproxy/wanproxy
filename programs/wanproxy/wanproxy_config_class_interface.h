@@ -1,5 +1,5 @@
-#ifndef	WANPROXY_CONFIG_CLASS_INTERFACE_H
-#define	WANPROXY_CONFIG_CLASS_INTERFACE_H
+#ifndef	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_INTERFACE_H
+#define	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_INTERFACE_H
 
 #include <config/config_class_address.h>
 
@@ -17,4 +17,4 @@ public:
 
 extern WANProxyConfigClassInterface wanproxy_config_class_interface;
 
-#endif /* !WANPROXY_CONFIG_CLASS_INTERFACE_H */
+#endif /* !PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_INTERFACE_H */

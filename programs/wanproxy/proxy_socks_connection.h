@@ -1,5 +1,5 @@
-#ifndef	PROXY_SOCKS_CONNECTION_H
-#define	PROXY_SOCKS_CONNECTION_H
+#ifndef	PROGRAMS_WANPROXY_PROXY_SOCKS_CONNECTION_H
+#define	PROGRAMS_WANPROXY_PROXY_SOCKS_CONNECTION_H
 
 class ProxySocksConnection {
 	enum State {
@@ -46,4 +46,4 @@ private:
 	void schedule_close(void);
 };
 
-#endif /* !PROXY_SOCKS_CONNECTION_H */
+#endif /* !PROGRAMS_WANPROXY_PROXY_SOCKS_CONNECTION_H */

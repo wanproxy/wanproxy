@@ -1,5 +1,5 @@
-#ifndef	TIMER_H
-#define	TIMER_H
+#ifndef	COMMON_TIMER_TIMER_H
+#define	COMMON_TIMER_TIMER_H
 
 class Timer {
 	uintmax_t start_;
@@ -37,4 +37,4 @@ public:
 	}
 };
 
-#endif /* !TIMER_H */
+#endif /* !COMMON_TIMER_TIMER_H */

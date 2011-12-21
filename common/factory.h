@@ -1,5 +1,5 @@
-#ifndef	FACTORY_H
-#define	FACTORY_H
+#ifndef	COMMON_FACTORY_H
+#define	COMMON_FACTORY_H
 
 #include <map>
 #include <set>
@@ -143,4 +143,4 @@ public:
 	}
 };
 
-#endif /* !FACTORY_H */
+#endif /* !COMMON_FACTORY_H */

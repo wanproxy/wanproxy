@@ -1,5 +1,5 @@
-#ifndef	EVENT_THREAD_H
-#define	EVENT_THREAD_H
+#ifndef	EVENT_EVENT_THREAD_H
+#define	EVENT_EVENT_THREAD_H
 
 #include <common/thread/thread.h>
 #include <event/callback_queue.h>
@@ -61,4 +61,4 @@ public:
 	}
 };
 
-#endif /* !EVENT_THREAD_H */
+#endif /* !EVENT_EVENT_THREAD_H */

@@ -1,5 +1,5 @@
-#ifndef	CONFIG_CLASS_ADDRESS_H
-#define	CONFIG_CLASS_ADDRESS_H
+#ifndef	CONFIG_CONFIG_CLASS_ADDRESS_H
+#define	CONFIG_CONFIG_CLASS_ADDRESS_H
 
 #include <config/config_type_address_family.h>
 #include <config/config_type_string.h>
@@ -25,4 +25,4 @@ public:
 
 extern ConfigClassAddress config_class_address;
 
-#endif /* !CONFIG_CLASS_ADDRESS_H */
+#endif /* !CONFIG_CONFIG_CLASS_ADDRESS_H */

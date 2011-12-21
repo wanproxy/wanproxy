@@ -1,5 +1,5 @@
-#ifndef	TIMEOUT_QUEUE_H
-#define	TIMEOUT_QUEUE_H
+#ifndef	EVENT_TIMEOUT_QUEUE_H
+#define	EVENT_TIMEOUT_QUEUE_H
 
 #include <map>
 
@@ -50,4 +50,4 @@ public:
 	bool ready(void) const;
 };
 
-#endif /* !TIMEOUT_QUEUE_H */
+#endif /* !EVENT_TIMEOUT_QUEUE_H */

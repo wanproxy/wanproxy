@@ -1,5 +1,5 @@
-#ifndef	IO_PIPE_SIMPLE_WRAPPER_H
-#define	IO_PIPE_SIMPLE_WRAPPER_H
+#ifndef	IO_PIPE_PIPE_SIMPLE_WRAPPER_H
+#define	IO_PIPE_PIPE_SIMPLE_WRAPPER_H
 
 #include <io/pipe/pipe_producer.h>
 
@@ -31,4 +31,4 @@ public:
 	}
 };
 
-#endif /* !IO_PIPE_SIMPLE_WRAPPER_H */
+#endif /* !IO_PIPE_PIPE_SIMPLE_WRAPPER_H */

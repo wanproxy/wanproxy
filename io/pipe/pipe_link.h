@@ -1,5 +1,5 @@
-#ifndef	PIPE_LINK_H
-#define	PIPE_LINK_H
+#ifndef	IO_PIPE_PIPE_LINK_H
+#define	IO_PIPE_PIPE_LINK_H
 
 class PipeSplice;
 
@@ -21,4 +21,4 @@ private:
 	void pipe_splice_complete(Event);
 };
 
-#endif /* !PIPE_LINK_H */
+#endif /* !IO_PIPE_PIPE_LINK_H */

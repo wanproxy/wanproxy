@@ -1,5 +1,5 @@
-#ifndef	THREAD_POSIX_H
-#define	THREAD_POSIX_H
+#ifndef	COMMON_THREAD_THREAD_POSIX_H
+#define	COMMON_THREAD_THREAD_POSIX_H
 
 struct ThreadState {
 	pthread_t td_;
@@ -26,4 +26,4 @@ struct ThreadState {
 
 
 
-#endif /* !THREAD_POSIX_H */
+#endif /* !COMMON_THREAD_THREAD_POSIX_H */

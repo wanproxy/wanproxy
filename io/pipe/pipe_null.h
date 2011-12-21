@@ -1,5 +1,5 @@
-#ifndef	IO_PIPE_NULL_H
-#define	IO_PIPE_NULL_H
+#ifndef	IO_PIPE_PIPE_NULL_H
+#define	IO_PIPE_PIPE_NULL_H
 
 #include <io/pipe/pipe_producer.h>
 
@@ -19,4 +19,4 @@ private:
 	}
 };
 
-#endif /* !IO_PIPE_NULL_H */
+#endif /* !IO_PIPE_PIPE_NULL_H */

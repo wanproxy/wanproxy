@@ -1,5 +1,5 @@
-#ifndef	XCODEC_DECODER_H
-#define	XCODEC_DECODER_H
+#ifndef	XCODEC_XCODEC_DECODER_H
+#define	XCODEC_XCODEC_DECODER_H
 
 #include <set>
 
@@ -19,4 +19,4 @@ public:
 	bool decode(Buffer *, Buffer *, std::set<uint64_t>&);
 };
 
-#endif /* !XCODEC_DECODER_H */
+#endif /* !XCODEC_XCODEC_DECODER_H */

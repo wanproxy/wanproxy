@@ -1,5 +1,5 @@
-#ifndef	SPEED_TEST_H
-#define	SPEED_TEST_H
+#ifndef	EVENT_SPEED_TEST_H
+#define	EVENT_SPEED_TEST_H
 
 #include <event/event_callback.h>
 #include <event/event_system.h>
@@ -59,4 +59,4 @@ protected:
 	{ }
 };
 
-#endif /* !SPEED_TEST_H */
+#endif /* !EVENT_SPEED_TEST_H */

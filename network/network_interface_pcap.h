@@ -1,5 +1,5 @@
-#ifndef	NETWORK_INTERFACE_PCAP_H
-#define	NETWORK_INTERFACE_PCAP_H
+#ifndef	NETWORK_NETWORK_INTERFACE_PCAP_H
+#define	NETWORK_NETWORK_INTERFACE_PCAP_H
 
 struct pcap;
 
@@ -30,4 +30,4 @@ public:
 	static NetworkInterface *open(const std::string&);
 };
 
-#endif /* !NETWORK_INTERFACE_PCAP_H */
+#endif /* !NETWORK_NETWORK_INTERFACE_PCAP_H */

@@ -1,5 +1,5 @@
-#ifndef	XCODEC_H
-#define	XCODEC_H
+#ifndef	XCODEC_XCODEC_H
+#define	XCODEC_XCODEC_H
 
 #define	XCODEC_MAGIC		((uint8_t)0xf1)	/* Magic!  */
 
@@ -81,4 +81,4 @@ public:
 	}
 };
 
-#endif /* !XCODEC_H */
+#endif /* !XCODEC_XCODEC_H */

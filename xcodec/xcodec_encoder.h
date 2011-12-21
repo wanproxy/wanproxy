@@ -1,5 +1,5 @@
-#ifndef	XCODEC_ENCODER_H
-#define	XCODEC_ENCODER_H
+#ifndef	XCODEC_XCODEC_ENCODER_H
+#define	XCODEC_XCODEC_ENCODER_H
 
 #include <xcodec/xcodec_window.h>
 
@@ -22,4 +22,4 @@ private:
 	bool encode_reference(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment *);
 };
 
-#endif /* !XCODEC_ENCODER_H */
+#endif /* !XCODEC_XCODEC_ENCODER_H */

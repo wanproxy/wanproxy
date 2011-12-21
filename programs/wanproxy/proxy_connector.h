@@ -1,5 +1,5 @@
-#ifndef	PROXY_CONNECTOR_H
-#define	PROXY_CONNECTOR_H
+#ifndef	PROGRAMS_WANPROXY_PROXY_CONNECTOR_H
+#define	PROGRAMS_WANPROXY_PROXY_CONNECTOR_H
 
 #include <set>
 
@@ -44,4 +44,4 @@ private:
 	void schedule_close(void);
 };
 
-#endif /* !PROXY_CONNECTOR_H */
+#endif /* !PROGRAMS_WANPROXY_PROXY_CONNECTOR_H */

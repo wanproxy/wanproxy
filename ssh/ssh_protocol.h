@@ -1,5 +1,5 @@
-#ifndef	SSH_PROTOCOL_H
-#define	SSH_PROTOCOL_H
+#ifndef	SSH_SSH_PROTOCOL_H
+#define	SSH_SSH_PROTOCOL_H
 
 #include <common/endian.h>
 
@@ -86,4 +86,4 @@ namespace SSH {
 	}
 }
 
-#endif /* !SSH_PROTOCOL_H */
+#endif /* !SSH_SSH_PROTOCOL_H */

@@ -1,5 +1,5 @@
-#ifndef	IO_PIPE_PAIR_SIMPLE_H
-#define	IO_PIPE_PAIR_SIMPLE_H
+#ifndef	IO_PIPE_PIPE_PAIR_SIMPLE_H
+#define	IO_PIPE_PIPE_PAIR_SIMPLE_H
 
 #include <io/pipe/pipe_simple.h>
 #include <io/pipe/pipe_simple_wrapper.h>
@@ -46,4 +46,4 @@ public:
 	}
 };
 
-#endif /* !IO_PIPE_PAIR_SIMPLE_H */
+#endif /* !IO_PIPE_PIPE_PAIR_SIMPLE_H */

@@ -1,5 +1,5 @@
-#ifndef	MUTEX_POSIX_H
-#define	MUTEX_POSIX_H
+#ifndef	COMMON_THREAD_MUTEX_POSIX_H
+#define	COMMON_THREAD_MUTEX_POSIX_H
 
 struct MutexState {
 	pthread_mutex_t mutex_;
@@ -101,4 +101,4 @@ struct MutexState {
 	}
 };
 
-#endif /* !MUTEX_POSIX_H */
+#endif /* !COMMON_THREAD_MUTEX_POSIX_H */

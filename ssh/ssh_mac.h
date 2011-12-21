@@ -1,5 +1,5 @@
-#ifndef	SSH_MAC_H
-#define	SSH_MAC_H
+#ifndef	SSH_SSH_MAC_H
+#define	SSH_SSH_MAC_H
 
 namespace SSH {
 	class MAC {
@@ -22,4 +22,4 @@ namespace SSH {
 	};
 }
 
-#endif /* !SSH_MAC_H */
+#endif /* !SSH_SSH_MAC_H */

@@ -1,5 +1,5 @@
-#ifndef	SOCKET_H
-#define	SOCKET_H
+#ifndef	IO_SOCKET_SOCKET_H
+#define	IO_SOCKET_SOCKET_H
 
 #include <event/event.h>
 #include <event/object_callback.h>
@@ -46,4 +46,4 @@ public:
 	static Socket *create(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");
 };
 
-#endif /* !SOCKET_H */
+#endif /* !IO_SOCKET_SOCKET_H */

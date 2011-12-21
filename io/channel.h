@@ -1,5 +1,5 @@
-#ifndef	CHANNEL_H
-#define	CHANNEL_H
+#ifndef	IO_CHANNEL_H
+#define	IO_CHANNEL_H
 
 class Action;
 class Buffer;
@@ -58,4 +58,4 @@ public:
 	virtual Action *shutdown(bool, bool, EventCallback *) = 0;
 };
 
-#endif /* !CHANNEL_H */
+#endif /* !IO_CHANNEL_H */

@@ -1,5 +1,5 @@
-#ifndef	SSH_ALGORITHM_NEGOTIATION_H
-#define	SSH_ALGORITHM_NEGOTIATION_H
+#ifndef	SSH_SSH_ALGORITHM_NEGOTIATION_H
+#define	SSH_SSH_ALGORITHM_NEGOTIATION_H
 
 #include <ssh/ssh_compression.h>
 #include <ssh/ssh_encryption.h>
@@ -135,4 +135,4 @@ namespace SSH {
 	};
 }
 
-#endif /* !SSH_ALGORITHM_NEGOTIATION_H */
+#endif /* !SSH_SSH_ALGORITHM_NEGOTIATION_H */

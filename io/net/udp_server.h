@@ -1,5 +1,5 @@
-#ifndef	UDP_SERVER_H
-#define	UDP_SERVER_H
+#ifndef	IO_NET_UDP_SERVER_H
+#define	IO_NET_UDP_SERVER_H
 
 #include <io/socket/socket.h>
 
@@ -39,4 +39,4 @@ public:
 	static UDPServer *listen(SocketAddressFamily, const std::string&);
 };
 
-#endif /* !UDP_SERVER_H */
+#endif /* !IO_NET_UDP_SERVER_H */

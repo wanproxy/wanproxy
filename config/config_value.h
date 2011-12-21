@@ -1,5 +1,5 @@
-#ifndef	CONFIG_VALUE_H
-#define	CONFIG_VALUE_H
+#ifndef	CONFIG_CONFIG_VALUE_H
+#define	CONFIG_CONFIG_VALUE_H
 
 class Config;
 class ConfigExporter;
@@ -22,4 +22,4 @@ struct ConfigValue {
 	void marshall(ConfigExporter *) const;
 };
 
-#endif /* !CONFIG_VALUE_H */
+#endif /* !CONFIG_CONFIG_VALUE_H */

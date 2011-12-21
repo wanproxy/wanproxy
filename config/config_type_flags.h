@@ -1,5 +1,5 @@
-#ifndef	CONFIG_TYPE_FLAGS_H
-#define	CONFIG_TYPE_FLAGS_H
+#ifndef	CONFIG_CONFIG_TYPE_FLAGS_H
+#define	CONFIG_CONFIG_TYPE_FLAGS_H
 
 #include <map>
 
@@ -84,4 +84,4 @@ public:
 	}
 };
 
-#endif /* !CONFIG_TYPE_FLAGS_H */
+#endif /* !CONFIG_CONFIG_TYPE_FLAGS_H */

@@ -1,5 +1,5 @@
-#ifndef	LOCK_H
-#define	LOCK_H
+#ifndef	COMMON_THREAD_LOCK_H
+#define	COMMON_THREAD_LOCK_H
 
 class LockClass {
 	std::string name_;
@@ -68,4 +68,4 @@ public:
 	}
 };
 
-#endif /* !LOCK_H */
+#endif /* !COMMON_THREAD_LOCK_H */

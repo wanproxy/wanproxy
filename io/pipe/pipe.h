@@ -1,5 +1,5 @@
-#ifndef	IO_PIPE_H
-#define	IO_PIPE_H
+#ifndef	IO_PIPE_PIPE_H
+#define	IO_PIPE_PIPE_H
 
 class Action;
 class Buffer;
@@ -20,4 +20,4 @@ public:
 	virtual Action *output(EventCallback *) = 0;
 };
 
-#endif /* !IO_PIPE_H */
+#endif /* !IO_PIPE_PIPE_H */

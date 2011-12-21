@@ -1,5 +1,5 @@
-#ifndef	CRYPTO_RANDOM_H
-#define	CRYPTO_RANDOM_H
+#ifndef	CRYPTO_CRYPTO_RANDOM_H
+#define	CRYPTO_CRYPTO_RANDOM_H
 
 #include <event/event_callback.h>
 
@@ -41,4 +41,4 @@ public:
 	static const CryptoRandomMethod *default_method;
 };
 
-#endif /* !CRYPTO_RANDOM_H */
+#endif /* !CRYPTO_CRYPTO_RANDOM_H */

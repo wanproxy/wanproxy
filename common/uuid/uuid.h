@@ -1,5 +1,5 @@
-#ifndef	COMMON_UUID_H
-#define	COMMON_UUID_H
+#ifndef	COMMON_UUID_UUID_H
+#define	COMMON_UUID_UUID_H
 
 /*
  * We use strings rather than the binary form to hide the fact that libuuid
@@ -32,4 +32,4 @@ struct UUID {
 	}
 };
 
-#endif /* !COMMON_UUID_H */
+#endif /* !COMMON_UUID_UUID_H */

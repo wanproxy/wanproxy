@@ -1,5 +1,5 @@
-#ifndef	UDP_CLIENT_H
-#define	UDP_CLIENT_H
+#ifndef	IO_NET_UDP_CLIENT_H
+#define	IO_NET_UDP_CLIENT_H
 
 #include <io/socket/socket.h>
 
@@ -27,4 +27,4 @@ public:
 	static Action *connect(SocketAddressFamily, const std::string&, const std::string&, SocketEventCallback *);
 };
 
-#endif /* !UDP_CLIENT_H */
+#endif /* !IO_NET_UDP_CLIENT_H */

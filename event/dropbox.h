@@ -1,5 +1,5 @@
-#ifndef	DROPBOX_H
-#define	DROPBOX_H
+#ifndef	EVENT_DROPBOX_H
+#define	EVENT_DROPBOX_H
 
 #include <event/typed_condition.h>
 
@@ -36,4 +36,4 @@ public:
 	}
 };
 
-#endif /* !DROPBOX_H */
+#endif /* !EVENT_DROPBOX_H */

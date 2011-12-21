@@ -1,5 +1,5 @@
-#ifndef	REF_H
-#define	REF_H
+#ifndef	COMMON_REF_H
+#define	COMMON_REF_H
 
 template<typename T>
 class Ref {
@@ -113,4 +113,4 @@ public:
 	}
 };
 
-#endif /* !REF_H */
+#endif /* !COMMON_REF_H */

@@ -1,5 +1,5 @@
-#ifndef	TYPED_PAIR_CALLBACK_H
-#define	TYPED_PAIR_CALLBACK_H
+#ifndef	EVENT_TYPED_PAIR_CALLBACK_H
+#define	EVENT_TYPED_PAIR_CALLBACK_H
 
 #include <event/callback.h>
 
@@ -123,4 +123,4 @@ TypedPairCallback<Ta, Tb> *callback(CallbackScheduler *scheduler, C *obj, void (
 	return (cb);
 }
 
-#endif /* !TYPED_PAIR_CALLBACK_H */
+#endif /* !EVENT_TYPED_PAIR_CALLBACK_H */

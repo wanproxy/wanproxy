@@ -1,5 +1,5 @@
-#ifndef	CONFIG_TYPE_POINTER_H
-#define	CONFIG_TYPE_POINTER_H
+#ifndef	CONFIG_CONFIG_TYPE_POINTER_H
+#define	CONFIG_CONFIG_TYPE_POINTER_H
 
 #include <map>
 
@@ -79,4 +79,4 @@ public:
 
 extern ConfigTypePointer config_type_pointer;
 
-#endif /* !CONFIG_TYPE_POINTER_H */
+#endif /* !CONFIG_CONFIG_TYPE_POINTER_H */

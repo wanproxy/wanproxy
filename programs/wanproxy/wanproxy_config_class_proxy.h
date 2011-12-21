@@ -1,5 +1,5 @@
-#ifndef	WANPROXY_CONFIG_CLASS_PROXY_H
-#define	WANPROXY_CONFIG_CLASS_PROXY_H
+#ifndef	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_PROXY_H
+#define	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_PROXY_H
 
 #include <config/config_type_pointer.h>
 
@@ -30,4 +30,4 @@ public:
 
 extern WANProxyConfigClassProxy wanproxy_config_class_proxy;
 
-#endif /* !WANPROXY_CONFIG_CLASS_PROXY_H */
+#endif /* !PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_PROXY_H */

@@ -1,5 +1,5 @@
-#ifndef	UNIX_SERVER_H
-#define	UNIX_SERVER_H
+#ifndef	IO_SOCKET_UNIX_SERVER_H
+#define	IO_SOCKET_UNIX_SERVER_H
 
 #include <io/socket/socket.h>
 
@@ -34,4 +34,4 @@ public:
 	static UnixServer *listen(const std::string&);
 };
 
-#endif /* !UNIX_SERVER_H */
+#endif /* !IO_SOCKET_UNIX_SERVER_H */

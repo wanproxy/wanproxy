@@ -1,5 +1,5 @@
-#ifndef	WANPROXY_CONFIG_CLASS_CODEC_H
-#define	WANPROXY_CONFIG_CLASS_CODEC_H
+#ifndef	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_CODEC_H
+#define	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_CODEC_H
 
 #include <config/config_type_int.h>
 
@@ -36,4 +36,4 @@ public:
 
 extern WANProxyConfigClassCodec wanproxy_config_class_codec;
 
-#endif /* !WANPROXY_CONFIG_CLASS_CODEC_H */
+#endif /* !PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_CODEC_H */

@@ -1,5 +1,5 @@
-#ifndef	EVENT_POLL_H
-#define	EVENT_POLL_H
+#ifndef	EVENT_EVENT_POLL_H
+#define	EVENT_EVENT_POLL_H
 
 #include <map>
 
@@ -84,4 +84,4 @@ private:
 	}
 };
 
-#endif /* !EVENT_POLL_H */
+#endif /* !EVENT_EVENT_POLL_H */

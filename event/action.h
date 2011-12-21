@@ -1,5 +1,5 @@
-#ifndef	ACTION_H
-#define	ACTION_H
+#ifndef	EVENT_ACTION_H
+#define	EVENT_ACTION_H
 
 class Action {
 	bool cancelled_;
@@ -106,4 +106,4 @@ Action *cancellation(C *obj, T method, A arg)
 	return (a);
 }
 
-#endif /* !ACTION_H */
+#endif /* !EVENT_ACTION_H */

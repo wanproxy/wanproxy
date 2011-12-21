@@ -1,5 +1,5 @@
-#ifndef	SSH_SERVER_HOST_KEY_H
-#define	SSH_SERVER_HOST_KEY_H
+#ifndef	SSH_SSH_SERVER_HOST_KEY_H
+#define	SSH_SSH_SERVER_HOST_KEY_H
 
 namespace SSH {
 	class ServerHostKey {
@@ -22,4 +22,4 @@ namespace SSH {
 	};
 }
 
-#endif /* !SSH_SERVER_HOST_KEY_H */
+#endif /* !SSH_SSH_SERVER_HOST_KEY_H */

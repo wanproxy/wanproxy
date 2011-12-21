@@ -1,5 +1,5 @@
-#ifndef	LOG_H
-#define	LOG_H
+#ifndef	COMMON_LOG_H
+#define	COMMON_LOG_H
 
 #include <stdlib.h> /* For abort(3).  */
 
@@ -185,4 +185,4 @@ public:
 	/* Selective debug tracing.  */
 #define	TRACE(log)	Trace trace_(log, __PRETTY_FUNCTION__)
 
-#endif /* !LOG_H */
+#endif /* !COMMON_LOG_H */

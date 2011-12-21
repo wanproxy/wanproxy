@@ -1,5 +1,5 @@
-#ifndef	BUFFER_H
-#define	BUFFER_H
+#ifndef	COMMON_BUFFER_H
+#define	COMMON_BUFFER_H
 
 #include <string.h> /* memmove(3), memcpy(3), etc.  */
 
@@ -1553,4 +1553,4 @@ public:
 std::ostream& operator<< (std::ostream&, const Buffer *);
 std::ostream& operator<< (std::ostream&, const Buffer&);
 
-#endif /* !BUFFER_H */
+#endif /* !COMMON_BUFFER_H */

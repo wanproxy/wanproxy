@@ -1,5 +1,5 @@
-#ifndef	NETWORK_INTERFACE_H
-#define	NETWORK_INTERFACE_H
+#ifndef	NETWORK_NETWORK_INTERFACE_H
+#define	NETWORK_NETWORK_INTERFACE_H
 
 class NetworkInterface {
 protected:
@@ -16,4 +16,4 @@ public:
 	static NetworkInterface *open(const std::string&);
 };
 
-#endif /* !NETWORK_INTERFACE_H */
+#endif /* !NETWORK_NETWORK_INTERFACE_H */
