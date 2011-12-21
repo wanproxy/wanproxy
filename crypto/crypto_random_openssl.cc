@@ -44,7 +44,7 @@ public:
 
 class CryptoRandomMethodOpenSSL : public CryptoRandomMethod {
 	LogHandle log_;
-	FactoryMap<CryptoRandomType, CryptoRandomSession> func_map_;
+	std::map<CryptoRandomType, const RAND_func *> func_map_;
 public:
 	CryptoRandomMethodOpenSSL(void)
 	: log_("/crypto/random/openssl"),
@@ -52,9 +52,8 @@ public:
 	{
 		OpenSSL_add_all_algorithms();
 
-		factory<CryptoRandomSessionRAND> evp_factory;
-		func_map_.enter(CryptoTypeRNG, evp_factory(RAND_bytes));
-		func_map_.enter(CryptoTypePRNG, evp_factory(RAND_pseudo_bytes));
+		func_map_[CryptoTypeRNG] = RAND_bytes;
+		func_map_[CryptoTypePRNG] = RAND_pseudo_bytes;
 
 		/* XXX Register.  */
 	}
@@ -64,9 +63,34 @@ public:
 		/* XXX Unregister.  */
 	}
 
+	/*
+	 * Synchronous randomness generation.  May not succeed.
+	 */
+	bool generate(CryptoRandomType func, size_t len, Buffer *out) const
+	{
+		std::map<CryptoRandomType, const RAND_func *>::const_iterator it;
+
+		it = func_map_.find(func);
+		if (it == func_map_.end())
+			return (false);
+
+		uint8_t bytes[len];
+		int rv = it->second(bytes, sizeof bytes);
+		if (rv == 0)
+			return (false);
+
+		out->append(bytes, sizeof bytes);
+		return (true);
+	}
+
 	CryptoRandomSession *session(CryptoRandomType func) const
 	{
-		return (func_map_.create(func));
+		std::map<CryptoRandomType, const RAND_func *>::const_iterator it;
+
+		it = func_map_.find(func);
+		if (it != func_map_.end())
+			return (new CryptoRandomSessionRAND(it->second));
+		return (NULL);
 	}
 };
 

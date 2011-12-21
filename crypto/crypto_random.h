@@ -5,6 +5,10 @@
 
 class CryptoRandomMethod;
 
+/*
+ * XXX
+ * Add a CryptoTypeBest, which will use whatever the best, available method is.
+ */
 enum CryptoRandomType {
 	CryptoTypeRNG,
 	CryptoTypePRNG,
@@ -30,6 +34,7 @@ protected:
 	virtual ~CryptoRandomMethod()
 	{ }
 public:
+	virtual bool generate(CryptoRandomType, size_t, Buffer *) const = 0;
 	virtual CryptoRandomSession *session(CryptoRandomType) const = 0;
 
 	/* XXX Registration API somehow.  */
