@@ -15,12 +15,12 @@ namespace {
 	static uint8_t zero_padding[255];
 }
 
-SSH::TransportPipe::TransportPipe(void)
+SSH::TransportPipe::TransportPipe(AlgorithmNegotiation *algorithm_negotiation)
 : PipeProducer("/ssh/transport/pipe"),
   state_(GetIdentificationString),
   block_size_(8),
   mac_length_(0),
-  algorithm_negotiation_(NULL),
+  algorithm_negotiation_(algorithm_negotiation),
   receive_callback_(NULL),
   receive_action_(NULL)
 {
@@ -48,6 +48,8 @@ SSH::TransportPipe::receive(EventCallback *cb)
 	 * needs executed either on the request of the caller
 	 * or when data comes in that satisfies a deferred
 	 * callback to a caller.
+	 *
+	 * Would an EventDropbox suffice?  Or something like?
 	 */
 	receive_callback_ = cb;
 	receive_do();

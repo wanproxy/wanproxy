@@ -1,3 +1,5 @@
+#include <crypto/crypto_encryption.h>
+
 #include <event/event_callback.h>
 #include <event/event_main.h>
 #include <event/event_system.h>
@@ -10,6 +12,7 @@
 
 #include <io/socket/simple_server.h>
 
+#include <ssh/ssh_algorithm_negotiation.h>
 #include <ssh/ssh_protocol.h>
 #include <ssh/ssh_transport_pipe.h>
 
@@ -30,7 +33,19 @@ public:
 	  splice_action_(NULL),
 	  close_action_(NULL)
 	{
-		pipe_ = new SSH::TransportPipe();
+		SSH::KeyExchange *key_exchange = NULL;
+		SSH::ServerHostKey *server_host_key = NULL;
+		SSH::Encryption *encryption = SSH::Encryption::cipher(CryptoCipher(CryptoAES128, CryptoModeCBC));
+		SSH::MAC *mac = NULL;
+		SSH::Compression *compression = NULL;
+		SSH::Language *language = NULL;
+
+		SSH::AlgorithmNegotiation *algorithm_negotiation;
+		algorithm_negotiation = new SSH::AlgorithmNegotiation(SSH::AlgorithmNegotiation::ServerRole,
+								      key_exchange, server_host_key,
+								      encryption, mac, compression, language);
+
+		pipe_ = new SSH::TransportPipe(algorithm_negotiation);
 		EventCallback *rcb = callback(this, &SSHConnection::receive_complete);
 		receive_action_ = pipe_->receive(rcb);
 

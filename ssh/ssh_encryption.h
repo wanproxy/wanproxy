@@ -1,6 +1,8 @@
 #ifndef	SSH_ENCRYPTION_H
 #define	SSH_ENCRYPTION_H
 
+#include <crypto/crypto_encryption.h>
+
 namespace SSH {
 	class Encryption {
 		std::string name_;
@@ -19,6 +21,8 @@ namespace SSH {
 		}
 
 		virtual bool input(Buffer *) = 0;
+
+		static Encryption *cipher(CryptoCipher);
 	};
 }
 

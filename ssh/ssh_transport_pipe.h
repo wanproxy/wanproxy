@@ -22,7 +22,7 @@ namespace SSH {
 		EventCallback *receive_callback_;
 		Action *receive_action_;
 	public:
-		TransportPipe(void);
+		TransportPipe(AlgorithmNegotiation * = NULL);
 		~TransportPipe();
 
 		Action *receive(EventCallback *);
