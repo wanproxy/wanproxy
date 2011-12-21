@@ -1,47 +1,22 @@
+#include <common/registrar.h>
+
 #include <crypto/crypto_encryption.h>
 
 namespace {
-	class Registrar {
-		std::set<const CryptoEncryptionMethod *> method_set_;
-
-		Registrar(void)
-		: method_set_()
-		{ }
-
-		~Registrar()
-		{ }
-	public:
-		void enter(const CryptoEncryptionMethod *method)
-		{
-			method_set_.insert(method);
-		}
-
-		std::set<const CryptoEncryptionMethod *> enumerate(void) const
-		{
-			return (method_set_);
-		}
-
-		static Registrar *instance(void)
-		{
-			static Registrar *instance;
-
-			if (instance == NULL)
-				instance = new Registrar();
-			return (instance);
-		}
-	};
+	struct CryptoEncryptionMethodRegistrarKey;
+	typedef	Registrar<CryptoEncryptionMethodRegistrarKey, const CryptoEncryptionMethod *> CryptoEncryptionMethodRegistrar;
 };
 
 CryptoEncryptionMethod::CryptoEncryptionMethod(const std::string& name)
 : name_(name)
 {
-	Registrar::instance()->enter(this);
+	CryptoEncryptionMethodRegistrar::instance()->enter(this);
 }
 
 const CryptoEncryptionMethod *
 CryptoEncryptionMethod::method(CryptoCipher cipher)
 {
-	std::set<const CryptoEncryptionMethod *> method_set = Registrar::instance()->enumerate();
+	std::set<const CryptoEncryptionMethod *> method_set = CryptoEncryptionMethodRegistrar::instance()->enumerate();
 	std::set<const CryptoEncryptionMethod *>::const_iterator it;
 
 	for (it = method_set.begin(); it != method_set.end(); ++it) {
