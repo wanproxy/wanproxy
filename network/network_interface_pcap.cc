@@ -176,7 +176,7 @@ NetworkInterfacePCAP::open(const std::string& ifname)
 	}
 
 	rv = pcap_set_buffer_size(pcap, 65536);
-	ASSERT(log_, rv == 0);
+	ASSERT("/network/pcap", rv == 0);
 
 	rv = pcap_activate(pcap);
 	if (rv != 0) {
@@ -186,7 +186,7 @@ NetworkInterfacePCAP::open(const std::string& ifname)
 	}
 
 	if (pcap_get_selectable_fd(pcap) == -1) {
-		ERROR("/networ/pcap") << "Unable to get selectable file desciptor for " << ifname;
+		ERROR("/network/pcap") << "Unable to get selectable file desciptor for " << ifname;
 		pcap_close(pcap);
 		return (NULL);
 	}
@@ -198,7 +198,7 @@ static void
 network_interface_pcap_dispatch(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
 {
 	Buffer *packet = (Buffer *)user;
-	ASSERT(log_, packet->empty());
+	ASSERT("/network/pcap/dispatch", packet->empty());
 
 	packet->append(bytes, h->caplen);
 }
