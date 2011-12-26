@@ -11,9 +11,9 @@ namespace {
 
 class CryptoRandomSessionRAND : public CryptoRandomSession {
 	LogHandle log_;
-	const RAND_func *func_;
+	RAND_func *func_;
 public:
-	CryptoRandomSessionRAND(const RAND_func *func)
+	CryptoRandomSessionRAND(RAND_func *func)
 	: log_("/crypto/random/session/openssl"),
 	  func_(func)
 	{ }
@@ -44,7 +44,7 @@ public:
 
 class CryptoRandomMethodOpenSSL : public CryptoRandomMethod {
 	LogHandle log_;
-	std::map<CryptoRandomType, const RAND_func *> func_map_;
+	std::map<CryptoRandomType, RAND_func *> func_map_;
 public:
 	CryptoRandomMethodOpenSSL(void)
 	: log_("/crypto/random/openssl"),
@@ -68,7 +68,7 @@ public:
 	 */
 	bool generate(CryptoRandomType func, size_t len, Buffer *out) const
 	{
-		std::map<CryptoRandomType, const RAND_func *>::const_iterator it;
+		std::map<CryptoRandomType, RAND_func *>::const_iterator it;
 
 		it = func_map_.find(func);
 		if (it == func_map_.end())
@@ -85,7 +85,7 @@ public:
 
 	CryptoRandomSession *session(CryptoRandomType func) const
 	{
-		std::map<CryptoRandomType, const RAND_func *>::const_iterator it;
+		std::map<CryptoRandomType, RAND_func *>::const_iterator it;
 
 		it = func_map_.find(func);
 		if (it != func_map_.end())
