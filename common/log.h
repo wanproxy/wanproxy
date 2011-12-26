@@ -15,10 +15,14 @@ public:
 	{ }
 
 	template<typename T>
-	LogNull&
-	operator << (T)
+	const LogNull& operator<< (T) const
 	{
-		return *this;
+		return (*this);
+	}
+
+	const LogNull& operator<< (std::ostream& (*)(std::ostream&)) const
+	{
+		return (*this);
 	}
 };
 
