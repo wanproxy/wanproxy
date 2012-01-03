@@ -38,9 +38,29 @@ protected:
 		incoming_pipe_->produce(buf);
 	}
 
+	void incoming_produce_eos(Buffer *buf = NULL)
+	{
+		incoming_pipe_->produce_eos(buf);
+	}
+
+	void incoming_produce_error(void)
+	{
+		incoming_pipe_->produce_error();
+	}
+
 	void outgoing_produce(Buffer *buf)
 	{
 		outgoing_pipe_->produce(buf);
+	}
+
+	void outgoing_produce_eos(Buffer *buf = NULL)
+	{
+		outgoing_pipe_->produce_eos(buf);
+	}
+
+	void outgoing_produce_error(void)
+	{
+		outgoing_pipe_->produce_error();
 	}
 
 public:
