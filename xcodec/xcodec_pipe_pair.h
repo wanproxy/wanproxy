@@ -18,7 +18,8 @@ class XCodecPipePair : public PipePair {
 
 	/*
 	 * XXX
-	 * Have N encoders and decoders, one for each ''level'', to do multi-level encoding.
+	 * Have N encoders and decoders (and, critically, caches), one for each
+	 * ''level'', to do multi-level encoding.
 	 */
 	XCodecDecoder *decoder_;
 	XCodecCache *decoder_cache_;
