@@ -31,6 +31,11 @@ class Ref {
 				delete this;
 		}
 
+		bool exclusive(void) const
+		{
+			return (count_ == 1);
+		}
+
 		T *get(void) const
 		{
 			return (ptr_);
@@ -44,8 +49,11 @@ public:
 	{ }
 
 	Ref(T *ptr)
-	: obj_(new RefObj(ptr))
-	{ }
+	: obj_(NULL)
+	{
+		if (ptr != NULL)
+			obj_ = new RefObj(ptr);
+	}
 
 	/*
 	 * XXX Template...  See operator=.
@@ -100,6 +108,11 @@ public:
 	{
 		const T *ptr = obj_->get();
 		return (dynamic_cast<Tc>(ptr));
+	}
+
+	bool exclusive(void) const
+	{
+		return (obj_->exclusive());
 	}
 
 	bool null(void) const
