@@ -92,6 +92,7 @@ private:
 
 	void decoder_produce(Buffer *buf)
 	{
+		ASSERT(log_, !buf->empty());
 		decoder_pipe_->produce(buf);
 	}
 
@@ -110,6 +111,7 @@ private:
 
 	void encoder_produce(Buffer *buf)
 	{
+		ASSERT(log_, !buf->empty());
 		encoder_pipe_->produce(buf);
 	}
 
