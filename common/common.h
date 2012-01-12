@@ -6,6 +6,7 @@
 #include <common/types.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <string> /* Already here for log.h, but be explicit.  */
 
 #endif /* !COMMON_COMMON_H */
