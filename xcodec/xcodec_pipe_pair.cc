@@ -138,11 +138,16 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 		if (!decoder_frame_buffer_.empty())
 			ERROR(log_) << "Remote encoder closed connection with frame data outstanding.";
 		if (!decoder_sent_eos_) {
+			DEBUG(log_) << "Decoder received, sent EOS.";
 			decoder_sent_eos_ = true;
 			decoder_produce_eos();
+		} else {
+			DEBUG(log_) << "Decoder received EOS after sending EOS.";
 		}
 		return;
 	}
+
+	ASSERT(!decoder_sent_eos_);
 
 	buf->moveout(&decoder_buffer_);
 
