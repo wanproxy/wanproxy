@@ -148,6 +148,8 @@ WANProxyConfig::configure(const std::string& name)
 		while (is.good()) {
 			std::string word;
 			is >> word;
+			if (word.empty())
+				continue;
 			if (word[0] == '#')
 				break;
 			tokens.push_back(word);
