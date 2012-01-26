@@ -197,7 +197,7 @@ NetworkInterfacePCAP::open(const std::string& ifname)
 static void
 network_interface_pcap_dispatch(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
 {
-	Buffer *packet = (Buffer *)user;
+	Buffer *packet = (Buffer *)(void *)user;
 	ASSERT("/network/pcap/dispatch", packet->empty());
 
 	packet->append(bytes, h->caplen);
