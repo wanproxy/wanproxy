@@ -10,7 +10,9 @@
 class Splice;
 
 class HTTPServerHandler {
+protected:
 	LogHandle log_;
+private:
 	Socket *client_;
 protected:
 	HTTPServerPipe *pipe_;
