@@ -147,8 +147,6 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 		return;
 	}
 
-	ASSERT(log_, !decoder_sent_eos_);
-
 	buf->moveout(&decoder_buffer_);
 
 	while (!decoder_buffer_.empty()) {
