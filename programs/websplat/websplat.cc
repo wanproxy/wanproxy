@@ -127,9 +127,8 @@ private:
 		}
 		close(fd);
 
-		std::ostringstream os;
-		os << "Content-length: " << data.length() << "\r\n";
-		Buffer headers(os.str());
+		Buffer headers;
+		headers << "Content-length: " << data.length() << "\r\n";
 
 		pipe_->send_response(HTTPProtocol::OK, &data, &headers);
 	}

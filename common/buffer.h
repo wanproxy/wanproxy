@@ -1537,6 +1537,33 @@ public:
 	}
 
 	/*
+	 * Output operator for strings.
+	 */
+	Buffer& operator<< (const std::string& str)
+	{
+		append(str);
+		return (*this);
+	}
+
+	/*
+	 * Output operator for Buffers.
+	 */
+	Buffer& operator<< (const Buffer& buf)
+	{
+		append(buf);
+		return (*this);
+	}
+
+	/*
+	 * Output operator for Buffer pointers.
+	 */
+	Buffer& operator<< (const Buffer *buf)
+	{
+		append(buf);
+		return (*this);
+	}
+
+	/*
 	 * Fill a suppled iovec which has at most a specified number of elements
 	 * with the contents of this Buffer and return the number which were
 	 * populated.
@@ -1552,5 +1579,27 @@ public:
 
 std::ostream& operator<< (std::ostream&, const Buffer *);
 std::ostream& operator<< (std::ostream&, const Buffer&);
+
+template<typename T>
+Buffer& operator<< (Buffer& buf, T arg)
+{
+	std::ostringstream os;
+	os << arg;
+	return (buf << os.str());
+}
+
+template<>
+Buffer& operator<< (Buffer& buf, const Buffer& src)
+{
+	buf.append(src);
+	return (buf);
+}
+
+template<>
+Buffer& operator<< (Buffer& buf, const Buffer *src)
+{
+	buf.append(src);
+	return (buf);
+}
 
 #endif /* !COMMON_BUFFER_H */
