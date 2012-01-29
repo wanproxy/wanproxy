@@ -1580,26 +1580,26 @@ public:
 std::ostream& operator<< (std::ostream&, const Buffer *);
 std::ostream& operator<< (std::ostream&, const Buffer&);
 
-template<typename T>
-Buffer& operator<< (Buffer& buf, T arg)
-{
-	std::ostringstream os;
-	os << arg;
-	return (buf << os.str());
-}
+namespace {
+	template<typename T>
+	Buffer& operator<< (Buffer& buf, T arg)
+	{
+		std::ostringstream os;
+		os << arg;
+		return (buf << os.str());
+	}
 
-template<>
-Buffer& operator<< (Buffer& buf, const Buffer& src)
-{
-	buf.append(src);
-	return (buf);
-}
+	Buffer& operator<< (Buffer& buf, const Buffer& src)
+	{
+		buf.append(src);
+		return (buf);
+	}
 
-template<>
-Buffer& operator<< (Buffer& buf, const Buffer *src)
-{
-	buf.append(src);
-	return (buf);
+	Buffer& operator<< (Buffer& buf, const Buffer *src)
+	{
+		buf.append(src);
+		return (buf);
+	}
 }
 
 #endif /* !COMMON_BUFFER_H */
