@@ -4,7 +4,9 @@
 #include <event/event_callback.h>
 #include <event/event_thread.h>
 
-static void signal_reload(int);
+namespace {
+	static void signal_reload(int);
+}
 
 EventThread::EventThread(void)
 : Thread("EventThread"),
@@ -113,9 +115,11 @@ EventThread::reload(void)
 	reload_ = true;
 }
 
-static void
-signal_reload(int)
-{
-	EventThread::self()->reload();
-	/* XXX Forward signal to all threads.  */
+namespace {
+	static void
+	signal_reload(int)
+	{
+		EventThread::self()->reload();
+		/* XXX Forward signal to all threads.  */
+	}
 }
