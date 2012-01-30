@@ -12,22 +12,24 @@
 
 #include "thread_posix.h"
 
-static bool thread_posix_initialized;
-static pthread_key_t thread_posix_key;
+namespace {
+	static bool thread_posix_initialized;
+	static pthread_key_t thread_posix_key;
 
-static LockClass thread_start_lock_class("Thread::start");
-static Mutex thread_start_mutex(&thread_start_lock_class, "Thread::start");
-static SleepQueue thread_start_sleepq("Thread::start", &thread_start_mutex);
+	static LockClass thread_start_lock_class("Thread::start");
+	static Mutex thread_start_mutex(&thread_start_lock_class, "Thread::start");
+	static SleepQueue thread_start_sleepq("Thread::start", &thread_start_mutex);
 
-static std::set<ThreadState *> running_threads;
+	static std::set<ThreadState *> running_threads;
 
-static void thread_posix_init(void);
-static void *thread_posix_start(void *);
+	static void thread_posix_init(void);
+	static void *thread_posix_start(void *);
 
-static void thread_posix_signal_ignore(int);
-static void thread_posix_signal_stop(int);
+	static void thread_posix_signal_ignore(int);
+	static void thread_posix_signal_stop(int);
 
-static NullThread initial_thread("initial thread");
+	static NullThread initial_thread("initial thread");
+}
 
 bool Thread::stop_ = false;
 
@@ -101,73 +103,75 @@ Thread::self(void)
 	return ((Thread *)ptr);
 }
 
-static void
-thread_posix_init(void)
-{
-	ASSERT("/thread/posix", !thread_posix_initialized);
+namespace {
+	static void
+	thread_posix_init(void)
+	{
+		ASSERT("/thread/posix", !thread_posix_initialized);
 
-	signal(SIGINT, thread_posix_signal_stop);
-	signal(SIGUSR1, thread_posix_signal_ignore);
+		signal(SIGINT, thread_posix_signal_stop);
+		signal(SIGUSR1, thread_posix_signal_ignore);
 
-	int rv = pthread_key_create(&thread_posix_key, NULL);
-	if (rv == -1) {
-		ERROR("/thread/posix/init") << "Could not initialize thread-local Thread pointer key.";
-		return;
+		int rv = pthread_key_create(&thread_posix_key, NULL);
+		if (rv == -1) {
+			ERROR("/thread/posix/init") << "Could not initialize thread-local Thread pointer key.";
+			return;
+		}
+
+		ThreadState::start(thread_posix_key, &initial_thread);
+
+		thread_posix_initialized = true;
 	}
 
-	ThreadState::start(thread_posix_key, &initial_thread);
+	static void
+	thread_posix_signal_ignore(int)
+	{
+		/* SIGUSR1 comes here so we can interrupt blocking syscalls.  */
+	}
 
-	thread_posix_initialized = true;
-}
+	static void
+	thread_posix_signal_stop(int sig)
+	{
+		signal(sig, SIG_DFL);
+		Thread::stop_ = true;
 
-static void
-thread_posix_signal_ignore(int)
-{
-	/* SIGUSR1 comes here so we can interrupt blocking syscalls.  */
-}
+		INFO("/thread/posix/signal") << "Received SIGINT; setting stop flag.";
 
-static void
-thread_posix_signal_stop(int sig)
-{
-	signal(sig, SIG_DFL);
-	Thread::stop_ = true;
-
-	INFO("/thread/posix/signal") << "Received SIGINT; setting stop flag.";
-
-	pthread_t self = pthread_self();
-
-	/*
-	 * Forward signal to all threads.
-	 *
-	 * XXX Could deadlock.  Should try_lock.
-	 */
-	thread_start_mutex.lock();
-	std::set<ThreadState *>::const_iterator it;
-	for (it = running_threads.begin(); it != running_threads.end(); ++it) {
-		const ThreadState *state = *it;
+		pthread_t self = pthread_self();
 
 		/*
-		 * Just send SIGUSR1 to interrupt any blocking syscalls.
+		 * Forward signal to all threads.
+		 *
+		 * XXX Could deadlock.  Should try_lock.
 		 */
-		if (state->td_ == self)
-			continue;
-		pthread_kill(state->td_, SIGUSR1);
+		thread_start_mutex.lock();
+		std::set<ThreadState *>::const_iterator it;
+		for (it = running_threads.begin(); it != running_threads.end(); ++it) {
+			const ThreadState *state = *it;
+
+			/*
+			 * Just send SIGUSR1 to interrupt any blocking syscalls.
+			 */
+			if (state->td_ == self)
+				continue;
+			pthread_kill(state->td_, SIGUSR1);
+		}
+		thread_start_mutex.unlock();
 	}
-	thread_start_mutex.unlock();
-}
 
-static void *
-thread_posix_start(void *arg)
-{
-	Thread *td = (Thread *)arg;
+	static void *
+	thread_posix_start(void *arg)
+	{
+		Thread *td = (Thread *)arg;
 
-	ThreadState::start(thread_posix_key, td);
+		ThreadState::start(thread_posix_key, td);
 
-	thread_start_mutex.lock();
-	thread_start_sleepq.signal();
-	thread_start_mutex.unlock();
+		thread_start_mutex.lock();
+		thread_start_sleepq.signal();
+		thread_start_mutex.unlock();
 
-	td->main();
+		td->main();
 
-	return (NULL);
+		return (NULL);
+	}
 }
