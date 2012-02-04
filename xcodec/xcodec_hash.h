@@ -48,14 +48,18 @@ class XCodecHash {
 	RollingHash bytes_;
 	RollingHash bits_;
 	unsigned start_;
+#ifndef NDEBUG
 	unsigned length_;
+#endif
 
 public:
 	XCodecHash(void)
 	: bytes_(),
 	  bits_(),
-	  start_(0),
-	  length_(0)
+	  start_(0)
+#ifndef NDEBUG
+	, length_(0)
+#endif
 	{ }
 
 	~XCodecHash()
@@ -66,12 +70,16 @@ public:
 		unsigned bit = ffs(ch);
 		unsigned word = (unsigned)ch + 1;
 
+#ifndef NDEBUG
 		ASSERT("/xcodec/hash", length_ < XCODEC_SEGMENT_LENGTH);
+#endif
 
 		bytes_.add(word, start_);
 		bits_.add(bit, start_);
 
+#ifndef NDEBUG
 		length_++;
+#endif
 		start_ = (start_ + 1) % XCODEC_SEGMENT_LENGTH;
 	}
 
@@ -80,7 +88,9 @@ public:
 		bytes_.reset();
 		bits_.reset();
 
+#ifndef NDEBUG
 		length_ = 0;
+#endif
 		start_ = 0;
 	}
 
@@ -89,7 +99,9 @@ public:
 		unsigned bit = ffs(ch);
 		unsigned word = (unsigned)ch + 1;
 
+#ifndef NDEBUG
 		ASSERT("/xcodec/hash", length_ == XCODEC_SEGMENT_LENGTH);
+#endif
 
 		bytes_.roll(word, start_);
 		bits_.roll(bit, start_);
@@ -117,7 +129,9 @@ public:
 	 */
 	uint64_t mix(void) const
 	{
+#ifndef NDEBUG
 		ASSERT("/xcodec/hash", length_ == XCODEC_SEGMENT_LENGTH);
+#endif
 
 		uint64_t bits_hash = (bits_.sum1_ << 16) + bits_.sum2_;
 		uint64_t bytes_hash = (bytes_.sum1_ << 20) + bytes_.sum2_;
