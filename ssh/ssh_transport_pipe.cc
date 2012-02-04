@@ -205,8 +205,7 @@ SSH::TransportPipe::receive_do(void)
 		if (mac_length_ != 0)
 			input_buffer_.moveout(&mac, 0, mac_length_);
 
-		padding_len = packet.peek();
-		packet.skip(sizeof padding_len);
+		padding_len = packet.pop();
 		if (padding_len != 0) {
 			if (packet.length() < padding_len) {
 				ERROR(log_) << "Padding too large for packet.";

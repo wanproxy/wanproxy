@@ -88,7 +88,7 @@ XML::escape(Buffer *out, const Buffer *in)
 	while (tmp.find_any("\"<>&", &pos)) {
 		if (pos != 0)
 			tmp.moveout(out, pos);
-		switch (tmp.peek()) {
+		switch (tmp.pop()) {
 		case '"':
 			out->append("&quot;");
 			break;
@@ -104,7 +104,6 @@ XML::escape(Buffer *out, const Buffer *in)
 		default:
 			NOTREACHED("/xml");
 		}
-		tmp.skip(1);
 	}
 	if (!tmp.empty())
 		out->append(tmp);

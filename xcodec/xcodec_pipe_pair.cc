@@ -206,8 +206,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 
 				decoder_buffer_.skip(sizeof op);
 
-				decoder_buffer_.extract(&hash);
-				decoder_buffer_.skip(sizeof hash);
+				decoder_buffer_.moveout(&hash);
 				hash = BigEndian::decode(hash);
 
 				BufferSegment *oseg = codec_->cache()->lookup(hash);

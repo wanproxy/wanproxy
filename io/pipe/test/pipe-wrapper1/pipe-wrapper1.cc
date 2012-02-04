@@ -144,9 +144,9 @@ public:
 	bool process(Buffer *output, Buffer *input)
 	{
 		while (!input->empty()) {
-			sum_ += input->peek();
-			output->append(input->peek());
-			input->skip(1);
+			uint8_t ch = input->pop();
+			sum_ += ch;
+			output->append(ch);
 		}
 		return (true);
 	}

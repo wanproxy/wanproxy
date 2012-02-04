@@ -153,7 +153,7 @@ dump(int ifd, int ofd)
 					break;
 				else {
 					uint64_t behash;
-					input.moveout((uint8_t *)&behash, sizeof XCODEC_MAGIC + sizeof op, sizeof behash);
+					input.moveout(&behash, sizeof XCODEC_MAGIC + sizeof op);
 					uint64_t hash = BigEndian::decode(behash);
 
 					bprintf(&output, "<hash-reference");

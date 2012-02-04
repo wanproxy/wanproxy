@@ -867,6 +867,54 @@ public:
 	}
 
 	/*
+	 * Move a 16-bit quantity out of this Buffer starting at offset.
+	 * No endianness is assumed.
+	 */
+	void moveout(uint16_t *p, unsigned offset = 0)
+	{
+		ASSERT("/buffer", length() >= offset + sizeof *p);
+		moveout((uint8_t *)p, offset, sizeof *p);
+	}
+
+	/*
+	 * Move a 32-bit quantity out of this Buffer starting at offset.
+	 * No endianness is assumed.
+	 */
+	void moveout(uint32_t *p, unsigned offset = 0)
+	{
+		ASSERT("/buffer", length() >= offset + sizeof *p);
+		moveout((uint8_t *)p, offset, sizeof *p);
+	}
+
+	/*
+	 * Move a 64-bit quantity out of this Buffer starting at offset.
+	 * No endianness is assumed.
+	 */
+	void moveout(uint64_t *p, unsigned offset = 0)
+	{
+		ASSERT("/buffer", length() >= offset + sizeof *p);
+		moveout((uint8_t *)p, offset, sizeof *p);
+	}
+
+	/*
+	 * Move a string in std::string format out of the beginning of this
+	 * Buffer.
+	 */
+	void moveout(std::string& str)
+	{
+		segment_list_t::const_iterator it;
+
+		for (it = data_.begin(); it != data_.end(); ++it) {
+			BufferSegment *seg = *it;
+
+			str += std::string((const char *)seg->data(), seg->length());
+			seg->unref();
+		}
+		data_.clear();
+		length_ = 0;
+	}
+
+	/*
 	 * Get a SegmentIterator that can be used to enumerate BufferSegments
 	 * in this Buffer.
 	 */
@@ -1095,6 +1143,26 @@ public:
 
 		const BufferSegment *seg = data_.front();
 		return (seg->data()[0]);
+	}
+
+	/*
+	 * Take the first character in this Buffer.
+	 */
+	uint8_t pop(void)
+	{
+		ASSERT("/buffer", length_ != 0);
+
+		segment_list_t::iterator front = data_.begin();
+		BufferSegment *seg = *front;
+		uint8_t ch = seg->data()[0];
+		if (seg->length() == 1) {
+			seg->unref();
+			data_.pop_front();
+		} else {
+			seg = seg->skip(1);
+			*front = seg;
+		}
+		return (ch);
 	}
 
 	/*
