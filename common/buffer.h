@@ -1162,6 +1162,7 @@ public:
 			seg = seg->skip(1);
 			*front = seg;
 		}
+		length_--;
 		return (ch);
 	}
 
