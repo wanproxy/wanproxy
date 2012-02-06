@@ -9,4 +9,6 @@
 #include <cstddef>
 #include <string> /* Already here for log.h, but be explicit.  */
 
+#pragma clang diagnostic ignored "-Wcovered-switch-default"
+
 #endif /* !COMMON_COMMON_H */
