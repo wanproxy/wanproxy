@@ -1658,13 +1658,13 @@ namespace {
 		return (buf << os.str());
 	}
 
-	Buffer& operator<< (Buffer& buf, const Buffer& src)
+	static inline Buffer& operator<< (Buffer& buf, const Buffer& src)
 	{
 		buf.append(src);
 		return (buf);
 	}
 
-	Buffer& operator<< (Buffer& buf, const Buffer *src)
+	static inline Buffer& operator<< (Buffer& buf, const Buffer *src)
 	{
 		buf.append(src);
 		return (buf);
