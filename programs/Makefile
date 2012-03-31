@@ -1,3 +1,4 @@
+SUBDIR+=fwdproxy
 SUBDIR+=tack
 SUBDIR+=wanproxy
 SUBDIR+=websplat
