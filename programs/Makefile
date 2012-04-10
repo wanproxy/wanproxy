@@ -1,3 +1,4 @@
+SUBDIR+=diskdup
 SUBDIR+=fwdproxy
 SUBDIR+=tack
 SUBDIR+=wanproxy
