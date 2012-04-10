@@ -154,6 +154,8 @@ WANProxyConfig::configure(const std::string& name)
 				break;
 			tokens.push_back(word);
 		}
+		if (tokens.empty())
+			continue;
 		ASSERT(log_, !tokens.empty());
 		if (!parse(tokens)) {
 			ERROR(log_) << "Error in configuration directive: " << line;
