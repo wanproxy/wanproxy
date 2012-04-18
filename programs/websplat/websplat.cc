@@ -1,4 +1,5 @@
 #include <sys/stat.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 
@@ -73,13 +74,14 @@ private:
 		}
 		path_components.clear();
 
-		std::string path = config_.root_ + "/";
-		Buffer::join(path_stack, "/").extract(path);
+		std::string canonical_uri("/");
+		Buffer::join(path_stack, "/").extract(canonical_uri);
+		std::string path = config_.root_ + canonical_uri;
 
-		handle_file(path);
+		handle_file(canonical_uri, path);
 	}
 
-	void handle_file(const std::string& path)
+	void handle_file(const std::string& uri, const std::string& path)
 	{
 		DEBUG(log_) << "Attempting to send file: " << path;
 
@@ -91,6 +93,11 @@ private:
 			return;
 		}
 
+		handle_file(uri, path, fd);
+	}
+
+	void handle_file(const std::string& uri, const std::string& path, int fd)
+	{
 		struct stat sb;
 		int rv = fstat(fd, &sb);
 		if (rv != 0) {
@@ -104,7 +111,10 @@ private:
 			break;
 		case S_IFDIR:
 			close(fd);
-			handle_file(path + "/index.html");
+			if (uri == "/")
+				handle_directory(uri, path);
+			else
+				handle_directory(uri + "/", path);
 			return;
 		default:
 			close(fd);
@@ -129,6 +139,62 @@ private:
 
 		Buffer headers;
 		headers << "Content-length: " << data.length() << "\r\n";
+
+		pipe_->send_response(HTTPProtocol::OK, &data, &headers);
+	}
+
+	void handle_directory(const std::string& uri_base, const std::string& directory)
+	{
+		static const char *index_files[] = {
+			"index.html",
+			NULL,
+		};
+		const char **ifp;
+
+		for (ifp = index_files; *ifp != NULL; ifp++) {
+			std::string index_file(directory + "/" + *ifp);
+
+			int fd;
+			fd = open(index_file.c_str(), O_RDONLY);
+			if (fd == -1)
+				continue;
+			handle_file(uri_base + *ifp, index_file, fd);
+			return;
+		}
+
+		DIR *dir;
+		dir = opendir(directory.c_str());
+		if (dir == NULL) {
+			pipe_->send_response(HTTPProtocol::NotFound, "Could not open directory.");
+			return;
+		}
+
+		Buffer data;
+		data << "<html><head>";
+		data << "<title>Index of " << uri_base << "</title>";
+		data << "<style type=\"text/css\">";
+		data << "body { font-family: sans-serif; };";
+		data << "li { font-family: serif; };";
+		data << "</style>";
+		data << "</head>";
+
+		data << "<body>";
+		data << "<h1>" << uri_base << "</h1>";
+		data << "<ul>";
+
+		struct dirent *de;
+		while ((de = readdir(dir)) != NULL)
+			data << "<li><a href=\"" << uri_base << de->d_name << "\">" << de->d_name << "</a></li>";
+
+		data << "</ul>";
+		data << "</body>";
+		data << "</html>";
+
+		closedir(dir);
+
+		Buffer headers;
+		headers << "Content-length: " << data.length() << "\r\n";
+		headers << "Content-type: text/html\r\n";
 
 		pipe_->send_response(HTTPProtocol::OK, &data, &headers);
 	}
