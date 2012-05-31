@@ -10,6 +10,7 @@
 #include <string> /* Already here for log.h, but be explicit.  */
 
 #ifdef __clang__
+#pragma clang diagnostic ignored "-Wunknown-pragmas"
 #pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
 
