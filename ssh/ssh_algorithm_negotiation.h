@@ -112,7 +112,9 @@ namespace SSH {
 		/* XXX Add a variant that takes only server_host_key_list and fills in suitable defaults.  */
 
 		~AlgorithmNegotiation()
-		{ }
+		{
+			(void)role_; /* XXX role_ is not yet used, but may be soon.  */
+		}
 
 		bool input(Buffer *);
 		bool output(Buffer *);
