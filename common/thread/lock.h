@@ -13,12 +13,10 @@ public:
 };
 
 class Lock {
-	LockClass *lock_class_;
 	std::string name_;
 protected:
-	Lock(LockClass *lock_class, const std::string& name)
-	: lock_class_(lock_class),
-	  name_(name)
+	Lock(LockClass *, const std::string& name)
+	: name_(name)
 	{ }
 public:
 	virtual ~Lock()
@@ -36,7 +34,6 @@ public:
 
 class ScopedLock {
 	Lock *lock_;
-	bool need_unlock_;
 public:
 	ScopedLock(Lock *lock)
 	: lock_(lock)
