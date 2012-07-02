@@ -5,7 +5,7 @@
 namespace {
 	struct CryptoEncryptionMethodRegistrarKey;
 	typedef	Registrar<CryptoEncryptionMethodRegistrarKey, const CryptoEncryptionMethod *> CryptoEncryptionMethodRegistrar;
-};
+}
 
 CryptoEncryptionMethod::CryptoEncryptionMethod(const std::string& name)
 : name_(name)
