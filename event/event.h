@@ -6,9 +6,11 @@
 /*
  * The general-purpose event type.  Never extended or anything like that.
  * Tracking a user-specified pointer is handled by the callback, providers of
- * Events can put extra data into the data_ pointer, which is perhaps a bit
- * lacking.  (For example: the Socket::accept() codepath returns a pointer to
- * the client Socket there.)
+ * Events can pass extra data by extending their Callback type, e.g. the
+ * SocketEventCallback used by Socket::accept() to pass back a Socket pointer
+ * along with an Event.
+ * XXX In light of this extension, it may make sense to move the Buffer out
+ *     of Event now, since the Callback can handle Buffers independently.
  *
  * Because we are primarily a data-movement/processing system, a Buffer is an
  * integral part of every Event.  Plus, Buffers with no data are basically
