@@ -18,6 +18,11 @@ public:
 	~Dropbox()
 	{ }
 
+	void clear(void)
+	{
+		item_dropped_ = false;
+	}
+
 	Action *get(TypedCallback<T> *cb)
 	{
 		Action *a = item_condition_.wait(cb);
