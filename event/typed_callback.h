@@ -33,6 +33,12 @@ public:
 		param_ = p;
 		have_param_ = true;
 	}
+
+	void reset(void)
+	{
+		param_ = T();
+		have_param_ = false;
+	}
 };
 
 template<typename T, class C>
