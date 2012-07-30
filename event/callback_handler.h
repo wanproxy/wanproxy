@@ -14,18 +14,6 @@ public:
 	  callback_(NULL)
 	{ }
 
-	template<typename Tobj, typename Tmethod>
-	CallbackHandler(Tobj obj, Tmethod method)
-	: action_(NULL),
-	  callback_(::callback(obj, method))
-	{ }
-
-	template<typename Tobj, typename Tmethod, typename Targ>
-	CallbackHandler(Tobj obj, Tmethod method, Targ arg)
-	: action_(NULL),
-	  callback_(::callback(obj, method, arg))
-	{ }
-
 	~CallbackHandler()
 	{
 		if (action_ != NULL) {
