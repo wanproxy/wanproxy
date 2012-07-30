@@ -44,13 +44,13 @@ public:
 	virtual ~SimpleCallback()
 	{ }
 
-protected:
-	virtual void operator() (void) = 0;
-
 	void execute(void)
 	{
 		(*this)();
 	}
+
+protected:
+	virtual void operator() (void) = 0;
 };
 
 #endif /* !EVENT_CALLBACK_H */
