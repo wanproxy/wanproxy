@@ -1,5 +1,5 @@
-#ifndef	PROGRAMS_WANPROXY_PROXY_LISTENER_H
-#define	PROGRAMS_WANPROXY_PROXY_LISTENER_H
+#ifndef	PROGRAMS_FWDPROXY_PROXY_LISTENER_H
+#define	PROGRAMS_FWDPROXY_PROXY_LISTENER_H
 
 #include <io/socket/simple_server.h>
 
@@ -20,4 +20,4 @@ private:
 	void client_connected(Socket *);
 };
 
-#endif /* !PROGRAMS_WANPROXY_PROXY_LISTENER_H */
+#endif /* !PROGRAMS_FWDPROXY_PROXY_LISTENER_H */

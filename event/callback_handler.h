@@ -1,5 +1,5 @@
-#ifndef	CALLBACK_HANDLER_H
-#define	CALLBACK_HANDLER_H
+#ifndef	EVENT_CALLBACK_HANDLER_H
+#define	EVENT_CALLBACK_HANDLER_H
 
 #include <event/action.h>
 #include <event/callback.h>
@@ -85,4 +85,4 @@ private:
 	}
 };
 
-#endif /* !CALLBACK_HANDLER_H */
+#endif /* !EVENT_CALLBACK_HANDLER_H */

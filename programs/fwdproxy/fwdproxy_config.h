@@ -1,5 +1,5 @@
-#ifndef	PROGRAMS_WANPROXY_WANPROXY_CONFIG_H
-#define	PROGRAMS_WANPROXY_WANPROXY_CONFIG_H
+#ifndef	PROGRAMS_FWDPROXY_FWDPROXY_CONFIG_H
+#define	PROGRAMS_FWDPROXY_FWDPROXY_CONFIG_H
 
 class FWDProxyConfig {
 	LogHandle log_;
@@ -14,4 +14,4 @@ public:
 	bool configure(const std::string&);
 };
 
-#endif /* !PROGRAMS_WANPROXY_WANPROXY_CONFIG_H */
+#endif /* !PROGRAMS_FWDPROXY_FWDPROXY_CONFIG_H */
