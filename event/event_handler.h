@@ -11,10 +11,12 @@ class EventHandler {
 
 	Action *action_;
 	callback_map_t callback_map_;
+	EventCallback *default_;
 public:
 	EventHandler(void)
 	: action_(NULL),
-	  callback_map_()
+	  callback_map_(),
+	  default_(NULL)
 	{ }
 
 	~EventHandler()
@@ -24,16 +26,22 @@ public:
 			action_ = NULL;
 		}
 
-		ASSERT("/event/handler", !callback_map_.empty());
-		callback_map_t::iterator it;
-		for (it = callback_map_.begin(); it != callback_map_.end(); ++it)
-			delete it->second;
-		callback_map_.clear();
+		if (!callback_map_.empty()) {
+			callback_map_t::iterator it;
+			for (it = callback_map_.begin(); it != callback_map_.end(); ++it)
+				delete it->second;
+			callback_map_.clear();
+		}
+
+		if (default_ != NULL) {
+			delete default_;
+			default_ = NULL;
+		}
 	}
 
 	EventCallback *callback(void)
 	{
-		ASSERT("/event/handler", !callback_map_.empty());
+		ASSERT("/event/handler", !callback_map_.empty() || default_ != NULL);
 		return (::callback(this, &EventHandler::handle_callback));
 	}
 
@@ -43,6 +51,26 @@ public:
 
 		action_->cancel();
 		action_ = NULL;
+	}
+
+	template<typename Tobj, typename Tmethod>
+	void handler(Tobj obj, Tmethod method)
+	{
+		ASSERT("/event/handler", action_ == NULL);
+
+		if (default_ != NULL)
+			HALT("/event/handler") << "Duplicate default handler installed.";
+		default_ = ::callback(obj, method);
+	}
+
+	template<typename Tobj, typename Tmethod, typename Targ>
+	void handler(Tobj obj, Tmethod method, Targ arg)
+	{
+		ASSERT("/event/handler", action_ == NULL);
+
+		if (default_ != NULL)
+			HALT("/event/handler") << "Duplicate default handler installed.";
+		default_ = ::callback(obj, method, arg);
 	}
 
 	template<typename Tobj, typename Tmethod>
@@ -84,8 +112,13 @@ private:
 		action_ = NULL;
 
 		callback_map_t::const_iterator it = callback_map_.find(e.type_);
-		if (it != callback_map_.end()) {
-			EventCallback *cb = it->second;
+		if (it != callback_map_.end() || default_ != NULL) {
+			EventCallback *cb;
+
+			if (it != callback_map_.end())
+				cb = it->second;
+			else
+				cb = default_;
 
 			cb->param(e);
 			cb->execute();
