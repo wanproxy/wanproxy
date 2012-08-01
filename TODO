@@ -1,3 +1,45 @@
+Make it so that Actions can be given a callback after they are created, and
+then the source of the Action from that gets the hint to start and where to
+continue after the asynchronous action.  This has the nice benefit of getting
+rid of the callback parameter to async methods, e.g.
+	handler_.wait(socket_->read(0, handler_.callback()));
+Becomes:
+	handler_.wait(socket_->read(0));
+Where handler_.wait is like:
+	void wait(Action *a)
+	{
+		a->callback(this, &EventHandler::handle_callback);
+		action_ = a;
+	}
+Alternately, it would be nice to make asynchronous interfaces move to taking
+CallbackHandler or EventHandler instances, e.g.
+	socket_->read(0, &handler_);
+And then socket_->read is like:
+	void read(size_t amt, EventHandler *handler)
+	{
+		read_callback_ = handler->callback();
+		handler->wait(cancellation(this, Socket::read_cancel));
+
+		start_read();
+	}
+
+I feel like continuing to live with these possibilities may make clear how the
+various APIs may best change, e.g. perhaps read should be:
+	void read(size_t amt, EventHandler *handler)
+	{
+		read_handler_ = handler;
+		read_handler_->cancellation(this, Socket::read_cancel);
+
+		start_read();
+	}
+	...
+	void read_complete(Event e)
+	{
+		read_handler_->consume(e);
+	}
+
+%%%
+
 o) Do a pass with Log taking a LogHandle& not a const LogHandle& so I can
    find places using hard-coded strings to move into LogHandles.  Using a
    LogHandle is vastly superior since it probably means doing the right
