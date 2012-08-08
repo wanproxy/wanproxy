@@ -1,6 +1,8 @@
 #include <unistd.h>
 
+#include <event/callback_handler.h>
 #include <event/event_callback.h>
+#include <event/event_handler.h>
 #include <event/event_main.h>
 
 #include <io/stream_handle.h>
@@ -9,51 +11,37 @@ class Sink {
 	LogHandle log_;
 
 	StreamHandle fd_;
-	Action *action_;
+	CallbackHandler close_handler_;
+	EventHandler read_handler_;
 public:
 	Sink(int fd)
 	: log_("/sink"),
 	  fd_(fd),
-	  action_(NULL)
+	  read_handler_()
 	{
-		EventCallback *cb = callback(this, &Sink::read_complete);
-		action_ = fd_.read(0, cb);
+		read_handler_.handler(Event::Done, this, &Sink::read_done);
+		read_handler_.handler(Event::EOS, this, &Sink::read_eos);
+
+		close_handler_.handler(this, &Sink::close_done);
+
+		read_handler_.wait(fd_.read(0, read_handler_.callback()));
 	}
 
 	~Sink()
+	{ }
+
+	void read_done(Event)
 	{
-		ASSERT(log_, action_ == NULL);
+		read_handler_.wait(fd_.read(0, read_handler_.callback()));
 	}
 
-	void read_complete(Event e)
+	void read_eos(Event)
 	{
-		action_->cancel();
-		action_ = NULL;
-
-		switch (e.type_) {
-		case Event::Done:
-		case Event::EOS:
-			break;
-		default:
-			HALT(log_) << "Unexpected event: " << e;
-			return;
-		}
-
-		if (e.type_ == Event::EOS) {
-			SimpleCallback *cb = callback(this, &Sink::close_complete);
-			action_ = fd_.close(cb);
-			return;
-		}
-
-		EventCallback *cb = callback(this, &Sink::read_complete);
-		action_ = fd_.read(0, cb);
+		close_handler_.wait(fd_.close(close_handler_.callback()));
 	}
 
-	void close_complete(void)
-	{
-		action_->cancel();
-		action_ = NULL;
-	}
+	void close_done(void)
+	{ }
 };
 
 int
