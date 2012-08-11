@@ -32,7 +32,7 @@ public:
 };
 
 template<class B, class C, typename A>
-class ConstructorArgFactory : public Factory<C> {
+class ConstructorArgFactory : public Factory<B> {
 	A a_;
 public:
 	ConstructorArgFactory(A a)
