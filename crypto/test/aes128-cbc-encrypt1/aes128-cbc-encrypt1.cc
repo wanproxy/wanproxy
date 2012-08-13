@@ -6,13 +6,13 @@
 
 class CryptoTest {
 	TestGroup& group_;
-	CryptoEncryptionSession *session_;
+	CryptoEncryption::Session *session_;
 	Test callback_called_;
 	Test destructor_called_;
 	Action *action_;
 	Buffer ciphertext_;
 public:
-	CryptoTest(TestGroup &group, CryptoCipher cipher, const Buffer& key, const Buffer& iv, const Buffer& plaintext, const Buffer& ciphertext)
+	CryptoTest(TestGroup &group, CryptoEncryption::Cipher cipher, const Buffer& key, const Buffer& iv, const Buffer& plaintext, const Buffer& ciphertext)
 	: group_(group),
 	  session_(NULL),
 	  callback_called_(group, "Callback called."),
@@ -22,14 +22,14 @@ public:
 	{
 		Buffer tmp(plaintext);
 
-		const CryptoEncryptionMethod *method = CryptoEncryptionMethod::method(cipher);
+		const CryptoEncryption::Method *method = CryptoEncryption::Method::method(cipher);
 		if (method == NULL)
 			HALT("/test/crypto/aes128-cbc/encrypt1") << "Could not find a suitable method.";
 
 		session_ = method->session(cipher);
 		{
 			Test _(group_, "Session initialize.");
-			if (session_->initialize(CryptoEncrypt, &key, &iv))
+			if (session_->initialize(CryptoEncryption::Encrypt, &key, &iv))
 				_.pass();
 		}
 		EventCallback *cb = callback(this, &CryptoTest::session_callback);
@@ -77,7 +77,7 @@ main(void)
 	Buffer plaintext("This is a 48-byte message (exactly 3 AES blocks)");
 	Buffer ciphertext("\xd0\xa0\x2b\x38\x36\x45\x17\x53\xd4\x93\x66\x5d\x33\xf0\xe8\x86\x2d\xea\x54\xcd\xb2\x93\xab\xc7\x50\x69\x39\x27\x67\x72\xf8\xd5\x02\x1c\x19\x21\x6b\xad\x52\x5c\x85\x79\x69\x5d\x83\xba\x26\x84");
 
-	CryptoTest _(g, CryptoCipher(CryptoAES128, CryptoModeCBC), key, iv, plaintext, ciphertext);
+	CryptoTest _(g, CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CBC), key, iv, plaintext, ciphertext);
 
 	event_main();
 }

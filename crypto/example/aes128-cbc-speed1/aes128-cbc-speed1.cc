@@ -9,25 +9,25 @@
 static uint8_t zbuf[8192];
 
 class CryptoSpeed {
-	CryptoEncryptionSession *session_;
+	CryptoEncryption::Session *session_;
 	Buffer buffer_;
 	uintmax_t bytes_;
 	Action *callback_action_;
 	Action *timeout_action_;
 public:
-	CryptoSpeed(CryptoCipher cipher, const Buffer& key, const Buffer& iv)
+	CryptoSpeed(CryptoEncryption::Cipher cipher, const Buffer& key, const Buffer& iv)
 	: session_(NULL),
 	  buffer_(zbuf, sizeof zbuf),
 	  bytes_(0),
 	  callback_action_(NULL),
 	  timeout_action_(NULL)
 	{
-		const CryptoEncryptionMethod *method = CryptoEncryptionMethod::method(cipher);
+		const CryptoEncryption::Method *method = CryptoEncryption::Method::method(cipher);
 		if (method == NULL)
 			HALT("/example/aes128-cbc/speed1") << "Could not find a suitable method.";
 
 		session_ = method->session(cipher);
-		if (!session_->initialize(CryptoEncrypt, &key, &iv))
+		if (!session_->initialize(CryptoEncryption::Encrypt, &key, &iv))
 			HALT("/example/aes128-cbc/speed1") << "Failed to initialize session.";
 
 		callback_action_ = callback(this, &CryptoSpeed::callback_complete)->schedule();
@@ -87,7 +87,7 @@ main(void)
 	Buffer key("\x6c\x3e\xa0\x47\x76\x30\xce\x21\xa2\xce\x33\x4a\xa7\x46\xc2\xcd");
 	Buffer iv("\xc7\x82\xdc\x4c\x09\x8c\x66\xcb\xd9\xcd\x27\xd8\x25\x68\x2c\x81");
 
-	CryptoSpeed _(CryptoCipher(CryptoAES128, CryptoModeCBC), key, iv);
+	CryptoSpeed _(CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CBC), key, iv);
 
 	event_main();
 }

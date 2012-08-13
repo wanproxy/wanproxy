@@ -5,55 +5,57 @@
 
 #include <event/event_callback.h>
 
-class CryptoEncryptionMethod;
+namespace CryptoEncryption {
+	class Method;
 
-enum CryptoEncryptionAlgorithm {
-	Crypto3DES,
-	CryptoAES128,
-	CryptoAES192,
-	CryptoAES256,
-};
+	enum Algorithm {
+		TripleDES,
+		AES128,
+		AES192,
+		AES256,
+	};
 
-enum CryptoEncryptionMode {
-	CryptoModeCBC,
-	CryptoModeCTR,
-};
-typedef	std::pair<CryptoEncryptionAlgorithm, CryptoEncryptionMode> CryptoCipher;
+	enum Mode {
+		CBC,
+		CTR,
+	};
+	typedef	std::pair<Algorithm, Mode> Cipher;
 
-enum CryptoEncryptionOperation {
-	CryptoEncrypt,
-	CryptoDecrypt,
-};
+	enum Operation {
+		Encrypt,
+		Decrypt,
+	};
 
-class CryptoEncryptionSession {
-protected:
-	CryptoEncryptionSession(void)
-	{ }
+	class Session {
+	protected:
+		Session(void)
+		{ }
 
-public:
-	virtual ~CryptoEncryptionSession()
-	{ }
+	public:
+		virtual ~Session()
+		{ }
 
-	virtual bool initialize(CryptoEncryptionOperation, const Buffer *, const Buffer *) = 0;
-	virtual Action *submit(Buffer *, EventCallback *) = 0;
-};
+		virtual bool initialize(Operation, const Buffer *, const Buffer *) = 0;
+		virtual Action *submit(Buffer *, EventCallback *) = 0;
+	};
 
-class CryptoEncryptionMethod {
-	std::string name_;
-protected:
-	CryptoEncryptionMethod(const std::string&);
+	class Method {
+		std::string name_;
+	protected:
+		Method(const std::string&);
 
-	virtual ~CryptoEncryptionMethod()
-	{ }
-public:
-	virtual std::set<CryptoCipher> ciphers(void) const = 0;
-	virtual CryptoEncryptionSession *session(CryptoCipher) const = 0;
+		virtual ~Method()
+		{ }
+	public:
+		virtual std::set<Cipher> ciphers(void) const = 0;
+		virtual Session *session(Cipher) const = 0;
 
-	static const CryptoEncryptionMethod *method(CryptoCipher);
-};
+		static const Method *method(Cipher);
+	};
+}
 
-std::ostream& operator<< (std::ostream&, CryptoEncryptionAlgorithm);
-std::ostream& operator<< (std::ostream&, CryptoEncryptionMode);
-std::ostream& operator<< (std::ostream&, CryptoCipher);
+std::ostream& operator<< (std::ostream&, CryptoEncryption::Algorithm);
+std::ostream& operator<< (std::ostream&, CryptoEncryption::Mode);
+std::ostream& operator<< (std::ostream&, CryptoEncryption::Cipher);
 
 #endif /* !CRYPTO_CRYPTO_ENCRYPTION_H */

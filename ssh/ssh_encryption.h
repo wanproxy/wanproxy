@@ -22,7 +22,7 @@ namespace SSH {
 
 		virtual bool input(Buffer *) = 0;
 
-		static Encryption *cipher(CryptoCipher);
+		static Encryption *cipher(CryptoEncryption::Cipher);
 	};
 }
 

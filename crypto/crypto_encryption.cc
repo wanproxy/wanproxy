@@ -3,25 +3,25 @@
 #include <crypto/crypto_encryption.h>
 
 namespace {
-	struct CryptoEncryptionMethodRegistrarKey;
-	typedef	Registrar<CryptoEncryptionMethodRegistrarKey, const CryptoEncryptionMethod *> CryptoEncryptionMethodRegistrar;
+	struct MethodRegistrarKey;
+	typedef	Registrar<MethodRegistrarKey, const CryptoEncryption::Method *> MethodRegistrar;
 }
 
-CryptoEncryptionMethod::CryptoEncryptionMethod(const std::string& name)
+CryptoEncryption::Method::Method(const std::string& name)
 : name_(name)
 {
-	CryptoEncryptionMethodRegistrar::instance()->enter(this);
+	MethodRegistrar::instance()->enter(this);
 }
 
-const CryptoEncryptionMethod *
-CryptoEncryptionMethod::method(CryptoCipher cipher)
+const CryptoEncryption::Method *
+CryptoEncryption::Method::method(CryptoEncryption::Cipher cipher)
 {
-	std::set<const CryptoEncryptionMethod *> method_set = CryptoEncryptionMethodRegistrar::instance()->enumerate();
-	std::set<const CryptoEncryptionMethod *>::const_iterator it;
+	std::set<const CryptoEncryption::Method *> method_set = MethodRegistrar::instance()->enumerate();
+	std::set<const CryptoEncryption::Method *>::const_iterator it;
 
 	for (it = method_set.begin(); it != method_set.end(); ++it) {
-		const CryptoEncryptionMethod *m = *it;
-		std::set<CryptoCipher> cipher_set = m->ciphers();
+		const CryptoEncryption::Method *m = *it;
+		std::set<CryptoEncryption::Cipher> cipher_set = m->ciphers();
 		if (cipher_set.find(cipher) == cipher_set.end())
 			continue;
 
@@ -34,35 +34,35 @@ CryptoEncryptionMethod::method(CryptoCipher cipher)
 }
 
 std::ostream&
-operator<< (std::ostream& os, CryptoEncryptionAlgorithm algorithm)
+operator<< (std::ostream& os, CryptoEncryption::Algorithm algorithm)
 {
 	switch (algorithm) {
-	case Crypto3DES:
+	case CryptoEncryption::TripleDES:
 		return (os << "3DES");
-	case CryptoAES128:
+	case CryptoEncryption::AES128:
 		return (os << "AES128");
-	case CryptoAES192:
+	case CryptoEncryption::AES192:
 		return (os << "AES192");
-	case CryptoAES256:
+	case CryptoEncryption::AES256:
 		return (os << "AES256");
 	}
 	NOTREACHED("/crypto/encryption");
 }
 
 std::ostream&
-operator<< (std::ostream& os, CryptoEncryptionMode mode)
+operator<< (std::ostream& os, CryptoEncryption::Mode mode)
 {
 	switch (mode) {
-	case CryptoModeCBC:
+	case CryptoEncryption::CBC:
 		return (os << "CBC");
-	case CryptoModeCTR:
+	case CryptoEncryption::CTR:
 		return (os << "CTR");
 	}
 	NOTREACHED("/crypto/encryption");
 }
 
 std::ostream&
-operator<< (std::ostream& os, CryptoCipher cipher)
+operator<< (std::ostream& os, CryptoEncryption::Cipher cipher)
 {
 	return (os << cipher.first << "/" << cipher.second);
 }

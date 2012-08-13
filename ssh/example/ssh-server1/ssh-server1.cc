@@ -35,7 +35,7 @@ public:
 	{
 		SSH::KeyExchange *key_exchange = NULL;
 		SSH::ServerHostKey *server_host_key = NULL;
-		SSH::Encryption *encryption = SSH::Encryption::cipher(CryptoCipher(CryptoAES128, CryptoModeCBC));
+		SSH::Encryption *encryption = SSH::Encryption::cipher(CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CBC));
 		SSH::MAC *mac = NULL;
 		SSH::Compression *compression = NULL;
 		SSH::Language *language = NULL;
