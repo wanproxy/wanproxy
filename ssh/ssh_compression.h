@@ -1,6 +1,8 @@
 #ifndef	SSH_SSH_COMPRESSION_H
 #define	SSH_SSH_COMPRESSION_H
 
+class Buffer;
+
 namespace SSH {
 	class Compression {
 		std::string name_;
@@ -19,6 +21,8 @@ namespace SSH {
 		}
 
 		virtual bool input(Buffer *) = 0;
+
+		static Compression *none(void);
 	};
 }
 

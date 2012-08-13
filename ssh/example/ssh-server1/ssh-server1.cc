@@ -37,7 +37,7 @@ public:
 		SSH::ServerHostKey *server_host_key = NULL;
 		SSH::Encryption *encryption = SSH::Encryption::cipher(CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CBC));
 		SSH::MAC *mac = SSH::MAC::algorithm(CryptoMAC::MD5);
-		SSH::Compression *compression = NULL;
+		SSH::Compression *compression = SSH::Compression::none();
 		SSH::Language *language = NULL;
 
 		SSH::AlgorithmNegotiation *algorithm_negotiation;
