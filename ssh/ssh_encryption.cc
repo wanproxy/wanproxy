@@ -52,9 +52,12 @@ SSH::Encryption::cipher(CryptoEncryption::Cipher cipher)
 		if (cipher.second != alg->crypto_mode_)
 			continue;
 		const CryptoEncryption::Method *method = CryptoEncryption::Method::method(cipher);
-		if (method == NULL)
+		if (method == NULL) {
+			ERROR("/ssh/encryption") << "Could not get method for cipher: " << cipher;
 			return (NULL);
+		}
 		return (new CryptoSSHEncryption(alg->rfc4250_name_, method));
 	}
+	ERROR("/ssh/encryption") << "No SSH encryption support is available for cipher: " << cipher;
 	return (NULL);
 }
