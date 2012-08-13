@@ -1,6 +1,8 @@
 #ifndef	SSH_SSH_MAC_H
 #define	SSH_SSH_MAC_H
 
+#include <crypto/crypto_mac.h>
+
 namespace SSH {
 	class MAC {
 		std::string name_;
@@ -19,6 +21,8 @@ namespace SSH {
 		}
 
 		virtual bool input(Buffer *) = 0;
+
+		static MAC *algorithm(CryptoMAC::Algorithm);
 	};
 }
 
