@@ -1,6 +1,8 @@
 #ifndef	SSH_SSH_SERVER_HOST_KEY_H
 #define	SSH_SSH_SERVER_HOST_KEY_H
 
+class Buffer;
+
 namespace SSH {
 	class ServerHostKey {
 		std::string name_;
@@ -19,6 +21,8 @@ namespace SSH {
 		}
 
 		virtual bool input(Buffer *) = 0;
+
+		static ServerHostKey *server(const std::string&);
 	};
 }
 
