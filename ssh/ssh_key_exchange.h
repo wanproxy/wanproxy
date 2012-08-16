@@ -1,6 +1,8 @@
 #ifndef	SSH_SSH_KEY_EXCHANGE_H
 #define	SSH_SSH_KEY_EXCHANGE_H
 
+class Buffer;
+
 namespace SSH {
 	class KeyExchange {
 		std::string name_;
@@ -19,6 +21,8 @@ namespace SSH {
 		}
 
 		virtual bool input(Buffer *) = 0;
+
+		static KeyExchange *method(void);
 	};
 }
 

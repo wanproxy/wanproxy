@@ -33,7 +33,7 @@ public:
 	  splice_action_(NULL),
 	  close_action_(NULL)
 	{
-		SSH::KeyExchange *key_exchange = NULL;
+		SSH::KeyExchange *key_exchange = SSH::KeyExchange::method();
 		SSH::ServerHostKey *server_host_key = SSH::ServerHostKey::server("/etc/ssh_host_rsa_key");
 		SSH::Encryption *encryption = SSH::Encryption::cipher(CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CBC));
 		SSH::MAC *mac = SSH::MAC::algorithm(CryptoMAC::MD5);
