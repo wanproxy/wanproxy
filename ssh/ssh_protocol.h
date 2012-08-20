@@ -92,6 +92,7 @@ namespace SSH {
 
 	namespace NameList {
 		void encode(Buffer *, const std::vector<Buffer>&);
+		bool decode(std::vector<Buffer>&, Buffer *);
 	}
 }
 

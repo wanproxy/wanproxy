@@ -51,3 +51,15 @@ SSH::NameList::encode(Buffer *out, const std::vector<Buffer>& in)
 	merged = Buffer::join(in, ",");
 	SSH::String::encode(out, &merged);
 }
+
+bool
+SSH::NameList::decode(std::vector<Buffer>& out, Buffer *in)
+{
+	Buffer merged;
+
+	if (!SSH::String::decode(&merged, in))
+		return (false);
+
+	out = merged.split(',');
+	return (true);
+}
