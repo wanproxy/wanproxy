@@ -19,17 +19,11 @@ namespace {
 	{
 		typename T::const_iterator it;
 		std::vector<Buffer> names;
-		Buffer merged;
-		uint32_t len;
 		Buffer out;
 
 		for (it = list.begin(); it != list.end(); ++it)
 			names.push_back(it->first);
-		merged = Buffer::join(names, ",");
-		len = merged.length();
-		len = BigEndian::encode(len);
-		out.append(&len);
-		out.append(merged);
+		SSH::NameList::encode(&out, names);
 		return (out);
 	}
 }

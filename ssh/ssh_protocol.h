@@ -84,6 +84,15 @@ namespace SSH {
 			NoMoreAuthenticationMethodsAvailable = 14,
 			IllegalUserName = 15;
 	}
+
+	namespace String {
+		bool decode(Buffer *, Buffer *);
+		void encode(Buffer *, Buffer *);
+	}
+
+	namespace NameList {
+		void encode(Buffer *, const std::vector<Buffer>&);
+	}
 }
 
 #endif /* !SSH_SSH_PROTOCOL_H */
