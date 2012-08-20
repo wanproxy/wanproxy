@@ -48,16 +48,16 @@ SSH::AlgorithmNegotiation::output(Buffer *out)
 
 	out->append(SSH::Message::KeyExchangeInitializationMessage);
 	out->append(constant_cookie, sizeof constant_cookie); /* XXX Synchronous random byte generation?  */
-	out->append(name_list(key_exchange_map_));
-	out->append(name_list(server_host_key_map_));
-	out->append(name_list(encryption_client_to_server_map_));
-	out->append(name_list(encryption_server_to_client_map_));
-	out->append(name_list(mac_client_to_server_map_));
-	out->append(name_list(mac_server_to_client_map_));
-	out->append(name_list(compression_client_to_server_map_));
-	out->append(name_list(compression_server_to_client_map_));
-	out->append(name_list(language_client_to_server_map_));
-	out->append(name_list(language_server_to_client_map_));
+	out->append(name_list(algorithms_.key_exchange_map_));
+	out->append(name_list(algorithms_.server_host_key_map_));
+	out->append(name_list(algorithms_.encryption_client_to_server_map_));
+	out->append(name_list(algorithms_.encryption_server_to_client_map_));
+	out->append(name_list(algorithms_.mac_client_to_server_map_));
+	out->append(name_list(algorithms_.mac_server_to_client_map_));
+	out->append(name_list(algorithms_.compression_client_to_server_map_));
+	out->append(name_list(algorithms_.compression_server_to_client_map_));
+	out->append(name_list(algorithms_.language_client_to_server_map_));
+	out->append(name_list(algorithms_.language_server_to_client_map_));
 	out->append(SSH::Boolean::False);
 	uint32_t reserved(0);
 	out->append(&reserved);
