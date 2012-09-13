@@ -743,6 +743,8 @@ public:
 	{
 		segment_list_t::const_iterator it;
 
+		ASSERT("/buffer", offset + dstsize <= length_);
+
 		for (it = data_.begin(); it != data_.end(); ++it) {
 			const BufferSegment *seg = *it;
 
