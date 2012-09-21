@@ -344,6 +344,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 		}
 
 		if (!output.empty()) {
+			ASSERT(log_, !decoder_sent_eos_);
 			decoder_produce(&output);
 		} else {
 			/*
@@ -374,12 +375,33 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 		}
 	}
 
+	/*
+	 * If we have received EOS and not yet sent it, we can send it now.
+	 * The only caveat is that if we have outstanding <ASK>s, i.e. we have
+	 * not yet emptied decoder_unknown_hashes_, then we can't send EOS yet.
+	 */
 	if (decoder_received_eos_ && !decoder_sent_eos_) {
-		DEBUG(log_) << "Decoder finished, got <EOS>, shutting down decoder output channel.";
-		decoder_produce_eos();
-		decoder_sent_eos_ = true;
+		ASSERT(log_, !decoder_sent_eos_);
+		if (decoder_unknown_hashes_.empty()) {
+			ASSERT(log_, decoder_frame_buffer_.empty());
+			DEBUG(log_) << "Decoder finished, got <EOS>, shutting down decoder output channel.";
+			decoder_produce_eos();
+			decoder_sent_eos_ = true;
+		} else {
+			ASSERT(log_, !decoder_frame_buffer_.empty());
+			DEBUG(log_) << "Decoder finished, waiting to send <EOS> until <ASK>s are answered.";
+		}
 	}
 
+	/*
+	 * NB:
+	 * Along with the comment above, there is some relevance here.  If we
+	 * use some kind of hierarchical decoding, then we need to be able to
+	 * handle the case where an <ASK>'s response necessitates us to send
+	 * another <ASK> or something of that sort.  There are other conditions
+	 * where we may still need to send something out of the encoder, but
+	 * thankfully none seem to arise yet.
+	 */
 	if (encoder_sent_eos_ack_ && decoder_received_eos_ack_) {
 		ASSERT(log_, decoder_buffer_.empty());
 		ASSERT(log_, decoder_frame_buffer_.empty());
