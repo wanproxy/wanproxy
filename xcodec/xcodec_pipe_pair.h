@@ -32,6 +32,7 @@ class XCodecPipePair : public PipePair {
 	PipeProducerWrapper<XCodecPipePair> *decoder_pipe_;
 
 	XCodecEncoder *encoder_;
+	bool encoder_produced_eos_;
 	bool encoder_sent_eos_;
 	bool encoder_sent_eos_ack_;
 	PipeProducerWrapper<XCodecPipePair> *encoder_pipe_;
@@ -50,6 +51,7 @@ public:
 	  decoder_frame_buffer_(),
 	  decoder_pipe_(NULL),
 	  encoder_(NULL),
+	  encoder_produced_eos_(false),
 	  encoder_sent_eos_(false),
 	  encoder_sent_eos_ack_(false),
 	  encoder_pipe_(NULL)

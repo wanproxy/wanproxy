@@ -386,7 +386,9 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 
 		DEBUG(log_) << "Decoder finished, got <EOS_ACK>, shutting down encoder output channel.";
 
+		ASSERT(log_, !encoder_produced_eos_);
 		encoder_produce_eos();
+		encoder_produced_eos_ = true;
 	}
 }
 
@@ -423,17 +425,19 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 		ASSERT(log_, !encoded.empty());
 
 		encode_frame(&output, &encoded);
-		ASSERT(log_, !output.empty());
 	} else {
+		ASSERT(log_, !encoder_sent_eos_);
 		output.append(XCODEC_PIPE_OP_EOS);
 		encoder_sent_eos_ = true;
 	}
+	ASSERT(log_, !output.empty());
 	encoder_produce(&output);
 }
 
 static void
 encode_frame(Buffer *out, Buffer *in)
 {
+	ASSERT("/xcodec/pipe/encode_frame", !in->empty());
 	while (!in->empty()) {
 		uint16_t framelen;
 		if (in->length() <= XCODEC_PIPE_MAX_FRAME)
