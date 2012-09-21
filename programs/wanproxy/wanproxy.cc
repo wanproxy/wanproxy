@@ -20,7 +20,7 @@ main(int argc, char *argv[])
 	verbose = false;
 
 	INFO("/wanproxy") << "WANProxy";
-	INFO("/wanproxy") << "Copyright (c) 2008-2011 WANProxy.org.";
+	INFO("/wanproxy") << "Copyright (c) 2008-2012 WANProxy.org.";
 	INFO("/wanproxy") << "All rights reserved.";
 
 	while ((ch = getopt(argc, argv, "c:qv")) != -1) {
