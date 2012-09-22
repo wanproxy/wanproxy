@@ -80,10 +80,9 @@ namespace {
 bool
 SSH::AlgorithmNegotiation::input(Buffer *in)
 {
-	Buffer original(*in);
-
 	switch (in->peek()) {
 	case SSH::Message::KeyExchangeInitializationMessage:
+		received_initialization_ = *in;
 		if (!choose_algorithms(in)) {
 			ERROR(log_) << "Unable to negotiate algorithms.";
 			return (false);
@@ -116,6 +115,8 @@ SSH::AlgorithmNegotiation::output(Buffer *out)
 	out->append(SSH::Boolean::False);
 	uint32_t reserved(0);
 	out->append(&reserved);
+
+	sent_initialization_ = *out;
 
 	return (true);
 }

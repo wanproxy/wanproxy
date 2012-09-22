@@ -71,6 +71,9 @@ namespace SSH {
 		Algorithms algorithms_;
 		Algorithms chosen_;
 		Algorithms active_;
+		Buffer sent_initialization_;
+		Buffer received_initialization_;
+		Buffer active_initialization_;
 	public:
 		AlgorithmNegotiation(Role role, std::vector<KeyExchange *> key_exchange_list,
 				     std::vector<ServerHostKey *> server_host_key_list,
@@ -95,7 +98,9 @@ namespace SSH {
 			      list_to_map(language_client_to_server_list),
 			      list_to_map(language_server_to_client_list)),
 		  chosen_(),
-		  active_()
+		  active_(),
+		  sent_initialization_(),
+		  received_initialization_()
 		{ }
 
 		AlgorithmNegotiation(Role role, std::vector<KeyExchange *> key_exchange_list,
@@ -113,7 +118,9 @@ namespace SSH {
 			      list_to_map(compression_list), list_to_map(compression_list),
 			      list_to_map(language_list), list_to_map(language_list)),
 		  chosen_(),
-		  active_()
+		  active_(),
+		  sent_initialization_(),
+		  received_initialization_()
 		{ }
 
 		AlgorithmNegotiation(Role role, KeyExchange *key_exchange,
@@ -125,7 +132,9 @@ namespace SSH {
 		  role_(role),
 		  algorithms_(),
 		  chosen_(),
-		  active_()
+		  active_(),
+		  sent_initialization_(),
+		  received_initialization_()
 		{
 			if (key_exchange != NULL)
 				algorithms_.key_exchange_map_[key_exchange->name()] = key_exchange;
