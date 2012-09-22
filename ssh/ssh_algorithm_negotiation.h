@@ -69,6 +69,8 @@ namespace SSH {
 		LogHandle log_;
 		Role role_;
 		Algorithms algorithms_;
+		Algorithms chosen_;
+		Algorithms active_;
 	public:
 		AlgorithmNegotiation(Role role, std::vector<KeyExchange *> key_exchange_list,
 				     std::vector<ServerHostKey *> server_host_key_list,
@@ -91,7 +93,9 @@ namespace SSH {
 			      list_to_map(compression_client_to_server_list),
 			      list_to_map(compression_server_to_client_list),
 			      list_to_map(language_client_to_server_list),
-			      list_to_map(language_server_to_client_list))
+			      list_to_map(language_server_to_client_list)),
+		  chosen_(),
+		  active_()
 		{ }
 
 		AlgorithmNegotiation(Role role, std::vector<KeyExchange *> key_exchange_list,
@@ -107,7 +111,9 @@ namespace SSH {
 			      list_to_map(encryption_list), list_to_map(encryption_list),
 			      list_to_map(mac_list), list_to_map(mac_list),
 			      list_to_map(compression_list), list_to_map(compression_list),
-			      list_to_map(language_list), list_to_map(language_list))
+			      list_to_map(language_list), list_to_map(language_list)),
+		  chosen_(),
+		  active_()
 		{ }
 
 		AlgorithmNegotiation(Role role, KeyExchange *key_exchange,
@@ -117,7 +123,9 @@ namespace SSH {
 				     Language *language)
 		: log_("/ssh/algorithm/negotiation"),
 		  role_(role),
-		  algorithms_()
+		  algorithms_(),
+		  chosen_(),
+		  active_()
 		{
 			if (key_exchange != NULL)
 				algorithms_.key_exchange_map_[key_exchange->name()] = key_exchange;
@@ -148,8 +156,10 @@ namespace SSH {
 		bool output(Buffer *);
 
 	private:
+		bool choose_algorithms(Buffer *);
+
 		template<typename T>
-		std::map<std::string, typename T::value_type> list_to_map(const T& list)
+		static std::map<std::string, typename T::value_type> list_to_map(const T& list)
 		{
 			std::map<std::string, typename T::value_type> map;
 			typename T::const_iterator it;

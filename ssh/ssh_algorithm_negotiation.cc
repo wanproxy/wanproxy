@@ -24,14 +24,71 @@ namespace {
 			vec.push_back(it->first);
 		return (vec);
 	}
+
+	template<typename T>
+	bool choose_algorithm(SSH::AlgorithmNegotiation::Role role,
+			      std::map<std::string, T>& chosen_map,
+			      std::map<std::string, T>& algorithm_map,
+			      Buffer *in, const std::string& type)
+	{
+		std::vector<Buffer> local_algorithms = names(algorithm_map);
+		std::vector<Buffer> remote_algorithms;
+		if (!SSH::NameList::decode(remote_algorithms, in)) {
+			ERROR("/ssh/algorithm/negotiation") << "Failed to decode " << type << " name-list.";
+			return (false);
+		}
+
+		if (remote_algorithms.empty() && local_algorithms.empty()) {
+			DEBUG("/ssh/algorithm/negotiation") << "Neither client nor server has any preference in " << type << " algorithms.";
+			return (true);
+		}
+
+		const std::vector<Buffer> *client_algorithms;
+		const std::vector<Buffer> *server_algorithms;
+		if (role == SSH::AlgorithmNegotiation::ClientRole) {
+			client_algorithms = &local_algorithms;
+			server_algorithms = &remote_algorithms;
+		} else {
+			client_algorithms = &remote_algorithms;
+			server_algorithms = &local_algorithms;
+		}
+
+		std::vector<Buffer>::const_iterator it;
+		for (it = client_algorithms->begin();
+		     it != client_algorithms->end(); ++it) {
+			std::vector<Buffer>::const_iterator it2;
+
+			for (it2 = server_algorithms->begin();
+			     it2 != server_algorithms->end(); ++it2) {
+				const Buffer& server = *it2;
+				if (!it->equal(&server))
+					continue;
+				std::string algorithm;
+				it->extract(algorithm);
+				chosen_map[algorithm] = algorithm_map[algorithm];
+
+				DEBUG("/ssh/algorithm/negotiation") << "Selected " << type << " algorithm " << algorithm;
+				return (true);
+			}
+		}
+
+		ERROR("/ssh/algorithm/negotiation") << "Failed to choose " << type << " algorithm.";
+		return (false);
+	}
 }
 
 bool
 SSH::AlgorithmNegotiation::input(Buffer *in)
 {
+	Buffer original(*in);
+
 	switch (in->peek()) {
 	case SSH::Message::KeyExchangeInitializationMessage:
-		DEBUG(log_) << "Just ignoring initialization message.";
+		if (!choose_algorithms(in)) {
+			ERROR(log_) << "Unable to negotiate algorithms.";
+			return (false);
+		}
+		DEBUG(log_) << "Chose algorithms.";
 		return (true);
 	default:
 		DEBUG(log_) << "Unsupported algorithm negotiation message:" << std::endl << in->hexdump();
@@ -59,6 +116,36 @@ SSH::AlgorithmNegotiation::output(Buffer *out)
 	out->append(SSH::Boolean::False);
 	uint32_t reserved(0);
 	out->append(&reserved);
+
+	return (true);
+}
+
+bool
+SSH::AlgorithmNegotiation::choose_algorithms(Buffer *in)
+{
+	in->skip(17);
+
+	chosen_ = Algorithms();
+	if (!choose_algorithm(role_, chosen_.key_exchange_map_, algorithms_.key_exchange_map_, in, "Key Exchange"))
+		return (false);
+	if (!choose_algorithm(role_, chosen_.server_host_key_map_, algorithms_.server_host_key_map_, in, "Server Host Key"))
+		return (false);
+	if (!choose_algorithm(role_, chosen_.encryption_client_to_server_map_, algorithms_.encryption_client_to_server_map_, in, "Encryption (Client->Server)"))
+		return (false);
+	if (!choose_algorithm(role_, chosen_.encryption_server_to_client_map_, algorithms_.encryption_server_to_client_map_, in, "Encryption (Server->Client)"))
+		return (false);
+	if (!choose_algorithm(role_, chosen_.mac_client_to_server_map_, algorithms_.mac_client_to_server_map_, in, "MAC (Client->Server)"))
+		return (false);
+	if (!choose_algorithm(role_, chosen_.mac_server_to_client_map_, algorithms_.mac_server_to_client_map_, in, "MAC (Server->Client)"))
+		return (false);
+	if (!choose_algorithm(role_, chosen_.compression_client_to_server_map_, algorithms_.compression_client_to_server_map_, in, "Compression (Client->Server)"))
+		return (false);
+	if (!choose_algorithm(role_, chosen_.compression_server_to_client_map_, algorithms_.compression_server_to_client_map_, in, "Compression (Server->Client)"))
+		return (false);
+	if (!choose_algorithm(role_, chosen_.language_client_to_server_map_, algorithms_.language_client_to_server_map_, in, "Language (Client->Server)"))
+		return (false);
+	if (!choose_algorithm(role_, chosen_.language_server_to_client_map_, algorithms_.language_server_to_client_map_, in, "Language (Server->Client)"))
+		return (false);
 
 	return (true);
 }
