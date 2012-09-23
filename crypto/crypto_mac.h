@@ -10,6 +10,8 @@ namespace CryptoMAC {
 
 	enum Algorithm {
 		MD5,
+		SHA1,
+		SHA256,
 	};
 
 	class Instance {
@@ -21,7 +23,7 @@ namespace CryptoMAC {
 		virtual ~Instance()
 		{ }
 
-		virtual bool initialize(const Buffer *) = 0;
+		virtual bool initialize(const Buffer * = NULL) = 0;
 		virtual Action *submit(Buffer *, EventCallback *) = 0;
 	};
 

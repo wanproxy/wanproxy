@@ -9,12 +9,14 @@ namespace {
 	class InstanceEVP : public CryptoMAC::Instance {
 		LogHandle log_;
 		const EVP_MD *algorithm_;
+		bool hmac_;
 		uint8_t key_[EVP_MAX_KEY_LENGTH];
 		size_t key_length_;
 	public:
 		InstanceEVP(const EVP_MD *algorithm)
 		: log_("/crypto/mac/instance/openssl"),
 		  algorithm_(algorithm),
+		  hmac_(false),
 		  key_(),
 		  key_length_(0)
 		{ }
@@ -24,9 +26,15 @@ namespace {
 
 		bool initialize(const Buffer *key)
 		{
+			if (key == NULL) {
+				hmac_ = false;
+				return (true);
+			}
+
 			if (key->length() > EVP_MAX_KEY_LENGTH)
 				return (false);
 
+			hmac_ = true;
 			key->copyout(key_, sizeof key->length());
 			key_length_ = key->length();
 
@@ -47,6 +55,15 @@ namespace {
 
 			uint8_t macdata[EVP_MD_size(algorithm_)];
 			unsigned maclen;
+			if (!hmac_) {
+				if (!EVP_Digest(indata, sizeof indata, macdata, &maclen, algorithm_, NULL)) {
+					cb->param(Event::Error);
+					return (cb->schedule());
+				}
+				ASSERT(log_, maclen == sizeof macdata);
+				cb->param(Event(Event::Done, Buffer(macdata, maclen)));
+				return (cb->schedule());
+			}
 			uint8_t *mac = HMAC(algorithm_, key_, key_length_, indata, sizeof indata, macdata, &maclen);
 			if (mac == NULL) {
 				cb->param(Event::Error);

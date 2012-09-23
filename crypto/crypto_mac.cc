@@ -39,6 +39,10 @@ operator<< (std::ostream& os, CryptoMAC::Algorithm algorithm)
 	switch (algorithm) {
 	case CryptoMAC::MD5:
 		return (os << "MD5");
+	case CryptoMAC::SHA1:
+		return (os << "SHA1");
+	case CryptoMAC::SHA256:
+		return (os << "SHA256");
 	}
 	NOTREACHED("/crypto/encryption");
 }
