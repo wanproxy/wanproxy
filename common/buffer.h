@@ -639,6 +639,15 @@ public:
 	}
 
 	/*
+	 * Prevent downcasts to uint8_t.
+	 */
+private:
+	void append(uint16_t);
+	void append(uint32_t);
+	void append(uint64_t);
+public:
+
+	/*
 	 * Append multiple bytes to this Buffer.
 	 */
 	void append(const uint8_t *buf, size_t len)

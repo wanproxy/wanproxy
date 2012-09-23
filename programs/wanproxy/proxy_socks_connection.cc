@@ -293,13 +293,13 @@ ProxySocksConnection::schedule_write(void)
 
 		/* XXX It's fun to lie about what kind of name we were given.  */
 		if (socks5_remote_name_ != "" || network_address_ == 0) {
-			response.append(0x03);
-			response.append(socks5_remote_name_.length());
+			response.append((uint8_t)0x03);
+			response.append((uint8_t)socks5_remote_name_.length());
 			response.append(socks5_remote_name_);
 		} else {
 			uint32_t address = BigEndian::encode(network_address_);
 
-			response.append(0x01);
+			response.append((uint8_t)0x01);
 			response.append(&address);
 		}
 
