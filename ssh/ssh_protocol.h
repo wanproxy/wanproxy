@@ -3,6 +3,9 @@
 
 #include <common/endian.h>
 
+/* XXX OpenSSL dependency.  */
+typedef struct bignum_st BIGNUM;
+
 namespace SSH {
 	namespace Message {
 		static const uint8_t
@@ -88,6 +91,16 @@ namespace SSH {
 	namespace String {
 		bool decode(Buffer *, Buffer *);
 		void encode(Buffer *, Buffer *);
+	}
+
+	namespace UInt32 {
+		void encode(Buffer *, uint32_t);
+		bool decode(uint32_t *, Buffer *);
+	}
+
+	namespace MPInt {
+		void encode(Buffer *, const BIGNUM *);
+		bool decode(BIGNUM **, Buffer *);
 	}
 
 	namespace NameList {

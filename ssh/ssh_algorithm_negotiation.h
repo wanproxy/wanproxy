@@ -164,6 +164,14 @@ namespace SSH {
 		bool input(Buffer *);
 		bool output(Buffer *);
 
+		SSH::KeyExchange *key_exchange_algorithm(void) const
+		{
+			if (chosen_.key_exchange_map_.empty())
+				return (NULL);
+			ASSERT(log_, chosen_.key_exchange_map_.size() == 1);
+			return (chosen_.key_exchange_map_.begin()->second);
+		}
+
 	private:
 		bool choose_algorithms(Buffer *);
 

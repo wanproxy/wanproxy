@@ -231,6 +231,18 @@ SSH::TransportPipe::receive_do(void)
 		 *     that they usually have better things to do.  If
 		 *     they register no handlers, they can certainly do
 		 *     so by hand.
+		 *
+		 * XXX It seems like having a separate class which handles
+		 *     all these details and algorithm negotiation would be
+		 *     nice, and to have this one be a bit more oriented
+		 *     towards managing just the transport layer.
+		 *
+		 *     At the very least, it needs to take responsibility
+		 *     for its failures and allow the handler functions
+		 *     here to mangle the packet buffer rather than trying
+		 *     to send it on to the receiver if decoding fails.
+		 *     A decoding failure should result in a disconnect,
+		 *     an error.
 		 */
 		msg = packet.peek();
 		if (msg >= SSH::Message::TransportRangeBegin &&
@@ -245,6 +257,11 @@ SSH::TransportPipe::receive_do(void)
 			DEBUG(log_) << "Using default handler for algorithm negotiation message.";
 		} else if (msg >= SSH::Message::KeyExchangeMethodRangeBegin &&
 			   msg <= SSH::Message::KeyExchangeMethodRangeEnd) {
+			SSH::KeyExchange *kex = algorithm_negotiation_->key_exchange_algorithm();
+			if (kex != NULL) {
+				if (kex->input(this, &packet))
+					continue;
+			}
 			DEBUG(log_) << "Using default handler for key exchange method message.";
 		} else if (msg >= SSH::Message::UserAuthenticationGenericRangeBegin &&
 			   msg <= SSH::Message::UserAuthenticationGenericRangeEnd) {

@@ -4,6 +4,8 @@
 class Buffer;
 
 namespace SSH {
+	class TransportPipe;
+
 	class KeyExchange {
 		std::string name_;
 	protected:
@@ -20,7 +22,7 @@ namespace SSH {
 			return (name_);
 		}
 
-		virtual bool input(Buffer *) = 0;
+		virtual bool input(SSH::TransportPipe *, Buffer *) = 0;
 
 		static KeyExchange *method(void);
 	};

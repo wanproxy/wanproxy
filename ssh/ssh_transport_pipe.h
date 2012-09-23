@@ -1,9 +1,19 @@
 #ifndef	SSH_SSH_TRANSPORT_PIPE_H
 #define	SSH_SSH_TRANSPORT_PIPE_H
 
+#include <io/pipe/pipe.h>
+#include <io/pipe/pipe_producer.h>
+
 namespace SSH {
 	class AlgorithmNegotiation;
 
+	/*
+	 * XXX
+	 * It would be nice to have a Transport base class
+	 * for use throughout the codebase to handle things
+	 * like sending packets, and have TransportPipe be
+	 * a version that's modeled as a Pipe.
+	 */
 	class TransportPipe : public PipeProducer {
 		enum State {
 			GetIdentificationString,
