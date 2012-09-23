@@ -3,35 +3,20 @@
 
 #include <common/factory.h>
 
-#include <crypto/crypto_mac.h>
+#include <crypto/crypto_hash.h>
 
 namespace {
-	class InstanceEVP : public CryptoMAC::Instance {
+	class InstanceEVP : public CryptoHash::Instance {
 		LogHandle log_;
 		const EVP_MD *algorithm_;
-		uint8_t key_[EVP_MAX_KEY_LENGTH];
-		size_t key_length_;
 	public:
 		InstanceEVP(const EVP_MD *algorithm)
-		: log_("/crypto/mac/instance/openssl"),
-		  algorithm_(algorithm),
-		  key_(),
-		  key_length_(0)
+		: log_("/crypto/hash/instance/openssl"),
+		  algorithm_(algorithm)
 		{ }
 
 		~InstanceEVP()
 		{ }
-
-		bool initialize(const Buffer *key)
-		{
-			if (key->length() > EVP_MAX_KEY_LENGTH)
-				return (false);
-
-			key->copyout(key_, sizeof key->length());
-			key_length_ = key->length();
-
-			return (true);
-		}
 
 		Action *submit(Buffer *in, EventCallback *cb)
 		{
@@ -47,32 +32,31 @@ namespace {
 
 			uint8_t macdata[EVP_MD_size(algorithm_)];
 			unsigned maclen;
-			uint8_t *mac = HMAC(algorithm_, key_, key_length_, indata, sizeof indata, macdata, &maclen);
-			if (mac == NULL) {
+			if (!EVP_Digest(indata, sizeof indata, macdata, &maclen, algorithm_, NULL)) {
 				cb->param(Event::Error);
 				return (cb->schedule());
 			}
 			ASSERT(log_, maclen == sizeof macdata);
-			cb->param(Event(Event::Done, Buffer(mac, maclen)));
+			cb->param(Event(Event::Done, Buffer(macdata, maclen)));
 			return (cb->schedule());
 		}
 	};
 
-	class MethodOpenSSL : public CryptoMAC::Method {
+	class MethodOpenSSL : public CryptoHash::Method {
 		LogHandle log_;
-		FactoryMap<CryptoMAC::Algorithm, CryptoMAC::Instance> algorithm_map_;
+		FactoryMap<CryptoHash::Algorithm, CryptoHash::Instance> algorithm_map_;
 	public:
 		MethodOpenSSL(void)
-		: CryptoMAC::Method("OpenSSL"),
-		  log_("/crypto/mac/openssl"),
+		: CryptoHash::Method("OpenSSL"),
+		  log_("/crypto/hash/openssl"),
 		  algorithm_map_()
 		{
 			OpenSSL_add_all_algorithms();
 
 			factory<InstanceEVP> evp_factory;
-			algorithm_map_.enter(CryptoMAC::MD5, evp_factory(EVP_md5()));
-			algorithm_map_.enter(CryptoMAC::SHA1, evp_factory(EVP_sha1()));
-			algorithm_map_.enter(CryptoMAC::SHA256, evp_factory(EVP_sha256()));
+			algorithm_map_.enter(CryptoHash::MD5, evp_factory(EVP_md5()));
+			algorithm_map_.enter(CryptoHash::SHA1, evp_factory(EVP_sha1()));
+			algorithm_map_.enter(CryptoHash::SHA256, evp_factory(EVP_sha256()));
 
 			/* XXX Register.  */
 		}
@@ -82,16 +66,16 @@ namespace {
 			/* XXX Unregister.  */
 		}
 
-		std::set<CryptoMAC::Algorithm> algorithms(void) const
+		std::set<CryptoHash::Algorithm> algorithms(void) const
 		{
 			return (algorithm_map_.keys());
 		}
 
-		CryptoMAC::Instance *instance(CryptoMAC::Algorithm algorithm) const
+		CryptoHash::Instance *instance(CryptoHash::Algorithm algorithm) const
 		{
 			return (algorithm_map_.create(algorithm));
 		}
 	};
 
-	static MethodOpenSSL crypto_mac_method_openssl;
+	static MethodOpenSSL crypto_hash_method_openssl;
 }
