@@ -36,7 +36,7 @@ public:
 		SSH::KeyExchange *key_exchange = SSH::KeyExchange::method();
 		SSH::ServerHostKey *server_host_key = SSH::ServerHostKey::server("/etc/ssh_host_rsa_key");
 		SSH::Encryption *encryption = SSH::Encryption::cipher(CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CBC));
-		SSH::MAC *mac = SSH::MAC::algorithm(CryptoMAC::MD5);
+		SSH::MAC *mac = SSH::MAC::algorithm(CryptoMAC::SHA1);
 		SSH::Compression *compression = SSH::Compression::none();
 		SSH::Language *language = NULL;
 

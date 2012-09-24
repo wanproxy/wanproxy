@@ -8,6 +8,8 @@ namespace {
 
 	static const struct ssh_mac_algorithm ssh_mac_algorithms[] = {
 		{ "hmac-md5",		CryptoMAC::MD5	},
+		{ "hmac-sha1",		CryptoMAC::SHA1 },
+		{ "hmac-sha256",	CryptoMAC::SHA256 },
 		{ NULL,			CryptoMAC::MD5	}
 	};
 
