@@ -22,6 +22,8 @@ namespace SSH {
 
 		virtual bool input(Buffer *) = 0;
 
+		virtual void encode_public_key(Buffer *) const = 0;
+
 		static ServerHostKey *server(const std::string&);
 	};
 }
