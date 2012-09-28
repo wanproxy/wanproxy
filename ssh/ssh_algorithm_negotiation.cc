@@ -83,7 +83,7 @@ SSH::AlgorithmNegotiation::input(Buffer *in)
 {
 	switch (in->peek()) {
 	case SSH::Message::KeyExchangeInitializationMessage:
-		received_initialization_ = *in;
+		session_->remote_kexinit(*in);
 		if (!choose_algorithms(in)) {
 			ERROR(log_) << "Unable to negotiate algorithms.";
 			return (false);
@@ -117,7 +117,7 @@ SSH::AlgorithmNegotiation::output(Buffer *out)
 	uint32_t reserved(0);
 	out->append(&reserved);
 
-	sent_initialization_ = *out;
+	session_->local_kexinit(*out);
 
 	return (true);
 }
