@@ -213,10 +213,6 @@ main(int argc, char *argv[])
 	quiet = false;
 	verbose = false;
 
-	INFO("/websplat") << "Websplat";
-	INFO("/websplat") << "Copyright (c) 2008-2012 WANProxy.org.";
-	INFO("/websplat") << "All rights reserved.";
-
 	while ((ch = getopt(argc, argv, "i:qr:v")) != -1) {
 		switch (ch) {
 		case 'i':
