@@ -9,22 +9,24 @@
 
 #include <ssh/ssh_algorithm_negotiation.h>
 #include <ssh/ssh_protocol.h>
+#include <ssh/ssh_session.h>
 #include <ssh/ssh_transport_pipe.h>
 
 namespace {
 	static uint8_t zero_padding[255];
 }
 
-SSH::TransportPipe::TransportPipe(AlgorithmNegotiation *algorithm_negotiation)
+SSH::TransportPipe::TransportPipe(Session *session)
 : PipeProducer("/ssh/transport/pipe"),
+  session_(session),
   state_(GetIdentificationString),
   block_size_(8),
   mac_length_(0),
-  algorithm_negotiation_(algorithm_negotiation),
   receive_callback_(NULL),
   receive_action_(NULL)
 {
 	Buffer identification_string("SSH-2.0-WANProxy " + (std::string)log_ + "\r\n");
+	session_->local_version(identification_string);
 	produce(&identification_string);
 }
 
@@ -111,8 +113,8 @@ SSH::TransportPipe::consume(Buffer *in)
 		HTTPProtocol::ParseStatus status;
 
 		while (!input_buffer_.empty()) {
-			Buffer line;
-			status = HTTPProtocol::ExtractLine(&line, &input_buffer_);
+			Buffer line, line_ending;
+			status = HTTPProtocol::ExtractLine(&line, &input_buffer_, &line_ending);
 			switch (status) {
 			case HTTPProtocol::ParseSuccess:
 				break;
@@ -134,14 +136,17 @@ SSH::TransportPipe::consume(Buffer *in)
 				return;
 			}
 
+			line.append(line_ending);
+			session_->remote_version(line);
+
 			state_ = GetPacket;
 			/*
 			 * XXX
 			 * Should have a callback here?
 			 */
-			if (algorithm_negotiation_ != NULL) {
+			if (session_->algorithm_negotiation_ != NULL) {
 				Buffer packet;
-				if (algorithm_negotiation_->output(&packet))
+				if (session_->algorithm_negotiation_->output(&packet))
 					send(&packet);
 			}
 			break;
@@ -250,14 +255,14 @@ SSH::TransportPipe::receive_do(void)
 			DEBUG(log_) << "Using default handler for transport message.";
 		} else if (msg >= SSH::Message::AlgorithmNegotiationRangeBegin &&
 			   msg <= SSH::Message::AlgorithmNegotiationRangeEnd) {
-			if (algorithm_negotiation_ != NULL) {
-				if (algorithm_negotiation_->input(&packet))
+			if (session_->algorithm_negotiation_ != NULL) {
+				if (session_->algorithm_negotiation_->input(&packet))
 					continue;
 			}
 			DEBUG(log_) << "Using default handler for algorithm negotiation message.";
 		} else if (msg >= SSH::Message::KeyExchangeMethodRangeBegin &&
 			   msg <= SSH::Message::KeyExchangeMethodRangeEnd) {
-			SSH::KeyExchange *kex = algorithm_negotiation_->key_exchange_algorithm();
+			SSH::KeyExchange *kex = session_->algorithm_negotiation_->chosen_key_exchange();
 			if (kex != NULL) {
 				if (kex->input(this, &packet))
 					continue;

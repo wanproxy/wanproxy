@@ -4,6 +4,7 @@
 class Buffer;
 
 namespace SSH {
+	class Session;
 	class TransportPipe;
 
 	class KeyExchange {
@@ -22,9 +23,9 @@ namespace SSH {
 			return (name_);
 		}
 
-		virtual bool input(SSH::TransportPipe *, Buffer *) = 0;
+		virtual bool input(TransportPipe *, Buffer *) = 0;
 
-		static KeyExchange *method(void);
+		static KeyExchange *method(Session *);
 	};
 }
 

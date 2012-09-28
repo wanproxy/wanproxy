@@ -89,8 +89,9 @@ namespace SSH {
 	}
 
 	namespace String {
-		bool decode(Buffer *, Buffer *);
+		void encode(Buffer *, const Buffer&);
 		void encode(Buffer *, Buffer *);
+		bool decode(Buffer *, Buffer *);
 	}
 
 	namespace UInt32 {

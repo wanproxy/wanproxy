@@ -5,7 +5,7 @@
 #include <io/pipe/pipe_producer.h>
 
 namespace SSH {
-	class AlgorithmNegotiation;
+	class Session;
 
 	/*
 	 * XXX
@@ -20,6 +20,8 @@ namespace SSH {
 			GetPacket
 		};
 
+		Session *session_;
+
 		State state_;
 		Buffer input_buffer_;
 
@@ -27,12 +29,10 @@ namespace SSH {
 		size_t block_size_;
 		size_t mac_length_;
 
-		AlgorithmNegotiation *algorithm_negotiation_;
-
 		EventCallback *receive_callback_;
 		Action *receive_action_;
 	public:
-		TransportPipe(AlgorithmNegotiation * = NULL);
+		TransportPipe(Session *);
 		~TransportPipe();
 
 		Action *receive(EventCallback *);

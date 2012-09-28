@@ -6,11 +6,19 @@
 #include <ssh/ssh_protocol.h>
 
 void
+SSH::String::encode(Buffer *out, const Buffer& in)
+{
+	SSH::UInt32::encode(out, in.length());
+	if (!in.empty())
+		out->append(in);
+}
+
+void
 SSH::String::encode(Buffer *out, Buffer *in)
 {
-	SSH::UInt32::encode(out, in->length());
+	SSH::String::encode(out, *in);
 	if (!in->empty())
-		in->moveout(out);
+		in->clear();
 }
 
 bool

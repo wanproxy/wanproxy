@@ -1,6 +1,8 @@
 #ifndef	SSH_SSH_ALGORITHM_NEGOTIATION_H
 #define	SSH_SSH_ALGORITHM_NEGOTIATION_H
 
+#include <map>
+
 #include <ssh/ssh_compression.h>
 #include <ssh/ssh_encryption.h>
 #include <ssh/ssh_key_exchange.h>
@@ -9,14 +11,9 @@
 #include <ssh/ssh_server_host_key.h>
 
 namespace SSH {
-	class AlgorithmNegotiation {
-	public:
-		enum Role {
-			ClientRole,
-			ServerRole,
-		};
+	class Session;
 
-	private:
+	class AlgorithmNegotiation {
 		struct Algorithms {
 			std::map<std::string, KeyExchange *> key_exchange_map_;
 			std::map<std::string, ServerHostKey *> server_host_key_map_;
@@ -67,7 +64,7 @@ namespace SSH {
 		};
 
 		LogHandle log_;
-		Role role_;
+		Session *session_;
 		Algorithms algorithms_;
 		Algorithms chosen_;
 		Algorithms active_;
@@ -75,7 +72,7 @@ namespace SSH {
 		Buffer received_initialization_;
 		Buffer active_initialization_;
 	public:
-		AlgorithmNegotiation(Role role, std::vector<KeyExchange *> key_exchange_list,
+		AlgorithmNegotiation(Session *session, std::vector<KeyExchange *> key_exchange_list,
 				     std::vector<ServerHostKey *> server_host_key_list,
 				     std::vector<Encryption *> encryption_client_to_server_list,
 				     std::vector<Encryption *> encryption_server_to_client_list,
@@ -86,7 +83,7 @@ namespace SSH {
 				     std::vector<Language *> language_client_to_server_list,
 				     std::vector<Language *> language_server_to_client_list)
 		: log_("/ssh/algorithm/negotiation"),
-		  role_(role),
+		  session_(session),
 		  algorithms_(list_to_map(key_exchange_list),
 			      list_to_map(server_host_key_list),
 			      list_to_map(encryption_client_to_server_list),
@@ -103,14 +100,14 @@ namespace SSH {
 		  received_initialization_()
 		{ }
 
-		AlgorithmNegotiation(Role role, std::vector<KeyExchange *> key_exchange_list,
+		AlgorithmNegotiation(Session *session, std::vector<KeyExchange *> key_exchange_list,
 				     std::vector<ServerHostKey *> server_host_key_list,
 				     std::vector<Encryption *> encryption_list,
 				     std::vector<MAC *> mac_list,
 				     std::vector<Compression *> compression_list,
 				     std::vector<Language *> language_list)
 		: log_("/ssh/algorithm/negotiation"),
-		  role_(role),
+		  session_(session),
 		  algorithms_(list_to_map(key_exchange_list),
 			      list_to_map(server_host_key_list),
 			      list_to_map(encryption_list), list_to_map(encryption_list),
@@ -123,13 +120,13 @@ namespace SSH {
 		  received_initialization_()
 		{ }
 
-		AlgorithmNegotiation(Role role, KeyExchange *key_exchange,
+		AlgorithmNegotiation(Session *session, KeyExchange *key_exchange,
 				     ServerHostKey *server_host_key,
 				     Encryption *encryption, MAC *mac,
 				     Compression *compression,
 				     Language *language)
 		: log_("/ssh/algorithm/negotiation"),
-		  role_(role),
+		  session_(session),
 		  algorithms_(),
 		  chosen_(),
 		  active_(),
@@ -157,19 +154,25 @@ namespace SSH {
 		/* XXX Add a variant that takes only server_host_key_list and fills in suitable defaults.  */
 
 		~AlgorithmNegotiation()
-		{
-			(void)role_; /* XXX role_ is not yet used, but may be soon.  */
-		}
+		{ }
 
 		bool input(Buffer *);
 		bool output(Buffer *);
 
-		SSH::KeyExchange *key_exchange_algorithm(void) const
+		KeyExchange *chosen_key_exchange(void) const
 		{
 			if (chosen_.key_exchange_map_.empty())
 				return (NULL);
 			ASSERT(log_, chosen_.key_exchange_map_.size() == 1);
 			return (chosen_.key_exchange_map_.begin()->second);
+		}
+
+		ServerHostKey *chosen_server_host_key(void) const
+		{
+			if (chosen_.server_host_key_map_.empty())
+				return (NULL);
+			ASSERT(log_, chosen_.server_host_key_map_.size() == 1);
+			return (chosen_.server_host_key_map_.begin()->second);
 		}
 
 	private:

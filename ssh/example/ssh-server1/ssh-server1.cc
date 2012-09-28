@@ -14,11 +14,13 @@
 
 #include <ssh/ssh_algorithm_negotiation.h>
 #include <ssh/ssh_protocol.h>
+#include <ssh/ssh_session.h>
 #include <ssh/ssh_transport_pipe.h>
 
 class SSHConnection {
 	LogHandle log_;
 	Socket *peer_;
+	SSH::Session session_;
 	SSH::TransportPipe *pipe_;
 	Action *receive_action_;
 	Splice *splice_;
@@ -28,24 +30,23 @@ public:
 	SSHConnection(Socket *peer)
 	: log_("/ssh/connection"),
 	  peer_(peer),
+	  session_(SSH::ServerRole),
 	  pipe_(NULL),
 	  splice_(NULL),
 	  splice_action_(NULL),
 	  close_action_(NULL)
 	{
-		SSH::KeyExchange *key_exchange = SSH::KeyExchange::method();
+		SSH::KeyExchange *key_exchange = SSH::KeyExchange::method(&session_);
 		SSH::ServerHostKey *server_host_key = SSH::ServerHostKey::server("/etc/ssh_host_rsa_key");
 		SSH::Encryption *encryption = SSH::Encryption::cipher(CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CBC));
 		SSH::MAC *mac = SSH::MAC::algorithm(CryptoMAC::SHA1);
 		SSH::Compression *compression = SSH::Compression::none();
 		SSH::Language *language = NULL;
 
-		SSH::AlgorithmNegotiation *algorithm_negotiation;
-		algorithm_negotiation = new SSH::AlgorithmNegotiation(SSH::AlgorithmNegotiation::ServerRole,
-								      key_exchange, server_host_key,
-								      encryption, mac, compression, language);
+		session_.algorithm_negotiation_ = new SSH::AlgorithmNegotiation(&session_, key_exchange, server_host_key,
+										encryption, mac, compression, language);
 
-		pipe_ = new SSH::TransportPipe(algorithm_negotiation);
+		pipe_ = new SSH::TransportPipe(&session_);
 		EventCallback *rcb = callback(this, &SSHConnection::receive_complete);
 		receive_action_ = pipe_->receive(rcb);
 

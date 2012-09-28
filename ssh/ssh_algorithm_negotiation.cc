@@ -5,6 +5,7 @@
 
 #include <ssh/ssh_algorithm_negotiation.h>
 #include <ssh/ssh_protocol.h>
+#include <ssh/ssh_session.h>
 
 namespace {
 	static uint8_t constant_cookie[16] = {
@@ -26,7 +27,7 @@ namespace {
 	}
 
 	template<typename T>
-	bool choose_algorithm(SSH::AlgorithmNegotiation::Role role,
+	bool choose_algorithm(SSH::Role role,
 			      std::map<std::string, T>& chosen_map,
 			      std::map<std::string, T>& algorithm_map,
 			      Buffer *in, const std::string& type)
@@ -45,7 +46,7 @@ namespace {
 
 		const std::vector<Buffer> *client_algorithms;
 		const std::vector<Buffer> *server_algorithms;
-		if (role == SSH::AlgorithmNegotiation::ClientRole) {
+		if (role == SSH::ClientRole) {
 			client_algorithms = &local_algorithms;
 			server_algorithms = &remote_algorithms;
 		} else {
@@ -127,25 +128,25 @@ SSH::AlgorithmNegotiation::choose_algorithms(Buffer *in)
 	in->skip(17);
 
 	chosen_ = Algorithms();
-	if (!choose_algorithm(role_, chosen_.key_exchange_map_, algorithms_.key_exchange_map_, in, "Key Exchange"))
+	if (!choose_algorithm(session_->role_, chosen_.key_exchange_map_, algorithms_.key_exchange_map_, in, "Key Exchange"))
 		return (false);
-	if (!choose_algorithm(role_, chosen_.server_host_key_map_, algorithms_.server_host_key_map_, in, "Server Host Key"))
+	if (!choose_algorithm(session_->role_, chosen_.server_host_key_map_, algorithms_.server_host_key_map_, in, "Server Host Key"))
 		return (false);
-	if (!choose_algorithm(role_, chosen_.encryption_client_to_server_map_, algorithms_.encryption_client_to_server_map_, in, "Encryption (Client->Server)"))
+	if (!choose_algorithm(session_->role_, chosen_.encryption_client_to_server_map_, algorithms_.encryption_client_to_server_map_, in, "Encryption (Client->Server)"))
 		return (false);
-	if (!choose_algorithm(role_, chosen_.encryption_server_to_client_map_, algorithms_.encryption_server_to_client_map_, in, "Encryption (Server->Client)"))
+	if (!choose_algorithm(session_->role_, chosen_.encryption_server_to_client_map_, algorithms_.encryption_server_to_client_map_, in, "Encryption (Server->Client)"))
 		return (false);
-	if (!choose_algorithm(role_, chosen_.mac_client_to_server_map_, algorithms_.mac_client_to_server_map_, in, "MAC (Client->Server)"))
+	if (!choose_algorithm(session_->role_, chosen_.mac_client_to_server_map_, algorithms_.mac_client_to_server_map_, in, "MAC (Client->Server)"))
 		return (false);
-	if (!choose_algorithm(role_, chosen_.mac_server_to_client_map_, algorithms_.mac_server_to_client_map_, in, "MAC (Server->Client)"))
+	if (!choose_algorithm(session_->role_, chosen_.mac_server_to_client_map_, algorithms_.mac_server_to_client_map_, in, "MAC (Server->Client)"))
 		return (false);
-	if (!choose_algorithm(role_, chosen_.compression_client_to_server_map_, algorithms_.compression_client_to_server_map_, in, "Compression (Client->Server)"))
+	if (!choose_algorithm(session_->role_, chosen_.compression_client_to_server_map_, algorithms_.compression_client_to_server_map_, in, "Compression (Client->Server)"))
 		return (false);
-	if (!choose_algorithm(role_, chosen_.compression_server_to_client_map_, algorithms_.compression_server_to_client_map_, in, "Compression (Server->Client)"))
+	if (!choose_algorithm(session_->role_, chosen_.compression_server_to_client_map_, algorithms_.compression_server_to_client_map_, in, "Compression (Server->Client)"))
 		return (false);
-	if (!choose_algorithm(role_, chosen_.language_client_to_server_map_, algorithms_.language_client_to_server_map_, in, "Language (Client->Server)"))
+	if (!choose_algorithm(session_->role_, chosen_.language_client_to_server_map_, algorithms_.language_client_to_server_map_, in, "Language (Client->Server)"))
 		return (false);
-	if (!choose_algorithm(role_, chosen_.language_server_to_client_map_, algorithms_.language_server_to_client_map_, in, "Language (Server->Client)"))
+	if (!choose_algorithm(session_->role_, chosen_.language_server_to_client_map_, algorithms_.language_server_to_client_map_, in, "Language (Server->Client)"))
 		return (false);
 
 	return (true);
