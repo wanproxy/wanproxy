@@ -5,7 +5,7 @@
 #include <io/pipe/pipe_producer.h>
 
 namespace SSH {
-	class Session;
+	struct Session;
 
 	/*
 	 * XXX

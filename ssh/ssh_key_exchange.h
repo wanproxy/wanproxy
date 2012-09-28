@@ -4,7 +4,7 @@
 class Buffer;
 
 namespace SSH {
-	class Session;
+	struct Session;
 	class TransportPipe;
 
 	class KeyExchange {

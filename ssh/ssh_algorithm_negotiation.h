@@ -11,7 +11,7 @@
 #include <ssh/ssh_server_host_key.h>
 
 namespace SSH {
-	class Session;
+	struct Session;
 
 	class AlgorithmNegotiation {
 		struct Algorithms {
