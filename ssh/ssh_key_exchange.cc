@@ -45,8 +45,6 @@ namespace {
 
 		bool input(SSH::TransportPipe *pipe, Buffer *in)
 		{
-			const CryptoHash::Method *hash_method;
-			CryptoHash::Instance *instance;
 			SSH::ServerHostKey *key;
 			uint32_t max, min, n;
 			BIGNUM *e, *f;
@@ -130,13 +128,8 @@ namespace {
 				data.append(key_exchange_);
 				SSH::String::encode(&data, session_->shared_secret_);
 
-				hash_method = CryptoHash::Method::method(CryptoHash::SHA1);
-				instance = hash_method->instance(CryptoHash::SHA1);
-				if (!instance->hash(&hash, &data)) {
-					delete instance;
+				if (!CryptoHash::hash(CryptoHash::SHA1, &hash, &data))
 					return (false);
-				}
-				delete instance;
 				buf.append(hash);
 
 				if (!key->sign(&signature, &hash))

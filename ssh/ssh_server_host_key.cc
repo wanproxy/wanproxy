@@ -40,10 +40,8 @@ namespace {
 
 		bool sign(Buffer *out, const Buffer *in) const
 		{
-			const CryptoHash::Method *method = CryptoHash::Method::method(CryptoHash::SHA1);
-			CryptoHash::Instance *instance = method->instance(CryptoHash::SHA1);
 			Buffer hash;
-			if (!instance->hash(&hash, in))
+			if (!CryptoHash::hash(CryptoHash::SHA1, &hash, in))
 				return (false);
 
 			uint8_t m[hash.length()];
