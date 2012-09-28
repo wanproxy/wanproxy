@@ -31,9 +31,7 @@ namespace {
 
 		void encode_public_key(Buffer *out) const
 		{
-			Buffer tag("ssh-rsa");
-
-			SSH::String::encode(out, &tag);
+			SSH::String::encode(out, Buffer("ssh-rsa"));
 			SSH::MPInt::encode(out, rsa_->e);
 			SSH::MPInt::encode(out, rsa_->n);
 		}
@@ -47,11 +45,12 @@ namespace {
 			uint8_t m[hash.length()];
 			hash.moveout(m, sizeof m);
 			uint8_t signature[RSA_size(rsa_)];
-			unsigned signature_length;
+			unsigned signature_length = sizeof signature;
 			int rv = RSA_sign(NID_sha1, m, sizeof m, signature, &signature_length, rsa_);
 			if (rv == 0)
 				return (false);
-			out->append(signature, signature_length);
+			SSH::String::encode(out, Buffer("ssh-rsa"));
+			SSH::String::encode(out, Buffer(signature, signature_length));
 			return (true);
 		}
 
