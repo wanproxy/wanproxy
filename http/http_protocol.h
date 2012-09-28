@@ -64,7 +64,7 @@ namespace HTTPProtocol {
 	};
 
 	bool DecodeURI(Buffer *, Buffer *);
-	ParseStatus ExtractLine(Buffer *, Buffer *);
+	ParseStatus ExtractLine(Buffer *, Buffer *, Buffer * = NULL);
 }
 
 #endif /* !HTTP_HTTP_PROTOCOL_H */

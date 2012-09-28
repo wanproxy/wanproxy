@@ -170,7 +170,7 @@ HTTPProtocol::DecodeURI(Buffer *encoded, Buffer *decoded)
 }
 
 HTTPProtocol::ParseStatus
-HTTPProtocol::ExtractLine(Buffer *line, Buffer *input)
+HTTPProtocol::ExtractLine(Buffer *line, Buffer *input, Buffer *line_ending)
 {
 	ASSERT("/http/protocol/extract/line", line->empty());
 
@@ -209,12 +209,16 @@ HTTPProtocol::ExtractLine(Buffer *line, Buffer *input)
 			return (ParseFailure);
 		}
 		input->skip(1);
+		if (line_ending != NULL)
+			line_ending->append("\r\n");
 		break;
 	case '\n':
 		/* Unix line endings.  */
 		if (pos != 0)
 			input->moveout(line, pos);
 		input->skip(1);
+		if (line_ending != NULL)
+			line_ending->append("\n");
 		break;
 	default:
 		NOTREACHED("/http/protocol/extract/line");
