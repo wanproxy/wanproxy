@@ -10,13 +10,16 @@
 #else
 #define	ASSERT(log, p)							\
 	do {								\
-		if (!(p))						\
+		if (!(p)) {						\
 			HALT((log)) << "Assertion (" << #p <<		\
 					") failed at "			\
 					<< __FILE__ << ':' << __LINE__	\
 					<< " in function " 		\
 					<< __PRETTY_FUNCTION__		\
 					<< '.';				\
+			for (;;)					\
+				abort();				\
+		}							\
 	} while (0)
 #endif
 
