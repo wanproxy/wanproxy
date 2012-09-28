@@ -19,10 +19,6 @@ main(int argc, char *argv[])
 	quiet = false;
 	verbose = false;
 
-	INFO("/fwdproxy") << "FWDProxy";
-	INFO("/fwdproxy") << "Copyright (c) 2008-2011 fwdproxy.org.";
-	INFO("/fwdproxy") << "All rights reserved.";
-
 	while ((ch = getopt(argc, argv, "c:qv")) != -1) {
 		switch (ch) {
 		case 'c':
