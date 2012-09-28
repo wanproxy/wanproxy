@@ -130,7 +130,6 @@ namespace {
 
 				if (!CryptoHash::hash(CryptoHash::SHA1, &hash, &data))
 					return (false);
-				buf.append(hash);
 
 				if (!key->sign(&signature, &hash))
 					return (false);
