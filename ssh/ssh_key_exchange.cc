@@ -54,7 +54,6 @@ namespace {
 			Buffer group;
 			Buffer hash;
 			Buffer data;
-			Buffer buf;
 
 			switch (in->peek()) {
 			case DiffieHellmanGroupExchangeRequest:
@@ -109,16 +108,10 @@ namespace {
 					k_ = BN_bin2bn(secret, secretlen, NULL);
 					if (k_ == NULL)
 						return (false);
-					session_->shared_secret_ = Buffer(secret, secretlen);
 				}
 
 				key = session_->algorithm_negotiation_->chosen_server_host_key();
 				key->encode_public_key(&server_public_key);
-
-				SSH::String::encode(&buf, server_public_key);
-				SSH::MPInt::encode(&buf, f);
-				key_exchange_.append(buf);
-				SSH::MPInt::encode(&key_exchange_, k_);
 
 				SSH::String::encode(&data, session_->client_version_);
 				SSH::String::encode(&data, session_->server_version_);
@@ -126,17 +119,23 @@ namespace {
 				SSH::String::encode(&data, session_->server_kexinit_);
 				SSH::String::encode(&data, server_public_key);
 				data.append(key_exchange_);
-				SSH::String::encode(&data, session_->shared_secret_);
+				SSH::MPInt::encode(&data, f);
+				SSH::MPInt::encode(&data, k_);
+
+				DEBUG(log_) << "Key exchange data:" << std::endl << data.hexdump();
 
 				if (!CryptoHash::hash(CryptoHash::SHA1, &hash, &data))
 					return (false);
 
+				DEBUG(log_) << "Key exchange hash:" << std::endl << hash.hexdump();
+
 				if (!key->sign(&signature, &hash))
 					return (false);
-				SSH::String::encode(&buf, &signature);
 
 				packet.append(DiffieHellmanGroupExchangeReply);
-				packet.append(buf);
+				SSH::String::encode(&packet, server_public_key);
+				SSH::MPInt::encode(&packet, f);
+				SSH::String::encode(&packet, &signature);
 				pipe->send(&packet);
 				return (true);
 			default:
