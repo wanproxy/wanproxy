@@ -25,8 +25,9 @@ SSH::TransportPipe::TransportPipe(Session *session)
   receive_callback_(NULL),
   receive_action_(NULL)
 {
-	Buffer identification_string("SSH-2.0-WANProxy " + (std::string)log_ + "\r\n");
+	Buffer identification_string("SSH-2.0-WANProxy " + (std::string)log_);
 	session_->local_version(identification_string);
+	identification_string.append("\r\n");
 	produce(&identification_string);
 }
 
@@ -113,8 +114,8 @@ SSH::TransportPipe::consume(Buffer *in)
 		HTTPProtocol::ParseStatus status;
 
 		while (!input_buffer_.empty()) {
-			Buffer line, line_ending;
-			status = HTTPProtocol::ExtractLine(&line, &input_buffer_, &line_ending);
+			Buffer line;
+			status = HTTPProtocol::ExtractLine(&line, &input_buffer_);
 			switch (status) {
 			case HTTPProtocol::ParseSuccess:
 				break;
@@ -136,7 +137,6 @@ SSH::TransportPipe::consume(Buffer *in)
 				return;
 			}
 
-			line.append(line_ending);
 			session_->remote_version(line);
 
 			state_ = GetPacket;
@@ -202,7 +202,7 @@ SSH::TransportPipe::receive_do(void)
 		}
 
 		if (input_buffer_.length() < sizeof packet_len + packet_len + mac_length_) {
-			DEBUG(log_) << "Need " << sizeof packet_len + packet_len + mac_length_ << "bytes; have " << input_buffer_.length() << ".";
+			DEBUG(log_) << "Need " << sizeof packet_len + packet_len + mac_length_ << " bytes; have " << input_buffer_.length() << ".";
 			return;
 		}
 
