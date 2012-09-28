@@ -18,7 +18,7 @@ namespace {
 		~InstanceEVP()
 		{ }
 
-		Action *submit(Buffer *in, EventCallback *cb)
+		virtual bool hash(Buffer *out, const Buffer *in)
 		{
 			/*
 			 * We process a single, large, linear byte buffer here rather
@@ -28,16 +28,27 @@ namespace {
 			 * BufferSegment's length is not modular to the block size.
 			 */
 			uint8_t indata[in->length()];
-			in->moveout(indata, sizeof indata);
+			in->copyout(indata, sizeof indata);
 
 			uint8_t macdata[EVP_MD_size(algorithm_)];
 			unsigned maclen;
-			if (!EVP_Digest(indata, sizeof indata, macdata, &maclen, algorithm_, NULL)) {
+			if (!EVP_Digest(indata, sizeof indata, macdata, &maclen, algorithm_, NULL))
+				return (false);
+			ASSERT(log_, maclen == sizeof macdata);
+			out->append(macdata, maclen);
+			return (true);
+		}
+
+		Action *submit(Buffer *in, EventCallback *cb)
+		{
+			Buffer out;
+			if (!hash(&out, in)) {
+				in->clear();
 				cb->param(Event::Error);
 				return (cb->schedule());
 			}
-			ASSERT(log_, maclen == sizeof macdata);
-			cb->param(Event(Event::Done, Buffer(macdata, maclen)));
+			in->clear();
+			cb->param(Event(Event::Done, out));
 			return (cb->schedule());
 		}
 	};

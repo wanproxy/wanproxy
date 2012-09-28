@@ -23,6 +23,8 @@ namespace CryptoHash {
 		virtual ~Instance()
 		{ }
 
+		virtual bool hash(Buffer *, const Buffer *) = 0;
+
 		virtual Action *submit(Buffer *, EventCallback *) = 0;
 	};
 
