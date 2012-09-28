@@ -23,12 +23,6 @@ namespace {
 		~RSAServerHostKey()
 		{ }
 
-		bool input(Buffer *)
-		{
-			ERROR(log_) << "Not yet implemented.";
-			return (false);
-		}
-
 		void encode_public_key(Buffer *out) const
 		{
 			SSH::String::encode(out, Buffer("ssh-rsa"));
