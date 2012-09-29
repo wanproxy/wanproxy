@@ -12,6 +12,7 @@
 
 namespace SSH {
 	struct Session;
+	class TransportPipe;
 
 	class AlgorithmNegotiation {
 		struct Algorithms {
@@ -66,8 +67,6 @@ namespace SSH {
 		LogHandle log_;
 		Session *session_;
 		Algorithms algorithms_;
-		Algorithms chosen_;
-		Algorithms active_;
 	public:
 		AlgorithmNegotiation(Session *session, std::vector<KeyExchange *> key_exchange_list,
 				     std::vector<ServerHostKey *> server_host_key_list,
@@ -90,9 +89,7 @@ namespace SSH {
 			      list_to_map(compression_client_to_server_list),
 			      list_to_map(compression_server_to_client_list),
 			      list_to_map(language_client_to_server_list),
-			      list_to_map(language_server_to_client_list)),
-		  chosen_(),
-		  active_()
+			      list_to_map(language_server_to_client_list))
 		{ }
 
 		AlgorithmNegotiation(Session *session, std::vector<KeyExchange *> key_exchange_list,
@@ -108,9 +105,7 @@ namespace SSH {
 			      list_to_map(encryption_list), list_to_map(encryption_list),
 			      list_to_map(mac_list), list_to_map(mac_list),
 			      list_to_map(compression_list), list_to_map(compression_list),
-			      list_to_map(language_list), list_to_map(language_list)),
-		  chosen_(),
-		  active_()
+			      list_to_map(language_list), list_to_map(language_list))
 		{ }
 
 		AlgorithmNegotiation(Session *session, KeyExchange *key_exchange,
@@ -120,9 +115,7 @@ namespace SSH {
 				     Language *language)
 		: log_("/ssh/algorithm/negotiation"),
 		  session_(session),
-		  algorithms_(),
-		  chosen_(),
-		  active_()
+		  algorithms_()
 		{
 			if (key_exchange != NULL)
 				algorithms_.key_exchange_map_[key_exchange->name()] = key_exchange;
@@ -147,24 +140,8 @@ namespace SSH {
 		~AlgorithmNegotiation()
 		{ }
 
-		bool input(Buffer *);
-		bool output(Buffer *);
-
-		KeyExchange *chosen_key_exchange(void) const
-		{
-			if (chosen_.key_exchange_map_.empty())
-				return (NULL);
-			ASSERT(log_, chosen_.key_exchange_map_.size() == 1);
-			return (chosen_.key_exchange_map_.begin()->second);
-		}
-
-		ServerHostKey *chosen_server_host_key(void) const
-		{
-			if (chosen_.server_host_key_map_.empty())
-				return (NULL);
-			ASSERT(log_, chosen_.server_host_key_map_.size() == 1);
-			return (chosen_.server_host_key_map_.begin()->second);
-		}
+		bool input(TransportPipe *, Buffer *);
+		bool init(Buffer *);
 
 	private:
 		bool choose_algorithms(Buffer *);

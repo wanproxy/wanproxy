@@ -15,15 +15,13 @@ namespace {
 
 	class CryptoSSHMAC : public SSH::MAC {
 		LogHandle log_;
-		const CryptoMAC::Method *method_;
+		CryptoMAC::Instance *instance_;
 	public:
-		CryptoSSHMAC(const std::string& xname, const CryptoMAC::Method *method)
-		: SSH::MAC(xname),
+		CryptoSSHMAC(const std::string& xname, CryptoMAC::Instance *instance)
+		: SSH::MAC(xname, instance->size(), instance->key_size()),
 		  log_("/ssh/mac/crypto/" + xname),
-		  method_(method)
-		{
-			ASSERT(log_, method_ != NULL);
-		}
+		  instance_(instance)
+		{ }
 
 		~CryptoSSHMAC()
 		{ }
@@ -49,7 +47,12 @@ SSH::MAC::algorithm(CryptoMAC::Algorithm xalgorithm)
 			ERROR("/ssh/mac") << "Could not get method for algorithm: " << xalgorithm;
 			return (NULL);
 		}
-		return (new CryptoSSHMAC(alg->rfc4250_name_, method));
+		CryptoMAC::Instance *instance = method->instance(xalgorithm);
+		if (instance == NULL) {
+			ERROR("/ssh/mac") << "Could not get instance for algorithm: " << xalgorithm;
+			return (NULL);
+		}
+		return (new CryptoSSHMAC(alg->rfc4250_name_, instance));
 	}
 	ERROR("/ssh/mac") << "No SSH MAC support is available for algorithm: " << xalgorithm;
 	return (NULL);

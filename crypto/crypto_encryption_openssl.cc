@@ -23,6 +23,21 @@ namespace {
 			EVP_CIPHER_CTX_cleanup(&ctx_);
 		}
 
+		unsigned block_size(void) const
+		{
+			return (EVP_CIPHER_block_size(cipher_));
+		}
+
+		unsigned key_size(void) const
+		{
+			return (EVP_CIPHER_key_length(cipher_));
+		}
+
+		unsigned iv_size(void) const
+		{
+			return (EVP_CIPHER_iv_length(cipher_));
+		}
+
 		bool initialize(CryptoEncryption::Operation operation, const Buffer *key, const Buffer *iv)
 		{
 			if (key->length() < (size_t)EVP_CIPHER_key_length(cipher_))

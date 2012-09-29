@@ -6,9 +6,13 @@
 namespace SSH {
 	class MAC {
 		std::string name_;
+		unsigned size_;
+		unsigned key_size_;
 	protected:
-		MAC(const std::string& xname)
-		: name_(xname)
+		MAC(const std::string& xname, unsigned xsize, unsigned xkey_size)
+		: name_(xname),
+		  size_(xsize),
+		  key_size_(xkey_size)
 		{ }
 
 	public:
@@ -18,6 +22,16 @@ namespace SSH {
 		std::string name(void) const
 		{
 			return (name_);
+		}
+
+		unsigned size(void) const
+		{
+			return (size_);
+		}
+
+		unsigned key_size(void) const
+		{
+			return (key_size_);
 		}
 
 		virtual bool input(Buffer *) = 0;

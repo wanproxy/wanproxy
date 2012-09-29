@@ -20,15 +20,13 @@ namespace {
 
 	class CryptoSSHEncryption : public SSH::Encryption {
 		LogHandle log_;
-		const CryptoEncryption::Method *method_;
+		CryptoEncryption::Session *session_;
 	public:
-		CryptoSSHEncryption(const std::string& xname, const CryptoEncryption::Method *method)
-		: SSH::Encryption(xname),
+		CryptoSSHEncryption(const std::string& xname, CryptoEncryption::Session *session)
+		: SSH::Encryption(xname, session->block_size(), session->key_size(), session->iv_size()),
 		  log_("/ssh/encryption/crypto/" + xname),
-		  method_(method)
-		{
-			ASSERT(log_, method_ != NULL);
-		}
+		  session_(session)
+		{ }
 
 		~CryptoSSHEncryption()
 		{ }
@@ -56,7 +54,12 @@ SSH::Encryption::cipher(CryptoEncryption::Cipher cipher)
 			ERROR("/ssh/encryption") << "Could not get method for cipher: " << cipher;
 			return (NULL);
 		}
-		return (new CryptoSSHEncryption(alg->rfc4250_name_, method));
+		CryptoEncryption::Session *session = method->session(cipher);
+		if (session == NULL) {
+			ERROR("/ssh/encryption") << "Could not get session for cipher: " << cipher;
+			return (NULL);
+		}
+		return (new CryptoSSHEncryption(alg->rfc4250_name_, session));
 	}
 	ERROR("/ssh/encryption") << "No SSH encryption support is available for cipher: " << cipher;
 	return (NULL);

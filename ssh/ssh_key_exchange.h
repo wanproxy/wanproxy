@@ -23,6 +23,8 @@ namespace SSH {
 			return (name_);
 		}
 
+		virtual bool hash(Buffer *, const Buffer *) const = 0;
+
 		virtual bool input(TransportPipe *, Buffer *) = 0;
 
 		static KeyExchange *method(Session *);

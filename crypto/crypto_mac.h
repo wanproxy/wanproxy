@@ -23,6 +23,9 @@ namespace CryptoMAC {
 		virtual ~Instance()
 		{ }
 
+		virtual unsigned size(void) const = 0;
+		virtual unsigned key_size(void) const = 0;
+
 		virtual bool initialize(const Buffer * = NULL) = 0;
 		virtual Action *submit(Buffer *, EventCallback *) = 0;
 	};

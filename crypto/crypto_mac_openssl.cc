@@ -22,6 +22,16 @@ namespace {
 		~InstanceEVP()
 		{ }
 
+		unsigned size(void) const
+		{
+			return (EVP_MD_size(algorithm_));
+		}
+
+		unsigned key_size(void) const
+		{
+			return (EVP_MD_size(algorithm_));
+		}
+
 		bool initialize(const Buffer *key)
 		{
 			if (key->length() > EVP_MAX_KEY_LENGTH)

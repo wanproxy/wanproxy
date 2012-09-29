@@ -43,6 +43,11 @@ namespace {
 		~DiffieHellmanGroupExchange()
 		{ }
 
+		bool hash(Buffer *out, const Buffer *in) const
+		{
+			return (CryptoHash::hash(CryptoHash::SHA1, out, in));
+		}
+
 		bool input(SSH::TransportPipe *pipe, Buffer *in)
 		{
 			SSH::ServerHostKey *key;
@@ -52,7 +57,7 @@ namespace {
 			Buffer signature;
 			Buffer packet;
 			Buffer group;
-			Buffer hash;
+			Buffer exchange_hash;
 			Buffer data;
 
 			switch (in->peek()) {
@@ -110,7 +115,7 @@ namespace {
 						return (false);
 				}
 
-				key = session_->algorithm_negotiation_->chosen_server_host_key();
+				key = session_->chosen_algorithms_.server_host_key_;
 				key->encode_public_key(&server_public_key);
 
 				SSH::String::encode(&data, session_->client_version_);
@@ -122,15 +127,15 @@ namespace {
 				SSH::MPInt::encode(&data, f);
 				SSH::MPInt::encode(&data, k_);
 
-				if (!CryptoHash::hash(CryptoHash::SHA1, &hash, &data))
+				if (!CryptoHash::hash(CryptoHash::SHA1, &exchange_hash, &data))
 					return (false);
 
-				session_->exchange_hash_ = hash;
+				session_->exchange_hash_ = exchange_hash;
 				SSH::MPInt::encode(&session_->shared_secret_, k_);
 				if (session_->session_id_.empty())
-					session_->session_id_ = hash;
+					session_->session_id_ = exchange_hash;
 
-				if (!key->sign(&signature, &hash))
+				if (!key->sign(&signature, &exchange_hash))
 					return (false);
 
 				packet.append(DiffieHellmanGroupExchangeReply);

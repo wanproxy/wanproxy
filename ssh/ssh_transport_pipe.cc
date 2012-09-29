@@ -146,7 +146,7 @@ SSH::TransportPipe::consume(Buffer *in)
 			 */
 			if (session_->algorithm_negotiation_ != NULL) {
 				Buffer packet;
-				if (session_->algorithm_negotiation_->output(&packet))
+				if (session_->algorithm_negotiation_->init(&packet))
 					send(&packet);
 			}
 			break;
@@ -256,15 +256,14 @@ SSH::TransportPipe::receive_do(void)
 		} else if (msg >= SSH::Message::AlgorithmNegotiationRangeBegin &&
 			   msg <= SSH::Message::AlgorithmNegotiationRangeEnd) {
 			if (session_->algorithm_negotiation_ != NULL) {
-				if (session_->algorithm_negotiation_->input(&packet))
+				if (session_->algorithm_negotiation_->input(this, &packet))
 					continue;
 			}
 			DEBUG(log_) << "Using default handler for algorithm negotiation message.";
 		} else if (msg >= SSH::Message::KeyExchangeMethodRangeBegin &&
 			   msg <= SSH::Message::KeyExchangeMethodRangeEnd) {
-			SSH::KeyExchange *kex = session_->algorithm_negotiation_->chosen_key_exchange();
-			if (kex != NULL) {
-				if (kex->input(this, &packet))
+			if (session_->chosen_algorithms_.key_exchange_ != NULL) {
+				if (session_->chosen_algorithms_.key_exchange_->input(this, &packet))
 					continue;
 			}
 			DEBUG(log_) << "Using default handler for key exchange method message.";
