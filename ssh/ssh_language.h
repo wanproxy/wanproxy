@@ -18,6 +18,8 @@ namespace SSH {
 			return (name_);
 		}
 
+		virtual Language *clone(void) const = 0;
+
 		virtual bool input(Buffer *) = 0;
 	};
 }

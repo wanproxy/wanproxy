@@ -20,8 +20,8 @@ SSH::TransportPipe::TransportPipe(Session *session)
 : PipeProducer("/ssh/transport/pipe"),
   session_(session),
   state_(GetIdentificationString),
-  block_size_(8),
-  mac_length_(0),
+  input_buffer_(),
+  first_block_(),
   receive_callback_(NULL),
   receive_action_(NULL)
 {
@@ -75,14 +75,32 @@ SSH::TransportPipe::receive(EventCallback *cb)
 void
 SSH::TransportPipe::send(Buffer *payload)
 {
+	Encryption *encryption_algorithm;
+	MAC *mac_algorithm;
 	Buffer packet;
 	uint8_t padding_len;
 	uint32_t packet_len;
+	unsigned block_size;
+	unsigned mac_size;
+	Buffer mac;
 
 	ASSERT(log_, state_ == GetPacket);
+	encryption_algorithm = session_->active_algorithms_.local_to_remote_->encryption_;
+	if (encryption_algorithm != NULL) {
+		block_size = encryption_algorithm->block_size();
+		if (block_size < 8)
+			block_size = 8;
+	} else {
+		block_size = 8;
+	}
+	mac_algorithm = session_->active_algorithms_.local_to_remote_->mac_;
+	if (mac_algorithm != NULL)
+		mac_size = mac_algorithm->size();
+	else
+		mac_size = 0;
 
 	packet_len = sizeof padding_len + payload->length();
-	padding_len = 4 + (block_size_ - ((sizeof packet_len + packet_len + 4) % block_size_));
+	padding_len = 4 + (block_size - ((sizeof packet_len + packet_len + 4) % block_size));
 	packet_len += padding_len;
 
 	packet_len = BigEndian::encode(packet_len);
@@ -91,8 +109,32 @@ SSH::TransportPipe::send(Buffer *payload)
 	payload->moveout(&packet);
 	packet.append(zero_padding, padding_len);
 
-	if (mac_length_ != 0)
-		NOTREACHED(log_);
+	if (mac_algorithm != NULL) {
+		Buffer mac_input;
+
+		SSH::UInt32::encode(&mac_input, session_->local_sequence_number_);
+		mac_input.append(&packet);
+
+		if (!mac_algorithm->mac(&mac, &mac_input)) {
+			ERROR(log_) << "Could not compute outgoing MAC.";
+			produce_error();
+			return;
+		}
+	}
+
+	if (encryption_algorithm != NULL) {
+		Buffer ciphertext;
+		if (!encryption_algorithm->cipher(&ciphertext, &packet)) {
+			ERROR(log_) << "Could not encrypt outgoing packet.";
+			produce_error();
+			return;
+		}
+		packet = ciphertext;
+	}
+	if (!mac.empty())
+		packet.append(mac);
+
+	session_->local_sequence_number_++;
 
 	produce(&packet);
 }
@@ -181,18 +223,49 @@ SSH::TransportPipe::receive_do(void)
 		return;
 
 	while (!input_buffer_.empty()) {
+		Encryption *encryption_algorithm;
+		MAC *mac_algorithm;
 		Buffer packet;
 		Buffer mac;
+		unsigned block_size;
+		unsigned mac_size;
 		uint32_t packet_len;
 		uint8_t padding_len;
 		uint8_t msg;
 
-		if (input_buffer_.length() <= sizeof packet_len) {
-			DEBUG(log_) << "Waiting for packet length.";
+		encryption_algorithm = session_->active_algorithms_.remote_to_local_->encryption_;
+		if (encryption_algorithm != NULL) {
+			block_size = encryption_algorithm->block_size();
+			if (block_size < 8)
+				block_size = 8;
+		} else {
+			block_size = 8;
+		}
+		mac_algorithm = session_->active_algorithms_.remote_to_local_->mac_;
+		if (mac_algorithm != NULL)
+			mac_size = mac_algorithm->size();
+		else
+			mac_size = 0;
+
+		if (input_buffer_.length() <= block_size) {
+			DEBUG(log_) << "Waiting for first block of packet.";
 			return;
 		}
 
-		input_buffer_.extract(&packet_len);
+		if (encryption_algorithm != NULL) {
+			if (first_block_.empty()) {
+				Buffer block;
+				input_buffer_.moveout(&block, block_size);
+				if (!encryption_algorithm->cipher(&first_block_, &block)) {
+					ERROR(log_) << "Decryption of first block failed.";
+					produce_error();
+					return;
+				}
+			}
+			first_block_.extract(&packet_len);
+		} else {
+			input_buffer_.extract(&packet_len);
+		}
 		packet_len = BigEndian::decode(packet_len);
 
 		if (packet_len == 0) {
@@ -201,14 +274,54 @@ SSH::TransportPipe::receive_do(void)
 			return;
 		}
 
-		if (input_buffer_.length() < sizeof packet_len + packet_len + mac_length_) {
-			DEBUG(log_) << "Need " << sizeof packet_len + packet_len + mac_length_ << " bytes; have " << input_buffer_.length() << ".";
-			return;
+		if (encryption_algorithm != NULL) {
+			ASSERT(log_, !first_block_.empty());
+
+			if (block_size + input_buffer_.length() < sizeof packet_len + packet_len + mac_size) {
+				DEBUG(log_) << "Need " << sizeof packet_len + packet_len + mac_size << " bytes to decrypt encrypted packet; have " << (block_size + input_buffer_.length()) << ".";
+				return;
+			}
+
+			first_block_.moveout(&packet);
+
+			Buffer ciphertext;
+			input_buffer_.moveout(&ciphertext, sizeof packet_len + packet_len - block_size);
+			if (!encryption_algorithm->cipher(&packet, &ciphertext)) {
+				ERROR(log_) << "Decryption of packet failed.";
+				produce_error();
+				return;
+			}
+			ASSERT(log_, packet.length() == sizeof packet_len + packet_len);
+		} else {
+			if (input_buffer_.length() < sizeof packet_len + packet_len + mac_size) {
+				DEBUG(log_) << "Need " << sizeof packet_len + packet_len + mac_size << " bytes; have " << input_buffer_.length() << ".";
+				return;
+			}
+
+			input_buffer_.moveout(&packet, sizeof packet_len + packet_len);
 		}
 
-		input_buffer_.moveout(&packet, sizeof packet_len, packet_len);
-		if (mac_length_ != 0)
-			input_buffer_.moveout(&mac, 0, mac_length_);
+		if (mac_algorithm != NULL) {
+			Buffer expected_mac;
+			Buffer mac_input;
+
+			input_buffer_.moveout(&mac, 0, mac_size);
+			SSH::UInt32::encode(&mac_input, session_->remote_sequence_number_);
+			mac_input.append(packet);
+			if (!mac_algorithm->mac(&expected_mac, &mac_input)) {
+				ERROR(log_) << "Could not compute expected MAC.";
+				produce_error();
+				return;
+			}
+			if (!expected_mac.equal(&mac)) {
+				ERROR(log_) << "Received MAC does not match expected MAC.";
+				produce_error();
+				return;
+			}
+		}
+		packet.skip(sizeof packet_len);
+
+		session_->remote_sequence_number_++;
 
 		padding_len = packet.pop();
 		if (padding_len != 0) {

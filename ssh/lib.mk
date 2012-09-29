@@ -3,6 +3,7 @@ VPATH+=	${TOPDIR}/ssh
 SRCS+=	ssh_algorithm_negotiation.cc
 SRCS+=	ssh_transport_pipe.cc
 SRCS+=	ssh_protocol.cc
+SRCS+=	ssh_session.cc
 
 SRCS+=	ssh_compression.cc
 SRCS+=	ssh_encryption.cc

@@ -5,11 +5,12 @@
 
 namespace SSH {
 	class Encryption {
-		std::string name_;
-		unsigned block_size_;
-		unsigned key_size_;
-		unsigned iv_size_;
 	protected:
+		const std::string name_;
+		const unsigned block_size_;
+		const unsigned key_size_;
+		const unsigned iv_size_;
+
 		Encryption(const std::string& xname, unsigned xblock_size, unsigned xkey_size, unsigned xiv_size)
 		: name_(xname),
 		  block_size_(xblock_size),
@@ -41,7 +42,10 @@ namespace SSH {
 			return (name_);
 		}
 
-		virtual bool input(Buffer *) = 0;
+		virtual Encryption *clone(void) const = 0;
+
+		virtual bool initialize(CryptoEncryption::Operation, const Buffer *, const Buffer *) = 0;
+		virtual bool cipher(Buffer *, Buffer *) = 0;
 
 		static Encryption *cipher(CryptoEncryption::Cipher);
 	};

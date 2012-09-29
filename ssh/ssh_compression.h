@@ -20,6 +20,8 @@ namespace SSH {
 			return (name_);
 		}
 
+		virtual Compression *clone(void) const = 0;
+
 		virtual bool input(Buffer *) = 0;
 
 		static Compression *none(void);

@@ -38,6 +38,11 @@ namespace {
 			return (EVP_CIPHER_iv_length(cipher_));
 		}
 
+		Session *clone(void) const
+		{
+			return (new SessionEVP(cipher_));
+		}
+
 		bool initialize(CryptoEncryption::Operation operation, const Buffer *key, const Buffer *iv)
 		{
 			if (key->length() < (size_t)EVP_CIPHER_key_length(cipher_))
@@ -71,7 +76,7 @@ namespace {
 			return (true);
 		}
 
-		Action *submit(Buffer *in, EventCallback *cb)
+		bool cipher(Buffer *out, const Buffer *in)
 		{
 			/*
 			 * We process a single, large, linear byte buffer here rather
@@ -81,15 +86,26 @@ namespace {
 			 * BufferSegment's length is not modular to the block size.
 			 */
 			uint8_t indata[in->length()];
-			in->moveout(indata, sizeof indata);
+			in->copyout(indata, sizeof indata);
 
 			uint8_t outdata[sizeof indata];
 			int rv = EVP_Cipher(&ctx_, outdata, indata, sizeof indata);
-			if (rv == 0) {
+			if (rv == 0)
+				return (false);
+			out->append(outdata, sizeof outdata);
+			return (true);
+		}
+
+		Action *submit(Buffer *in, EventCallback *cb)
+		{
+			Buffer out;
+			if (!cipher(&out, in)) {
+				in->clear();
 				cb->param(Event::Error);
 				return (cb->schedule());
 			}
-			cb->param(Event(Event::Done, Buffer(outdata, sizeof outdata)));
+			in->clear();
+			cb->param(Event(Event::Done, out));
 			return (cb->schedule());
 		}
 	};

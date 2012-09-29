@@ -31,10 +31,24 @@ namespace {
 		~CryptoSSHEncryption()
 		{ }
 
-		bool input(Buffer *)
+		Encryption *clone(void) const
 		{
-			ERROR(log_) << "Not yet implemented.";
-			return (false);
+			return (new CryptoSSHEncryption(name_, session_->clone()));
+		}
+
+		bool initialize(CryptoEncryption::Operation operation, const Buffer *key, const Buffer *iv)
+		{
+			return (session_->initialize(operation, key, iv));
+		}
+
+		bool cipher(Buffer *out, Buffer *in)
+		{
+			if (!session_->cipher(out, in)) {
+				in->clear();
+				return (false);
+			}
+			in->clear();
+			return (true);
 		}
 	};
 }

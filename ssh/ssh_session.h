@@ -3,6 +3,12 @@
 
 namespace SSH {
 	class AlgorithmNegotiation;
+	class Compression;
+	class Encryption;
+	class KeyExchange;
+	class Language;
+	class MAC;
+	class ServerHostKey;
 
 	enum Role {
 		ClientRole,
@@ -60,6 +66,8 @@ namespace SSH {
 		Buffer server_to_client_key_;	/* Server-to-client encryption key.  */
 		Buffer client_to_server_integrity_key_;	/* Client-to-server integrity key.  */
 		Buffer server_to_client_integrity_key_;	/* Server-to-client integrity key.  */
+		uint32_t local_sequence_number_;	/* Our packet sequence number.  */
+		uint32_t remote_sequence_number_;	/* Our peer's packet sequence number.  */
 
 		Session(Role role)
 		: role_(role),
@@ -78,7 +86,9 @@ namespace SSH {
 		  client_to_server_key_(),
 		  server_to_client_key_(),
 		  client_to_server_integrity_key_(),
-		  server_to_client_integrity_key_()
+		  server_to_client_integrity_key_(),
+		  local_sequence_number_(0),
+		  remote_sequence_number_(0)
 		{ }
 
 		void local_version(const Buffer& version)
@@ -113,38 +123,9 @@ namespace SSH {
 				client_kexinit_ = kexinit;
 		}
 
-		void activate_chosen(void)
-		{
-			active_algorithms_ = chosen_algorithms_;
-
-			client_to_server_iv_ = generate_key("A", active_algorithms_.client_to_server_.encryption_->iv_size());
-			server_to_client_iv_ = generate_key("B", active_algorithms_.server_to_client_.encryption_->iv_size());
-			client_to_server_key_ = generate_key("C", active_algorithms_.client_to_server_.encryption_->key_size());
-			server_to_client_key_ = generate_key("D", active_algorithms_.server_to_client_.encryption_->key_size());
-			client_to_server_integrity_key_ = generate_key("E", active_algorithms_.client_to_server_.mac_->key_size());
-			server_to_client_integrity_key_ = generate_key("F", active_algorithms_.server_to_client_.mac_->key_size());
-		}
-
-		Buffer generate_key(const std::string& x, unsigned key_size)
-		{
-			Buffer key;
-			while (key.length() < key_size) {
-				Buffer input;
-				input.append(shared_secret_);
-				input.append(exchange_hash_);
-				if (key.empty()) {
-					input.append(x);
-					input.append(session_id_);
-				} else {
-					input.append(key);
-				}
-				if (!active_algorithms_.key_exchange_->hash(&key, &input))
-					HALT("/ssh/session") << "Hash failed in generating key.";
-			}
-			if (key.length() > key_size)
-				key.truncate(key_size);
-			return (key);
-		}
+		void activate_chosen(void);
+	private:
+		Buffer generate_key(const std::string& x, unsigned key_size);
 	};
 }
 

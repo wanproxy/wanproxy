@@ -24,10 +24,7 @@ namespace SSH {
 
 		State state_;
 		Buffer input_buffer_;
-
-		/* XXX These parameters are different for receive and send.  */
-		size_t block_size_;
-		size_t mac_length_;
+		Buffer first_block_;
 
 		EventCallback *receive_callback_;
 		Action *receive_action_;

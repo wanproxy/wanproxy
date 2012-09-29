@@ -20,6 +20,11 @@ namespace SSH {
 			return (name_);
 		}
 
+		virtual ServerHostKey *clone(void)
+		{
+			return (this);
+		}
+
 		virtual void encode_public_key(Buffer *) const = 0;
 
 		virtual bool sign(Buffer *, const Buffer *) const = 0;

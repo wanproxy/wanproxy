@@ -12,6 +12,11 @@ namespace {
 		~NoneCompression()
 		{ }
 
+		Compression *clone(void) const
+		{
+			return (new NoneCompression(*this));
+		}
+
 		bool input(Buffer *)
 		{
 			ERROR(log_) << "Not yet implemented.";

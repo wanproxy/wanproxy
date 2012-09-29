@@ -27,9 +27,10 @@ namespace {
 			return (EVP_MD_size(algorithm_));
 		}
 
-		unsigned key_size(void) const
+		Instance *clone(void) const
 		{
-			return (EVP_MD_size(algorithm_));
+			ASSERT(log_, key_length_ == 0);
+			return (new InstanceEVP(algorithm_));
 		}
 
 		bool initialize(const Buffer *key)
@@ -37,13 +38,13 @@ namespace {
 			if (key->length() > EVP_MAX_KEY_LENGTH)
 				return (false);
 
-			key->copyout(key_, sizeof key->length());
+			key->copyout(key_, key->length());
 			key_length_ = key->length();
 
 			return (true);
 		}
 
-		Action *submit(Buffer *in, EventCallback *cb)
+		bool mac(Buffer *out, const Buffer *in)
 		{
 			/*
 			 * We process a single, large, linear byte buffer here rather
@@ -53,17 +54,27 @@ namespace {
 			 * BufferSegment's length is not modular to the block size.
 			 */
 			uint8_t indata[in->length()];
-			in->moveout(indata, sizeof indata);
+			in->copyout(indata, sizeof indata);
 
 			uint8_t macdata[EVP_MD_size(algorithm_)];
 			unsigned maclen;
-			uint8_t *mac = HMAC(algorithm_, key_, key_length_, indata, sizeof indata, macdata, &maclen);
-			if (mac == NULL) {
+			if (HMAC(algorithm_, key_, key_length_, indata, sizeof indata, macdata, &maclen) == NULL)
+				return (false);
+			ASSERT(log_, maclen == sizeof macdata);
+			out->append(macdata, maclen);
+			return (true);
+		}
+
+		Action *submit(Buffer *in, EventCallback *cb)
+		{
+			Buffer out;
+			if (!mac(&out, in)) {
+				in->clear();
 				cb->param(Event::Error);
 				return (cb->schedule());
 			}
-			ASSERT(log_, maclen == sizeof macdata);
-			cb->param(Event(Event::Done, Buffer(mac, maclen)));
+			in->clear();
+			cb->param(Event(Event::Done, out));
 			return (cb->schedule());
 		}
 	};

@@ -5,10 +5,11 @@
 
 namespace SSH {
 	class MAC {
-		std::string name_;
-		unsigned size_;
-		unsigned key_size_;
 	protected:
+		const std::string name_;
+		const unsigned size_;
+		const unsigned key_size_;
+
 		MAC(const std::string& xname, unsigned xsize, unsigned xkey_size)
 		: name_(xname),
 		  size_(xsize),
@@ -34,7 +35,10 @@ namespace SSH {
 			return (key_size_);
 		}
 
-		virtual bool input(Buffer *) = 0;
+		virtual MAC *clone(void) const = 0;
+
+		virtual bool initialize(const Buffer *) = 0;
+		virtual bool mac(Buffer *, const Buffer *) = 0;
 
 		static MAC *algorithm(CryptoMAC::Algorithm);
 	};

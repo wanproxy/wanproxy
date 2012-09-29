@@ -43,6 +43,11 @@ namespace {
 		~DiffieHellmanGroupExchange()
 		{ }
 
+		KeyExchange *clone(void) const
+		{
+			return (new DiffieHellmanGroupExchange(session_));
+		}
+
 		bool hash(Buffer *out, const Buffer *in) const
 		{
 			return (CryptoHash::hash(CryptoHash::SHA1, out, in));

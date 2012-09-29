@@ -39,7 +39,12 @@ namespace CryptoEncryption {
 		virtual unsigned key_size(void) const = 0;
 		virtual unsigned iv_size(void) const = 0;
 
+		virtual Session *clone(void) const = 0;
+
 		virtual bool initialize(Operation, const Buffer *, const Buffer *) = 0;
+
+		virtual bool cipher(Buffer *, const Buffer *) = 0;
+
 		virtual Action *submit(Buffer *, EventCallback *) = 0;
 	};
 

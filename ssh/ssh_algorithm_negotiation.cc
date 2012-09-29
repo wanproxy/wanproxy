@@ -67,7 +67,7 @@ namespace {
 					continue;
 				std::string algorithm;
 				it->extract(algorithm);
-				*chosenp = algorithm_map[algorithm];
+				*chosenp = algorithm_map[algorithm]->clone();
 
 				DEBUG("/ssh/algorithm/negotiation") << "Selected " << type << " algorithm " << algorithm;
 				return (true);
@@ -94,11 +94,11 @@ SSH::AlgorithmNegotiation::input(SSH::TransportPipe *pipe, Buffer *in)
 		DEBUG(log_) << "Chose algorithms.";
 		return (true);
 	case SSH::Message::NewKeysMessage:
-		session_->activate_chosen();
-		DEBUG(log_) << "Switched to new keys.";
-
 		packet.append(SSH::Message::NewKeysMessage);
 		pipe->send(&packet);
+
+		session_->activate_chosen();
+		DEBUG(log_) << "Switched to new keys.";
 		return (true);
 	default:
 		DEBUG(log_) << "Unsupported algorithm negotiation message:" << std::endl << in->hexdump();
