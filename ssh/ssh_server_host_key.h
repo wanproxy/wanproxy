@@ -4,6 +4,8 @@
 class Buffer;
 
 namespace SSH {
+	struct Session;
+
 	class ServerHostKey {
 		std::string name_;
 	protected:
@@ -20,16 +22,16 @@ namespace SSH {
 			return (name_);
 		}
 
-		virtual ServerHostKey *clone(void)
-		{
-			return (this);
-		}
+		virtual ServerHostKey *clone(void) const = 0;
 
+		virtual bool decode_public_key(Buffer *) = 0;
 		virtual void encode_public_key(Buffer *) const = 0;
 
 		virtual bool sign(Buffer *, const Buffer *) const = 0;
+		virtual bool verify(const Buffer *, const Buffer *) const = 0;
 
-		static ServerHostKey *server(const std::string&);
+		static ServerHostKey *client(Session *);
+		static ServerHostKey *server(Session *, const std::string&);
 	};
 }
 

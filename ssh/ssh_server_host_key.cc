@@ -7,21 +7,57 @@
 
 #include <ssh/ssh_protocol.h>
 #include <ssh/ssh_server_host_key.h>
+#include <ssh/ssh_session.h>
 
 namespace {
 	class RSAServerHostKey : public SSH::ServerHostKey {
 		LogHandle log_;
+		SSH::Session *session_; 
 		RSA *rsa_;
 
-		RSAServerHostKey(RSA *rsa)
+	public:
+		RSAServerHostKey(SSH::Session *session, RSA *rsa)
 		: SSH::ServerHostKey("ssh-rsa"),
 		  log_("/ssh/serverhostkey/rsa"),
+		  session_(session),
 		  rsa_(rsa)
-		{ }
-	public:
+		{
+			ASSERT(log_, rsa != NULL || session->role_ == SSH::ClientRole);
+		}
 
 		~RSAServerHostKey()
 		{ }
+
+		SSH::ServerHostKey *clone(void) const
+		{
+			if (session_->role_ == SSH::ClientRole) {
+				if (rsa_ != NULL)
+					return (new RSAServerHostKey(session_, RSAPublicKey_dup(rsa_)));
+				else
+					return (new RSAServerHostKey(session_, NULL));
+			} else {
+				return (new RSAServerHostKey(session_, RSAPrivateKey_dup(rsa_)));
+			}
+		}
+
+		bool decode_public_key(Buffer *in)
+		{
+			ASSERT(log_, session_->role_ == SSH::ClientRole);
+			ASSERT(log_, rsa_ == NULL);
+			Buffer tag;
+			if (!SSH::String::decode(&tag, in))
+				return (false);
+			if (!tag.equal("ssh-rsa"))
+				return (false);
+			rsa_ = RSA_new();
+			if (rsa_ == NULL)
+				return (false);
+			if (!SSH::MPInt::decode(&rsa_->e, in))
+				return (false);
+			if (!SSH::MPInt::decode(&rsa_->n, in))
+				return (false);
+			return (true);
+		}
 
 		void encode_public_key(Buffer *out) const
 		{
@@ -32,6 +68,8 @@ namespace {
 
 		bool sign(Buffer *out, const Buffer *in) const
 		{
+			ASSERT(log_, session_->role_ == SSH::ServerRole);
+
 			Buffer hash;
 			if (!CryptoHash::hash(CryptoHash::SHA1, &hash, in))
 				return (false);
@@ -48,30 +86,70 @@ namespace {
 			return (true);
 		}
 
-		static RSAServerHostKey *open(FILE *file)
+		bool verify(const Buffer *signature, const Buffer *message) const
+		{
+			ASSERT(log_, session_->role_ == SSH::ClientRole);
+
+			Buffer hash;
+			if (!CryptoHash::hash(CryptoHash::SHA1, &hash, message))
+				return (false);
+
+			Buffer in;
+			in.append(signature);
+			Buffer tag;
+			if (!SSH::String::decode(&tag, &in))
+				return (false);
+			if (!tag.equal("ssh-rsa"))
+				return (false);
+			Buffer sig;
+			if (!SSH::String::decode(&sig, &in))
+				return (false);
+
+			uint8_t m[hash.length()];
+			hash.moveout(m, sizeof m);
+			uint8_t sigbuf[sig.length()];
+			sig.moveout(sigbuf, sig.length());
+			int rv = RSA_verify(NID_sha1, m, sizeof m, sigbuf, sizeof sigbuf, rsa_);
+			if (rv == 0)
+				return (false);
+			return (true);
+		}
+
+		static RSAServerHostKey *open(SSH::Session *session, FILE *file)
 		{
 			RSA *rsa;
+
+			ASSERT("/ssh/serverhostkey/rsa/open", session->role_ == SSH::ServerRole);
 
 			rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, NULL);
 			if (rsa == NULL)
 				return (NULL);
 
-			return (new RSAServerHostKey(rsa));
+			return (new RSAServerHostKey(session, rsa));
 		}
 	};
 }
 
 SSH::ServerHostKey *
-SSH::ServerHostKey::server(const std::string& keyfile)
+SSH::ServerHostKey::client(SSH::Session *session)
+{
+	ASSERT("/ssh/serverhostkey/client", session->role_ == SSH::ClientRole);
+	return (new RSAServerHostKey(session, NULL));
+}
+
+SSH::ServerHostKey *
+SSH::ServerHostKey::server(SSH::Session *session, const std::string& keyfile)
 {
 	SSH::ServerHostKey *key;
 	FILE *file;
+
+	ASSERT("/ssh/serverhostkey/server", session->role_ == SSH::ServerRole);
 
 	file = fopen(keyfile.c_str(), "r");
 	if (file == NULL)
 		return (NULL);
 	
-	key = RSAServerHostKey::open(file);
+	key = RSAServerHostKey::open(session, file);
 	if (key == NULL) {
 		fclose(file);
 		return (NULL);

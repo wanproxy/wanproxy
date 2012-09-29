@@ -13,6 +13,11 @@ SSH::Session::activate_chosen(void)
 	const Buffer *local_to_remote_key_;
 	const Buffer *remote_to_local_key_;
 
+	/*
+	 * XXX
+	 * Need to free instances in active_algorithms_.
+	 */
+
 	active_algorithms_ = chosen_algorithms_;
 
 	if (active_algorithms_.client_to_server_.encryption_ != NULL) {

@@ -92,6 +92,16 @@ SSH::AlgorithmNegotiation::input(SSH::TransportPipe *pipe, Buffer *in)
 			return (false);
 		}
 		DEBUG(log_) << "Chose algorithms.";
+
+		if (session_->role_ == ClientRole && session_->chosen_algorithms_.key_exchange_ != NULL) {
+			Buffer out;
+			if (!session_->chosen_algorithms_.key_exchange_->init(&out)) {
+				ERROR(log_) << "Could not start new key exchange.";
+				return (false);
+			}
+			if (!out.empty())
+				pipe->send(&out);
+		}
 		return (true);
 	case SSH::Message::NewKeysMessage:
 		packet.append(SSH::Message::NewKeysMessage);

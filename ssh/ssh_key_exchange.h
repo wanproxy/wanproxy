@@ -29,6 +29,8 @@ namespace SSH {
 
 		virtual bool input(TransportPipe *, Buffer *) = 0;
 
+		virtual bool init(Buffer *) = 0;
+
 		static KeyExchange *method(Session *);
 	};
 }

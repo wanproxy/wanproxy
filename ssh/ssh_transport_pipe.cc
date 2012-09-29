@@ -371,6 +371,9 @@ SSH::TransportPipe::receive_do(void)
 			if (session_->algorithm_negotiation_ != NULL) {
 				if (session_->algorithm_negotiation_->input(this, &packet))
 					continue;
+				ERROR(log_) << "Algorithm negotiation message failed.";
+				produce_error();
+				return;
 			}
 			DEBUG(log_) << "Using default handler for algorithm negotiation message.";
 		} else if (msg >= SSH::Message::KeyExchangeMethodRangeBegin &&
@@ -378,6 +381,9 @@ SSH::TransportPipe::receive_do(void)
 			if (session_->chosen_algorithms_.key_exchange_ != NULL) {
 				if (session_->chosen_algorithms_.key_exchange_->input(this, &packet))
 					continue;
+				ERROR(log_) << "Key exchange message failed.";
+				produce_error();
+				return;
 			}
 			DEBUG(log_) << "Using default handler for key exchange method message.";
 		} else if (msg >= SSH::Message::UserAuthenticationGenericRangeBegin &&

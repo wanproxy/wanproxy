@@ -37,7 +37,7 @@ public:
 	  close_action_(NULL)
 	{
 		SSH::KeyExchange *key_exchange = SSH::KeyExchange::method(&session_);
-		SSH::ServerHostKey *server_host_key = SSH::ServerHostKey::server("ssh-server1.pem");
+		SSH::ServerHostKey *server_host_key = SSH::ServerHostKey::server(&session_, "ssh-server1.pem");
 		SSH::Encryption *encryption = SSH::Encryption::cipher(CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CBC));
 		SSH::MAC *mac = SSH::MAC::algorithm(CryptoMAC::SHA1);
 		SSH::Compression *compression = SSH::Compression::none();
