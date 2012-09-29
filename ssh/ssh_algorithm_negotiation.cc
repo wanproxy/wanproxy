@@ -90,6 +90,10 @@ SSH::AlgorithmNegotiation::input(Buffer *in)
 		}
 		DEBUG(log_) << "Chose algorithms.";
 		return (true);
+	case SSH::Message::NewKeysMessage:
+		active_ = chosen_;
+		DEBUG(log_) << "Switched to new keys.";
+		return (true);
 	default:
 		DEBUG(log_) << "Unsupported algorithm negotiation message:" << std::endl << in->hexdump();
 		return (false);

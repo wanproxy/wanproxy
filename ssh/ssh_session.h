@@ -12,12 +12,13 @@ namespace SSH {
 	struct Session {
 		Role role_;
 		AlgorithmNegotiation *algorithm_negotiation_;
-		Buffer client_version_;
-		Buffer server_version_;
-		Buffer client_kexinit_;
-		Buffer server_kexinit_;
-		Buffer shared_secret_;
-		Buffer session_id_;
+		Buffer client_version_;	/* Client's version string.  */
+		Buffer server_version_;	/* Server's version string.  */
+		Buffer client_kexinit_;	/* Client's first key exchange packet.  */
+		Buffer server_kexinit_;	/* Server's first key exchange packet.  */
+		Buffer shared_secret_;	/* Shared secret from key exchange.  */
+		Buffer session_id_;	/* First exchange hash.  */
+		Buffer exchange_hash_;	/* Most recent exchange hash.  */
 
 		Session(Role role)
 		: role_(role),
@@ -27,7 +28,8 @@ namespace SSH {
 		  client_kexinit_(),
 		  server_kexinit_(),
 		  shared_secret_(),
-		  session_id_()
+		  session_id_(),
+		  exchange_hash_()
 		{ }
 
 		void local_version(const Buffer& version)

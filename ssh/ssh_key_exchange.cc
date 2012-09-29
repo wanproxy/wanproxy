@@ -122,12 +122,13 @@ namespace {
 				SSH::MPInt::encode(&data, f);
 				SSH::MPInt::encode(&data, k_);
 
-				DEBUG(log_) << "Key exchange data:" << std::endl << data.hexdump();
-
 				if (!CryptoHash::hash(CryptoHash::SHA1, &hash, &data))
 					return (false);
 
-				DEBUG(log_) << "Key exchange hash:" << std::endl << hash.hexdump();
+				session_->exchange_hash_ = hash;
+				SSH::MPInt::encode(&session_->shared_secret_, k_);
+				if (session_->session_id_.empty())
+					session_->session_id_ = hash;
 
 				if (!key->sign(&signature, &hash))
 					return (false);
