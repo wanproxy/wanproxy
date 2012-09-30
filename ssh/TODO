@@ -10,3 +10,6 @@ o) Make sure all those things created by new have appropriate deletes somewhere.
 o) Likewise, go over all the BIGNUM, etc., stuff and add frees.
 o) Maybe don't ever generate random padding, but ought to be able to generate
    random cookies for the key exchange.
+o) Have the AlgorithmNegotiation code add all algorithms to itself somehow.  We
+   only really want the caller to have to provide a key.
+o) Some kind of server public key verification callback.
