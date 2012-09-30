@@ -7,7 +7,7 @@ o) Make the Crypto* stuff less awful.  It seems like the Method abstraction is
 o) Do separate algorithm from instance in the SSH code.  It's a mess right now,
    what with the clone() methods.  Yuck.
 o) Make sure all those things created by new have appropriate deletes somewhere.
-o) Likewise, go over all the BIGNUM, etc., stuff and add frees.
+o) Likewise, go over all the RSA, DH, BIGNUM, etc., stuff and add frees.
 o) Maybe don't ever generate random padding, but ought to be able to generate
    random cookies for the key exchange.
 o) Have the AlgorithmNegotiation code add all algorithms to itself somehow.  We
