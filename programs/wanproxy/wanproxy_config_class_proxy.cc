@@ -10,6 +10,7 @@
 #include <io/socket/socket_types.h>
 
 #include "proxy_listener.h"
+#include "ssh_proxy_listener.h"
 #include "wanproxy_config_class_codec.h"
 #include "wanproxy_config_class_interface.h"
 #include "wanproxy_config_class_peer.h"
@@ -21,6 +22,16 @@ bool
 WANProxyConfigClassProxy::activate(ConfigObject *co)
 {
 	if (object_listener_map_.find(co) != object_listener_map_.end())
+		return (false);
+
+	/* Extract type.  */
+	WANProxyConfigTypeProxyType *typect;
+	ConfigValue *typecv = co->get("type", &typect);
+	if (typecv == NULL)
+		return (false);
+
+	WANProxyConfigProxyType type;
+	if (!typect->get(typecv, &type))
 		return (false);
 
 	/* Extract interface.  */
@@ -138,8 +149,13 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	std::string interface_address = '[' + interface_hoststr + ']' + ':' + interface_portstr;
 	std::string peer_address = '[' + peer_hoststr + ']' + ':' + peer_portstr;
 
-	ProxyListener *listener = new ProxyListener(co->name(), interface_codeccodec, peer_codeccodec, interface_family, interface_address, peer_family, peer_address);
-	object_listener_map_[co] = listener;
+	if (type == WANProxyConfigProxyTypeTCPTCP) {
+		ProxyListener *listener = new ProxyListener(co->name(), interface_codeccodec, peer_codeccodec, interface_family, interface_address, peer_family, peer_address);
+		object_listener_map_[co] = listener;
+	} else {
+		SSHProxyListener *listener = new SSHProxyListener(co->name(), interface_codeccodec, peer_codeccodec, interface_family, interface_address, peer_family, peer_address);
+		(void)listener;
+	}
 
 	return (true);
 }

@@ -8,6 +8,9 @@ SRCS+=	proxy_listener.cc
 SRCS+=	proxy_socks_connection.cc
 SRCS+=	proxy_socks_listener.cc
 
+SRCS+=	ssh_proxy_connector.cc
+SRCS+=	ssh_proxy_listener.cc
+
 SRCS+=	wanproxy.cc
 SRCS+=	wanproxy_codec_pipe_pair.cc
 SRCS+=	wanproxy_config.cc
@@ -22,5 +25,5 @@ SRCS+=	wanproxy_config_type_compressor.cc
 SRCS+=	wanproxy_config_type_proxy_type.cc
 
 TOPDIR=../..
-USE_LIBS=common common/thread common/time common/uuid config event http io io/net io/pipe io/socket xcodec zlib
+USE_LIBS=common common/thread common/time common/uuid config crypto event http io io/net io/pipe io/socket ssh xcodec zlib
 include ${TOPDIR}/common/program.mk

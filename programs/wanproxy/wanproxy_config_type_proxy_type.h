@@ -5,9 +5,7 @@
 
 enum WANProxyConfigProxyType {
 	WANProxyConfigProxyTypeTCPTCP,
-	WANProxyConfigProxyTypeUDPTCP,
-	WANProxyConfigProxyTypeTCPUDP,
-	WANProxyConfigProxyTypeUDPUDP,
+	WANProxyConfigProxyTypeSSHSSH,
 };
 
 typedef ConfigTypeEnum<WANProxyConfigProxyType> WANProxyConfigTypeProxyType;
