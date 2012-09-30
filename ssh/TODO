@@ -13,3 +13,9 @@ o) Maybe don't ever generate random padding, but ought to be able to generate
 o) Have the AlgorithmNegotiation code add all algorithms to itself somehow.  We
    only really want the caller to have to provide a key.
 o) Some kind of server public key verification callback.
+o) Figure out a naming scheme.  Packet, payload, MACs, etc., all have lots of
+   different names.  Hard because we sometimes need to have a Buffer and a
+   uint8_t array for the same data.  But the code is hard to read due to all the
+   inconsistency and duplication.
+o) Split up the key exchange input method.  It's harder to check whether its
+   variables are used safely since they're in a big, combined lump.
