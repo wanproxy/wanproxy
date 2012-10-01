@@ -1,5 +1,5 @@
-#ifndef	CRYPTO_CRYPTO_Hash_H
-#define	CRYPTO_CRYPTO_Hash_H
+#ifndef	CRYPTO_CRYPTO_HASH_H
+#define	CRYPTO_CRYPTO_HASH_H
 
 #include <set>
 
@@ -63,4 +63,4 @@ namespace CryptoHash {
 
 std::ostream& operator<< (std::ostream&, CryptoHash::Algorithm);
 
-#endif /* !CRYPTO_CRYPTO_Hash_H */
+#endif /* !CRYPTO_CRYPTO_HASH_H */
