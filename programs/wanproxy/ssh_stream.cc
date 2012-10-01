@@ -135,7 +135,7 @@ SSHStream::write(Buffer *buf, EventCallback *cb)
 	ASSERT(log_, write_action_ == NULL);
 	ASSERT(log_, write_callback_ == NULL);
 
-	ASSERT(log_, input_buffer_.empty());
+	ASSERT(log_, ready_ || input_buffer_.empty());
 
 	buf->moveout(&input_buffer_);
 
