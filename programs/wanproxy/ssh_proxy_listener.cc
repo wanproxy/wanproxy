@@ -34,5 +34,5 @@ void
 SSHProxyListener::client_connected(Socket *socket)
 {
 	PipePair *pipe_pair = new WANProxyCodecPipePair(interface_codec_, remote_codec_);
-	new SSHProxyConnector(name_, pipe_pair, socket, remote_family_, remote_name_);
+	new SSHProxyConnector(name_, pipe_pair, socket, remote_family_, remote_name_, interface_codec_, remote_codec_);
 }

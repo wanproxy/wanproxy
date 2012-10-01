@@ -10,6 +10,7 @@ SRCS+=	proxy_socks_listener.cc
 
 SRCS+=	ssh_proxy_connector.cc
 SRCS+=	ssh_proxy_listener.cc
+SRCS+=	ssh_stream.cc
 
 SRCS+=	wanproxy.cc
 SRCS+=	wanproxy_codec_pipe_pair.cc
