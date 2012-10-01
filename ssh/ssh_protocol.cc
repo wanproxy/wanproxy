@@ -71,7 +71,6 @@ SSH::MPInt::encode(Buffer *out, const BIGNUM *in)
 	uint8_t buf[BN_num_bytes(in)];
 	BN_bn2bin(in, buf);
 	if ((buf[0] & 0x80) == 0x80) {
-		DEBUG("/ssh/mpint/encoder") << "Adding padding byte for non-negative number with high bit set.";
 		SSH::UInt32::encode(out, sizeof buf + 1);
 		out->append((uint8_t)0x00);
 		out->append(buf, sizeof buf);
