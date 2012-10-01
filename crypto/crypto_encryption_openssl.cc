@@ -10,9 +10,9 @@ namespace {
 		const EVP_CIPHER *cipher_;
 		EVP_CIPHER_CTX ctx_;
 	public:
-		SessionEVP(const EVP_CIPHER *cipher)
+		SessionEVP(const EVP_CIPHER *xcipher)
 		: log_("/crypto/encryption/session/openssl"),
-		  cipher_(cipher),
+		  cipher_(xcipher),
 		  ctx_()
 		{
 			EVP_CIPHER_CTX_init(&ctx_);
