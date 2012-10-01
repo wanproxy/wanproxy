@@ -28,6 +28,10 @@ namespace SSH {
 
 		EventCallback *receive_callback_;
 		Action *receive_action_;
+
+		bool ready_;
+		SimpleCallback *ready_callback_;
+		Action *ready_action_;
 	public:
 		TransportPipe(Session *);
 		~TransportPipe();
@@ -35,11 +39,17 @@ namespace SSH {
 		Action *receive(EventCallback *);
 		void send(Buffer *);
 
+		Action *ready(SimpleCallback *);
+
+		void key_exchange_complete(void);
+
 	private:
 		void consume(Buffer *);
 
 		void receive_cancel(void);
 		void receive_do(void);
+
+		void ready_cancel(void);
 	};
 }
 

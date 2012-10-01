@@ -23,7 +23,10 @@ SSH::TransportPipe::TransportPipe(Session *session)
   input_buffer_(),
   first_block_(),
   receive_callback_(NULL),
-  receive_action_(NULL)
+  receive_action_(NULL),
+  ready_(false),
+  ready_callback_(NULL),
+  ready_action_(NULL)
 {
 	Buffer identification_string("SSH-2.0-WANProxy " + (std::string)log_);
 	session_->local_version(identification_string);
@@ -35,6 +38,9 @@ SSH::TransportPipe::~TransportPipe()
 {
 	ASSERT(log_, receive_callback_ == NULL);
 	ASSERT(log_, receive_action_ == NULL);
+
+	ASSERT(log_, ready_callback_ == NULL);
+	ASSERT(log_, ready_action_ == NULL);
 }
 
 Action *
@@ -137,6 +143,36 @@ SSH::TransportPipe::send(Buffer *payload)
 	session_->local_sequence_number_++;
 
 	produce(&packet);
+}
+
+Action *
+SSH::TransportPipe::ready(SimpleCallback *cb)
+{
+	ASSERT(log_, ready_callback_ == NULL);
+	ASSERT(log_, ready_action_ == NULL);
+
+	if (ready_)
+		return (cb->schedule());
+
+	ready_callback_ = cb;
+
+	return (cancellation(this, &SSH::TransportPipe::ready_cancel));
+}
+
+void
+SSH::TransportPipe::key_exchange_complete(void)
+{
+	if (!ready_) {
+		ready_ = true;
+
+		if (ready_callback_ != NULL) {
+			ASSERT(log_, ready_action_ == NULL);
+			ready_action_ = ready_callback_->schedule();
+			ready_callback_ = NULL;
+		}
+	} else {
+		ASSERT(log_, ready_callback_ == NULL);
+	}
 }
 
 void
@@ -284,12 +320,16 @@ SSH::TransportPipe::receive_do(void)
 
 			first_block_.moveout(&packet);
 
-			Buffer ciphertext;
-			input_buffer_.moveout(&ciphertext, sizeof packet_len + packet_len - block_size);
-			if (!encryption_algorithm->cipher(&packet, &ciphertext)) {
-				ERROR(log_) << "Decryption of packet failed.";
-				produce_error();
-				return;
+			if (sizeof packet_len + packet_len > block_size) {
+				Buffer ciphertext;
+				input_buffer_.moveout(&ciphertext, sizeof packet_len + packet_len - block_size);
+				if (!encryption_algorithm->cipher(&packet, &ciphertext)) {
+					ERROR(log_) << "Decryption of packet failed.";
+					produce_error();
+					return;
+				}
+			} else {
+				DEBUG(log_) << "Packet of exactly one block.";
 			}
 			ASSERT(log_, packet.length() == sizeof packet_len + packet_len);
 		} else {
@@ -414,5 +454,21 @@ SSH::TransportPipe::receive_do(void)
 		receive_callback_ = NULL;
 
 		return;
+	}
+}
+
+void
+SSH::TransportPipe::ready_cancel(void)
+{
+	if (ready_callback_ != NULL) {
+		ASSERT(log_, !ready_);
+		delete ready_callback_;
+		ready_callback_ = NULL;
+	}
+
+	if (ready_action_ != NULL) {
+		ASSERT(log_, ready_);
+		ready_action_->cancel();
+		ready_action_ = NULL;
 	}
 }
