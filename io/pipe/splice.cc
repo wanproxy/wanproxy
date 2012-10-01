@@ -5,7 +5,7 @@
 #include <io/pipe/splice.h>
 
 /*
- * A Splice passes data unidirectionall between StreamChannels across a Pipe.
+ * A Splice passes data unidirectionally between StreamChannels across a Pipe.
  */
 
 Splice::Splice(const LogHandle& log, StreamChannel *source, Pipe *pipe, StreamChannel *sink)
