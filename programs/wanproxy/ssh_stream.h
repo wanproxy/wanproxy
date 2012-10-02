@@ -25,7 +25,6 @@ class SSHStream : public StreamChannel {
 	Action *read_action_;
 	Buffer input_buffer_;
 	bool ready_;
-	SimpleCallback *ready_callback_;
 	Action *ready_action_;
 	EventCallback *write_callback_;
 	Action *write_action_;

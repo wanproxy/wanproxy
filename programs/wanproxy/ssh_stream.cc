@@ -53,6 +53,8 @@ SSHStream::SSHStream(const LogHandle& log, SSH::Role role, WANProxyCodec *incomi
 	SSH::Compression *compression = SSH::Compression::none();
 	SSH::Language *language = NULL;
 
+	(void)outgoing_codec_;
+
 	session_.algorithm_negotiation_ = new SSH::AlgorithmNegotiation(&session_, key_exchange, server_host_key,
 									encryption, mac, compression, language);
 
