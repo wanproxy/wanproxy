@@ -87,7 +87,6 @@ SSH::TransportPipe::send(Buffer *payload)
 	uint8_t padding_len;
 	uint32_t packet_len;
 	unsigned block_size;
-	unsigned mac_size;
 	Buffer mac;
 
 	ASSERT(log_, state_ == GetPacket);
@@ -100,10 +99,6 @@ SSH::TransportPipe::send(Buffer *payload)
 		block_size = 8;
 	}
 	mac_algorithm = session_->active_algorithms_.local_to_remote_->mac_;
-	if (mac_algorithm != NULL)
-		mac_size = mac_algorithm->size();
-	else
-		mac_size = 0;
 
 	packet_len = sizeof padding_len + payload->length();
 	padding_len = 4 + (block_size - ((sizeof packet_len + packet_len + 4) % block_size));
