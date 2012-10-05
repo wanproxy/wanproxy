@@ -9,8 +9,11 @@ common/timer	Time sampling infrastructure.
 common/uuid	UUID API.
 config		General-purpose configuration system infrastructure and some
 		essential types and classes.
+crypto		Cryptographic API and implementations, including hashes, MACs
+		and encryption algorithms.
 event		The event system and infrastructure to support it, such as
 		the various implementations of the poll interface.
+http		HTTP protocol implementation and utility functions.
 io		IO system, namely file descriptors interfaces.
 io/net		Networking abstractions for the IO system, utility functions and
 		protocols.
@@ -19,10 +22,19 @@ io/socket	Sockets interface to the IO system.
 network		Low-level networking, e.g. packet capture.
 programs	Stand-alone programs, organized into sub-directories named by
 		program.
+programs/diskdup
+		Block storage demonstration program, for making two block
+		devices or files have identical contents with a minimal number
+		of writes.
+programs/fwdproxy
+		Simple file-driven port-forwarding proxy.
 programs/tack	File-oriented dictionary compression using XCodec.
 programs/wanproxy
 		WANProxy.
+programs/websplat
+		Simple web server.
 programs/xcdump	XCodec stream decoder and pretty-printer.
+ssh		SSH protocol implementation.
 xcodec		The XCodec codec, which performs deduplication, and its
 		internal interfaces.
 xml		Trivial XML functions.
