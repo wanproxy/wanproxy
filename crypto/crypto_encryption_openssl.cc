@@ -131,6 +131,7 @@ namespace {
 			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::AES192, CryptoEncryption::CTR), evp_factory(EVP_aes_192_ctr()));
 			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::AES256, CryptoEncryption::CTR), evp_factory(EVP_aes_256_ctr()));
 #endif
+			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::Blowfish, CryptoEncryption::CBC), evp_factory(EVP_bf_cbc()));
 
 			/* XXX Register.  */
 		}

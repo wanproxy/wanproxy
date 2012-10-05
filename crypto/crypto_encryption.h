@@ -13,6 +13,7 @@ namespace CryptoEncryption {
 		AES128,
 		AES192,
 		AES256,
+		Blowfish,
 	};
 
 	enum Mode {

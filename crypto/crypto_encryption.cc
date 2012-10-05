@@ -45,6 +45,8 @@ operator<< (std::ostream& os, CryptoEncryption::Algorithm algorithm)
 		return (os << "AES192");
 	case CryptoEncryption::AES256:
 		return (os << "AES256");
+	case CryptoEncryption::Blowfish:
+		return (os << "Blowfish");
 	}
 	NOTREACHED("/crypto/encryption");
 }

@@ -11,12 +11,15 @@ namespace {
 
 	static const struct ssh_encryption_algorithm ssh_encryption_algorithms[] = {
 		{ "3des-cbc",		CryptoEncryption::TripleDES,	CryptoEncryption::CBC	},
+		{ "3des-ctr",		CryptoEncryption::TripleDES,	CryptoEncryption::CTR	},
 		{ "aes128-cbc",		CryptoEncryption::AES128,	CryptoEncryption::CBC	},
 		{ "aes128-ctr",		CryptoEncryption::AES128,	CryptoEncryption::CTR	},
 		{ "aes192-cbc",		CryptoEncryption::AES192,	CryptoEncryption::CBC	},
 		{ "aes192-ctr",		CryptoEncryption::AES192,	CryptoEncryption::CTR	},
 		{ "aes256-cbc",		CryptoEncryption::AES256,	CryptoEncryption::CBC	},
 		{ "aes256-ctr",		CryptoEncryption::AES256,	CryptoEncryption::CTR	},
+		{ "blowfish-cbc",	CryptoEncryption::Blowfish,	CryptoEncryption::CBC	},
+		{ "blowfish-ctr",	CryptoEncryption::Blowfish,	CryptoEncryption::CTR	},
 		{ NULL,			CryptoEncryption::AES128,	CryptoEncryption::CBC	}
 	};
 
