@@ -34,15 +34,8 @@ public:
 	  splice_action_(NULL),
 	  close_action_(NULL)
 	{
-		SSH::KeyExchange *key_exchange = SSH::KeyExchange::method(&session_);
-		SSH::ServerHostKey *server_host_key = SSH::ServerHostKey::client(&session_);
-		SSH::Encryption *encryption = SSH::Encryption::cipher(CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CBC));
-		SSH::MAC *mac = SSH::MAC::algorithm(CryptoMAC::SHA1);
-		SSH::Compression *compression = SSH::Compression::none();
-		SSH::Language *language = NULL;
-
-		session_.algorithm_negotiation_ = new SSH::AlgorithmNegotiation(&session_, key_exchange, server_host_key,
-										encryption, mac, compression, language);
+		session_.algorithm_negotiation_ = new SSH::AlgorithmNegotiation(&session_);
+		session_.algorithm_negotiation_->add_algorithms();
 
 		pipe_ = new SSH::TransportPipe(&session_);
 		EventCallback *rcb = callback(this, &SSHConnection::receive_complete);

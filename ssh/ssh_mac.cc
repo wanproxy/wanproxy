@@ -1,4 +1,6 @@
+#include <ssh/ssh_algorithm_negotiation.h>
 #include <ssh/ssh_mac.h>
+#include <ssh/ssh_session.h>
 
 namespace {
 	struct ssh_mac_algorithm {
@@ -44,6 +46,26 @@ namespace {
 			return (instance_->mac(out, in));
 		}
 	};
+}
+
+void
+SSH::MAC::add_algorithms(Session *session)
+{
+	const struct ssh_mac_algorithm *alg;
+
+	for (alg = ssh_mac_algorithms; alg->rfc4250_name_ != NULL; alg++) {
+		const CryptoMAC::Method *method = CryptoMAC::Method::method(alg->crypto_algorithm_);
+		if (method == NULL) {
+			DEBUG("/ssh/mac") << "Could not get method for algorithm: " << alg->crypto_algorithm_;
+			continue;
+		}
+		CryptoMAC::Instance *instance = method->instance(alg->crypto_algorithm_);
+		if (instance == NULL) {
+			DEBUG("/ssh/mac") << "Could not get instance for algorithm: " << alg->crypto_algorithm_;
+			continue;
+		}
+		session->algorithm_negotiation_->add_algorithm(new CryptoSSHMAC(alg->rfc4250_name_, instance, alg->size_));
+	}
 }
 
 SSH::MAC *

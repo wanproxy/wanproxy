@@ -31,7 +31,7 @@ namespace SSH {
 
 		virtual bool init(Buffer *) = 0;
 
-		static KeyExchange *method(Session *);
+		static void add_algorithms(Session *);
 	};
 }
 

@@ -39,106 +39,58 @@ namespace SSH {
 			  language_client_to_server_map_(),
 			  language_server_to_client_map_()
 			{ }
-
-			Algorithms(std::map<std::string, KeyExchange *> key_exchange_list,
-				   std::map<std::string, ServerHostKey *> server_host_key_list,
-				   std::map<std::string, Encryption *> encryption_client_to_server_list,
-				   std::map<std::string, Encryption *> encryption_server_to_client_list,
-				   std::map<std::string, MAC *> mac_client_to_server_list,
-				   std::map<std::string, MAC *> mac_server_to_client_list,
-				   std::map<std::string, Compression *> compression_client_to_server_list,
-				   std::map<std::string, Compression *> compression_server_to_client_list,
-				   std::map<std::string, Language *> language_client_to_server_list,
-				   std::map<std::string, Language *> language_server_to_client_list)
-			: key_exchange_map_(key_exchange_list),
-			  server_host_key_map_(server_host_key_list),
-			  encryption_client_to_server_map_(encryption_client_to_server_list),
-			  encryption_server_to_client_map_(encryption_server_to_client_list),
-			  mac_client_to_server_map_(mac_client_to_server_list),
-			  mac_server_to_client_map_(mac_server_to_client_list),
-			  compression_client_to_server_map_(compression_client_to_server_list),
-			  compression_server_to_client_map_(compression_server_to_client_list),
-			  language_client_to_server_map_(language_client_to_server_list),
-			  language_server_to_client_map_(language_server_to_client_list)
-			{ }
-
 		};
 
 		LogHandle log_;
 		Session *session_;
 		Algorithms algorithms_;
 	public:
-		AlgorithmNegotiation(Session *session, std::vector<KeyExchange *> key_exchange_list,
-				     std::vector<ServerHostKey *> server_host_key_list,
-				     std::vector<Encryption *> encryption_client_to_server_list,
-				     std::vector<Encryption *> encryption_server_to_client_list,
-				     std::vector<MAC *> mac_client_to_server_list,
-				     std::vector<MAC *> mac_server_to_client_list,
-				     std::vector<Compression *> compression_client_to_server_list,
-				     std::vector<Compression *> compression_server_to_client_list,
-				     std::vector<Language *> language_client_to_server_list,
-				     std::vector<Language *> language_server_to_client_list)
-		: log_("/ssh/algorithm/negotiation"),
-		  session_(session),
-		  algorithms_(list_to_map(key_exchange_list),
-			      list_to_map(server_host_key_list),
-			      list_to_map(encryption_client_to_server_list),
-			      list_to_map(encryption_server_to_client_list),
-			      list_to_map(mac_client_to_server_list),
-			      list_to_map(mac_server_to_client_list),
-			      list_to_map(compression_client_to_server_list),
-			      list_to_map(compression_server_to_client_list),
-			      list_to_map(language_client_to_server_list),
-			      list_to_map(language_server_to_client_list))
-		{ }
-
-		AlgorithmNegotiation(Session *session, std::vector<KeyExchange *> key_exchange_list,
-				     std::vector<ServerHostKey *> server_host_key_list,
-				     std::vector<Encryption *> encryption_list,
-				     std::vector<MAC *> mac_list,
-				     std::vector<Compression *> compression_list,
-				     std::vector<Language *> language_list)
-		: log_("/ssh/algorithm/negotiation"),
-		  session_(session),
-		  algorithms_(list_to_map(key_exchange_list),
-			      list_to_map(server_host_key_list),
-			      list_to_map(encryption_list), list_to_map(encryption_list),
-			      list_to_map(mac_list), list_to_map(mac_list),
-			      list_to_map(compression_list), list_to_map(compression_list),
-			      list_to_map(language_list), list_to_map(language_list))
-		{ }
-
-		AlgorithmNegotiation(Session *session, KeyExchange *key_exchange,
-				     ServerHostKey *server_host_key,
-				     Encryption *encryption, MAC *mac,
-				     Compression *compression,
-				     Language *language)
+		AlgorithmNegotiation(Session *session)
 		: log_("/ssh/algorithm/negotiation"),
 		  session_(session),
 		  algorithms_()
-		{
-			if (key_exchange != NULL)
-				algorithms_.key_exchange_map_[key_exchange->name()] = key_exchange;
-			if (server_host_key != NULL)
-				algorithms_.server_host_key_map_[server_host_key->name()] = server_host_key;
-			if (encryption != NULL)
-				algorithms_.encryption_client_to_server_map_[encryption->name()] = encryption;
-			algorithms_.encryption_server_to_client_map_ = algorithms_.encryption_client_to_server_map_;
-			if (mac != NULL)
-				algorithms_.mac_client_to_server_map_[mac->name()] = mac;
-			algorithms_.mac_server_to_client_map_ = algorithms_.mac_client_to_server_map_;
-			if (compression != NULL)
-				algorithms_.compression_client_to_server_map_[compression->name()] = compression;
-			algorithms_.compression_server_to_client_map_ = algorithms_.compression_client_to_server_map_;
-			if (language != NULL)
-				algorithms_.language_client_to_server_map_[language->name()] = language;
-			algorithms_.language_server_to_client_map_ = algorithms_.language_client_to_server_map_;
-		}
+		{ }
 
 		/* XXX Add a variant that takes only server_host_key_list and fills in suitable defaults.  */
 
 		~AlgorithmNegotiation()
 		{ }
+
+		void add_algorithm(KeyExchange *key_exchange)
+		{
+			algorithms_.key_exchange_map_[key_exchange->name()] = key_exchange;
+		}
+
+		void add_algorithm(ServerHostKey *server_host_key)
+		{
+			algorithms_.server_host_key_map_[server_host_key->name()] = server_host_key;
+		}
+
+		void add_algorithm(Encryption *encryption)
+		{
+			algorithms_.encryption_client_to_server_map_[encryption->name()] = encryption;
+			algorithms_.encryption_server_to_client_map_[encryption->name()] = encryption;
+		}
+
+		void add_algorithm(MAC *mac)
+		{
+			algorithms_.mac_client_to_server_map_[mac->name()] = mac;
+			algorithms_.mac_server_to_client_map_[mac->name()] = mac;
+		}
+
+		void add_algorithm(Compression *compression)
+		{
+			algorithms_.compression_client_to_server_map_[compression->name()] = compression;
+			algorithms_.compression_server_to_client_map_[compression->name()] = compression;
+		}
+
+		void add_algorithm(Language *language)
+		{
+			algorithms_.language_client_to_server_map_[language->name()] = language;
+			algorithms_.language_server_to_client_map_[language->name()] = language;
+		}
+
+		void add_algorithms(void);
 
 		bool input(TransportPipe *, Buffer *);
 		bool init(Buffer *);

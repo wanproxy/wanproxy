@@ -4,6 +4,8 @@
 #include <crypto/crypto_mac.h>
 
 namespace SSH {
+	struct Session;
+
 	class MAC {
 	protected:
 		const std::string name_;
@@ -40,6 +42,7 @@ namespace SSH {
 		virtual bool initialize(const Buffer *) = 0;
 		virtual bool mac(Buffer *, const Buffer *) = 0;
 
+		static void add_algorithms(Session *);
 		static MAC *algorithm(CryptoMAC::Algorithm);
 	};
 }

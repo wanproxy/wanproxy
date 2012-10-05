@@ -79,6 +79,18 @@ namespace {
 	}
 }
 
+void
+SSH::AlgorithmNegotiation::add_algorithms(void)
+{
+	SSH::KeyExchange::add_algorithms(session_);
+	if (session_->role_ == ClientRole)
+		SSH::ServerHostKey::add_client_algorithms(session_);
+	SSH::Encryption::add_algorithms(session_);
+	SSH::MAC::add_algorithms(session_);
+	add_algorithm(SSH::Compression::none());
+	/* XXX Add languages?  */
+}
+
 bool
 SSH::AlgorithmNegotiation::input(SSH::TransportPipe *pipe, Buffer *in)
 {

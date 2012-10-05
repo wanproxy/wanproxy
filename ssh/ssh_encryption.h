@@ -4,6 +4,8 @@
 #include <crypto/crypto_encryption.h>
 
 namespace SSH {
+	struct Session;
+
 	class Encryption {
 	protected:
 		const std::string name_;
@@ -47,6 +49,7 @@ namespace SSH {
 		virtual bool initialize(CryptoEncryption::Operation, const Buffer *, const Buffer *) = 0;
 		virtual bool cipher(Buffer *, Buffer *) = 0;
 
+		static void add_algorithms(Session *);
 		static Encryption *cipher(CryptoEncryption::Cipher);
 	};
 }

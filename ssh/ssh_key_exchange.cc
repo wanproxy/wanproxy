@@ -313,8 +313,8 @@ namespace {
 	};
 }
 
-SSH::KeyExchange *
-SSH::KeyExchange::method(SSH::Session *session)
+void
+SSH::KeyExchange::add_algorithms(SSH::Session *session)
 {
-	return (new DiffieHellmanGroupExchange(session));
+	session->algorithm_negotiation_->add_algorithm(new DiffieHellmanGroupExchange(session));
 }

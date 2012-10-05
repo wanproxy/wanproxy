@@ -42,21 +42,14 @@ SSHStream::SSHStream(const LogHandle& log, SSH::Role role, WANProxyCodec *incomi
   write_callback_(NULL),
   write_action_(NULL)
 {
-	SSH::KeyExchange *key_exchange = SSH::KeyExchange::method(&session_);
-	SSH::ServerHostKey *server_host_key;
-	if (session_.role_ == SSH::ServerRole)
-		server_host_key = SSH::ServerHostKey::server(&session_, "ssh-server1.pem");
-	else
-		server_host_key = SSH::ServerHostKey::client(&session_);
-	SSH::Encryption *encryption = SSH::Encryption::cipher(CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CBC));
-	SSH::MAC *mac = SSH::MAC::algorithm(CryptoMAC::SHA1);
-	SSH::Compression *compression = SSH::Compression::none();
-	SSH::Language *language = NULL;
-
 	(void)outgoing_codec_;
 
-	session_.algorithm_negotiation_ = new SSH::AlgorithmNegotiation(&session_, key_exchange, server_host_key,
-									encryption, mac, compression, language);
+	session_.algorithm_negotiation_ = new SSH::AlgorithmNegotiation(&session_);
+	if (session_.role_ == SSH::ServerRole) {
+		SSH::ServerHostKey *server_host_key = SSH::ServerHostKey::server(&session_, "ssh-server1.pem");
+		session_.algorithm_negotiation_->add_algorithm(server_host_key);
+	}
+	session_.algorithm_negotiation_->add_algorithms();
 
 	pipe_ = new SSH::TransportPipe(&session_);
 

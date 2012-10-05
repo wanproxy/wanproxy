@@ -1,4 +1,6 @@
+#include <ssh/ssh_algorithm_negotiation.h>
 #include <ssh/ssh_encryption.h>
+#include <ssh/ssh_session.h>
 
 namespace {
 	struct ssh_encryption_algorithm {
@@ -51,6 +53,19 @@ namespace {
 			return (true);
 		}
 	};
+}
+
+void
+SSH::Encryption::add_algorithms(Session *session)
+{
+	const struct ssh_encryption_algorithm *alg;
+
+	for (alg = ssh_encryption_algorithms; alg->rfc4250_name_ != NULL; alg++) {
+		Encryption *encryption = cipher(CryptoEncryption::Cipher(alg->crypto_algorithm_, alg->crypto_mode_));
+		if (encryption == NULL)
+			continue;
+		session->algorithm_negotiation_->add_algorithm(encryption);
+	}
 }
 
 SSH::Encryption *

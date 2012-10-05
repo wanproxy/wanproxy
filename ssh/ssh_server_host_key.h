@@ -30,7 +30,7 @@ namespace SSH {
 		virtual bool sign(Buffer *, const Buffer *) const = 0;
 		virtual bool verify(const Buffer *, const Buffer *) const = 0;
 
-		static ServerHostKey *client(Session *);
+		static void add_client_algorithms(Session *);
 		static ServerHostKey *server(Session *, const std::string&);
 	};
 }

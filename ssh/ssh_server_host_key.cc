@@ -5,6 +5,7 @@
 
 #include <crypto/crypto_hash.h>
 
+#include <ssh/ssh_algorithm_negotiation.h>
 #include <ssh/ssh_protocol.h>
 #include <ssh/ssh_server_host_key.h>
 #include <ssh/ssh_session.h>
@@ -130,11 +131,11 @@ namespace {
 	};
 }
 
-SSH::ServerHostKey *
-SSH::ServerHostKey::client(SSH::Session *session)
+void
+SSH::ServerHostKey::add_client_algorithms(SSH::Session *session)
 {
 	ASSERT("/ssh/serverhostkey/client", session->role_ == SSH::ClientRole);
-	return (new RSAServerHostKey(session, NULL));
+	session->algorithm_negotiation_->add_algorithm(new RSAServerHostKey(session, NULL));
 }
 
 SSH::ServerHostKey *
