@@ -8,8 +8,9 @@ namespace SSH {
 	class TransportPipe;
 
 	class KeyExchange {
-		std::string name_;
 	protected:
+		const std::string name_;
+
 		KeyExchange(const std::string& xname)
 		: name_(xname)
 		{ }

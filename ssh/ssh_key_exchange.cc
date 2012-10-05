@@ -49,6 +49,7 @@ namespace {
 	 *
 	 * Need to add assertions and frees.
 	 */
+	template<CryptoHash::Algorithm hash_algorithm>
 	class DiffieHellmanGroupExchange : public SSH::KeyExchange {
 		LogHandle log_;
 		SSH::Session *session_;
@@ -56,9 +57,9 @@ namespace {
 		Buffer key_exchange_;
 		BIGNUM *k_;
 	public:
-		DiffieHellmanGroupExchange(SSH::Session *session)
-		: SSH::KeyExchange("diffie-hellman-group-exchange-sha1"),
-		  log_("/ssh/key_exchange/stub"),
+		DiffieHellmanGroupExchange(SSH::Session *session, const std::string& key_exchange_name)
+		: SSH::KeyExchange(key_exchange_name),
+		  log_("/ssh/key_exchange/" + key_exchange_name),
 		  session_(session),
 		  dh_(NULL),
 		  key_exchange_(),
@@ -70,12 +71,12 @@ namespace {
 
 		KeyExchange *clone(void) const
 		{
-			return (new DiffieHellmanGroupExchange(session_));
+			return (new DiffieHellmanGroupExchange(session_, name_));
 		}
 
 		bool hash(Buffer *out, const Buffer *in) const
 		{
-			return (CryptoHash::hash(CryptoHash::SHA1, out, in));
+			return (CryptoHash::hash(hash_algorithm, out, in));
 		}
 
 		bool input(SSH::TransportPipe *pipe, Buffer *in)
@@ -300,7 +301,7 @@ namespace {
 			data.append(key_exchange_);
 			SSH::MPInt::encode(&data, k_);
 
-			if (!CryptoHash::hash(CryptoHash::SHA1, &exchange_hash, &data))
+			if (!CryptoHash::hash(hash_algorithm, &exchange_hash, &data))
 				return (false);
 
 			session_->exchange_hash_ = exchange_hash;
@@ -316,5 +317,5 @@ namespace {
 void
 SSH::KeyExchange::add_algorithms(SSH::Session *session)
 {
-	session->algorithm_negotiation_->add_algorithm(new DiffieHellmanGroupExchange(session));
+	session->algorithm_negotiation_->add_algorithm(new DiffieHellmanGroupExchange<CryptoHash::SHA1>(session, "diffie-hellman-group-exchange-sha1"));
 }
