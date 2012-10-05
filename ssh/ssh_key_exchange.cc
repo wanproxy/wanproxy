@@ -317,5 +317,6 @@ namespace {
 void
 SSH::KeyExchange::add_algorithms(SSH::Session *session)
 {
+	session->algorithm_negotiation_->add_algorithm(new DiffieHellmanGroupExchange<CryptoHash::SHA256>(session, "diffie-hellman-group-exchange-sha256"));
 	session->algorithm_negotiation_->add_algorithm(new DiffieHellmanGroupExchange<CryptoHash::SHA1>(session, "diffie-hellman-group-exchange-sha1"));
 }
