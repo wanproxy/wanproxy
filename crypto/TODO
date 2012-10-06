@@ -1,6 +1,5 @@
 o) Find a good way to integrate the CryptoThread, CryptoSystem code.
 o) Process all cryptographic operations in the (a?) CryptoThread.
-o) Hash infrastructure.
 o) DH infrastructure.
 o) BIGNUM infrastructure?
 o) Lots more algorithms.
