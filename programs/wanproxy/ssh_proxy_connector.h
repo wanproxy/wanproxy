@@ -5,9 +5,6 @@
 
 #include <io/channel.h>
 
-#include <ssh/ssh_session.h>
-#include <ssh/ssh_transport_pipe.h>
-
 #include "ssh_stream.h"
 
 class Pipe;

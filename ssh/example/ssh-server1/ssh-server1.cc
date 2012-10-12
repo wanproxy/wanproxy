@@ -14,6 +14,7 @@
 
 #include <ssh/ssh_algorithm_negotiation.h>
 #include <ssh/ssh_protocol.h>
+#include <ssh/ssh_server_host_key.h>
 #include <ssh/ssh_session.h>
 #include <ssh/ssh_transport_pipe.h>
 

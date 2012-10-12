@@ -3,13 +3,6 @@
 
 #include <list>
 
-#include <ssh/ssh_compression.h>
-#include <ssh/ssh_encryption.h>
-#include <ssh/ssh_key_exchange.h>
-#include <ssh/ssh_language.h>
-#include <ssh/ssh_mac.h>
-#include <ssh/ssh_server_host_key.h>
-
 namespace SSH {
 	class Compression;
 	class Encryption;

@@ -1,3 +1,5 @@
+#include <common/buffer.h>
+
 #include <ssh/ssh_algorithm_negotiation.h>
 #include <ssh/ssh_encryption.h>
 #include <ssh/ssh_session.h>

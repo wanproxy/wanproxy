@@ -2,7 +2,13 @@
 #include <common/endian.h>
 
 #include <ssh/ssh_algorithm_negotiation.h>
+#include <ssh/ssh_compression.h>
+#include <ssh/ssh_encryption.h>
+#include <ssh/ssh_key_exchange.h>
+#include <ssh/ssh_language.h>
+#include <ssh/ssh_mac.h>
 #include <ssh/ssh_protocol.h>
+#include <ssh/ssh_server_host_key.h>
 #include <ssh/ssh_session.h>
 #include <ssh/ssh_transport_pipe.h>
 
