@@ -17,9 +17,3 @@ o) Figure out a naming scheme.  Packet, payload, MACs, etc., all have lots of
    inconsistency and duplication.
 o) Split up the key exchange input method.  It's harder to check whether its
    variables are used safely since they're in a big, combined lump.
-o) Get rid of the maps as first-order data structures for algorithm negotiation.
-   Making it use strings and look up algorithms by strings to create instances
-   would seem rather a lot better (except for actual server ServerHostKeys), and
-   would get rid of the instance/algorithm problem as well.  A simpler fix will
-   likely come first that allows us to present algorithms in the order we prefer
-   to use them, not sorted order.

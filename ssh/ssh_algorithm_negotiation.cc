@@ -1,5 +1,3 @@
-#include <map>
-
 #include <common/buffer.h>
 #include <common/endian.h>
 
@@ -17,23 +15,25 @@ namespace {
 	};
 
 	template<typename T>
-	std::vector<Buffer> names(T list)
+	std::vector<Buffer> names(const std::list<T>& list)
 	{
-		typename T::const_iterator it;
+		typename std::list<T>::const_iterator it;
 		std::vector<Buffer> vec;
 
-		for (it = list.begin(); it != list.end(); ++it)
-			vec.push_back(it->first);
+		for (it = list.begin(); it != list.end(); ++it) {
+			const T alg = *it;
+			vec.push_back(alg->name());
+		}
 		return (vec);
 	}
 
 	template<typename T>
 	bool choose_algorithm(SSH::Role role,
 			      T *chosenp,
-			      std::map<std::string, T>& algorithm_map,
+			      std::list<T>& algorithm_list,
 			      Buffer *in, const std::string& type)
 	{
-		std::vector<Buffer> local_algorithms = names(algorithm_map);
+		std::vector<Buffer> local_algorithms = names(algorithm_list);
 		std::vector<Buffer> remote_algorithms;
 		if (!SSH::NameList::decode(remote_algorithms, in)) {
 			ERROR("/ssh/algorithm/negotiation") << "Failed to decode " << type << " name-list.";
@@ -67,10 +67,16 @@ namespace {
 					continue;
 				std::string algorithm;
 				it->extract(algorithm);
-				*chosenp = algorithm_map[algorithm]->clone();
 
-				DEBUG("/ssh/algorithm/negotiation") << "Selected " << type << " algorithm " << algorithm;
-				return (true);
+				typename std::list<T>::const_iterator ait;
+				for (ait = algorithm_list.begin(); ait != algorithm_list.end(); ++ait) {
+					const T alg = *ait;
+					*chosenp = alg->clone();
+
+					DEBUG("/ssh/algorithm/negotiation") << "Selected " << type << " algorithm " << algorithm;
+					return (true);
+				}
+				NOTREACHED("/ssh/algorithm/negotiation");
 			}
 		}
 
@@ -135,16 +141,16 @@ SSH::AlgorithmNegotiation::init(Buffer *out)
 
 	out->append(SSH::Message::KeyExchangeInitializationMessage);
 	out->append(constant_cookie, sizeof constant_cookie); /* XXX Synchronous random byte generation?  */
-	SSH::NameList::encode(out, names(algorithms_.key_exchange_map_));
-	SSH::NameList::encode(out, names(algorithms_.server_host_key_map_));
-	SSH::NameList::encode(out, names(algorithms_.encryption_client_to_server_map_));
-	SSH::NameList::encode(out, names(algorithms_.encryption_server_to_client_map_));
-	SSH::NameList::encode(out, names(algorithms_.mac_client_to_server_map_));
-	SSH::NameList::encode(out, names(algorithms_.mac_server_to_client_map_));
-	SSH::NameList::encode(out, names(algorithms_.compression_client_to_server_map_));
-	SSH::NameList::encode(out, names(algorithms_.compression_server_to_client_map_));
-	SSH::NameList::encode(out, names(algorithms_.language_client_to_server_map_));
-	SSH::NameList::encode(out, names(algorithms_.language_server_to_client_map_));
+	SSH::NameList::encode(out, names(algorithms_.key_exchange_list_));
+	SSH::NameList::encode(out, names(algorithms_.server_host_key_list_));
+	SSH::NameList::encode(out, names(algorithms_.encryption_client_to_server_list_));
+	SSH::NameList::encode(out, names(algorithms_.encryption_server_to_client_list_));
+	SSH::NameList::encode(out, names(algorithms_.mac_client_to_server_list_));
+	SSH::NameList::encode(out, names(algorithms_.mac_server_to_client_list_));
+	SSH::NameList::encode(out, names(algorithms_.compression_client_to_server_list_));
+	SSH::NameList::encode(out, names(algorithms_.compression_server_to_client_list_));
+	SSH::NameList::encode(out, names(algorithms_.language_client_to_server_list_));
+	SSH::NameList::encode(out, names(algorithms_.language_server_to_client_list_));
 	out->append(SSH::Boolean::False);
 	uint32_t reserved(0);
 	out->append(&reserved);
@@ -159,25 +165,25 @@ SSH::AlgorithmNegotiation::choose_algorithms(Buffer *in)
 {
 	in->skip(17);
 
-	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.key_exchange_, algorithms_.key_exchange_map_, in, "Key Exchange"))
+	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.key_exchange_, algorithms_.key_exchange_list_, in, "Key Exchange"))
 		return (false);
-	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.server_host_key_, algorithms_.server_host_key_map_, in, "Server Host Key"))
+	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.server_host_key_, algorithms_.server_host_key_list_, in, "Server Host Key"))
 		return (false);
-	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.client_to_server_.encryption_, algorithms_.encryption_client_to_server_map_, in, "Encryption (Client->Server)"))
+	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.client_to_server_.encryption_, algorithms_.encryption_client_to_server_list_, in, "Encryption (Client->Server)"))
 		return (false);
-	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.server_to_client_.encryption_, algorithms_.encryption_server_to_client_map_, in, "Encryption (Server->Client)"))
+	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.server_to_client_.encryption_, algorithms_.encryption_server_to_client_list_, in, "Encryption (Server->Client)"))
 		return (false);
-	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.client_to_server_.mac_, algorithms_.mac_client_to_server_map_, in, "MAC (Client->Server)"))
+	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.client_to_server_.mac_, algorithms_.mac_client_to_server_list_, in, "MAC (Client->Server)"))
 		return (false);
-	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.server_to_client_.mac_, algorithms_.mac_server_to_client_map_, in, "MAC (Server->Client)"))
+	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.server_to_client_.mac_, algorithms_.mac_server_to_client_list_, in, "MAC (Server->Client)"))
 		return (false);
-	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.client_to_server_.compression_, algorithms_.compression_client_to_server_map_, in, "Compression (Client->Server)"))
+	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.client_to_server_.compression_, algorithms_.compression_client_to_server_list_, in, "Compression (Client->Server)"))
 		return (false);
-	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.server_to_client_.compression_, algorithms_.compression_server_to_client_map_, in, "Compression (Server->Client)"))
+	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.server_to_client_.compression_, algorithms_.compression_server_to_client_list_, in, "Compression (Server->Client)"))
 		return (false);
-	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.client_to_server_.language_, algorithms_.language_client_to_server_map_, in, "Language (Client->Server)"))
+	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.client_to_server_.language_, algorithms_.language_client_to_server_list_, in, "Language (Client->Server)"))
 		return (false);
-	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.server_to_client_.language_, algorithms_.language_server_to_client_map_, in, "Language (Server->Client)"))
+	if (!choose_algorithm(session_->role_, &session_->chosen_algorithms_.server_to_client_.language_, algorithms_.language_server_to_client_list_, in, "Language (Server->Client)"))
 		return (false);
 
 	return (true);
