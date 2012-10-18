@@ -22,6 +22,9 @@ namespace {
 		{ "blowfish-cbc",	CryptoEncryption::Blowfish,	CryptoEncryption::CBC	},
 		{ "3des-ctr",		CryptoEncryption::TripleDES,	CryptoEncryption::CTR	},
 		{ "3des-cbc",		CryptoEncryption::TripleDES,	CryptoEncryption::CBC	},
+		{ "cast128-cbc",	CryptoEncryption::CAST,		CryptoEncryption::CBC	},
+		{ "idea-cbc",		CryptoEncryption::IDEA,		CryptoEncryption::CBC	},
+		{ "arcfour",		CryptoEncryption::RC4,		CryptoEncryption::Stream},
 		{ NULL,			CryptoEncryption::AES128,	CryptoEncryption::CBC	}
 	};
 
