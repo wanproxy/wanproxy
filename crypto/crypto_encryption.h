@@ -14,11 +14,15 @@ namespace CryptoEncryption {
 		AES192,
 		AES256,
 		Blowfish,
+		CAST,
+		IDEA,
+		RC4,
 	};
 
 	enum Mode {
 		CBC,
 		CTR,
+		Stream,
 	};
 	typedef	std::pair<Algorithm, Mode> Cipher;
 

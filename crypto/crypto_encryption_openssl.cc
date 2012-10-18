@@ -131,7 +131,16 @@ namespace {
 			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::AES192, CryptoEncryption::CTR), evp_factory(EVP_aes_192_ctr()));
 			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::AES256, CryptoEncryption::CTR), evp_factory(EVP_aes_256_ctr()));
 #endif
+#ifndef	OPENSSL_NO_BF
 			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::Blowfish, CryptoEncryption::CBC), evp_factory(EVP_bf_cbc()));
+#endif
+#ifndef	OPENSSL_NO_CAST
+			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::CAST, CryptoEncryption::CBC), evp_factory(EVP_cast5_cbc()));
+#endif
+#ifndef	OPENSSL_NO_IDEA
+			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::IDEA, CryptoEncryption::CBC), evp_factory(EVP_idea_cbc()));
+#endif
+			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::RC4, CryptoEncryption::Stream), evp_factory(EVP_rc4()));
 
 			/* XXX Register.  */
 		}

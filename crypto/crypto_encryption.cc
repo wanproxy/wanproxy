@@ -47,6 +47,12 @@ operator<< (std::ostream& os, CryptoEncryption::Algorithm algorithm)
 		return (os << "AES256");
 	case CryptoEncryption::Blowfish:
 		return (os << "Blowfish");
+	case CryptoEncryption::CAST:
+		return (os << "CAST");
+	case CryptoEncryption::IDEA:
+		return (os << "IDEA");
+	case CryptoEncryption::RC4:
+		return (os << "RC4");
 	}
 	NOTREACHED("/crypto/encryption");
 }
@@ -59,6 +65,8 @@ operator<< (std::ostream& os, CryptoEncryption::Mode mode)
 		return (os << "CBC");
 	case CryptoEncryption::CTR:
 		return (os << "CTR");
+	case CryptoEncryption::Stream:
+		return (os << "Stream");
 	}
 	NOTREACHED("/crypto/encryption");
 }
