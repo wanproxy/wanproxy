@@ -68,6 +68,8 @@ namespace {
 			algorithm_map_.enter(CryptoHash::MD5, evp_factory(EVP_md5()));
 			algorithm_map_.enter(CryptoHash::SHA1, evp_factory(EVP_sha1()));
 			algorithm_map_.enter(CryptoHash::SHA256, evp_factory(EVP_sha256()));
+			algorithm_map_.enter(CryptoHash::SHA512, evp_factory(EVP_sha512()));
+			algorithm_map_.enter(CryptoHash::RIPEMD160, evp_factory(EVP_ripemd160()));
 
 			/* XXX Register.  */
 		}

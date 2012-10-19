@@ -43,6 +43,10 @@ operator<< (std::ostream& os, CryptoHash::Algorithm algorithm)
 		return (os << "SHA1");
 	case CryptoHash::SHA256:
 		return (os << "SHA256");
+	case CryptoHash::SHA512:
+		return (os << "SHA512");
+	case CryptoHash::RIPEMD160:
+		return (os << "RIPEMD160");
 	}
 	NOTREACHED("/crypto/encryption");
 }
