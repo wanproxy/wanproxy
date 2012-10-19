@@ -94,6 +94,8 @@ namespace {
 			algorithm_map_.enter(CryptoMAC::MD5, evp_factory(EVP_md5()));
 			algorithm_map_.enter(CryptoMAC::SHA1, evp_factory(EVP_sha1()));
 			algorithm_map_.enter(CryptoMAC::SHA256, evp_factory(EVP_sha256()));
+			algorithm_map_.enter(CryptoMAC::SHA512, evp_factory(EVP_sha512()));
+			algorithm_map_.enter(CryptoMAC::RIPEMD160, evp_factory(EVP_ripemd160()));
 
 			/* XXX Register.  */
 		}

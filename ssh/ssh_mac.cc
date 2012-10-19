@@ -15,6 +15,7 @@ namespace {
 		{ "hmac-sha1",		CryptoMAC::SHA1,	0 },
 		{ "hmac-sha256",	CryptoMAC::SHA256,	0 },
 		{ "hmac-md5",		CryptoMAC::MD5,		0 },
+		{ "hmac-ripemd160",	CryptoMAC::RIPEMD160,	0 },
 		{ "hmac-sha1-96",	CryptoMAC::SHA1,	12 },
 		{ "hmac-md5-96",	CryptoMAC::MD5,		12 },
 		{ NULL,			CryptoMAC::MD5,		0 }

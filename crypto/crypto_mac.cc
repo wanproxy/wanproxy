@@ -43,6 +43,10 @@ operator<< (std::ostream& os, CryptoMAC::Algorithm algorithm)
 		return (os << "HMAC-SHA1");
 	case CryptoMAC::SHA256:
 		return (os << "HMAC-SHA256");
+	case CryptoMAC::SHA512:
+		return (os << "HMAC-SHA512");
+	case CryptoMAC::RIPEMD160:
+		return (os << "HMAC-RIPEMD160");
 	}
 	NOTREACHED("/crypto/encryption");
 }
