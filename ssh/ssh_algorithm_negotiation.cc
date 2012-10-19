@@ -77,6 +77,9 @@ namespace {
 				typename std::list<T>::const_iterator ait;
 				for (ait = algorithm_list.begin(); ait != algorithm_list.end(); ++ait) {
 					const T alg = *ait;
+					if (alg->name() != algorithm)
+						continue;
+
 					*chosenp = alg->clone();
 
 					DEBUG("/ssh/algorithm/negotiation") << "Selected " << type << " algorithm " << algorithm;
