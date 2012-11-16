@@ -27,7 +27,7 @@ public:
 	virtual Action *accept(SocketEventCallback *);
 	bool bind(const std::string&);
 	Action *connect(const std::string&, EventCallback *);
-	bool listen(int=10);
+	bool listen(void);
 	Action *shutdown(bool, bool, EventCallback *);
 
 	std::string getpeername(void) const;

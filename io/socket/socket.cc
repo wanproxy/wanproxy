@@ -381,9 +381,9 @@ Socket::connect(const std::string& name, EventCallback *cb)
 }
 
 bool
-Socket::listen(int backlog)
+Socket::listen(void)
 {
-	int rv = ::listen(fd_, backlog);
+	int rv = ::listen(fd_, 128);
 	if (rv == -1)
 		return (false);
 	return (true);

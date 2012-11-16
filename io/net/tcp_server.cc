@@ -21,7 +21,7 @@ TCPServer::listen(SocketAddressFamily family, const std::string& name)
 		ERROR("/tcp/server") << "Socket bind failed, leaking socket.";
 		return (NULL);
 	}
-	if (!socket->listen(10)) {
+	if (!socket->listen()) {
 		ERROR("/tcp/server") << "Socket listen failed, leaking socket.";
 		return (NULL);
 	}

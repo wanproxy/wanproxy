@@ -20,7 +20,7 @@ UnixServer::listen(const std::string& name)
 		ERROR("/unix/server") << "Socket bind failed, leaking socket.";
 		return (NULL);
 	}
-	if (!socket->listen(10)) {
+	if (!socket->listen()) {
 		ERROR("/unix/server") << "Socket listen failed, leaking socket.";
 		return (NULL);
 	}
