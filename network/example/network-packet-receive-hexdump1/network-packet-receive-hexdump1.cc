@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include <event/event_callback.h>
 #include <event/event_main.h>
 #include <event/event_system.h>
