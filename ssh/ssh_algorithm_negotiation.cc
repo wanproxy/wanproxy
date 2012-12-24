@@ -1,6 +1,8 @@
 #include <common/buffer.h>
 #include <common/endian.h>
 
+#include <crypto/crypto_random.h>
+
 #include <ssh/ssh_algorithm_negotiation.h>
 #include <ssh/ssh_compression.h>
 #include <ssh/ssh_encryption.h>
@@ -13,13 +15,6 @@
 #include <ssh/ssh_transport_pipe.h>
 
 namespace {
-	static uint8_t constant_cookie[16] = {
-		0x00, 0x10, 0x20, 0x30,
-		0x40, 0x50, 0x60, 0x70,
-		0x80, 0x90, 0xa0, 0xb0,
-		0xc0, 0xd0, 0xe0, 0xf0
-	};
-
 	template<typename T>
 	std::vector<Buffer> names(const std::list<T>& list)
 	{
@@ -148,8 +143,12 @@ SSH::AlgorithmNegotiation::init(Buffer *out)
 {
 	ASSERT(log_, out->empty());
 
+	Buffer cookie;
+	if (!CryptoRandomMethod::default_method->generate(CryptoTypeRNG, 16, &cookie))
+		return (false);
+
 	out->append(SSH::Message::KeyExchangeInitializationMessage);
-	out->append(constant_cookie, sizeof constant_cookie); /* XXX Synchronous random byte generation?  */
+	out->append(cookie);
 	SSH::NameList::encode(out, names(algorithms_.key_exchange_list_));
 	SSH::NameList::encode(out, names(algorithms_.server_host_key_list_));
 	SSH::NameList::encode(out, names(algorithms_.encryption_client_to_server_list_));

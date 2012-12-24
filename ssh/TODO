@@ -8,8 +8,7 @@ o) Do separate algorithm from instance in the SSH code.  It's a mess right now,
    what with the clone() methods.  Yuck.
 o) Make sure all those things created by new have appropriate deletes somewhere.
 o) Likewise, go over all the RSA, DH, BIGNUM, etc., stuff and add frees.
-o) Maybe don't ever generate random padding, but ought to be able to generate
-   random cookies for the key exchange.
+o) Maybe don't ever generate random padding?
 o) Some kind of server public key verification callback.
 o) Figure out a naming scheme.  Packet, payload, MACs, etc., all have lots of
    different names.  Hard because we sometimes need to have a Buffer and a
