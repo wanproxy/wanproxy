@@ -79,10 +79,50 @@ private:
 
 		ASSERT(log_, !e.buffer_.empty());
 
-		/*
-		 * SSH Echo!
-		 */
-		pipe_->send(&e.buffer_);
+		std::vector<Buffer> name_list;
+		Buffer service;
+		Buffer msg;
+		switch (e.buffer_.peek()) {
+		case SSH::Message::TransportServiceRequestMessage:
+			/* Claim to support any kind of service the client requests.  */
+			e.buffer_.skip(1);
+			if (e.buffer_.empty()) {
+				ERROR(log_) << "No service name after transport request.";
+				return;
+			}
+			if (!SSH::String::decode(&service, &e.buffer_)) {
+				ERROR(log_) << "Could not decode service name.";
+				return;
+			}
+			if (!e.buffer_.empty()) {
+				ERROR(log_) << "Extraneous data after service name.";
+				return;
+			}
+			DEBUG(log_) << "Service: " << service;
+			msg.append(SSH::Message::TransportServiceAcceptMessage);
+			SSH::String::encode(&msg, service);
+			pipe_->send(&msg);
+
+			if (service.equal("ssh-userauth")) {
+				msg.append(SSH::Message::UserAuthenticationBannerMessage);
+				SSH::String::encode(&msg, std::string(" *\r\n\007 * This is a test server.  Sessions, including authentication, may be logged.\r\n *\r\n"));
+				SSH::String::encode(&msg, std::string("en-CA"));
+				pipe_->send(&msg);
+			}
+			break;
+		case SSH::Message::UserAuthenticationRequestMessage:
+			/* Always let the user try again.  */
+			e.buffer_.skip(1);
+			msg.append(SSH::Message::UserAuthenticationFailureMessage);
+			name_list.push_back(std::string("password")); /* Only let the user fling passwords at us.  */
+			SSH::NameList::encode(&msg, name_list);
+			msg.append(SSH::Boolean::False);
+			pipe_->send(&msg);
+			break;
+		default:
+			DEBUG(log_) << "Unhandled message:" << std::endl << e.buffer_.hexdump();
+			break;
+		}
 
 		EventCallback *rcb = callback(this, &SSHConnection::receive_complete);
 		receive_action_ = pipe_->receive(rcb);
