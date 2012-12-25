@@ -79,9 +79,10 @@ private:
 
 		ASSERT(log_, !e.buffer_.empty());
 
-		std::vector<Buffer> name_list;
 		Buffer service;
+		Buffer type;
 		Buffer msg;
+		uint32_t recipient_channel, sender_channel, window_size, packet_size;
 		switch (e.buffer_.peek()) {
 		case SSH::Message::TransportServiceRequestMessage:
 			/* Claim to support any kind of service the client requests.  */
@@ -98,7 +99,7 @@ private:
 				ERROR(log_) << "Extraneous data after service name.";
 				return;
 			}
-			DEBUG(log_) << "Service: " << service;
+
 			msg.append(SSH::Message::TransportServiceAcceptMessage);
 			SSH::String::encode(&msg, service);
 			pipe_->send(&msg);
@@ -111,12 +112,69 @@ private:
 			}
 			break;
 		case SSH::Message::UserAuthenticationRequestMessage:
-			/* Always let the user try again.  */
+			/* Any authentication request succeeds.  */
 			e.buffer_.skip(1);
-			msg.append(SSH::Message::UserAuthenticationFailureMessage);
-			name_list.push_back(std::string("password")); /* Only let the user fling passwords at us.  */
-			SSH::NameList::encode(&msg, name_list);
-			msg.append(SSH::Boolean::False);
+			msg.append(SSH::Message::UserAuthenticationSuccessMessage);
+			pipe_->send(&msg);
+			break;
+		case SSH::Message::ConnectionChannelOpen:
+			/* Opening a channel.  */
+			e.buffer_.skip(1);
+			if (e.buffer_.empty()) {
+				ERROR(log_) << "No channel type after channel open.";
+				return;
+			}
+			if (!SSH::String::decode(&type, &e.buffer_)) {
+				ERROR(log_) << "Could not decode channel type.";
+				return;
+			}
+			if (!SSH::UInt32::decode(&sender_channel, &e.buffer_)) {
+				ERROR(log_) << "Could not decode sender channel.";
+				return;
+			}
+			if (!SSH::UInt32::decode(&window_size, &e.buffer_)) {
+				ERROR(log_) << "Could not decode window size.";
+				return;
+			}
+			if (!SSH::UInt32::decode(&packet_size, &e.buffer_)) {
+				ERROR(log_) << "Could not decode packet size.";
+				return;
+			}
+
+			/* Only support session channels.  */
+			if (!type.equal("session")) {
+				msg.append(SSH::Message::ConnectionChannelOpenFailure);
+				SSH::UInt32::encode(&msg, sender_channel);
+				SSH::UInt32::encode(&msg, 3);
+				SSH::String::encode(&msg, std::string("Unsupported session type."));
+				SSH::String::encode(&msg, std::string("en-CA"));
+				pipe_->send(&msg);
+				return;
+			}
+
+			/* Set up session.  */
+			msg.append(SSH::Message::ConnectionChannelOpenConfirmation);
+			SSH::UInt32::encode(&msg, sender_channel);
+			SSH::UInt32::encode(&msg, sender_channel); /* Use the same channel as the client.  */
+			SSH::UInt32::encode(&msg, window_size);
+			SSH::UInt32::encode(&msg, packet_size);
+			pipe_->send(&msg);
+			break;
+		case SSH::Message::ConnectionChannelRequest:
+			/* For now just fail any channel request.  */
+			e.buffer_.skip(1);
+			if (e.buffer_.empty()) {
+				ERROR(log_) << "No channel after channel request.";
+				return;
+			}
+			if (!SSH::UInt32::decode(&recipient_channel, &e.buffer_)) {
+				ERROR(log_) << "Could not decode recipient channel.";
+				return;
+			}
+			/* XXX Ignore rest of request for now.  */
+
+			msg.append(SSH::Message::ConnectionChannelRequestFailure);
+			SSH::UInt32::encode(&msg, recipient_channel); /* Sender and recipient channels match.  */
 			pipe_->send(&msg);
 			break;
 		default:
