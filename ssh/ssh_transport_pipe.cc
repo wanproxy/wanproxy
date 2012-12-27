@@ -108,8 +108,7 @@ SSH::TransportPipe::send(Buffer *payload)
 	padding_len = 4 + (block_size - ((sizeof packet_len + packet_len + 4) % block_size));
 	packet_len += padding_len;
 
-	packet_len = BigEndian::encode(packet_len);
-	packet.append(&packet_len);
+	BigEndian::append(&packet, packet_len);
 	packet.append(padding_len);
 	payload->moveout(&packet);
 	packet.append(zero_padding, padding_len);
@@ -297,11 +296,10 @@ SSH::TransportPipe::receive_do(void)
 					return;
 				}
 			}
-			first_block_.extract(&packet_len);
+			BigEndian::extract(&packet_len, &first_block_);
 		} else {
-			input_buffer_.extract(&packet_len);
+			BigEndian::extract(&packet_len, &input_buffer_);
 		}
-		packet_len = BigEndian::decode(packet_len);
 
 		if (packet_len == 0) {
 			ERROR(log_) << "Need to handle 0-length packet.";

@@ -62,6 +62,21 @@ struct SwapEndian {
 	{
 		return (Endian::swap(in));
 	}
+
+	template<class C, typename T>
+	static void append(C *out, const T& in)
+	{
+		T swapped = encode(in);
+		out->append(&swapped);
+	}
+
+	template<class C, typename T>
+	static void extract(T *out, const C *in)
+	{
+		T wire;
+		in->extract(&wire);
+		*out = decode(wire);
+	}
 };
 
 struct HostEndian {
@@ -75,6 +90,18 @@ struct HostEndian {
 	static T decode(const T& in)
 	{
 		return (in);
+	}
+
+	template<class C, typename T>
+	static void append(C *out, const T& in)
+	{
+		out->append(&in);
+	}
+
+	template<class C, typename T>
+	static void extract(T *out, const C *in)
+	{
+		in->extract(out);
 	}
 };
 

@@ -28,9 +28,7 @@ SSH::String::decode(Buffer *out, Buffer *in)
 
 	if (in->length() < sizeof len)
 		return (false);
-	in->extract(&len);
-	len = BigEndian::decode(len);
-
+	BigEndian::extract(&len, in);
 	if (len == 0) {
 		in->skip(sizeof len);
 		return (true);
@@ -46,19 +44,15 @@ SSH::String::decode(Buffer *out, Buffer *in)
 void
 SSH::UInt32::encode(Buffer *out, uint32_t in)
 {
-	in = BigEndian::encode(in);
-	out->append(&in);
+	BigEndian::append(out, in);
 }
 
 bool
 SSH::UInt32::decode(uint32_t *outp, Buffer *in)
 {
-	uint32_t out;
-
 	if (in->length() < sizeof *outp)
 		return (false);
-	in->extract(&out);
-	*outp = BigEndian::decode(out);
+	BigEndian::extract(outp, in);
 	return (true);
 }
 
@@ -88,9 +82,7 @@ SSH::MPInt::decode(BIGNUM **outp, Buffer *in)
 
 	if (in->length() < sizeof len)
 		return (false);
-	in->extract(&len);
-	len = BigEndian::decode(len);
-
+	BigEndian::extract(&len, in);
 	if (len == 0) {
 		out = BN_new();
 		if (out == NULL)
