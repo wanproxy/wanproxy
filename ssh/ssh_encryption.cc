@@ -88,7 +88,7 @@ SSH::Encryption::cipher(CryptoEncryption::Cipher cipher)
 			continue;
 		const CryptoEncryption::Method *method = CryptoEncryption::Method::method(cipher);
 		if (method == NULL) {
-			ERROR("/ssh/encryption") << "Could not get method for cipher: " << cipher;
+			DEBUG("/ssh/encryption") << "Could not get method for cipher: " << cipher;
 			return (NULL);
 		}
 		CryptoEncryption::Session *session = method->session(cipher);
@@ -98,6 +98,6 @@ SSH::Encryption::cipher(CryptoEncryption::Cipher cipher)
 		}
 		return (new CryptoSSHEncryption(alg->rfc4250_name_, session));
 	}
-	ERROR("/ssh/encryption") << "No SSH encryption support is available for cipher: " << cipher;
+	DEBUG("/ssh/encryption") << "No SSH encryption support is available for cipher: " << cipher;
 	return (NULL);
 }
