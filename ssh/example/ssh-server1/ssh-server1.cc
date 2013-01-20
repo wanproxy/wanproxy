@@ -31,13 +31,16 @@ class SSHConnection {
 		uint32_t remote_window_size_;
 		uint32_t remote_packet_size_;
 
+		std::map<std::string, Buffer> environment_;
+
 		SSHChannel(uint32_t local_channel, uint32_t remote_channel, uint32_t local_window_size, uint32_t local_packet_size, uint32_t remote_window_size, uint32_t remote_packet_size)
 		: local_channel_(local_channel),
 		  local_window_size_(local_window_size),
 		  local_packet_size_(local_packet_size),
 		  remote_channel_(remote_channel),
 		  remote_window_size_(remote_window_size),
-		  remote_packet_size_(remote_packet_size)
+		  remote_packet_size_(remote_packet_size),
+		  environment_()
 		{ }
 	};
 
@@ -231,7 +234,39 @@ private:
 			if (type.equal("pty-req")) {
 				/* Fail for now.  */
 			} else if (type.equal("env")) {
-				/* Fail for now.  */
+				Buffer keybuf;
+				if (!SSH::String::decode(&keybuf, &e.buffer_)) {
+					ERROR(log_) << "Could not decode environment key.";
+					return;
+				}
+
+				Buffer value;
+				if (!SSH::String::decode(&value, &e.buffer_)) {
+					ERROR(log_) << "Could not decode environment value.";
+					return;
+				}
+
+				std::string key;
+				keybuf.extract(key);
+
+				if (channel->environment_.find(key) == channel->environment_.end()) {
+					channel->environment_[key] = value;
+
+					DEBUG(log_) << "Client set environment variable.";
+					if (want_reply) {
+						msg.append(SSH::Message::ConnectionChannelRequestSuccess);
+						SSH::UInt32::encode(&msg, channel->remote_channel_);
+						pipe_->send(&msg);
+					}
+					break;
+				}
+				INFO(log_) << "Client attempted to set environment variable twice.";
+				if (want_reply) {
+					msg.append(SSH::Message::ConnectionChannelRequestFailure);
+					SSH::UInt32::encode(&msg, channel->remote_channel_);
+					pipe_->send(&msg);
+				}
+				break;
 			} else if (type.equal("shell")) {
 				if (want_reply) {
 					msg.append(SSH::Message::ConnectionChannelRequestSuccess);
