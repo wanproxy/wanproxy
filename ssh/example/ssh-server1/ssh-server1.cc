@@ -18,7 +18,29 @@
 #include <ssh/ssh_session.h>
 #include <ssh/ssh_transport_pipe.h>
 
+/*
+ * XXX Create an SSH chat program.  Let only one of each user be connected at a time.  Send lines of data to all others.
+ */
+
 class SSHConnection {
+	struct SSHChannel {
+		uint32_t local_channel_;
+		uint32_t local_window_size_;
+		uint32_t local_packet_size_;
+		uint32_t remote_channel_;
+		uint32_t remote_window_size_;
+		uint32_t remote_packet_size_;
+
+		SSHChannel(uint32_t local_channel, uint32_t remote_channel, uint32_t local_window_size, uint32_t local_packet_size, uint32_t remote_window_size, uint32_t remote_packet_size)
+		: local_channel_(local_channel),
+		  local_window_size_(local_window_size),
+		  local_packet_size_(local_packet_size),
+		  remote_channel_(remote_channel),
+		  remote_window_size_(remote_window_size),
+		  remote_packet_size_(remote_packet_size)
+		{ }
+	};
+
 	LogHandle log_;
 	Socket *peer_;
 	SSH::Session session_;
@@ -27,6 +49,9 @@ class SSHConnection {
 	Splice *splice_;
 	Action *splice_action_;
 	Action *close_action_;
+	uint32_t channel_next_;
+	std::map<uint32_t, SSHChannel *> channel_map_;
+	std::map<uint32_t, uint32_t> remote_channel_map_;
 public:
 	SSHConnection(Socket *peer)
 	: log_("/ssh/connection"),
@@ -35,7 +60,9 @@ public:
 	  pipe_(NULL),
 	  splice_(NULL),
 	  splice_action_(NULL),
-	  close_action_(NULL)
+	  close_action_(NULL),
+	  channel_next_(0),
+	  channel_map_()
 	{
 		session_.algorithm_negotiation_ = new SSH::AlgorithmNegotiation(&session_);
 		if (session_.role_ == SSH::ServerRole) {
@@ -82,8 +109,14 @@ private:
 		Buffer service;
 		Buffer type;
 		Buffer msg;
+		SSHChannel *channel;
 		uint32_t recipient_channel, sender_channel, window_size, packet_size;
+		bool want_reply;
+		std::map<uint32_t, uint32_t>::const_iterator rchit;
+		std::map<uint32_t, SSHChannel *>::const_iterator chit;
 		switch (e.buffer_.peek()) {
+		case SSH::Message::TransportDisconnectMessage:
+			break;
 		case SSH::Message::TransportServiceRequestMessage:
 			/* Claim to support any kind of service the client requests.  */
 			e.buffer_.skip(1);
@@ -152,10 +185,13 @@ private:
 				return;
 			}
 
+			recipient_channel = sender_channel;
+			sender_channel = channel_setup(recipient_channel, window_size, packet_size);
+
 			/* Set up session.  */
 			msg.append(SSH::Message::ConnectionChannelOpenConfirmation);
+			SSH::UInt32::encode(&msg, recipient_channel);
 			SSH::UInt32::encode(&msg, sender_channel);
-			SSH::UInt32::encode(&msg, sender_channel); /* Use the same channel as the client.  */
 			SSH::UInt32::encode(&msg, window_size);
 			SSH::UInt32::encode(&msg, packet_size);
 			pipe_->send(&msg);
@@ -171,11 +207,53 @@ private:
 				ERROR(log_) << "Could not decode recipient channel.";
 				return;
 			}
-			/* XXX Ignore rest of request for now.  */
+			if (!SSH::String::decode(&type, &e.buffer_)) {
+				ERROR(log_) << "Could not decode channel request type.";
+				return;
+			}
+			if (e.buffer_.empty()) {
+				ERROR(log_) << "Missing want_reply field.";
+				return;
+			}
+			want_reply = e.buffer_.pop();
 
-			msg.append(SSH::Message::ConnectionChannelRequestFailure);
-			SSH::UInt32::encode(&msg, recipient_channel); /* Sender and recipient channels match.  */
-			pipe_->send(&msg);
+			chit = channel_map_.find(recipient_channel);
+			if (chit == channel_map_.end()) {
+				if (want_reply) {
+					msg.append(SSH::Message::ConnectionChannelRequestFailure);
+					SSH::UInt32::encode(&msg, 0); /* XXX What to do for a request that fails due to unknown channel?  */
+					pipe_->send(&msg);
+				}
+				break;
+			}
+			channel = chit->second;
+
+			if (type.equal("pty-req")) {
+				/* Fail for now.  */
+			} else if (type.equal("env")) {
+				/* Fail for now.  */
+			} else if (type.equal("shell")) {
+				if (want_reply) {
+					msg.append(SSH::Message::ConnectionChannelRequestSuccess);
+					SSH::UInt32::encode(&msg, channel->remote_channel_);
+					pipe_->send(&msg);
+				}
+				break;
+			} else {
+				DEBUG(log_) << "Unhandled channel request type:" << std::endl << type.hexdump();
+			}
+
+			if (want_reply) {
+				msg.append(SSH::Message::ConnectionChannelRequestFailure);
+				SSH::UInt32::encode(&msg, channel->remote_channel_);
+				pipe_->send(&msg);
+			}
+			break;
+		case SSH::Message::ConnectionChannelWindowAdjust:
+			/* Follow our peer's lead on window adjustments.  */
+		case SSH::Message::ConnectionChannelData:
+			/* Just echo data back.  We do not need to decode at present because channels are the same in both directions.  */
+			pipe_->send(&e.buffer_);
 			break;
 		default:
 			DEBUG(log_) << "Unhandled message:" << std::endl << e.buffer_.hexdump();
@@ -233,6 +311,25 @@ private:
 		ASSERT(log_, close_action_ == NULL);
 		SimpleCallback *cb = callback(this, &SSHConnection::close_complete);
 		close_action_ = peer_->close(cb);
+	}
+
+	uint32_t channel_setup(const uint32_t& remote_channel, const uint32_t& window_size, const uint32_t& packet_size)
+	{
+		std::map<uint32_t, SSHChannel *>::const_iterator it;
+		uint32_t local_channel;
+
+		uint32_t next = channel_next_;
+		for (;;) {
+			it = channel_map_.find(next);
+			if (it == channel_map_.end())
+				break;
+			next++;
+		}
+		channel_next_ = next + 1;
+
+		local_channel = next;
+		channel_map_[local_channel] = new SSHChannel(local_channel, remote_channel, 65536, 65536, window_size, packet_size);
+		return (local_channel);
 	}
 };
 
