@@ -24,6 +24,15 @@
 
 class SSHConnection {
 	struct SSHChannel {
+		enum Mode {
+			SetupMode,
+			ShellMode,
+			ExecMode,
+			SubsystemMode
+		};
+
+		Mode mode_;
+
 		uint32_t local_channel_;
 		uint32_t local_window_size_;
 		uint32_t local_packet_size_;
@@ -34,7 +43,8 @@ class SSHConnection {
 		std::map<std::string, Buffer> environment_;
 
 		SSHChannel(uint32_t local_channel, uint32_t remote_channel, uint32_t local_window_size, uint32_t local_packet_size, uint32_t remote_window_size, uint32_t remote_packet_size)
-		: local_channel_(local_channel),
+		: mode_(SetupMode),
+		  local_channel_(local_channel),
 		  local_window_size_(local_window_size),
 		  local_packet_size_(local_packet_size),
 		  remote_channel_(remote_channel),
@@ -268,12 +278,16 @@ private:
 				}
 				break;
 			} else if (type.equal("shell")) {
-				if (want_reply) {
-					msg.append(SSH::Message::ConnectionChannelRequestSuccess);
-					SSH::UInt32::encode(&msg, channel->remote_channel_);
-					pipe_->send(&msg);
+				if (channel->mode_ == SSHChannel::SetupMode) {
+					channel->mode_ = SSHChannel::ShellMode;
+					if (want_reply) {
+						msg.append(SSH::Message::ConnectionChannelRequestSuccess);
+						SSH::UInt32::encode(&msg, channel->remote_channel_);
+						pipe_->send(&msg);
+					}
+					break;
 				}
-				break;
+				ERROR(log_) << "Client requested a shell session, but session is not in setup mode.";
 			} else {
 				DEBUG(log_) << "Unhandled channel request type:" << std::endl << type.hexdump();
 			}
