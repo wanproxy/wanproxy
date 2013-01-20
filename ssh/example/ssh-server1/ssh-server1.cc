@@ -64,7 +64,6 @@ class SSHConnection {
 	Action *close_action_;
 	uint32_t channel_next_;
 	std::map<uint32_t, SSHChannel *> channel_map_;
-	std::map<uint32_t, uint32_t> remote_channel_map_;
 public:
 	SSHConnection(Socket *peer)
 	: log_("/ssh/connection"),
@@ -125,7 +124,6 @@ private:
 		SSHChannel *channel;
 		uint32_t recipient_channel, sender_channel, window_size, packet_size;
 		bool want_reply;
-		std::map<uint32_t, uint32_t>::const_iterator rchit;
 		std::map<uint32_t, SSHChannel *>::const_iterator chit;
 		switch (e.buffer_.peek()) {
 		case SSH::Message::TransportDisconnectMessage:
@@ -285,6 +283,11 @@ private:
 						SSH::UInt32::encode(&msg, channel->remote_channel_);
 						pipe_->send(&msg);
 					}
+
+					msg.append(SSH::Message::ConnectionChannelData);
+					SSH::UInt32::encode(&msg, channel->remote_channel_);
+					SSH::String::encode(&msg, std::string(">>> Connected to shell.\r\n"));
+					pipe_->send(&msg);
 					break;
 				}
 				ERROR(log_) << "Client requested a shell session, but session is not in setup mode.";
@@ -301,8 +304,7 @@ private:
 		case SSH::Message::ConnectionChannelWindowAdjust:
 			/* Follow our peer's lead on window adjustments.  */
 		case SSH::Message::ConnectionChannelData:
-			/* Just echo data back.  We do not need to decode at present because channels are the same in both directions.  */
-			pipe_->send(&e.buffer_);
+			/* For now, just ignore data.  Will pass to something shell-like eventually.  */
 			break;
 		default:
 			DEBUG(log_) << "Unhandled message:" << std::endl << e.buffer_.hexdump();
