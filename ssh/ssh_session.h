@@ -60,12 +60,14 @@ namespace SSH {
 		Buffer shared_secret_;	/* Shared secret from key exchange.  */
 		Buffer session_id_;	/* First exchange hash.  */
 		Buffer exchange_hash_;	/* Most recent exchange hash.  */
+	private:
 		Buffer client_to_server_iv_;	/* Initial client-to-server IV.  */
 		Buffer server_to_client_iv_;	/* Initial server-to-client IV.  */
 		Buffer client_to_server_key_;	/* Client-to-server encryption key.  */
 		Buffer server_to_client_key_;	/* Server-to-client encryption key.  */
 		Buffer client_to_server_integrity_key_;	/* Client-to-server integrity key.  */
 		Buffer server_to_client_integrity_key_;	/* Server-to-client integrity key.  */
+	public:
 		uint32_t local_sequence_number_;	/* Our packet sequence number.  */
 		uint32_t remote_sequence_number_;	/* Our peer's packet sequence number.  */
 
