@@ -145,7 +145,7 @@ public:
 		}
 		{
 			Test _(group_, "Socket listen");
-			if (!socket_->listen(1))
+			if (!socket_->listen())
 				return;
 			_.pass();
 		}
