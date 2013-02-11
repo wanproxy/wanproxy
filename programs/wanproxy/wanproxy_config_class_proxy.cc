@@ -24,15 +24,16 @@ WANProxyConfigClassProxy::activate(ConfigObject *co)
 	if (object_listener_map_.find(co) != object_listener_map_.end())
 		return (false);
 
-	/* Extract type.  */
+	/* Extract type.  Defaults to TCP.  */
+	WANProxyConfigProxyType type = WANProxyConfigProxyTypeTCPTCP;
+
 	WANProxyConfigTypeProxyType *typect;
 	ConfigValue *typecv = co->get("type", &typect);
-	if (typecv == NULL)
-		return (false);
-
-	WANProxyConfigProxyType type;
-	if (!typect->get(typecv, &type))
-		return (false);
+	if (typecv != NULL) {
+		if (!typect->get(typecv, &type)) {
+			DEBUG("/wanproxy/config/proxy") << "Could not get proxy type.";
+		}
+	}
 
 	/* Extract interface.  */
 	ConfigTypePointer *interfacect;
