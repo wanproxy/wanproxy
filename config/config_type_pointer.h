@@ -30,8 +30,6 @@
 
 #include <config/config_type.h>
 
-struct ConfigValue;
-
 class ConfigTypePointer : public ConfigType {
 public:
 	ConfigTypePointer(void)
