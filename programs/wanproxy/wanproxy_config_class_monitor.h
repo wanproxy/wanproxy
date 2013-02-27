@@ -1,25 +1,30 @@
 #ifndef	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_MONITOR_H
 #define	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_MONITOR_H
 
-#include <set>
-
 #include <config/config_type_pointer.h>
 
+class MonitorListener;
+
 class WANProxyConfigClassMonitor : public ConfigClass {
-	std::set<ConfigObject *> object_listener_set_;
+	struct Instance : public ConfigClassInstance {
+		ConfigObject *interface_;
+
+		Instance(void)
+		: interface_(NULL)
+		{ }
+
+		bool activate(const ConfigObject *);
+	};
 public:
 	WANProxyConfigClassMonitor(void)
-	: ConfigClass("monitor"),
-	  object_listener_set_()
+	: ConfigClass("monitor", new ConstructorFactory<ConfigClassInstance, Instance>)
 	{
-		add_member("interface", &config_type_pointer);
+		add_member("interface", &config_type_pointer, &Instance::interface_);
 	}
 
 	/* XXX So wrong.  */
 	~WANProxyConfigClassMonitor()
 	{ }
-
-	bool activate(ConfigObject *);
 };
 
 extern WANProxyConfigClassMonitor wanproxy_config_class_monitor;

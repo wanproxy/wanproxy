@@ -6,20 +6,25 @@
 class ProxySocksListener;
 
 class WANProxyConfigClassProxySocks : public ConfigClass {
-	std::map<ConfigObject *, ProxySocksListener *> object_listener_map_;
+	struct Instance : public ConfigClassInstance {
+		ConfigObject *interface_;
+
+		Instance(void)
+		: interface_(NULL)
+		{ }
+
+		bool activate(const ConfigObject *);
+	};
 public:
 	WANProxyConfigClassProxySocks(void)
-	: ConfigClass("proxy-socks"),
-	  object_listener_map_()
+	: ConfigClass("proxy-socks", new ConstructorFactory<ConfigClassInstance, Instance>)
 	{
-		add_member("interface", &config_type_pointer);
+		add_member("interface", &config_type_pointer, &Instance::interface_);
 	}
 
 	/* XXX So wrong.  */
 	~WANProxyConfigClassProxySocks()
 	{ }
-
-	bool activate(ConfigObject *);
 };
 
 extern WANProxyConfigClassProxySocks wanproxy_config_class_proxy_socks;

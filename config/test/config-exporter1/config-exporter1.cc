@@ -23,42 +23,34 @@ static TestConfigTypeFlags
 	test_config_type_flags("test-flags", test_config_type_flags_map);
 
 class TestConfigClassFlags : public ConfigClass {
+	struct Instance : public ConfigClassInstance {
+		unsigned int flags_;
+
+		Instance(void)
+		: flags_(0)
+		{ }
+
+		bool activate(const ConfigObject *)
+		{
+			if (flags_ != (FLAG_A | FLAG_C)) {
+				ERROR("/test/config/flags/class") << "Field (flags) does not have expected value.";
+				return (false);
+			}
+
+			INFO("/test/config/flags/class") << "Got all expected values.";
+
+			return (true);
+		}
+	};
 public:
 	TestConfigClassFlags(void)
-	: ConfigClass("test-config-flags")
+	: ConfigClass("test-config-flags", new ConstructorFactory<ConfigClassInstance, Instance>)
 	{
-		add_member("flags", &test_config_type_flags);
+		add_member("flags", &test_config_type_flags, &Instance::flags_);
 	}
 
 	~TestConfigClassFlags()
 	{ }
-
-	bool activate(ConfigObject *co)
-	{
-		TestConfigTypeFlags *ct;
-		ConfigValue *cv;
-		unsigned int flags;
-
-		cv = co->get("flags", &ct);
-		if (cv == NULL) {
-			ERROR("/test/config/flags/class") << "Could not get flags.";
-			return (false);
-		}
-
-		if (!ct->get(cv, &flags)) {
-			ERROR("/test/config/flags/class") << "Could not get flags1.";
-			return (false);
-		}
-
-		if (flags != (FLAG_A | FLAG_C)) {
-			ERROR("/test/config/flags/class") << "Field (flags) does not have expected value.";
-			return (false);
-		}
-
-		INFO("/test/config/flags/class") << "Got all expected values.";
-
-		return (true);
-	}
 };
 
 class TestConfigExporter : public ConfigExporter {
@@ -79,27 +71,27 @@ public:
 		str_ += ";";
 	}
 
-	void field(const ConfigValue *cv, const std::string& name)
+	void field(const ConfigClassInstance *inst, const ConfigClassMember *m, const std::string& name)
 	{
 		str_ += " field ";
 		str_ += name;
 		str_ += ":";
-		cv->marshall(this);
+		m->marshall(this, inst);
 		str_ += ";";
 	}
 
-	void object(const ConfigClass *cc, const ConfigObject *co)
+	void object(const ConfigObject *co, const std::string& name)
 	{
 		str_ += " object ";
-		str_ += co->name();
+		str_ += name;
 		str_ += " class ";
-		str_ += cc->name();
+		str_ += co->class_->name();
 		str_ += ":";
-		cc->marshall(this, co);
+		co->marshall(this);
 		str_ += ";";
 	}
 
-	void value(const ConfigValue *, const std::string& val)
+	void value(const ConfigType *, const std::string& val)
 	{
 		str_ += " value: ";
 		str_ += val;

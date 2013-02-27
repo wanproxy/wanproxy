@@ -4,8 +4,9 @@
 #include <map>
 
 class ConfigClass;
-class ConfigObject;
+class ConfigClassInstance;
 class ConfigExporter;
+struct ConfigObject;
 
 class Config {
 	LogHandle log_;

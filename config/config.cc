@@ -3,7 +3,6 @@
 #include <config/config_exporter.h>
 #include <config/config_object.h>
 #include <config/config_type.h>
-#include <config/config_value.h>
 
 bool
 Config::activate(const std::string& oname)
@@ -14,9 +13,7 @@ Config::activate(const std::string& oname)
 	}
 
 	ConfigObject *co = object_map_[oname];
-	ConfigClass *cc = co->class_;
-
-	return (cc->activate(co));
+	return (co->activate());
 }
 
 bool
@@ -32,9 +29,8 @@ Config::create(const std::string& cname, const std::string& oname)
 	}
 
 	ConfigClass *cc = class_map_[cname];
-	ConfigObject *co = new ConfigObject(oname, this, cc);
 
-	object_map_[oname] = co;
+	object_map_[oname] = new ConfigObject(this, oname, cc, cc->allocate());
 
 	return (true);
 }
@@ -49,13 +45,14 @@ Config::set(const std::string& oname, const std::string& mname,
 	}
 
 	ConfigObject *co = object_map_[oname];
-	ConfigClass *cc = co->class_;
 
+#if 0
 	ConfigType *ct = cc->member(mname);
 	if (ct == NULL) {
 		ERROR(log_) << "No such member (" << mname << ") in object (" << oname << ")";
 		return (false);
 	}
+#endif
 
 	if (vstr[0] == '$') {
 		std::string::const_iterator dot;
@@ -76,24 +73,18 @@ Config::set(const std::string& oname, const std::string& mname,
 		}
 
 		ConfigObject *oco = object_map_[ooname];
-		ConfigClass *occ = oco->class_;
 
-		ConfigType *oct = occ->member(mname);
-		if (oct == NULL) {
-			ERROR(log_) << "Reference to non-existant member (" << omname << ") in object (" << ooname << ")";
+		std::map<std::string, std::string>::const_iterator mit;
+		mit = oco->member_values_.find(omname);
+		if (mit == oco->member_values_.end()) {
+			ERROR(log_) << "Reference to unset member (" << omname << ") in object (" << ooname << ")";
 			return (false);
 		}
 
-		ConfigValue *ocv = oco->members_[omname];
-		if (ocv == NULL) {
-			ERROR(log_) << "Reference to uninitialized member (" << omname << ") in object (" << ooname << ")";
-			return (false);
-		}
-
-		return (set(oname, mname, ocv->string_));
+		return (set(oname, mname, mit->second));
 	}
 
-	if (!cc->set(co, mname, ct, vstr)) {
+	if (!co->set(mname, vstr)) {
 		ERROR(log_) << "Member (" << mname << ") in object (" << oname << ") could not be set.";
 		return (false);
 	}
@@ -115,9 +106,6 @@ Config::marshall(ConfigExporter *exp) const
 {
 	std::map<std::string, ConfigObject *>::const_iterator it;
 
-	for (it = object_map_.begin(); it != object_map_.end(); ++it) {
-		const ConfigObject *co = it->second;
-
-		co->marshall(exp);
-	}
+	for (it = object_map_.begin(); it != object_map_.end(); ++it)
+		exp->object(it->second, it->first);
 }

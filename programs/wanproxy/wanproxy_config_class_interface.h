@@ -11,8 +11,6 @@ public:
 
 	~WANProxyConfigClassInterface()
 	{ }
-
-	bool activate(ConfigObject *);
 };
 
 extern WANProxyConfigClassInterface wanproxy_config_class_interface;

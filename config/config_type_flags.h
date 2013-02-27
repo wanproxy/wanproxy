@@ -6,8 +6,6 @@
 #include <config/config_exporter.h>
 #include <config/config_type.h>
 
-struct ConfigValue;
-
 template<typename T>
 class ConfigTypeFlags : public ConfigType {
 public:
@@ -16,12 +14,10 @@ public:
 		T flag_;
 	};
 private:
-	std::map<const ConfigValue *, T> flags_;
 	std::map<std::string, T> flag_map_;
 public:
 	ConfigTypeFlags(const std::string& xname, struct Mapping *mappings)
 	: ConfigType(xname),
-	  flags_(),
 	  flag_map_()
 	{
 		ASSERT("/config/type/flags", mappings != NULL);
@@ -32,27 +28,11 @@ public:
 	}
 
 	~ConfigTypeFlags()
-	{
-		flags_.clear();
-	}
+	{ }
 
-	bool get(const ConfigValue *cv, T *flagsp) const
+	void marshall(ConfigExporter *exp, const T *flagsp) const
 	{
-		typename std::map<const ConfigValue *, T>::const_iterator it;
-		it = flags_.find(cv);
-		if (it == flags_.end()) {
-			ERROR("/config/type/flags") << "Value not set.";
-			return (false);
-		}
-		*flagsp = it->second;
-		return (true);
-	}
-
-	void marshall(ConfigExporter *exp, const ConfigValue *cv) const
-	{
-		T flags;
-		if (!get(cv, &flags))
-			HALT("/config/type/flags") << "Trying to marshall unset value.";
+		T flags = *flagsp;
 
 		std::string str;
 		typename std::map<std::string, T>::const_iterator it;
@@ -68,17 +48,17 @@ public:
 			HALT("/config/type/flags") << "Trying to marshall unknown flags.";
 		if (flags == 0 && str.empty())
 			str = "0";
-		exp->value(cv, str);
+		exp->value(this, str);
 	}
 
-	bool set(const ConfigValue *cv, const std::string& vstr)
+	bool set(ConfigObject *, const std::string& vstr, T *flagsp)
 	{
 		if (flag_map_.find(vstr) == flag_map_.end()) {
 			ERROR("/config/type/flags") << "Invalid value (" << vstr << ")";
 			return (false);
 		}
 
-		flags_[cv] |= flag_map_[vstr];
+		*flagsp |= flag_map_[vstr];
 
 		return (true);
 	}

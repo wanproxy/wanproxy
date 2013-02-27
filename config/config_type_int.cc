@@ -10,25 +10,18 @@
 ConfigTypeInt config_type_int;
 
 void
-ConfigTypeInt::marshall(ConfigExporter *exp, const ConfigValue *cv) const
+ConfigTypeInt::marshall(ConfigExporter *exp, const intmax_t *valp) const
 {
-	intmax_t val;
-	if (!get(cv, &val))
-		HALT("/config/type/int") << "Trying to marshall unset value.";
+	intmax_t val = *valp;
 
 	char buf[sizeof val * 2 + 2 + 1];
 	snprintf(buf, sizeof buf, "0x%016jx", val);
-	exp->value(cv, buf);
+	exp->value(this, buf);
 }
 
 bool
-ConfigTypeInt::set(const ConfigValue *cv, const std::string& vstr)
+ConfigTypeInt::set(ConfigObject *, const std::string& vstr, intmax_t *valp)
 {
-	if (ints_.find(cv) != ints_.end()) {
-		ERROR("/config/type/int") << "Value already set.";
-		return (false);
-	}
-
 	const char *str = vstr.c_str();
 	char *endp;
 	intmax_t imax;
@@ -43,7 +36,7 @@ ConfigTypeInt::set(const ConfigValue *cv, const std::string& vstr)
 		return (false);
 	}
 
-	ints_[cv] = imax;
+	*valp = imax;
 
 	return (true);
 }

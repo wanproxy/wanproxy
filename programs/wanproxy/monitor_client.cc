@@ -43,32 +43,29 @@ public:
 		os_ << "</table>";
 	}
 
-	void field(const ConfigValue *cv, const std::string& name)
+	void field(const ConfigClassInstance *inst, const ConfigClassMember *m, const std::string& name)
 	{
-		os_ << "<tr><td colspan=\"2\" /><td>" << name << "</td><td>" << cv->type_->name() << "</td><td>";
-		cv->marshall(this);
+		ConfigType *ct = m->type();
+		os_ << "<tr><td colspan=\"2\" /><td>" << name << "</td><td>" << ct->name() << "</td><td>";
+		m->marshall(this, inst);
 		os_ << "</td></tr>";
 	}
 
-	void object(const ConfigClass *cc, const ConfigObject *co)
+	void object(const ConfigObject *co, const std::string& name)
 	{
-		if (select_ != "" && select_ != co->name())
+		if (select_ != "" && select_ != name)
 			return;
 		os_ << "<tr><th>object</th><th>class</th><th>field</th><th>type</th><th>value</th></tr>";
-		os_ << "<tr><td><a href=\"/object/" << co->name() << "\">" << co->name() << "</a></td><td>" << cc->name() << "</td><td colspan=\"3\" /></tr>";
-		cc->marshall(this, co);
+		os_ << "<tr><td><a href=\"/object/" << name << "\">" << name << "</a></td><td>" << co->class_->name() << "</td><td colspan=\"3\" /></tr>";
+		co->marshall(this);
 	}
 
-	void value(const ConfigValue *cv, const std::string& val)
+	void value(const ConfigType *ct, const std::string& val)
 	{
-		ConfigTypePointer *ct = dynamic_cast<ConfigTypePointer *>(cv->type_);
-		if (ct != NULL) {
-			ConfigObject *co;
-			if (ct->get(cv, &co)) {
-				if (co == NULL)
-					os_ << "<tt>None</tt>";
-				else
-					os_ << "<a href=\"/object/" << co->name() << "\">" << co->name() << "</a>";
+		const ConfigTypePointer *ctp = dynamic_cast<const ConfigTypePointer *>(ct);
+		if (ctp != NULL) {
+			if (val != "None") {
+				os_ << "<a href=\"/object/" << val << "\">" << val << "</a>";
 				return;
 			}
 		}

@@ -8,30 +8,33 @@
 #include "wanproxy_config_type_compressor.h"
 
 class WANProxyConfigClassCodec : public ConfigClass {
-	std::map<ConfigObject *, WANProxyCodec *> object_codec_map_;
 public:
+	struct Instance : public ConfigClassInstance {
+		WANProxyCodec codec_;
+		WANProxyConfigCodec codec_type_;
+		WANProxyConfigCompressor compressor_;
+		intmax_t compressor_level_;
+
+		Instance(void)
+		: codec_(),
+		  codec_type_(WANProxyConfigCodecNone),
+		  compressor_(WANProxyConfigCompressorNone),
+		  compressor_level_(0)
+		{ }
+
+		bool activate(const ConfigObject *);
+	};
+
 	WANProxyConfigClassCodec(void)
-	: ConfigClass("codec"),
-	  object_codec_map_()
+	: ConfigClass("codec", new ConstructorFactory<ConfigClassInstance, Instance>)
 	{
-		add_member("codec", &wanproxy_config_type_codec);
-		add_member("compressor", &wanproxy_config_type_compressor);
-		add_member("compressor_level", &config_type_int);
+		add_member("codec", &wanproxy_config_type_codec, &Instance::codec_type_);
+		add_member("compressor", &wanproxy_config_type_compressor, &Instance::compressor_);
+		add_member("compressor_level", &config_type_int, &Instance::compressor_level_);
 	}
 
 	~WANProxyConfigClassCodec()
 	{ }
-
-	bool activate(ConfigObject *);
-
-	WANProxyCodec *get(ConfigObject *co) const
-	{
-		std::map<ConfigObject *, WANProxyCodec *>::const_iterator it;
-		it = object_codec_map_.find(co);
-		if (it == object_codec_map_.end())
-			return (NULL);
-		return (it->second);
-	}
 };
 
 extern WANProxyConfigClassCodec wanproxy_config_class_codec;

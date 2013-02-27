@@ -6,49 +6,22 @@
 #include <config/config_exporter.h>
 #include <config/config_type.h>
 
-struct ConfigValue;
-
 class ConfigTypeString : public ConfigType {
-	std::map<const ConfigValue *, std::string> strings_;
 public:
 	ConfigTypeString(void)
-	: ConfigType("string"),
-	  strings_()
+	: ConfigType("string")
 	{ }
 
 	~ConfigTypeString()
+	{ }
+
+	void marshall(ConfigExporter *exp, const std::string *stringp) const
 	{
-		strings_.clear();
+		exp->value(this, *stringp);
 	}
 
-	bool get(const ConfigValue *cv, std::string *strp) const
+	bool set(ConfigObject *, const std::string& vstr, std::string *stringp)
 	{
-		std::map<const ConfigValue *, std::string>::const_iterator it;
-		it = strings_.find(cv);
-		if (it == strings_.end()) {
-			ERROR("/config/type/string") << "Value not set.";
-			return (false);
-		}
-		*strp = it->second;
-		return (true);
-	}
-
-	void marshall(ConfigExporter *exp, const ConfigValue *cv) const
-	{
-		std::string str;
-		if (!get(cv, &str))
-			HALT("/config/type/string") << "Trying to marshall unset value.";
-
-		exp->value(cv, str);
-	}
-
-	bool set(const ConfigValue *cv, const std::string& vstr)
-	{
-		if (strings_.find(cv) != strings_.end()) {
-			ERROR("/config/type/string") << "Value already set.";
-			return (false);
-		}
-
 		if (*vstr.begin() != '"') {
 			ERROR("/config/type/string") << "String does not begin with '\"'.";
 			return (false);
@@ -64,7 +37,7 @@ public:
 			return (false);
 		}
 
-		strings_[cv] = str;
+		*stringp = str;
 		return (true);
 	}
 };

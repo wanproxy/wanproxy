@@ -9,8 +9,8 @@ struct WANProxyCodec {
 	bool compressor_;
 	unsigned compressor_level_;
 
-	WANProxyCodec(const std::string& name)
-	: name_(name),
+	WANProxyCodec(void)
+	: name_(""),
 	  codec_(NULL),
 	  compressor_(false),
 	  compressor_level_(0)

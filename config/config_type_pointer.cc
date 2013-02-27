@@ -1,50 +1,39 @@
 #include <stdio.h>
 
 #include <config/config.h>
+#include <config/config_class.h>
 #include <config/config_exporter.h>
+#include <config/config_object.h>
 #include <config/config_type_pointer.h>
-#include <config/config_value.h>
 
 ConfigTypePointer config_type_pointer;
 
 void
-ConfigTypePointer::marshall(ConfigExporter *exp, const ConfigValue *cv) const
+ConfigTypePointer::marshall(ConfigExporter *exp, ConfigObject *const *cop) const
 {
-	std::map<const ConfigValue *, ConfigObject *>::const_iterator it;
+	const ConfigObject *co = *cop;
 
-	it = pointers_.find(cv);
-	if (it == pointers_.end())
-		HALT("/config/type/pointer") << "Trying to marshall unset value.";
-
-	const ConfigObject *co = it->second;
-
-	char buf[sizeof co * 2 + 2 + 1];
-	snprintf(buf, sizeof buf, "%p", co);
-	exp->value(cv, buf);
+	if (co == NULL)
+		exp->value(this, "None");
+	else
+		exp->value(this, co->name_);
 }
 
 bool
-ConfigTypePointer::set(const ConfigValue *cv, const std::string& vstr)
+ConfigTypePointer::set(ConfigObject *co, const std::string& vstr, ConfigObject **cop)
 {
-	if (pointers_.find(cv) != pointers_.end()) {
-		ERROR("/config/type/pointer") << "Value already set.";
-		return (false);
-	}
-
-	/* XXX Have a magic None that is easily-detected?  */
 	if (vstr == "None") {
-		pointers_[cv] = NULL;
+		*cop = NULL;
 		return (true);
 	}
 
-	Config *config = cv->config_;
-	ConfigObject *co = config->lookup(vstr);
-	if (co == NULL) {
+	ConfigObject *target = co->config_->lookup(vstr);
+	if (target == NULL) {
 		ERROR("/config/type/pointer") << "Referenced object (" << vstr << ") does not exist.";
 		return (false);
 	}
 
-	pointers_[cv] = co;
+	*cop = target;
 
 	return (true);
 }

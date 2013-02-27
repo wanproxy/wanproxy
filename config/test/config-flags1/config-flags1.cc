@@ -2,7 +2,6 @@
 
 #include <config/config.h>
 #include <config/config_class.h>
-#include <config/config_object.h>
 #include <config/config_type_flags.h>
 
 #define	FLAG_A	(0x00000001)
@@ -21,84 +20,65 @@ static struct TestConfigTypeFlags::Mapping test_config_type_flags_map[] = {
 static TestConfigTypeFlags
 	test_config_type_flags("test-flags", test_config_type_flags_map);
 
+#if 0
+	template<typename T, typename Ti>
+	int foo(T Ti::*f);
+#endif
+
 class TestConfigClassFlags : public ConfigClass {
+	struct Instance : public ConfigClassInstance {
+		unsigned int flags1_;
+		unsigned int flags2_;
+		unsigned int flags3_;
+		unsigned int flags4_;
+
+		Instance(void)
+		: flags1_(0),
+		  flags2_(0),
+		  flags3_(0),
+		  flags4_(0)
+		{ }
+
+		bool activate(const ConfigObject *)
+		{
+			if (flags1_ != FLAG_A) {
+				ERROR("/test/config/flags/class") << "Field (flags1) does not have expected value.";
+				return (false);
+			}
+
+			if (flags2_ != (FLAG_A | FLAG_B | FLAG_C)) {
+				ERROR("/test/config/flags/class") << "Field (flags2) does not have expected value.";
+				return (false);
+			}
+
+			if (flags3_ != FLAG_C) {
+				ERROR("/test/config/flags/class") << "Field (flags3) does not have expected value.";
+				return (false);
+			}
+
+			if (flags4_ != 0) {
+				ERROR("/test/config/flags/class") << "Field (flags4) does not have expected value.";
+				return (false);
+			}
+
+			INFO("/test/config/flags/class") << "Got all expected values.";
+
+			return (true);
+		}
+
+	};
 public:
 	TestConfigClassFlags(void)
-	: ConfigClass("test-config-flags")
+	: ConfigClass("test-config-flags", new ConstructorFactory<ConfigClassInstance, Instance>)
 	{
-		add_member("flags1", &test_config_type_flags);
-		add_member("flags2", &test_config_type_flags);
-		add_member("flags3", &test_config_type_flags);
-		add_member("flags4", &test_config_type_flags);
+		add_member("flags1", &test_config_type_flags, &Instance::flags1_);
+		add_member("flags2", &test_config_type_flags, &Instance::flags2_);
+		add_member("flags3", &test_config_type_flags, &Instance::flags3_);
+		add_member("flags4", &test_config_type_flags, &Instance::flags4_);
 	}
 
 	~TestConfigClassFlags()
 	{ }
-
-	bool activate(ConfigObject *co)
-	{
-		TestConfigTypeFlags *ct;
-		ConfigValue *cv;
-		unsigned int flags;
-
-		cv = co->get("flags1", &ct);
-		if (cv == NULL) {
-			ERROR("/test/config/flags/class") << "Could not get flags1.";
-			return (false);
-		}
-
-		if (!ct->get(cv, &flags)) {
-			ERROR("/test/config/flags/class") << "Could not get flags1.";
-			return (false);
-		}
-
-		if (flags != FLAG_A) {
-			ERROR("/test/config/flags/class") << "Field (flags1) does not have expected value.";
-			return (false);
-		}
-
-		cv = co->get("flags2", &ct);
-		if (cv == NULL) {
-			ERROR("/test/config/flags/class") << "Could not get flags2.";
-			return (false);
-		}
-
-		if (!ct->get(cv, &flags)) {
-			ERROR("/test/config/flags/class") << "Could not get flags2.";
-			return (false);
-		}
-
-		if (flags != (FLAG_A | FLAG_B | FLAG_C)) {
-			ERROR("/test/config/flags/class") << "Field (flags2) does not have expected value.";
-			return (false);
-		}
-
-		cv = co->get("flags3", &ct);
-		if (cv == NULL) {
-			ERROR("/test/config/flags/class") << "Could not get flags3.";
-			return (false);
-		}
-
-		if (!ct->get(cv, &flags)) {
-			ERROR("/test/config/flags/class") << "Could not get flags3.";
-			return (false);
-		}
-
-		if (flags != FLAG_C) {
-			ERROR("/test/config/flags/class") << "Field (flags3) does not have expected value.";
-			return (false);
-		}
-
-		cv = co->get("flags4", &ct);
-		if (cv != NULL) {
-			ERROR("/test/config/flags/class") << "Could get flags4.";
-			return (false);
-		}
-
-		INFO("/test/config/flags/class") << "Got all expected values.";
-
-		return (true);
-	}
 };
 
 int

@@ -4,21 +4,23 @@
 #include <config/config_type_log_level.h>
 #include <config/config_type_string.h>
 
-class ConfigObject;
-
 class ConfigClassLogMask : public ConfigClass {
+	struct Instance : public ConfigClassInstance {
+		std::string regex_;
+		Log::Priority mask_;
+
+		bool activate(const ConfigObject *);
+	};
 public:
 	ConfigClassLogMask(void)
-	: ConfigClass("log-mask")
+	: ConfigClass("log-mask", new ConstructorFactory<ConfigClassInstance, Instance>)
 	{
-		add_member("regex", &config_type_string);
-		add_member("mask", &config_type_log_level);
+		add_member("regex", &config_type_string, &Instance::regex_);
+		add_member("mask", &config_type_log_level, &Instance::mask_);
 	}
 
 	~ConfigClassLogMask()
 	{ }
-
-	bool activate(ConfigObject *);
 };
 
 extern ConfigClassLogMask config_class_log_mask;

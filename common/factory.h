@@ -68,17 +68,17 @@ public:
 	}
 };
 
-template<class C>
+template<class B, class C = B>
 struct factory {
-	Factory<C> *operator() (void) const
+	Factory<B> *operator() (void) const
 	{
-		return (new ConstructorFactory<C, C>);
+		return (new ConstructorFactory<B, C>);
 	}
 
 	template<typename T>
-	Factory<C> *operator() (T arg) const
+	Factory<B> *operator() (T arg) const
 	{
-		return (new ConstructorArgFactory<C, C, T>(arg));
+		return (new ConstructorArgFactory<B, C, T>(arg));
 	}
 };
 
