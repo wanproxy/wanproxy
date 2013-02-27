@@ -1,8 +1,6 @@
 #ifndef	CONFIG_CONFIG_OBJECT_H
 #define	CONFIG_CONFIG_OBJECT_H
 
-#include <map>
-
 class Config;
 class ConfigClass;
 class ConfigClassInstance;
@@ -13,14 +11,12 @@ struct ConfigObject {
 	std::string name_;
 	const ConfigClass *class_;
 	ConfigClassInstance *instance_;
-	std::map<std::string, std::string> member_values_;
 
 	ConfigObject(Config *config, const std::string& name, const ConfigClass *cc, ConfigClassInstance *inst)
 	: config_(config),
 	  name_(name),
 	  class_(cc),
-	  instance_(inst),
-	  member_values_()
+	  instance_(inst)
 	{ }
 
 	virtual ~ConfigObject()

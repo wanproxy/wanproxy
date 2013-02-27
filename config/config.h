@@ -9,9 +9,12 @@ class ConfigExporter;
 struct ConfigObject;
 
 class Config {
+	typedef	std::map<std::pair<ConfigObject *, std::string>, std::string> object_field_string_map_t;
+
 	LogHandle log_;
 	std::map<std::string, ConfigClass *> class_map_;
 	std::map<std::string, ConfigObject *> object_map_;
+	object_field_string_map_t field_strings_map_;
 
 public:
 	Config(void)

@@ -17,9 +17,5 @@ ConfigObject::marshall(ConfigExporter *exp) const
 bool
 ConfigObject::set(const std::string& mname, const std::string& vstr)
 {
-	bool ok = class_->set(this, mname, vstr);
-	if (!ok)
-		return (false);
-	member_values_[mname] = vstr;
-	return (true);
+	return (class_->set(this, mname, vstr));
 }

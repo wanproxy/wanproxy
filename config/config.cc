@@ -74,20 +74,22 @@ Config::set(const std::string& oname, const std::string& mname,
 
 		ConfigObject *oco = object_map_[ooname];
 
-		std::map<std::string, std::string>::const_iterator mit;
-		mit = oco->member_values_.find(omname);
-		if (mit == oco->member_values_.end()) {
+		object_field_string_map_t::const_iterator fsit;
+		fsit = field_strings_map_.find(object_field_string_map_t::key_type(oco, omname));
+		if (fsit == field_strings_map_.end()) {
 			ERROR(log_) << "Reference to unset member (" << omname << ") in object (" << ooname << ")";
 			return (false);
 		}
 
-		return (set(oname, mname, mit->second));
+		return (set(oname, mname, fsit->second));
 	}
 
 	if (!co->set(mname, vstr)) {
 		ERROR(log_) << "Member (" << mname << ") in object (" << oname << ") could not be set.";
 		return (false);
 	}
+
+	field_strings_map_[object_field_string_map_t::key_type(co, mname)] = vstr;
 
 	return (true);
 }
