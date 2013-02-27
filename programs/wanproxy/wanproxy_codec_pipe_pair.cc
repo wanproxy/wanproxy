@@ -18,6 +18,32 @@
 #include "wanproxy_codec.h"
 #include "wanproxy_codec_pipe_pair.h"
 
+namespace {
+	class PipeByteCount : public PipeProducer {
+		intmax_t *counterp_;
+	public:
+		PipeByteCount(intmax_t *counterp)
+		: PipeProducer("/wanproxy/codec/byte_count"),
+		  counterp_(counterp)
+		{ }
+
+		~PipeByteCount()
+		{ }
+
+	private:
+		void consume(Buffer *buf)
+		{
+			if (!buf->empty()) {
+				if (counterp_ != NULL)
+					*counterp_ += buf->length();
+				produce(buf);
+			} else {
+				produce_eos();
+			}
+		}
+	};
+};
+
 WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCodec *outgoing)
 : incoming_pipe_(NULL),
   outgoing_pipe_(NULL),
@@ -28,6 +54,17 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 	std::deque<Pipe *> incoming_pipe_list, outgoing_pipe_list;
 
 	if (incoming != NULL) {
+		if (true) {
+			Pipe *incoming_pipe = new PipeByteCount(incoming->incoming_to_codec_bytes_);
+			Pipe *outgoing_pipe = new PipeByteCount(incoming->codec_to_incoming_bytes_);
+
+			incoming_pipe_list.push_back(incoming_pipe);
+			outgoing_pipe_list.push_front(outgoing_pipe);
+
+			pipes_.insert(incoming_pipe);
+			pipes_.insert(outgoing_pipe);
+		}
+
 		if (incoming->compressor_) {
 			Pipe *deflate_pipe = new DeflatePipe(incoming->compressor_level_);
 			Pipe *inflate_pipe = new InflatePipe();
@@ -46,9 +83,31 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 			incoming_pipe_list.push_back(pair->get_incoming());
 			outgoing_pipe_list.push_front(pair->get_outgoing());
 		}
+
+		if (true) {
+			Pipe *incoming_pipe = new PipeByteCount(incoming->codec_to_outgoing_bytes_);
+			Pipe *outgoing_pipe = new PipeByteCount(incoming->outgoing_to_codec_bytes_);
+
+			incoming_pipe_list.push_back(incoming_pipe);
+			outgoing_pipe_list.push_front(outgoing_pipe);
+
+			pipes_.insert(incoming_pipe);
+			pipes_.insert(outgoing_pipe);
+		}
 	}
 
 	if (outgoing != NULL) {
+		if (true) {
+			Pipe *incoming_pipe = new PipeByteCount(outgoing->incoming_to_codec_bytes_);
+			Pipe *outgoing_pipe = new PipeByteCount(outgoing->codec_to_incoming_bytes_);
+
+			incoming_pipe_list.push_back(incoming_pipe);
+			outgoing_pipe_list.push_front(outgoing_pipe);
+
+			pipes_.insert(incoming_pipe);
+			pipes_.insert(outgoing_pipe);
+		}
+
 		if (outgoing->codec_ != NULL) {
 			PipePair *pair = new XCodecPipePair("/wanproxy/codec/" + outgoing->name_, outgoing->codec_, XCodecPipePairTypeClient);
 			pipe_pairs_.insert(pair);
@@ -66,6 +125,17 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 
 			pipes_.insert(deflate_pipe);
 			pipes_.insert(inflate_pipe);
+		}
+
+		if (true) {
+			Pipe *incoming_pipe = new PipeByteCount(outgoing->codec_to_outgoing_bytes_);
+			Pipe *outgoing_pipe = new PipeByteCount(outgoing->outgoing_to_codec_bytes_);
+
+			incoming_pipe_list.push_back(incoming_pipe);
+			outgoing_pipe_list.push_front(outgoing_pipe);
+
+			pipes_.insert(incoming_pipe);
+			pipes_.insert(outgoing_pipe);
 		}
 	}
 
