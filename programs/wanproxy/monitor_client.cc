@@ -109,5 +109,5 @@ MonitorClient::handle_request(const std::string& method, const std::string& uri,
 
 	HTMLConfigExporter exporter(select);
 	exporter.config(config_);
-	pipe_->send_response(HTTPProtocol::OK, "<html><head><title>WANProxy Configuration Monitor</title><style type=\"text/css\">body { font-family: sans-serif; } td, th { vertical-align: text-top; text-align: left; }</style></head><body>" + exporter.os_.str() + "</body></html>", "text/html");
+	pipe_->send_response(HTTPProtocol::OK, "<html><head><title>WANProxy Monitor</title><style type=\"text/css\">body { font-family: sans-serif; } td, th { vertical-align: text-top; text-align: left; }</style></head><body>" + exporter.os_.str() + "</body></html>", "text/html");
 }
