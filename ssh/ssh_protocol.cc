@@ -53,6 +53,7 @@ SSH::UInt32::decode(uint32_t *outp, Buffer *in)
 	if (in->length() < sizeof *outp)
 		return (false);
 	BigEndian::extract(outp, in);
+	in->skip(sizeof *outp);
 	return (true);
 }
 
