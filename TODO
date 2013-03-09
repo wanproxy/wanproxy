@@ -1,3 +1,17 @@
+High-priority:
+	Add a mechanism for forwarding callbacks between EventThread instances,
+	or even just between thread instances.  Have a callback queue and an
+	fd to poll on, and when a remote thread adds something to an empty
+	callback queue, it writes something to the fd so as to wake up its
+	peer thread.  NB: Even better if the poll-compatible wakeups (note,
+	that's the real point here: don't want to mix fd polling and cv waiting,
+	for instance) were dependent on the EventPoll implementation.  That way
+	we could use kqueue's user types, etc., rather than needing to use a
+	pipe.
+
+	Alternately, move fd polling to its own thread and use condvars and
+	callback queues for everything else.
+
 Make it so that Actions can be given a callback after they are created, and
 then the source of the Action from that gets the hint to start and where to
 continue after the asynchronous action.  This has the nice benefit of getting
