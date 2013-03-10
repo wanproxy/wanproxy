@@ -31,6 +31,8 @@
  * event system, which also sees more general use.  Since this is only used for
  * limited internal facilities, the more obscure name is acceptable, but it's
  * basically a condition variable.
+ *
+ * XXX Should support timed wait.
  */
 
 struct SleepQueueState;
