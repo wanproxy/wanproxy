@@ -1,3 +1,10 @@
+o) We should really be looking up hashes both in our cache and in our cache
+   of hashes from the peer.  If it's only in the peer's cache, we can add it
+   to ours and send it as if it were a new piece of data.  This could either
+   be a big speedup or a big slowdown for the encoding process.  It depends
+   on how often we see data from the peer then be data we need to send back
+   to the peer.
+
 XCodec 0.9.0 goals:
 o) Stop using hashes like names and use actual names.  This abstraction will
    allow us to minimize the cost of collisions, speed lookup, etc.  It also
