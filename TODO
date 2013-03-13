@@ -12,6 +12,29 @@ High-priority:
 	Alternately, move fd polling to its own thread and use condvars and
 	callback queues for everything else.
 
+	As part of testing/enabling/proofing that work, split EventThread into
+	two threads, and add one more.  One thread which does FD polling.  One
+	thread which does callback / timeout dispatch.  And then move the I/O
+	system into its own thread.  Does that sound about right?  Easy then to
+	start to move other things to their own threads, because the threading
+	concerns of each of those subsystems would be covered.  So we could
+	have some number of XCodec threads or whatever.  A work submission
+	model that's fairly generic would be nice.  So you could submit
+	callbacks or timeouts to the callback thread, fd registration and
+	deregestration to the poll thread, and I/O requests to the I/O thread.
+
+	Adds some latency, but probably worth it?
+
+	And for threads which need a specialized work submission process, we
+	could just override some method from Thread.  Have a simple base class
+	for work items, let each type of thread do a dynamic_cast from there
+	up?  Or provide more specific interfaces, do queueing in each thread's
+	class, and just provide a common alert() / biff() / ping() / wakeup()
+	method which alerts that an empty mailbox has become non-empty.  So
+	the poll thread doesn't have to use condvars AND fds somehow.  And let
+	each thread specify a timeout for sleeping, mostly useful for the
+	callback thread.
+
 Make it so that Actions can be given a callback after they are created, and
 then the source of the Action from that gets the hint to start and where to
 continue after the asynchronous action.  This has the nice benefit of getting
