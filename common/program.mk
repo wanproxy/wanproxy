@@ -56,11 +56,22 @@ CFLAGS+=-g
 endif
 endif
 
+# OpenBSD needs no -Werror.
+ifeq "${OSNAME}" "OpenBSD"
+NO_WERROR=1
+endif
+
+# Linux needs no -Werror because the epoll headers are terrible.
+# XXX Should just disable -Werror for the one file using epoll.
+ifeq "${OSNAME}" "Linux"
+NO_WERROR=1
+endif
+
 #CFLAGS+=--std gnu++0x
 #CFLAGS+=-pedantic
 CXXFLAGS+=-Wno-deprecated
 CFLAGS+=-W -Wall
-ifneq "${OSNAME}" "OpenBSD"
+ifndef NO_WERROR
 CFLAGS+=-Werror
 endif
 CFLAGS+=-Wno-system-headers
