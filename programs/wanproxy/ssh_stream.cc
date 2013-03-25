@@ -338,9 +338,8 @@ SSHStream::write_do(void)
 				break;
 			}
 
-			input_buffer_.skip(sizeof length);
 			Buffer packet;
-			input_buffer_.moveout(&packet, length);
+			input_buffer_.moveout(&packet, sizeof length, length);
 
 			pipe_->send(&packet);
 		}
