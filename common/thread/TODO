@@ -7,3 +7,7 @@ If moving to a worker model, why not provide a work unit, too, and the possibili
 Maybe too much generalization is a curse, and it would be better to find a limited and reliable model to support, and make sure all the applications we care about in the immediate future are plausible.
 
 Why not just register threads that need to generate callbacks as an "EventSource" with the EventThread/EventSystem?  This is non-ideal for a world in which we would have multiple EventThreads but it's a start for now.  But with this, the EventSource could include a pipe to read/write on, which would be very neat and tidy.
+
+I tried moving towards making EventThread the normative model for threads, and parameterizing anything using callbacks on EventThread (as a CallbackScheduler mostly, but also for timeouts, although there's no reason to not have timeouts in a different thread, and merely schedule them back to EventThread.)  This is OK, but mostly devolves into single-threading anyway.
+
+If polling code is simplified a little further and moved to common/poll/..., it makes sense indeed to move polling into *every* thread, and to use pipes to communicate between threads (or, where possible, we could use user events like with kqueue.)  That can all mostly be done under the hood after the fact for real if we begin with the EventSource model, in which new sources are registered with the EventSystem.  Then we have one-direction communication, which is probably most of what we need anyway.  Right?
