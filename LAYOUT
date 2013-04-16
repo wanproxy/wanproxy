@@ -20,6 +20,8 @@ io/net		Networking abstractions for the IO system, utility functions and
 io/pipe		Pipe infrastructure; abstractions and useful types.
 io/socket	Sockets interface to the IO system.
 network		Low-level networking, e.g. packet capture.
+network/uinet	User-space TCP/IP stack (see network/uinet/LAYOUT for futher
+		layout info).
 programs	Stand-alone programs, organized into sub-directories named by
 		program.
 programs/diskdup
