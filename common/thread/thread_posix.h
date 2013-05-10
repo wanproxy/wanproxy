@@ -49,6 +49,4 @@ struct ThreadState {
 	}
 };
 
-
-
 #endif /* !COMMON_THREAD_THREAD_POSIX_H */
