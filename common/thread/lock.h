@@ -26,21 +26,10 @@
 #ifndef	COMMON_THREAD_LOCK_H
 #define	COMMON_THREAD_LOCK_H
 
-class LockClass {
-	std::string name_;
-public:
-	LockClass(const std::string& name)
-	: name_(name)
-	{ }
-
-	~LockClass()
-	{ }
-};
-
 class Lock {
 	std::string name_;
 protected:
-	Lock(LockClass *, const std::string& name)
+	Lock(const std::string& name)
 	: name_(name)
 	{ }
 public:

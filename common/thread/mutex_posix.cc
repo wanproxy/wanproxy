@@ -30,8 +30,8 @@
 
 #include "mutex_posix.h"
 
-Mutex::Mutex(LockClass *lock_class, const std::string& name)
-: Lock(lock_class, name),
+Mutex::Mutex(const std::string& name)
+: Lock(name),
   state_(new MutexState())
 { }
 

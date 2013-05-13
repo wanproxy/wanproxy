@@ -41,8 +41,7 @@ namespace {
 	static bool thread_posix_initialized;
 	static pthread_key_t thread_posix_key;
 
-	static LockClass thread_start_lock_class("Thread::start");
-	static Mutex thread_start_mutex(&thread_start_lock_class, "Thread::start");
+	static Mutex thread_start_mutex("Thread::start");
 	static SleepQueue thread_start_sleepq("Thread::start", &thread_start_mutex);
 
 	static std::set<ThreadState *> running_threads;

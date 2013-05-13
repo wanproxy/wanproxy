@@ -31,8 +31,7 @@
 #define	NTHREAD		8
 #define	ROUNDS		1024
 
-static LockClass test_lock_class("TestMutexClass");
-static Mutex test_mtx(&test_lock_class, "TestMutex");
+static Mutex test_mtx("TestMutex");
 
 class TestThread : public Thread {
 	Test *test_main_;
