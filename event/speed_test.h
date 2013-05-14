@@ -68,6 +68,8 @@ private:
 		}
 
 		finish();
+
+		EventSystem::instance()->stop();
 	}
 
 protected:

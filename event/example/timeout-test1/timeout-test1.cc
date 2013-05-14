@@ -62,6 +62,8 @@ private:
 		action_ = NULL;
 
 		INFO("/example/timeout/test1") << "Timer 2 expired.";
+
+		EventSystem::instance()->stop();
 	}
 };
 

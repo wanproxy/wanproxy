@@ -65,6 +65,11 @@ public:
 		return (td_.timeout(ms, cb));
 	}
 
+	void reload(void)
+	{
+		td_.reload();
+	}
+
 	void start(void)
 	{
 		td_.start();
@@ -75,13 +80,16 @@ public:
 		td_.join();
 	}
 
+	void stop(void)
+	{
+		td_.stop();
+	}
+
 	static EventSystem *instance(void)
 	{
-		static EventSystem *instance;
+		static EventSystem instance;
 
-		if (instance == NULL)
-			instance = new EventSystem();
-		return (instance);
+		return (&instance);
 	}
 };
 

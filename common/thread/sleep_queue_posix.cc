@@ -29,6 +29,9 @@
 #include <common/thread/sleep_queue.h>
 #include <common/thread/thread.h>
 
+#include <common/time/time.h>
+
+#include "mutex_posix.h"
 #include "sleep_queue_posix.h"
 
 SleepQueue::SleepQueue(const std::string& name, Mutex *mutex)
@@ -57,10 +60,11 @@ SleepQueue::signal(void)
 	ASSERT_LOCK_OWNED("/sleep/queue", mutex_);
 }
 
-void
-SleepQueue::wait(void)
+int
+SleepQueue::wait(int ms)
 {
 	ASSERT_LOCK_OWNED("/sleep/queue", mutex_);
-	state_->wait();
+	ms = state_->wait(ms);
 	ASSERT_LOCK_OWNED("/sleep/queue", mutex_);
+	return (ms);
 }

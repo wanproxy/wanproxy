@@ -38,6 +38,7 @@ struct EventPollState {
 
 EventPoll::EventPoll(void)
 : log_("/event/poll"),
+  mtx_("EventPoll"),
   read_poll_(),
   write_poll_(),
   state_(new EventPollState())

@@ -26,6 +26,9 @@
 #ifndef	COMMON_THREAD_THREAD_H
 #define	COMMON_THREAD_THREAD_H
 
+#include <common/thread/mutex.h>
+#include <common/thread/sleep_queue.h>
+
 struct ThreadState;
 
 class Thread {
@@ -33,8 +36,12 @@ class Thread {
 
 	std::string name_;
 	ThreadState *state_;
-
 protected:
+	Mutex mtx_;
+	SleepQueue sleepq_;
+	bool signal_;
+	bool stop_;
+
 	Thread(const std::string&);
 
 public:
@@ -43,12 +50,64 @@ public:
 	void join(void);
 	void start(void);
 
-	virtual void main(void) = 0;
-
 public:
-	static Thread *self(void);
+	void main(void)
+	{
+		int ms;
 
-	static bool stop_;
+		/*
+		 * XXX
+		 * Should carry around a deadline, not a maximum delay.
+		 */
+		ms = -1;
+
+		mtx_.lock();
+		while (!stop_) {
+			if (!signal_) {
+				ms = wait(ms);
+				if (ms != 0)
+					continue;
+			}
+
+			signal_ = false;
+			mtx_.unlock();
+
+			ms = work();
+
+			mtx_.lock();
+		}
+		mtx_.unlock();
+	}
+
+	virtual int work(void) = 0;
+
+	virtual int wait(int ms = -1)
+	{
+		ASSERT_LOCK_OWNED("/thread", &mtx_);
+		ASSERT("/thread", !signal_);
+		ASSERT("/thread", !stop_);
+		return (sleepq_.wait(ms));
+	}
+
+	virtual void signal(void)
+	{
+		ScopedLock _(&mtx_);
+		if (signal_)
+			return;
+		signal_ = true;
+		sleepq_.signal();
+	}
+
+	virtual void stop(void)
+	{
+		ScopedLock _(&mtx_);
+		if (stop_)
+			return;
+		stop_ = true;
+		sleepq_.signal();
+	}
+
+	static Thread *self(void);
 };
 
 class NullThread : public Thread {
@@ -61,7 +120,7 @@ public:
 	{ }
 
 private:
-	void main(void)
+	int work(void)
 	{
 		NOTREACHED("/thread/null");
 	}

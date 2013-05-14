@@ -29,6 +29,9 @@
 #include <common/thread/thread.h>
 #include <event/callback_queue.h>
 #include <event/event_poll.h>
+#if 0
+#include <event/event_poll_thread.h>
+#endif
 #include <event/timeout_queue.h>
 
 enum EventInterest {
@@ -65,17 +68,20 @@ public:
 	Action *schedule(CallbackBase *cb)
 	{
 		Action *a = queue_.schedule(cb);
+		signal();
 		return (a);
 	}
 
 	Action *timeout(unsigned secs, SimpleCallback *cb)
 	{
 		Action *a = timeout_queue_.append(secs, cb);
+		signal();
 		return (a);
 	}
 
 private:
-	void main(void);
+	int work(void);
+
 public:
 	void reload(void);
 

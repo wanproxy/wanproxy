@@ -31,8 +31,6 @@
  * event system, which also sees more general use.  Since this is only used for
  * limited internal facilities, the more obscure name is acceptable, but it's
  * basically a condition variable.
- *
- * XXX Should support timed wait.
  */
 
 struct SleepQueueState;
@@ -46,7 +44,7 @@ public:
 	~SleepQueue();
 
 	void signal(void);
-	void wait(void);
+	int wait(int = -1);
 };
 
 #endif /* !COMMON_THREAD_SLEEP_QUEUE_H */

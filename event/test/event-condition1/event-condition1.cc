@@ -28,6 +28,11 @@
 #include <event/event_callback.h>
 #include <event/event_condition.h>
 #include <event/event_main.h>
+#include <event/event_system.h>
+
+namespace {
+	static unsigned outstanding;
+}
 
 struct ConditionTest {
 	unsigned key_;
@@ -75,6 +80,9 @@ struct ConditionTest {
 				_.pass();
 		}
 
+		if (outstanding-- == 1)
+			EventSystem::instance()->stop();
+
 		delete this;
 	}
 };
@@ -83,6 +91,8 @@ int
 main(void)
 {
 	TestGroup g("/test/event/condition1", "EventCondition #1");
+
+	outstanding = 100;
 
 	unsigned i;
 	for (i = 0; i < 100; i++) {

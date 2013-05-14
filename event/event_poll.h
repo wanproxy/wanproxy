@@ -28,6 +28,8 @@
 
 #include <map>
 
+#include <common/thread/mutex.h>
+
 struct EventPollState;
 
 class EventPoll {
@@ -82,6 +84,7 @@ private:
 	typedef std::map<int, PollHandler> poll_handler_map_t;
 
 	LogHandle log_;
+	Mutex mtx_;
 	poll_handler_map_t read_poll_;
 	poll_handler_map_t write_poll_;
 	EventPollState *state_;

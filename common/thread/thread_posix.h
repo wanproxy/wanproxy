@@ -47,6 +47,8 @@ struct ThreadState {
 		pthread_setname_np(td->name_.c_str());
 #endif
 	}
+
+	static void signal_stop(int);
 };
 
 #endif /* !COMMON_THREAD_THREAD_POSIX_H */
