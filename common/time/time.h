@@ -26,8 +26,6 @@
 #ifndef	COMMON_TIME_TIME_H
 #define	COMMON_TIME_TIME_H
 
-#include <map>
-
 struct NanoTime {
 	uintmax_t seconds_;
 	uintmax_t nanoseconds_;
