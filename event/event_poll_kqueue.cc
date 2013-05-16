@@ -32,6 +32,8 @@
 #include <event/event_callback.h>
 #include <event/event_poll.h>
 
+#define	SIGNAL_IDENT	(0x5c0276ef) /* A random number. */
+
 struct EventPollState {
 	int kq_;
 };
@@ -45,6 +47,13 @@ EventPoll::EventPoll(void)
 {
 	state_->kq_ = kqueue();
 	ASSERT(log_, state_->kq_ != -1);
+
+	struct kevent kev;
+	EV_SET(&kev, SIGNAL_IDENT, EVFILT_USER, EV_ADD, 0, 0, NULL);
+	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
+	if (evcnt == -1)
+		HALT(log_) << "Could not add self-signal event to kqueue.";
+	ASSERT(log_, evcnt == 0);
 }
 
 EventPoll::~EventPoll()
@@ -122,26 +131,11 @@ EventPoll::cancel(const Type& type, int fd)
 }
 
 void
-EventPoll::wait(int ms)
+EventPoll::wait(void)
 {
 	static const unsigned kevcnt = 128;
-	struct timespec ts;
-
-	ts.tv_sec = ms / 1000;
-	ts.tv_nsec = (ms % 1000) * 1000000;
-
-	if (idle()) {
-		if (ms != -1) {
-			int rv;
-
-			rv = nanosleep(&ts, NULL);
-			ASSERT(log_, rv != -1);
-		}
-		return;
-	}
-
 	struct kevent kev[kevcnt];
-	int evcnt = kevent(state_->kq_, NULL, 0, kev, kevcnt, ms == -1 ? NULL : &ts);
+	int evcnt = kevent(state_->kq_, NULL, 0, kev, kevcnt, NULL);
 	if (evcnt == -1) {
 		if (errno == EINTR) {
 			INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";
@@ -164,6 +158,8 @@ EventPoll::wait(int ms)
 			       write_poll_.end());
 			poll_handler = &write_poll_[ev->ident];
 			break;
+		case EVFILT_USER: /* A user event was triggered to wake us up.  Ignore it.  */
+			continue;
 		default:
 			NOTREACHED(log_);
 		}
@@ -183,4 +179,15 @@ EventPoll::wait(int ms)
 		 */
 		poll_handler->callback(Event(Event::Done, ev->fflags));
 	}
+}
+
+void
+EventPoll::signal(void)
+{
+	struct kevent kev;
+	EV_SET(&kev, SIGNAL_IDENT, EVFILT_USER, 0, NOTE_TRIGGER, 0, NULL);
+	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
+	if (evcnt == -1)
+		HALT(log_) << "Could not trigger self-signal event in kqueue.";
+	ASSERT(log_, evcnt == 0);
 }

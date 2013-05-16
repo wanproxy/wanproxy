@@ -94,21 +94,12 @@ private:
 
 	Action *poll(const Type&, int, EventCallback *);
 	void cancel(const Type&, int);
-	void wait(int);
+	void wait(void);
+	void signal(void);
 
 	bool idle(void) const
 	{
 		return (read_poll_.empty() && write_poll_.empty());
-	}
-
-	void poll(void)
-	{
-		wait(0);
-	}
-
-	void wait(void)
-	{
-		wait(-1);
 	}
 };
 

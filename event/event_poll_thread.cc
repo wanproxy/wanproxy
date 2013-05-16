@@ -27,8 +27,6 @@
 #include <event/event_poll_thread.h>
 #include <event/event_system.h>
 
-/* XXX Add an FD to read and write to for signal purposes.  */
-
 EventPollThread::EventPollThread(void)
 : Thread("EventPollThread"),
   log_("/event/poll/thread"),
@@ -43,35 +41,29 @@ EventPollThread::poll(const EventPoll::Type& type, int fd, EventCallback *cb)
 {
 	ScopedLock _(&mtx_);
 	Action *a = poll_.poll(type, fd, cb);
-	submit();
+	poll_.signal();
 	return (a);
 }
 
 void
 EventPollThread::work(void)
 {
-	ScopedLock _(&mtx_);
-	poll_.poll();
+	NOTREACHED(log_);
 }
 
 void
 EventPollThread::wait(void)
 {
-	ScopedLock _(&mtx_);
-	poll_.wait();
+	poll_.wait(); /* XXX EventPoll needs internal locking.  */
 }
 
 void
 EventPollThread::signal(bool stop)
 {
 	ScopedLock _(&mtx_);
-	if (!stop) {
-		if (pending_)
-			return;
-		pending_ = true;
-	} else {
-		if (stop_)
-			return;
-		stop_ = true;
-	}
+	ASSERT(log_, stop);
+	if (stop_)
+		return;
+	stop_ = true;
+	poll_.signal();
 }
