@@ -153,7 +153,7 @@ ThreadState::signal_stop(int sig)
 			continue;
 		}
 
-		td->signal(true);
+		td->stop();
 
 		/*
 		 * Also send SIGUSR1 to interrupt any blocking syscalls.
