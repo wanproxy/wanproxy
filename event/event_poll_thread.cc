@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,63 +23,55 @@
  * SUCH DAMAGE.
  */
 
-#ifndef	EVENT_EVENT_THREAD_H
-#define	EVENT_EVENT_THREAD_H
+#include <event/event_callback.h>
+#include <event/event_poll_thread.h>
+#include <event/event_system.h>
 
-#include <common/thread/thread.h>
-#include <event/callback_queue.h>
-#include <event/timeout_queue.h>
+/* XXX Add an FD to read and write to for signal purposes.  */
 
-enum EventInterest {
-	EventInterestReload,
-	EventInterestStop
-};
+EventPollThread::EventPollThread(void)
+: Thread("EventPollThread"),
+  log_("/event/poll/thread"),
+  poll_()
+{ }
 
-class EventThread : public Thread {
-	LogHandle log_;
-	CallbackQueue queue_;
-	bool reload_;
-	std::map<EventInterest, CallbackQueue> interest_queue_;
-	TimeoutQueue timeout_queue_;
-public:
-	EventThread(void);
+EventPollThread::~EventPollThread()
+{ }
 
-	~EventThread()
-	{ }
+Action *
+EventPollThread::poll(const EventPoll::Type& type, int fd, EventCallback *cb)
+{
+	ScopedLock _(&mtx_);
+	Action *a = poll_.poll(type, fd, cb);
+	submit();
+	return (a);
+}
 
-public:
-	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
-	{
-		Action *a = interest_queue_[interest].schedule(cb);
-		return (a);
+void
+EventPollThread::work(void)
+{
+	ScopedLock _(&mtx_);
+	poll_.poll();
+}
+
+void
+EventPollThread::wait(void)
+{
+	ScopedLock _(&mtx_);
+	poll_.wait();
+}
+
+void
+EventPollThread::signal(bool stop)
+{
+	ScopedLock _(&mtx_);
+	if (!stop) {
+		if (pending_)
+			return;
+		pending_ = true;
+	} else {
+		if (stop_)
+			return;
+		stop_ = true;
 	}
-
-	Action *schedule(CallbackBase *cb)
-	{
-		Action *a = queue_.schedule(cb);
-		submit();
-		return (a);
-	}
-
-	Action *timeout(unsigned secs, SimpleCallback *cb)
-	{
-		Action *a = timeout_queue_.append(secs, cb);
-		submit();
-		return (a);
-	}
-
-private:
-	void work(void);
-	void wait(void);
-
-public:
-	void reload(void);
-
-	static EventThread *self(void)
-	{
-		Thread *td = Thread::self();
-		return (dynamic_cast<EventThread *>(td));
-	}
-};
-
-#endif /* !EVENT_EVENT_THREAD_H */
+}

@@ -40,8 +40,7 @@ EventThread::EventThread(void)
   queue_(),
   reload_(),
   interest_queue_(),
-  timeout_queue_(),
-  poll_()
+  timeout_queue_()
 {
 	INFO(log_) << "Starting event thread.";
 

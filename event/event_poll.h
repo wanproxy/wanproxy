@@ -33,7 +33,7 @@
 struct EventPollState;
 
 class EventPoll {
-	friend class EventThread;
+	friend class EventPollThread;
 	friend class PollAction;
 
 public:

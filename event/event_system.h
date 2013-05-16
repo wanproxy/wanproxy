@@ -26,6 +26,7 @@
 #ifndef	EVENT_EVENT_SYSTEM_H
 #define	EVENT_EVENT_SYSTEM_H
 
+#include <event/event_poll_thread.h>
 #include <event/event_thread.h>
 
 /*
@@ -36,9 +37,11 @@
 
 class EventSystem {
 	EventThread td_;
+	EventPollThread poll_;
 private:
 	EventSystem(void)
-	: td_()
+	: td_(),
+	  poll_()
 	{ }
 
 	~EventSystem()
@@ -47,7 +50,7 @@ private:
 public:
 	Action *poll(const EventPoll::Type& type, int fd, EventCallback *cb)
 	{
-		return (td_.poll(type, fd, cb));
+		return (poll_.poll(type, fd, cb));
 	}
 
 	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
@@ -73,16 +76,19 @@ public:
 	void start(void)
 	{
 		td_.start();
+		poll_.start();
 	}
 
 	void join(void)
 	{
 		td_.join();
+		poll_.join();
 	}
 
 	void stop(void)
 	{
 		td_.stop();
+		poll_.stop();
 	}
 
 	static EventSystem *instance(void)
