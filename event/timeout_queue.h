@@ -31,7 +31,7 @@
 #include <common/time/time.h>
 
 class TimeoutQueue {
-	typedef std::map<NanoTime, CallbackQueue> timeout_map_t;
+	typedef std::map<NanoTime, CallbackQueue *> timeout_map_t;
 
 	LogHandle log_;
 	timeout_map_t timeout_queue_;
@@ -42,11 +42,18 @@ public:
 	{ }
 
 	~TimeoutQueue()
-	{ }
-
-	bool empty(void) const
 	{
-		timeout_map_t::const_iterator it;
+		timeout_map_t::iterator it;
+
+		for (it = timeout_queue_.begin(); it != timeout_queue_.end(); ++it)
+			delete it->second;
+		timeout_queue_.clear();
+	}
+
+	/* XXX Can't be const because CallbackQueue::empty can't be due to locking.  */
+	bool empty(void)
+	{
+		timeout_map_t::iterator it;
 
 		/*
 		 * Since we allow elements within each CallbackQueue to be
@@ -62,7 +69,7 @@ public:
 		 * never make that call.  Yikes.
 		 */
 		for (it = timeout_queue_.begin(); it != timeout_queue_.end(); ++it) {
-			if (it->second.empty())
+			if (it->second->empty())
 				continue;
 			return (false);
 		}

@@ -31,7 +31,7 @@
 
 #include <event/event_poll.h>
 
-class EventPollThread : public Thread {
+class EventPollThread : public WorkerThread {
 	LogHandle log_;
 	EventPoll poll_;
 

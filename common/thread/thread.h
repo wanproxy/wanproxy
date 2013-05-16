@@ -50,7 +50,24 @@ public:
 	void join(void);
 	void start(void);
 
+	virtual void main(void) = 0;
+	virtual void stop(void) = 0;
+
 public:
+	static Thread *self(void);
+};
+
+class WorkerThread : public Thread {
+protected:
+	WorkerThread(const std::string& name)
+	: Thread(name)
+	{ }
+
+public:
+	virtual ~WorkerThread()
+	{ }
+
+protected:
 	void main(void)
 	{
 		mtx_.lock();
@@ -72,6 +89,7 @@ public:
 		final();
 	}
 
+public:
 	void submit(void)
 	{
 		signal(false);
@@ -111,9 +129,6 @@ protected:
 		}
 		sleepq_.signal();
 	}
-
-public:
-	static Thread *self(void);
 };
 
 class NullThread : public Thread {
@@ -126,7 +141,12 @@ public:
 	{ }
 
 private:
-	void work(void)
+	void main(void)
+	{
+		NOTREACHED("/thread/null");
+	}
+
+	void stop(void)
 	{
 		NOTREACHED("/thread/null");
 	}

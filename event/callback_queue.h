@@ -28,6 +28,8 @@
 
 #include <deque>
 
+#include <common/thread/mutex.h>
+
 #include <event/callback.h>
 
 class CallbackQueue : public CallbackScheduler {
@@ -58,11 +60,13 @@ class CallbackQueue : public CallbackScheduler {
 
 	friend class CallbackAction;
 
+	Mutex mtx_;
 	std::deque<CallbackAction *> queue_;
 	uint64_t generation_;
 public:
 	CallbackQueue(void)
-	: queue_(),
+	: mtx_("CallbackQueue"),
+	  queue_(),
 	  generation_(0)
 	{ }
 
@@ -74,7 +78,9 @@ public:
 	Action *schedule(CallbackBase *cb)
 	{
 		CallbackAction *a = new CallbackAction(this, generation_, cb);
+		mtx_.lock();
 		queue_.push_back(a);
+		mtx_.unlock();
 		return (a);
 	}
 
@@ -86,31 +92,54 @@ public:
 	 */
 	bool drain(void)
 	{
-		if (queue_.empty())
+		mtx_.lock();
+		if (queue_.empty()) {
+			mtx_.unlock();
 			return (false);
+		}
 
 		generation_++;
 		while (!queue_.empty()) {
 			CallbackAction *a = queue_.front();
 			ASSERT("/callback/queue", a->queue_ == this);
-			if (a->generation_ >= generation_)
+			if (a->generation_ >= generation_) {
+				mtx_.unlock();
 				return (true);
+			}
+			mtx_.unlock();
 			a->callback_->execute();
+			mtx_.lock();
 		}
 		return (false);
 	}
 
-	bool empty(void) const
+	/* XXX Is not const because of the Mutex.  */
+	bool empty(void)
 	{
+		ScopedLock _(&mtx_);
 		return (queue_.empty());
 	}
 
 	void perform(void)
 	{
-		if (queue_.empty())
+		mtx_.lock();
+		if (queue_.empty()) {
+			mtx_.unlock();
 			return;
+		}
 		CallbackAction *a = queue_.front();
 		ASSERT("/callback/queue", a->queue_ == this);
+		mtx_.unlock();
+		/*
+		 * XXX
+		 * This can race with cancel, right?
+		 * We need some way to flag that a callback
+		 * is in progress, and ensure we do some kind
+		 * of right thing in that case.  Or maybe it's
+		 * up to the application at some point if it's
+		 * running with multiple threads to handle?
+		 * Although that doesn't seem very convincing.
+		 */
 		a->callback_->execute();
 	}
 
@@ -119,6 +148,7 @@ private:
 	{
 		std::deque<CallbackAction *>::iterator it;
 
+		ScopedLock _(&mtx_);
 		for (it = queue_.begin(); it != queue_.end(); ++it) {
 			if (*it != a)
 				continue;

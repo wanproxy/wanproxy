@@ -33,13 +33,17 @@
 Action *
 TimeoutQueue::append(uintmax_t ms, SimpleCallback *cb)
 {
-	NanoTime now = NanoTime::current_time();
+	NanoTime deadline = NanoTime::current_time();
 
-	now.seconds_ += ms / 1000;
-	now.nanoseconds_ += (ms % 1000) * 1000000;
+	deadline.seconds_ += ms / 1000;
+	deadline.nanoseconds_ += (ms % 1000) * 1000000;
 
-	CallbackQueue& queue = timeout_queue_[now];
-	Action *a = queue.schedule(cb);
+	CallbackQueue *queue = timeout_queue_[deadline];
+	if (queue == NULL) {
+		queue = new CallbackQueue();
+		timeout_queue_[deadline] = queue;
+	}
+	Action *a = queue->schedule(cb);
 	return (a);
 }
 
@@ -52,10 +56,11 @@ TimeoutQueue::perform(void)
 	NanoTime now = NanoTime::current_time();
 	if (it->first > now)
 		return;
-	CallbackQueue& queue = it->second;
-	while (!queue.empty())
-		queue.perform();
+	CallbackQueue *queue = it->second;
+	while (!queue->empty())
+		queue->perform();
 	timeout_queue_.erase(it);
+	delete queue;
 }
 
 bool

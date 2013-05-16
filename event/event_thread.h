@@ -35,11 +35,11 @@ enum EventInterest {
 	EventInterestStop
 };
 
-class EventThread : public Thread {
+class EventThread : public WorkerThread {
 	LogHandle log_;
 	CallbackQueue queue_;
 	bool reload_;
-	std::map<EventInterest, CallbackQueue> interest_queue_;
+	std::map<EventInterest, CallbackQueue *> interest_queue_;
 	TimeoutQueue timeout_queue_;
 public:
 	EventThread(void);
@@ -50,14 +50,19 @@ public:
 public:
 	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
 	{
-		Action *a = interest_queue_[interest].schedule(cb);
+		CallbackQueue *cbq = interest_queue_[interest];
+		if (cbq == NULL) {
+			cbq = new CallbackQueue();
+			interest_queue_[interest] = cbq;
+		}
+		Action *a = cbq->schedule(cb);
 		return (a);
 	}
 
 	Action *schedule(CallbackBase *cb)
 	{
 		Action *a = queue_.schedule(cb);
-		submit();
+		submit(); /* XXX Only do so if queue was empty.  */
 		return (a);
 	}
 

@@ -28,7 +28,7 @@
 #include <event/event_system.h>
 
 EventPollThread::EventPollThread(void)
-: Thread("EventPollThread"),
+: WorkerThread("EventPollThread"),
   log_("/event/poll/thread"),
   poll_()
 { }

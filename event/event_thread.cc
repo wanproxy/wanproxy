@@ -35,7 +35,7 @@ namespace {
 }
 
 EventThread::EventThread(void)
-: Thread("EventThread"),
+: WorkerThread("EventThread"),
   log_("/event/thread"),
   queue_(),
   reload_(),
@@ -59,6 +59,7 @@ EventThread::work(void)
 		/*
 		 * If we have been told to reload, fire all shutdown events.
 		 */
+#if 0
 		if (reload_ && !interest_queue_[EventInterestReload].empty()) {
 			INFO(log_) << "Running reload handlers.";
 			interest_queue_[EventInterestReload].drain();
@@ -67,6 +68,7 @@ EventThread::work(void)
 			reload_ = false;
 			::signal(SIGHUP, signal_reload);
 		}
+#endif
 
 		/*
 		 * If there are time-triggered events whose time has come,
@@ -139,7 +141,7 @@ void
 EventThread::wait(void)
 {
 	if (timeout_queue_.empty()) {
-		Thread::wait();
+		WorkerThread::wait();
 		return;
 	}
 	NanoTime deadline = timeout_queue_.deadline();

@@ -39,6 +39,9 @@ public:
 	virtual void assert_owned(bool, const LogHandle&, const std::string&, unsigned, const std::string&) = 0;
 	virtual void lock(void) = 0;
 	virtual void unlock(void) = 0;
+
+private:
+	Lock(const Lock&); /* XXX Disable copy.  */
 };
 
 #define	ASSERT_LOCK_OWNED(log, lock)					\
