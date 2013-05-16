@@ -37,9 +37,6 @@ class Thread {
 	std::string name_;
 	ThreadState *state_;
 protected:
-	Mutex mtx_;
-	SleepQueue sleepq_;
-	bool pending_;
 	bool stop_;
 
 	Thread(const std::string&);
@@ -59,8 +56,15 @@ public:
 
 class WorkerThread : public Thread {
 protected:
+	Mutex mtx_;
+	SleepQueue sleepq_;
+	bool pending_;
+
 	WorkerThread(const std::string& name)
-	: Thread(name)
+	: Thread(name),
+	  mtx_("Thread"),
+	  sleepq_("Thread", &mtx_),
+	  pending_(false)
 	{ }
 
 public:

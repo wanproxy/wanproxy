@@ -28,8 +28,9 @@
 #include <event/event_system.h>
 
 EventPollThread::EventPollThread(void)
-: WorkerThread("EventPollThread"),
+: Thread("EventPollThread"),
   log_("/event/poll/thread"),
+  mtx_("EventPollThread"),
   poll_()
 { }
 
@@ -46,24 +47,21 @@ EventPollThread::poll(const EventPoll::Type& type, int fd, EventCallback *cb)
 }
 
 void
-EventPollThread::work(void)
+EventPollThread::main(void)
 {
-	NOTREACHED(log_);
-}
-
-void
-EventPollThread::wait(void)
-{
-	mtx_.unlock();
-	poll_.wait(); /* XXX EventPoll needs internal locking.  */
 	mtx_.lock();
+	while (!stop_) {
+		mtx_.unlock();
+		poll_.wait(); /* XXX EventPoll needs internal locking.  */
+		mtx_.lock();
+	}
+	mtx_.unlock();
 }
 
 void
-EventPollThread::signal(bool stop)
+EventPollThread::stop(void)
 {
 	ScopedLock _(&mtx_);
-	ASSERT(log_, stop);
 	if (stop_)
 		return;
 	stop_ = true;

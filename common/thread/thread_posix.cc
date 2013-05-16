@@ -57,9 +57,6 @@ namespace {
 Thread::Thread(const std::string& name)
 : name_(name),
   state_(new ThreadState()),
-  mtx_("Thread"),
-  sleepq_("Thread", &mtx_),
-  pending_(false),
   stop_(false)
 { }
 

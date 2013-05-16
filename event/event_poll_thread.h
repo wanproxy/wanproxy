@@ -31,8 +31,9 @@
 
 #include <event/event_poll.h>
 
-class EventPollThread : public WorkerThread {
+class EventPollThread : public Thread {
 	LogHandle log_;
+	Mutex mtx_;
 	EventPoll poll_;
 
 public:
@@ -42,9 +43,10 @@ public:
 	Action *poll(const EventPoll::Type&, int, EventCallback *);
 
 private:
-	void work(void);
-	void wait(void);
-	void signal(bool);
+	void main(void);
+
+public:
+	void stop(void);
 };
 
 #endif /* !EVENT_EVENT_POLL_THREAD_H */
