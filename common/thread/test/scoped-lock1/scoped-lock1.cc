@@ -48,7 +48,7 @@ public:
 		test_destroy_->pass();
 	}
 
-	int work(void)
+	void work(void)
 	{
 		test_main_->pass();
 
@@ -84,8 +84,6 @@ public:
 		ASSERT_LOCK_NOT_OWNED("/test/thread", &test_mtx);
 
 		stop();
-
-		return (-1);
 	}
 };
 
@@ -110,7 +108,7 @@ main(void)
 			threads[i]->start();
 
 		for (i = 0; i < NTHREAD; i++)
-			threads[i]->signal();
+			threads[i]->submit();
 
 		for (i = 0; i < NTHREAD; i++)
 			threads[i]->join();

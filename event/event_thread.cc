@@ -46,14 +46,14 @@ EventThread::EventThread(void)
 	INFO(log_) << "Starting event thread.";
 
 	::signal(SIGHUP, signal_reload);
-	signal_ = true;
+	pending_ = true; /* XXX Necessary?  */
 }
 
 /*
  * XXX
  * Locking?
  */
-int
+void
 EventThread::work(void)
 {
 	for (;;) {
@@ -88,9 +88,6 @@ EventThread::work(void)
 			break;
 	}
 
-	if (timeout_queue_.empty())
-		return (-1);
-	return (timeout_queue_.interval());
 #if 0
 	for (;;) {
 		/*
@@ -140,12 +137,26 @@ EventThread::work(void)
 }
 
 void
+EventThread::wait(void)
+{
+	if (timeout_queue_.empty()) {
+		Thread::wait();
+		return;
+	}
+	NanoTime deadline = timeout_queue_.deadline();
+	sleepq_.wait(&deadline);
+
+	if (!pending_ && !timeout_queue_.empty() && timeout_queue_.ready())
+		pending_ = true;
+}
+
+void
 EventThread::reload(void)
 {
 	::signal(SIGHUP, SIG_IGN);
 	INFO(log_) << "Running reload events.";
 	reload_ = true;
-	signal();
+	submit();
 }
 
 namespace {

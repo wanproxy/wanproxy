@@ -60,11 +60,10 @@ SleepQueue::signal(void)
 	ASSERT_LOCK_OWNED("/sleep/queue", mutex_);
 }
 
-int
-SleepQueue::wait(int ms)
+void
+SleepQueue::wait(const NanoTime *deadline)
 {
 	ASSERT_LOCK_OWNED("/sleep/queue", mutex_);
-	ms = state_->wait(ms);
+	state_->wait(deadline);
 	ASSERT_LOCK_OWNED("/sleep/queue", mutex_);
-	return (ms);
 }

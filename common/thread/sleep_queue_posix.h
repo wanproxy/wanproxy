@@ -77,44 +77,26 @@ struct SleepQueueState {
 		ASSERT("/sleep/queue/posix/state", rv != -1);
 	}
 
-	int wait(int ms)
+	void wait(const NanoTime *deadline)
 	{
 		struct timespec ts;
 		NanoTime nt;
 		int rv;
 
-		if (ms != -1) {
-			nt.seconds_ = ms / 1000;
-			nt.nanoseconds_ = (uintmax_t)(ms % 1000) * 1000000;
-
-			nt += NanoTime::current_time();
-
-			ts.tv_sec = nt.seconds_;
-			ts.tv_nsec = nt.nanoseconds_;
+		if (deadline != NULL) {
+			ts.tv_sec = deadline->seconds_;
+			ts.tv_nsec = deadline->nanoseconds_;
 		}
 
 		mutex_state_->lock();
 		mutex_state_->lock_release();
-		if (ms == -1)
+		if (deadline == NULL)
 			rv = pthread_cond_wait(&cond_, &mutex_state_->mutex_);
 		else
 			rv = pthread_cond_timedwait(&cond_, &mutex_state_->mutex_, &ts);
 		ASSERT("/sleep/queue/posix/state", rv != -1);
 		mutex_state_->lock_acquire();
 		mutex_state_->unlock();
-
-		if (ms != -1) {
-			NanoTime now = NanoTime::current_time();
-
-			if (nt <= now)
-				return (0);
-			nt -= NanoTime::current_time();
-			ms = nt.nanoseconds_ / 1000000;
-			ASSERT("/sleep/queue/posix/state", ms < 1000);
-			ms += nt.seconds_ * 1000;
-		}
-
-		return (ms);
 	}
 };
 

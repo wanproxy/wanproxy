@@ -43,21 +43,6 @@ TimeoutQueue::append(uintmax_t ms, SimpleCallback *cb)
 	return (a);
 }
 
-uintmax_t
-TimeoutQueue::interval(void) const
-{
-	NanoTime now = NanoTime::current_time();
-	timeout_map_t::const_iterator it = timeout_queue_.begin();
-	if (it == timeout_queue_.end())
-		return (0);
-	if (it->first < now)
-		return (0);
-
-	NanoTime expiry = it->first;
-	expiry -= now;
-	return ((expiry.seconds_ * 1000) + (expiry.nanoseconds_ / 1000000));
-}
-
 void
 TimeoutQueue::perform(void)
 {

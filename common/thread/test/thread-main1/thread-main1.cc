@@ -31,8 +31,6 @@
 #define	NTHREAD		8
 #define	ROUNDS		1024
 
-static LockClass test_lock_class("TestMutexClass");
-
 class TestThread : public Thread {
 	Mutex test_mutex_;
 	TestGroup& test_group_;
@@ -44,7 +42,7 @@ class TestThread : public Thread {
 public:
 	TestThread(TestGroup& test_group, Test *test_main, Test *test_destroy)
 	: Thread("TestThread"),
-	  test_mutex_(&test_lock_class, "TestMutex"),
+	  test_mutex_("TestMutex"),
 	  test_group_(test_group),
 	  test_main_(test_main),
 	  test_destroy_(test_destroy),
@@ -58,7 +56,7 @@ public:
 		test_destroy_->pass();
 	}
 
-	int work(void)
+	void work(void)
 	{
 		test_main_->pass();
 
@@ -66,8 +64,6 @@ public:
 		if (test_ready_)
 			test_ready_received_.pass();
 		stop();
-
-		return (-1);
 	}
 
 	void ready(void)
@@ -75,7 +71,7 @@ public:
 		ScopedLock _(&test_mutex_);
 		test_ready_ = true;
 		test_ready_called_.pass();
-		signal();
+		submit();
 	}
 };
 

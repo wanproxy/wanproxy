@@ -59,7 +59,7 @@ Thread::Thread(const std::string& name)
   state_(new ThreadState()),
   mtx_("Thread"),
   sleepq_("Thread", &mtx_),
-  signal_(false),
+  pending_(false),
   stop_(false)
 { }
 
@@ -153,7 +153,7 @@ ThreadState::signal_stop(int sig)
 			continue;
 		}
 
-		td->stop();
+		td->signal(true);
 
 		/*
 		 * Also send SIGUSR1 to interrupt any blocking syscalls.

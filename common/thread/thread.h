@@ -39,7 +39,7 @@ class Thread {
 protected:
 	Mutex mtx_;
 	SleepQueue sleepq_;
-	bool signal_;
+	bool pending_;
 	bool stop_;
 
 	Thread(const std::string&);
@@ -53,60 +53,66 @@ public:
 public:
 	void main(void)
 	{
-		int ms;
-
-		/*
-		 * XXX
-		 * Should carry around a deadline, not a maximum delay.
-		 */
-		ms = -1;
-
 		mtx_.lock();
 		while (!stop_) {
-			if (!signal_) {
-				ms = wait(ms);
-				if (ms != 0)
-					continue;
+			if (pending_) {
+				pending_ = false;
+				mtx_.unlock();
+
+				work();
+
+				mtx_.lock();
+				continue;
 			}
 
-			signal_ = false;
-			mtx_.unlock();
-
-			ms = work();
-
-			mtx_.lock();
+			wait();
 		}
 		mtx_.unlock();
+
+		final();
 	}
 
-	virtual int work(void) = 0;
+	void submit(void)
+	{
+		signal(false);
+	}
 
-	virtual int wait(int ms = -1)
+	void stop(void)
+	{
+		signal(true);
+	}
+
+protected:
+	virtual void work(void) = 0;
+
+	virtual void wait(void)
 	{
 		ASSERT_LOCK_OWNED("/thread", &mtx_);
-		ASSERT("/thread", !signal_);
+		ASSERT("/thread", !pending_);
 		ASSERT("/thread", !stop_);
-		return (sleepq_.wait(ms));
+		sleepq_.wait();
 	}
 
-	virtual void signal(void)
+	virtual void final(void)
+	{
+	}
+
+	virtual void signal(bool stop)
 	{
 		ScopedLock _(&mtx_);
-		if (signal_)
-			return;
-		signal_ = true;
+		if (!stop) {
+			if (pending_)
+				return;
+			pending_ = true;
+		} else {
+			if (stop_)
+				return;
+			stop_ = true;
+		}
 		sleepq_.signal();
 	}
 
-	virtual void stop(void)
-	{
-		ScopedLock _(&mtx_);
-		if (stop_)
-			return;
-		stop_ = true;
-		sleepq_.signal();
-	}
-
+public:
 	static Thread *self(void);
 };
 
@@ -120,7 +126,7 @@ public:
 	{ }
 
 private:
-	int work(void)
+	void work(void)
 	{
 		NOTREACHED("/thread/null");
 	}

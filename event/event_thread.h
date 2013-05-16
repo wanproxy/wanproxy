@@ -68,19 +68,20 @@ public:
 	Action *schedule(CallbackBase *cb)
 	{
 		Action *a = queue_.schedule(cb);
-		signal();
+		submit();
 		return (a);
 	}
 
 	Action *timeout(unsigned secs, SimpleCallback *cb)
 	{
 		Action *a = timeout_queue_.append(secs, cb);
-		signal();
+		submit();
 		return (a);
 	}
 
 private:
-	int work(void);
+	void work(void);
+	void wait(void);
 
 public:
 	void reload(void);

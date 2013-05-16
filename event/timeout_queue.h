@@ -69,8 +69,13 @@ public:
 		return (true);
 	}
 
+	NanoTime deadline(void) const
+	{
+		ASSERT(log_, !timeout_queue_.empty());
+		return (timeout_queue_.begin()->first);
+	}
+
 	Action *append(uintmax_t, SimpleCallback *);
-	uintmax_t interval(void) const;
 	void perform(void);
 	bool ready(void) const;
 };

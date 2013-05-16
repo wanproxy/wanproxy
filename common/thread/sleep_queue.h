@@ -26,6 +26,8 @@
 #ifndef	COMMON_THREAD_SLEEP_QUEUE_H
 #define	COMMON_THREAD_SLEEP_QUEUE_H
 
+struct NanoTime;
+
 /*
  * We don't call this a condition variable because that name is in use in the
  * event system, which also sees more general use.  Since this is only used for
@@ -44,7 +46,7 @@ public:
 	~SleepQueue();
 
 	void signal(void);
-	int wait(int = -1);
+	void wait(const NanoTime * = NULL);
 };
 
 #endif /* !COMMON_THREAD_SLEEP_QUEUE_H */
