@@ -54,7 +54,9 @@ EventPollThread::work(void)
 void
 EventPollThread::wait(void)
 {
+	mtx_.unlock();
 	poll_.wait(); /* XXX EventPoll needs internal locking.  */
+	mtx_.lock();
 }
 
 void

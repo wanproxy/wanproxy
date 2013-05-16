@@ -82,12 +82,12 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 	case EventPoll::Readable:
 		ASSERT(log_, read_poll_.find(fd) == read_poll_.end());
 		poll_handler = &read_poll_[fd];
-		EV_SET(&kev, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+		EV_SET(&kev, fd, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		break;
 	case EventPoll::Writable:
 		ASSERT(log_, write_poll_.find(fd) == write_poll_.end());
 		poll_handler = &write_poll_[fd];
-		EV_SET(&kev, fd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+		EV_SET(&kev, fd, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		break;
 	default:
 		NOTREACHED(log_);
@@ -106,28 +106,20 @@ void
 EventPoll::cancel(const Type& type, int fd)
 {
 	EventPoll::PollHandler *poll_handler;
-
-	struct kevent kev;
 	switch (type) {
 	case EventPoll::Readable:
 		ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
 		poll_handler = &read_poll_[fd];
 		poll_handler->cancel();
 		read_poll_.erase(fd);
-		EV_SET(&kev, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 		break;
 	case EventPoll::Writable:
 		ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
 		poll_handler = &write_poll_[fd];
 		poll_handler->cancel();
 		write_poll_.erase(fd);
-		EV_SET(&kev, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
 		break;
 	}
-	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
-	if (evcnt == -1)
-		HALT(log_) << "Could not delete event from kqueue.";
-	ASSERT(log_, evcnt == 0);
 }
 
 void
