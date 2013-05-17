@@ -31,12 +31,14 @@ struct MutexState {
 	pthread_mutexattr_t mutex_attr_;
 	pthread_cond_t cond_;
 	Thread *owner_;
+	unsigned waiters_;
 
 	MutexState(void)
 	: mutex_(),
 	  mutex_attr_(),
 	  cond_(),
-	  owner_(NULL)
+	  owner_(NULL),
+	  waiters_(0)
 	{
 		int rv;
 
@@ -91,8 +93,10 @@ struct MutexState {
 		Thread *self = Thread::self();
 		ASSERT("/mutex/posix/state", self != NULL);
 
+		waiters_++;
 		while (owner_ != NULL)
 			pthread_cond_wait(&cond_, &mutex_);
+		waiters_--;
 		owner_ = self;
 	}
 
@@ -122,7 +126,8 @@ struct MutexState {
 		ASSERT("/mutex/posix/state", owner_ == self);
 		owner_ = NULL;
 
-		pthread_cond_signal(&cond_);
+		if (waiters_ != 0)
+			pthread_cond_signal(&cond_);
 	}
 };
 
