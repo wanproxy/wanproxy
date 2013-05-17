@@ -74,6 +74,8 @@ EventPoll::~EventPoll()
 Action *
 EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 {
+	ScopedLock _(&mtx_);
+
 	ASSERT(log_, fd != -1);
 
 	EventPoll::PollHandler *poll_handler;
@@ -105,6 +107,8 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 void
 EventPoll::cancel(const Type& type, int fd)
 {
+	ScopedLock _(&mtx_);
+
 	EventPoll::PollHandler *poll_handler;
 	switch (type) {
 	case EventPoll::Readable:
@@ -136,6 +140,7 @@ EventPoll::wait(void)
 		HALT(log_) << "Could not poll kqueue.";
 	}
 
+	ScopedLock _(&mtx_);
 	int i;
 	for (i = 0; i < evcnt; i++) {
 		struct kevent *ev = &kev[i];
