@@ -28,18 +28,14 @@
 
 #include <map>
 
-#include <common/thread/thread.h>
-
-#include "callback_queue.h"
+#include <event/callback_queue.h>
+#include <event/callback_thread.h>
 
 enum EventInterest {
 	EventInterestStop
 };
 
-class EventThread : public WorkerThread {
-	LogHandle log_;
-	std::deque<CallbackBase *> queue_;
-	CallbackBase *inflight_;
+class EventThread : public CallbackThread {
 	std::map<EventInterest, CallbackQueue *> interest_queue_;
 public:
 	EventThread(void);
@@ -60,12 +56,7 @@ public:
 		return (a);
 	}
 
-	Action *schedule(CallbackBase *);
-
 private:
-	void cancel(CallbackBase *);
-
-	void work(void);
 	void final(void);
 
 public:

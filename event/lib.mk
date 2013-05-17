@@ -1,6 +1,7 @@
 VPATH+=	${TOPDIR}/event
 
 SRCS+=	callback.cc
+SRCS+=	callback_thread.cc
 SRCS+=	event_main.cc
 SRCS+=	event_poll.cc
 SRCS+=	event_poll_thread.cc

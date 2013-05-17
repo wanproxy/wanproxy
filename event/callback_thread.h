@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2011 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,27 +23,33 @@
  * SUCH DAMAGE.
  */
 
-#include <event/event_callback.h>
-#include <event/event_thread.h>
-#include <event/event_system.h>
+#ifndef	EVENT_CALLBACK_THREAD_H
+#define	EVENT_CALLBACK_THREAD_H
 
-EventThread::EventThread(void)
-: CallbackThread("EventThread"),
-  interest_queue_()
-{ }
+#include <deque>
 
-void
-EventThread::final(void)
-{
-#if 0
-	/*
-	 * If we have been told to stop, fire all shutdown events.
-	 */
-	if (!interest_queue_[EventInterestStop].empty()) {
-		INFO(log_) << "Running stop handlers.";
-		if (interest_queue_[EventInterestStop].drain())
-			ERROR(log_) << "Stop handlers added other stop handlers.";
-		INFO(log_) << "Stop handlers have been run.";
-	}
-#endif
-}
+#include <common/thread/thread.h>
+
+#include <event/callback.h>
+
+class CallbackThread : public WorkerThread, public CallbackScheduler {
+protected:
+	LogHandle log_;
+private:
+	std::deque<CallbackBase *> queue_;
+	CallbackBase *inflight_;
+public:
+	CallbackThread(const std::string&);
+
+	~CallbackThread()
+	{ }
+
+	Action *schedule(CallbackBase *);
+
+private:
+	void cancel(CallbackBase *);
+
+	void work(void);
+};
+
+#endif /* !EVENT_CALLBACK_THREAD_H */
