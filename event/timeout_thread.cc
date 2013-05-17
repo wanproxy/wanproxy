@@ -31,9 +31,7 @@ TimeoutThread::TimeoutThread(void)
 : WorkerThread("TimeoutThread"),
   log_("/event/timeout/thread"),
   timeout_queue_()
-{
-	INFO(log_) << "Starting timer thread.";
-}
+{ }
 
 /*
  * XXX
