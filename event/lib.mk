@@ -6,6 +6,7 @@ SRCS+=	event_poll.cc
 SRCS+=	event_poll_thread.cc
 SRCS+=	event_thread.cc
 SRCS+=	timeout_queue.cc
+SRCS+=	timeout_thread.cc
 
 ifndef USE_POLL
 ifeq "${OSNAME}" "Darwin"

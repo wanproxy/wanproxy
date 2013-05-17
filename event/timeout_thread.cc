@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,60 +23,47 @@
  * SUCH DAMAGE.
  */
 
-#ifndef	EVENT_EVENT_THREAD_H
-#define	EVENT_EVENT_THREAD_H
+#include <event/event_callback.h>
+#include <event/timeout_thread.h>
+#include <event/event_system.h>
 
-#include <map>
+TimeoutThread::TimeoutThread(void)
+: WorkerThread("TimeoutThread"),
+  log_("/event/timeout/thread"),
+  timeout_queue_()
+{
+	INFO(log_) << "Starting timer thread.";
+}
 
-#include <common/thread/thread.h>
-#include <event/callback_queue.h>
-
-enum EventInterest {
-	EventInterestReload,
-	EventInterestStop
-};
-
-class EventThread : public WorkerThread {
-	LogHandle log_;
-	CallbackQueue queue_;
-	bool reload_;
-	std::map<EventInterest, CallbackQueue *> interest_queue_;
-public:
-	EventThread(void);
-
-	~EventThread()
-	{ }
-
-	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
-	{
-		CallbackQueue *cbq = interest_queue_[interest];
-		if (cbq == NULL) {
-			cbq = new CallbackQueue();
-			interest_queue_[interest] = cbq;
-		}
-		Action *a = cbq->schedule(cb);
-		return (a);
+/*
+ * XXX
+ * Locking?
+ */
+void
+TimeoutThread::work(void)
+{
+	if (!timeout_queue_.empty()) {
+		/*
+		 * XXX
+		 * We need to manage the queue here and schedule the
+		 * callbacks in the main EventThread, not just
+		 * execute them in this thread directly.
+		 */
+		while (timeout_queue_.ready())
+			timeout_queue_.perform();
 	}
+}
 
-	Action *schedule(CallbackBase *cb)
-	{
-		Action *a = queue_.schedule(cb);
-		submit(); /* XXX Only do so if queue was empty.  */
-		return (a);
+void
+TimeoutThread::wait(void)
+{
+	if (timeout_queue_.empty()) {
+		WorkerThread::wait();
+		return;
 	}
+	NanoTime deadline = timeout_queue_.deadline();
+	sleepq_.wait(&deadline);
 
-private:
-	void work(void);
-	void final(void);
-
-public:
-	void reload(void);
-
-	static EventThread *self(void)
-	{
-		Thread *td = Thread::self();
-		return (dynamic_cast<EventThread *>(td));
-	}
-};
-
-#endif /* !EVENT_EVENT_THREAD_H */
+	if (!pending_ && !timeout_queue_.empty() && timeout_queue_.ready())
+		pending_ = true;
+}

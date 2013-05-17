@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,13 +39,11 @@ EventThread::EventThread(void)
   log_("/event/thread"),
   queue_(),
   reload_(),
-  interest_queue_(),
-  timeout_queue_()
+  interest_queue_()
 {
 	INFO(log_) << "Starting event thread.";
 
 	::signal(SIGHUP, signal_reload);
-	pending_ = true; /* XXX Necessary?  */
 }
 
 /*
@@ -70,85 +68,27 @@ EventThread::work(void)
 		}
 #endif
 
-		/*
-		 * If there are time-triggered events whose time has come,
-		 * run them.
-		 */
-		if (!timeout_queue_.empty()) {
-			while (timeout_queue_.ready())
-				timeout_queue_.perform();
-		}
-
-		while (!timeout_queue_.ready()) {
-			if (queue_.empty() || stop_ || reload_)
-				break;
-			queue_.perform();
-		}
-
 		if (queue_.empty() || stop_ || reload_)
 			break;
+
+		queue_.drain();
 	}
-
-#if 0
-	for (;;) {
-		/*
-		 * If we have been told to stop, fire all shutdown events.
-		 */
-		if (stop_ && !interest_queue_[EventInterestStop].empty()) {
-			INFO(log_) << "Running stop handlers.";
-			if (interest_queue_[EventInterestStop].drain())
-				ERROR(log_) << "Stop handlers added other stop handlers.";
-			INFO(log_) << "Stop handlers have been run.";
-		}
-
-
-
-		/*
-		 * If there are any pending callbacks, go back to the start
-		 * of the loop.
-		 */
-		if (!queue_.empty() || timeout_queue_.ready())
-			continue;
-
-		/*
-		 * But if there are no pending callbacks, and no timers or
-		 * file descriptors being polled, stop.
-		 */
-		if (timeout_queue_.empty() && poll_.idle())
-			break;
-		/*
-		 * If there are timers ticking down, then let the poll module
-		 * block until a timer will be ready.
-		 * XXX Maybe block 1 second less, just in case?  We'll never
-		 * be a realtime thread though, so any attempt at pretending
-		 * to be one, beyond giving time events priority at the top of
-		 * this loop, is probably a mistake.
-		 */
-		if (!timeout_queue_.empty()) {
-			poll_.wait(timeout_queue_.interval());
-			continue;
-		}
-		/*
-		 * If, however, there's nothing sensitive to time, but someone
-		 * has a file descriptor that can be blocked on, just block on it
-		 * indefinitely.
-		 */
-	}
-#endif
 }
 
 void
-EventThread::wait(void)
+EventThread::final(void)
 {
-	if (timeout_queue_.empty()) {
-		WorkerThread::wait();
-		return;
+#if 0
+	/*
+	 * If we have been told to stop, fire all shutdown events.
+	 */
+	if (!interest_queue_[EventInterestStop].empty()) {
+		INFO(log_) << "Running stop handlers.";
+		if (interest_queue_[EventInterestStop].drain())
+			ERROR(log_) << "Stop handlers added other stop handlers.";
+		INFO(log_) << "Stop handlers have been run.";
 	}
-	NanoTime deadline = timeout_queue_.deadline();
-	sleepq_.wait(&deadline);
-
-	if (!pending_ && !timeout_queue_.empty() && timeout_queue_.ready())
-		pending_ = true;
+#endif
 }
 
 void

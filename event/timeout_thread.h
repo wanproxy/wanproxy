@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,60 +23,32 @@
  * SUCH DAMAGE.
  */
 
-#ifndef	EVENT_EVENT_THREAD_H
-#define	EVENT_EVENT_THREAD_H
-
-#include <map>
+#ifndef	EVENT_TIMEOUT_THREAD_H
+#define	EVENT_TIMEOUT_THREAD_H
 
 #include <common/thread/thread.h>
 #include <event/callback_queue.h>
+#include <event/timeout_queue.h>
 
-enum EventInterest {
-	EventInterestReload,
-	EventInterestStop
-};
-
-class EventThread : public WorkerThread {
+class TimeoutThread : public WorkerThread {
 	LogHandle log_;
-	CallbackQueue queue_;
-	bool reload_;
-	std::map<EventInterest, CallbackQueue *> interest_queue_;
+	TimeoutQueue timeout_queue_;
 public:
-	EventThread(void);
+	TimeoutThread(void);
 
-	~EventThread()
+	~TimeoutThread()
 	{ }
 
-	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
+	Action *timeout(unsigned secs, SimpleCallback *cb)
 	{
-		CallbackQueue *cbq = interest_queue_[interest];
-		if (cbq == NULL) {
-			cbq = new CallbackQueue();
-			interest_queue_[interest] = cbq;
-		}
-		Action *a = cbq->schedule(cb);
-		return (a);
-	}
-
-	Action *schedule(CallbackBase *cb)
-	{
-		Action *a = queue_.schedule(cb);
-		submit(); /* XXX Only do so if queue was empty.  */
+		Action *a = timeout_queue_.append(secs, cb);
+		submit();
 		return (a);
 	}
 
 private:
 	void work(void);
-	void final(void);
-
-public:
-	void reload(void);
-
-	static EventThread *self(void)
-	{
-		Thread *td = Thread::self();
-		return (dynamic_cast<EventThread *>(td));
-	}
+	void wait(void);
 };
 
-#endif /* !EVENT_EVENT_THREAD_H */
+#endif /* !EVENT_TIMEOUT_THREAD_H */

@@ -28,6 +28,7 @@
 
 #include <event/event_poll_thread.h>
 #include <event/event_thread.h>
+#include <event/timeout_thread.h>
 
 /*
  * XXX
@@ -38,10 +39,12 @@
 class EventSystem {
 	EventThread td_;
 	EventPollThread poll_;
+	TimeoutThread timeout_;
 private:
 	EventSystem(void)
 	: td_(),
-	  poll_()
+	  poll_(),
+	  timeout_()
 	{ }
 
 	~EventSystem()
@@ -65,7 +68,7 @@ public:
 
 	Action *timeout(unsigned ms, SimpleCallback *cb)
 	{
-		return (td_.timeout(ms, cb));
+		return (timeout_.timeout(ms, cb));
 	}
 
 	void reload(void)
@@ -77,18 +80,21 @@ public:
 	{
 		td_.start();
 		poll_.start();
+		timeout_.start();
 	}
 
 	void join(void)
 	{
 		td_.join();
 		poll_.join();
+		timeout_.join();
 	}
 
 	void stop(void)
 	{
 		td_.stop();
 		poll_.stop();
+		timeout_.stop();
 	}
 
 	static EventSystem *instance(void)
