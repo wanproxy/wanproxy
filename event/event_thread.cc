@@ -31,10 +31,8 @@ EventThread::EventThread(void)
 : WorkerThread("EventThread"),
   log_("/event/thread"),
   queue_(),
-  inflight_(NULL)
-#if 0
+  inflight_(NULL),
   interest_queue_()
-#endif
 { }
 
 /*

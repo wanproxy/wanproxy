@@ -30,6 +30,8 @@
 
 #include <common/thread/thread.h>
 
+#include "callback_queue.h"
+
 enum EventInterest {
 	EventInterestStop
 };
@@ -38,32 +40,25 @@ class EventThread : public WorkerThread {
 	LogHandle log_;
 	std::deque<CallbackBase *> queue_;
 	CallbackBase *inflight_;
-#if 0
 	std::map<EventInterest, CallbackQueue *> interest_queue_;
-#endif
 public:
 	EventThread(void);
 
 	~EventThread()
 	{ }
 
-#if 0
 	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
 	{
+		mtx_.lock();
 		CallbackQueue *cbq = interest_queue_[interest];
 		if (cbq == NULL) {
 			cbq = new CallbackQueue();
 			interest_queue_[interest] = cbq;
 		}
 		Action *a = cbq->schedule(cb);
+		mtx_.unlock();
 		return (a);
 	}
-#else
-	Action *register_interest(const EventInterest&, SimpleCallback *)
-	{
-		NOTREACHED(log_);
-	}
-#endif
 
 	Action *schedule(CallbackBase *);
 
