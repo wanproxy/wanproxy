@@ -57,8 +57,7 @@ TimeoutQueue::perform(void)
 	if (it->first > now)
 		return;
 	CallbackQueue *queue = it->second;
-	while (!queue->empty())
-		queue->perform();
+	queue->drain();
 	timeout_queue_.erase(it);
 	delete queue;
 }
