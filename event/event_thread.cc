@@ -124,6 +124,21 @@ EventThread::work(void)
 		inflight_ = cb;
 		mtx_.unlock();
 
+		/*
+		 * XXX
+		 * Could batch these to improve throughput with lots of
+		 * callbacks at once.  Have a set of in-flight callbacks
+		 * as well as the current one, and a second lock for the
+		 * callbacks in-flight, and check that as a last resort
+		 * in the cancel path.
+		 *
+		 * Right now fixated on performance with one callback at
+		 * a time, for which it won't help a lot, so it's worth
+		 * not overthinking.  Moving to lockless append on a
+		 * per-thread basis would be reasonable, and then a
+		 * lockless move of the whole queue out at a time.  That
+		 * would avoid the serious lock overhead involved here.
+		 */
 		cb->execute();
 		delete cb;
 
