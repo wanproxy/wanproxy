@@ -155,7 +155,9 @@ EventPoll::wait(void)
 			       write_poll_.end());
 			poll_handler = &write_poll_[ev->ident];
 			break;
-		case EVFILT_USER: /* A user event was triggered to wake us up.  Ignore it.  */
+		case EVFILT_USER:
+			/* A user event was triggered to wake us up.  Ignore it.  */
+			ASSERT(log_, ev->ident == SIGNAL_IDENT);
 			continue;
 		default:
 			NOTREACHED(log_);
@@ -181,10 +183,18 @@ EventPoll::wait(void)
 void
 EventPoll::signal(void)
 {
+	/*
+	 * XXX
+	 * This isn't necessary because kqueue provides synchronization, right?
+	 * It may be necessary in the stop() case...  Another good argument for
+	 * integrating EventPollThread and EventPoll more closely.
+	 */
+#if 0
 	struct kevent kev;
 	EV_SET(&kev, SIGNAL_IDENT, EVFILT_USER, 0, NOTE_TRIGGER, 0, NULL);
 	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
 	if (evcnt == -1)
 		HALT(log_) << "Could not trigger self-signal event in kqueue.";
 	ASSERT(log_, evcnt == 0);
+#endif
 }
