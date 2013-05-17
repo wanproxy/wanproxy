@@ -44,7 +44,7 @@ public:
 		receive_action_ = interface_->receive(cb);
 
 		SimpleCallback *scb = callback(this, &PacketDumper::stop);
-		stop_action_ = EventSystem::instance()->register_interest(EventInterestReload, scb);
+		stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 	}
 
 	~PacketDumper()
