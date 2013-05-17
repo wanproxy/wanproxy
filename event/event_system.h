@@ -40,6 +40,7 @@ class EventSystem {
 	EventThread td_;
 	EventPollThread poll_;
 	TimeoutThread timeout_;
+	std::deque<Thread *> threads_;
 private:
 	EventSystem(void)
 	: td_(),
@@ -71,6 +72,11 @@ public:
 		return (timeout_.timeout(ms, cb));
 	}
 
+	void thread_wait(Thread *td)
+	{
+		threads_.push_back(td);
+	}
+
 	void start(void)
 	{
 		td_.start();
@@ -83,6 +89,10 @@ public:
 		td_.join();
 		poll_.join();
 		timeout_.join();
+		while (!threads_.empty()) {
+			threads_.front()->join();
+			threads_.pop_front();
+		}
 	}
 
 	void stop(void)
