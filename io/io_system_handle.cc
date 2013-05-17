@@ -41,8 +41,6 @@ IOSystem::Handle::Handle(int fd, Channel *owner)
 : log_("/io/system/handle"),
   fd_(fd),
   owner_(owner),
-  close_callback_(NULL),
-  close_action_(NULL),
   read_offset_(-1),
   read_amount_(0),
   read_buffer_(),
@@ -58,9 +56,6 @@ IOSystem::Handle::~Handle()
 {
 	ASSERT(log_, fd_ == -1);
 
-	ASSERT(log_, close_action_ == NULL);
-	ASSERT(log_, close_callback_ == NULL);
-
 	ASSERT(log_, read_action_ == NULL);
 	ASSERT(log_, read_callback_ == NULL);
 
@@ -68,24 +63,12 @@ IOSystem::Handle::~Handle()
 	ASSERT(log_, write_callback_ == NULL);
 }
 
-void
-IOSystem::Handle::close_callback(void)
+Action *
+IOSystem::Handle::close_do(SimpleCallback *cb)
 {
-	close_action_->cancel();
-	close_action_ = NULL;
-
 	ASSERT(log_, fd_ != -1);
 	int rv = ::close(fd_);
 	if (rv == -1) {
-		if (errno == EAGAIN) {
-			/*
-			 * XXX
-			 * Is there something we should be polling on?
-			 */
-			close_action_ = close_schedule();
-			return;
-		}
-
 		/*
 		 * We display the error here but do not pass it to the
 		 * upper layers because it is almost impossible to get
@@ -93,38 +76,15 @@ IOSystem::Handle::close_callback(void)
 		 *
 		 * For most errors, close fails because it already was
 		 * closed by a peer or something like that, so it's as
-		 * good as close succeeding.  Only in the case where we
-		 * get an EAGAIN, in which case we loop internally,
-		 * should anything more be done.
+		 * good as close succeeding.  Only EINTR is allowed to
+		 * leave the file descriptor in an undefined state, in
+		 * POSIX, although most actual kernels are kinder than
+		 * that, and specify that descriptors are closed then.
 		 */
 		ERROR(log_) << "Close returned error: " << strerror(errno);
 	}
 	fd_ = -1;
-	Action *a = close_callback_->schedule();
-	close_action_ = a;
-	close_callback_ = NULL;
-}
-
-void
-IOSystem::Handle::close_cancel(void)
-{
-	ASSERT(log_, close_action_ != NULL);
-	close_action_->cancel();
-	close_action_ = NULL;
-
-	if (close_callback_ != NULL) {
-		delete close_callback_;
-		close_callback_ = NULL;
-	}
-}
-
-Action *
-IOSystem::Handle::close_schedule(void)
-{
-	ASSERT(log_, close_action_ == NULL);
-	SimpleCallback *cb = callback(this, &IOSystem::Handle::close_callback);
-	Action *a = cb->schedule();
-	return (a);
+	return (cb->schedule());
 }
 
 void

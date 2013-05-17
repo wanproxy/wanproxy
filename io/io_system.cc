@@ -113,9 +113,6 @@ IOSystem::close(int fd, Channel *owner, SimpleCallback *cb)
 	h = handle_map_[handle_key_t(fd, owner)];
 	ASSERT(log_, h != NULL);
 
-	ASSERT(log_, h->close_callback_ == NULL);
-	ASSERT(log_, h->close_action_ == NULL);
-
 	ASSERT(log_, h->read_callback_ == NULL);
 	ASSERT(log_, h->read_action_ == NULL);
 
@@ -124,9 +121,7 @@ IOSystem::close(int fd, Channel *owner, SimpleCallback *cb)
 
 	ASSERT(log_, h->fd_ != -1);
 
-	h->close_callback_ = cb;
-	h->close_action_ = h->close_schedule();
-	return (cancellation(h, &IOSystem::Handle::close_cancel));
+	return (h->close_do(cb));
 }
 
 Action *

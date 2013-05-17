@@ -39,9 +39,6 @@ class IOSystem {
 		int fd_;
 		Channel *owner_;
 
-		SimpleCallback *close_callback_;
-		Action *close_action_;
-
 		off_t read_offset_;
 		size_t read_amount_;
 		Buffer read_buffer_;
@@ -56,9 +53,7 @@ class IOSystem {
 		Handle(int, Channel *);
 		~Handle();
 
-		void close_callback(void);
-		void close_cancel(void);
-		Action *close_schedule(void);
+		Action *close_do(SimpleCallback *);
 
 		void read_callback(Event);
 		void read_cancel(void);
