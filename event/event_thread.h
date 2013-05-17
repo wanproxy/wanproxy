@@ -29,7 +29,6 @@
 #include <map>
 
 #include <common/thread/thread.h>
-#include <event/callback_queue.h>
 
 enum EventInterest {
 	EventInterestReload,
@@ -38,15 +37,19 @@ enum EventInterest {
 
 class EventThread : public WorkerThread {
 	LogHandle log_;
-	CallbackQueue queue_;
+	std::deque<CallbackBase *> queue_;
+	CallbackBase *inflight_;
+#if 0
 	bool reload_;
 	std::map<EventInterest, CallbackQueue *> interest_queue_;
+#endif
 public:
 	EventThread(void);
 
 	~EventThread()
 	{ }
 
+#if 0
 	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
 	{
 		CallbackQueue *cbq = interest_queue_[interest];
@@ -57,15 +60,18 @@ public:
 		Action *a = cbq->schedule(cb);
 		return (a);
 	}
-
-	Action *schedule(CallbackBase *cb)
+#else
+	Action *register_interest(const EventInterest&, SimpleCallback *)
 	{
-		Action *a = queue_.schedule(cb);
-		submit(); /* XXX Only do so if queue was empty.  */
-		return (a);
+		NOTREACHED(log_);
 	}
+#endif
+
+	Action *schedule(CallbackBase *);
 
 private:
+	void cancel(CallbackBase *);
+
 	void work(void);
 	void final(void);
 

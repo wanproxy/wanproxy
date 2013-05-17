@@ -38,12 +38,57 @@ EventThread::EventThread(void)
 : WorkerThread("EventThread"),
   log_("/event/thread"),
   queue_(),
+  inflight_(NULL)
+#if 0
   reload_(),
   interest_queue_()
+#endif
 {
-	INFO(log_) << "Starting event thread.";
-
 	::signal(SIGHUP, signal_reload);
+}
+
+/*
+ * NB:
+ * Unless the caller itself is running in the EventThread, it needs to
+ * acquire a lock in its cancel path as well as around this schedule
+ * call to avoid races when dispatching deferred callbacks.
+ */
+Action *
+EventThread::schedule(CallbackBase *cb)
+{
+	mtx_.lock();
+	bool need_wakeup = queue_.empty();
+	queue_.push_back(cb);
+	if (need_wakeup && !pending_) {
+		pending_ = true;
+		sleepq_.signal();
+	}
+	mtx_.unlock();
+
+	return (cancellation(this, &EventThread::cancel, cb));
+}
+
+void
+EventThread::cancel(CallbackBase *cb)
+{
+	mtx_.lock();
+	if (inflight_ == cb) {
+		inflight_ = NULL;
+		mtx_.unlock();
+		return;
+	}
+
+	std::deque<CallbackBase *>::iterator it;
+	for (it = queue_.begin(); it != queue_.end(); ++it) {
+		if (*it != cb)
+			continue;
+		queue_.erase(it);
+		mtx_.unlock();
+		delete cb;
+		return;
+	}
+
+	NOTREACHED(log_);
 }
 
 /*
@@ -53,6 +98,7 @@ EventThread::EventThread(void)
 void
 EventThread::work(void)
 {
+	mtx_.lock();
 	for (;;) {
 		/*
 		 * If we have been told to reload, fire all shutdown events.
@@ -68,10 +114,22 @@ EventThread::work(void)
 		}
 #endif
 
-		if (queue_.empty() || stop_ || reload_)
-			break;
+		if (queue_.empty() || stop_) {
+			mtx_.unlock();
+			return;
+		}
 
-		queue_.drain();
+		CallbackBase *cb = queue_.front();
+		queue_.pop_front();
+		inflight_ = cb;
+		mtx_.unlock();
+
+		cb->execute();
+		delete cb;
+
+		mtx_.lock();
+		if (inflight_ != NULL)
+			HALT(log_) << "Callback not cancelled in execution.";
 	}
 }
 
@@ -96,8 +154,10 @@ EventThread::reload(void)
 {
 	::signal(SIGHUP, SIG_IGN);
 	INFO(log_) << "Running reload events.";
+#if 0
 	reload_ = true;
 	submit();
+#endif
 }
 
 namespace {
