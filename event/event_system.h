@@ -71,11 +71,6 @@ public:
 		return (timeout_.timeout(ms, cb));
 	}
 
-	void reload(void)
-	{
-		td_.reload();
-	}
-
 	void start(void)
 	{
 		td_.start();

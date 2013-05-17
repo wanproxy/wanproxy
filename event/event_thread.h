@@ -31,7 +31,6 @@
 #include <common/thread/thread.h>
 
 enum EventInterest {
-	EventInterestReload,
 	EventInterestStop
 };
 
@@ -40,7 +39,6 @@ class EventThread : public WorkerThread {
 	std::deque<CallbackBase *> queue_;
 	CallbackBase *inflight_;
 #if 0
-	bool reload_;
 	std::map<EventInterest, CallbackQueue *> interest_queue_;
 #endif
 public:
@@ -76,8 +74,6 @@ private:
 	void final(void);
 
 public:
-	void reload(void);
-
 	static EventThread *self(void)
 	{
 		Thread *td = Thread::self();

@@ -23,16 +23,9 @@
  * SUCH DAMAGE.
  */
 
-#include <signal.h>
-#include <unistd.h>
-
 #include <event/event_callback.h>
 #include <event/event_thread.h>
 #include <event/event_system.h>
-
-namespace {
-	static void signal_reload(int);
-}
 
 EventThread::EventThread(void)
 : WorkerThread("EventThread"),
@@ -40,12 +33,9 @@ EventThread::EventThread(void)
   queue_(),
   inflight_(NULL)
 #if 0
-  reload_(),
   interest_queue_()
 #endif
-{
-	::signal(SIGHUP, signal_reload);
-}
+{ }
 
 /*
  * NB:
@@ -100,20 +90,6 @@ EventThread::work(void)
 {
 	mtx_.lock();
 	for (;;) {
-		/*
-		 * If we have been told to reload, fire all shutdown events.
-		 */
-#if 0
-		if (reload_ && !interest_queue_[EventInterestReload].empty()) {
-			INFO(log_) << "Running reload handlers.";
-			interest_queue_[EventInterestReload].drain();
-			INFO(log_) << "Reload handlers have been run.";
-
-			reload_ = false;
-			::signal(SIGHUP, signal_reload);
-		}
-#endif
-
 		if (queue_.empty() || stop_) {
 			mtx_.unlock();
 			return;
@@ -162,24 +138,4 @@ EventThread::final(void)
 		INFO(log_) << "Stop handlers have been run.";
 	}
 #endif
-}
-
-void
-EventThread::reload(void)
-{
-	::signal(SIGHUP, SIG_IGN);
-	INFO(log_) << "Running reload events.";
-#if 0
-	reload_ = true;
-	submit();
-#endif
-}
-
-namespace {
-	static void
-	signal_reload(int)
-	{
-		EventSystem::instance()->reload();
-		/* XXX Forward signal to all threads.  */
-	}
 }
