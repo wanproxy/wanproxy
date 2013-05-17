@@ -31,7 +31,7 @@
 #define	NTHREAD		8
 #define	ROUNDS		1024
 
-class TestThread : public Thread {
+class TestThread : public WorkerThread {
 	Mutex test_mutex_;
 	TestGroup& test_group_;
 	Test *test_main_;
@@ -41,7 +41,7 @@ class TestThread : public Thread {
 	bool test_ready_;
 public:
 	TestThread(TestGroup& test_group, Test *test_main, Test *test_destroy)
-	: Thread("TestThread"),
+	: WorkerThread("TestThread"),
 	  test_mutex_("TestMutex"),
 	  test_group_(test_group),
 	  test_main_(test_main),

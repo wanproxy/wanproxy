@@ -33,12 +33,12 @@
 
 static Mutex test_mtx("TestMutex");
 
-class TestThread : public Thread {
+class TestThread : public WorkerThread {
 	Test *test_main_;
 	Test *test_destroy_;
 public:
 	TestThread(Test *test_main, Test *test_destroy)
-	: Thread("TestThread"),
+	: WorkerThread("TestThread"),
 	  test_main_(test_main),
 	  test_destroy_(test_destroy)
 	{ }
@@ -90,7 +90,7 @@ public:
 int
 main(void)
 {
-	Thread *threads[NTHREAD];
+	WorkerThread *threads[NTHREAD];
 	Test *test_main[NTHREAD], *test_destroy[NTHREAD];
 
 	TestGroup g("/test/scopedlock1", "ScopedLock #1");
