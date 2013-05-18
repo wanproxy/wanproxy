@@ -36,6 +36,7 @@
 
 IOSystem::IOSystem(void)
 : log_("/io/system"),
+  mtx_("IOSystem"),
   handle_map_(),
   handler_thread_(new CallbackThread("IOThread"))
 {
@@ -91,6 +92,7 @@ IOSystem::~IOSystem()
 void
 IOSystem::attach(int fd, Channel *owner)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, handle_map_.find(handle_key_t(fd, owner)) == handle_map_.end());
 	handle_map_[handle_key_t(fd, owner)] = new IOSystem::Handle(handler_thread_, fd, owner);
 }
@@ -101,14 +103,17 @@ IOSystem::detach(int fd, Channel *owner)
 	handle_map_t::iterator it;
 	IOSystem::Handle *h;
 
+	mtx_.lock();
 	it = handle_map_.find(handle_key_t(fd, owner));
 	ASSERT(log_, it != handle_map_.end());
 
 	h = it->second;
 	ASSERT(log_, h != NULL);
+
 	ASSERT(log_, h->owner_ == owner);
 
 	handle_map_.erase(it);
+	mtx_.unlock();
 	delete h;
 }
 
@@ -117,8 +122,12 @@ IOSystem::close(int fd, Channel *owner, SimpleCallback *cb)
 {
 	IOSystem::Handle *h;
 
+	mtx_.lock();
 	h = handle_map_[handle_key_t(fd, owner)];
 	ASSERT(log_, h != NULL);
+	
+	ScopedLock _(&h->mtx_);
+	mtx_.unlock();
 
 	ASSERT(log_, h->read_callback_ == NULL);
 	ASSERT(log_, h->read_action_ == NULL);
@@ -136,8 +145,12 @@ IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, EventCallbac
 {
 	IOSystem::Handle *h;
 
+	mtx_.lock();
 	h = handle_map_[handle_key_t(fd, owner)];
 	ASSERT(log_, h != NULL);
+
+	ScopedLock _(&h->mtx_);
+	mtx_.unlock();
 
 	ASSERT(log_, h->read_callback_ == NULL);
 	ASSERT(log_, h->read_action_ == NULL);
@@ -177,8 +190,12 @@ IOSystem::write(int fd, Channel *owner, off_t offset, Buffer *buffer, EventCallb
 {
 	IOSystem::Handle *h;
 
+	mtx_.lock();
 	h = handle_map_[handle_key_t(fd, owner)];
 	ASSERT(log_, h != NULL);
+
+	ScopedLock _(&h->mtx_);
+	mtx_.unlock();
 
 	ASSERT(log_, h->write_callback_ == NULL);
 	ASSERT(log_, h->write_action_ == NULL);

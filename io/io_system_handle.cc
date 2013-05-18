@@ -39,6 +39,7 @@
 
 IOSystem::Handle::Handle(CallbackScheduler *scheduler, int fd, Channel *owner)
 : log_("/io/system/handle"),
+  mtx_("IOSystem::Handle"),
   scheduler_(scheduler),
   fd_(fd),
   owner_(owner),
@@ -67,6 +68,8 @@ IOSystem::Handle::~Handle()
 Action *
 IOSystem::Handle::close_do(SimpleCallback *cb)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
+
 	ASSERT(log_, fd_ != -1);
 	int rv = ::close(fd_);
 	if (rv == -1) {
@@ -91,6 +94,7 @@ IOSystem::Handle::close_do(SimpleCallback *cb)
 void
 IOSystem::Handle::read_callback(Event e)
 {
+	ScopedLock _(&mtx_);
 	read_action_->cancel();
 	read_action_ = NULL;
 
@@ -119,6 +123,7 @@ IOSystem::Handle::read_callback(Event e)
 void
 IOSystem::Handle::read_cancel(void)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, read_action_ != NULL);
 	read_action_->cancel();
 	read_action_ = NULL;
@@ -132,6 +137,7 @@ IOSystem::Handle::read_cancel(void)
 Action *
 IOSystem::Handle::read_do(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, read_action_ == NULL);
 
 	if (!read_buffer_.empty() && read_buffer_.length() >= read_amount_) {
@@ -257,6 +263,7 @@ IOSystem::Handle::read_do(void)
 Action *
 IOSystem::Handle::read_schedule(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, read_action_ == NULL);
 
 	EventCallback *cb = callback(scheduler_, this, &IOSystem::Handle::read_callback);
@@ -267,6 +274,7 @@ IOSystem::Handle::read_schedule(void)
 void
 IOSystem::Handle::write_callback(Event e)
 {
+	ScopedLock _(&mtx_);
 	write_action_->cancel();
 	write_action_ = NULL;
 
@@ -294,6 +302,7 @@ IOSystem::Handle::write_callback(Event e)
 void
 IOSystem::Handle::write_cancel(void)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, write_action_ != NULL);
 	write_action_->cancel();
 	write_action_ = NULL;
@@ -307,6 +316,8 @@ IOSystem::Handle::write_cancel(void)
 Action *
 IOSystem::Handle::write_do(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
+
 	/*
 	 * XXX
 	 *
@@ -404,7 +415,9 @@ IOSystem::Handle::write_do(void)
 Action *
 IOSystem::Handle::write_schedule(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, write_action_ == NULL);
+
 	EventCallback *cb = callback(scheduler_, this, &IOSystem::Handle::write_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Writable, fd_, cb);
 	return (a);

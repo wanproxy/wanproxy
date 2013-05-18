@@ -28,6 +28,8 @@
 
 #include <map>
 
+#include <common/thread/mutex.h>
+
 #include <io/io_system.h>
 
 class CallbackScheduler;
@@ -38,6 +40,7 @@ class IOSystem {
 	struct Handle {
 		LogHandle log_;
 
+		Mutex mtx_;
 		CallbackScheduler *scheduler_;
 
 		int fd_;
@@ -80,6 +83,7 @@ class IOSystem {
 	typedef std::map<handle_key_t, Handle *> handle_map_t;
 
 	LogHandle log_;
+	Mutex mtx_;
 	handle_map_t handle_map_;
 	CallbackThread *handler_thread_;
 
