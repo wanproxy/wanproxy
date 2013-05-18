@@ -30,11 +30,15 @@
 
 #include <io/io_system.h>
 
+class CallbackScheduler;
+class CallbackThread;
 class Channel;
 
 class IOSystem {
 	struct Handle {
 		LogHandle log_;
+
+		CallbackScheduler *scheduler_;
 
 		int fd_;
 		Channel *owner_;
@@ -50,7 +54,7 @@ class IOSystem {
 		EventCallback *write_callback_;
 		Action *write_action_;
 
-		Handle(int, Channel *);
+		Handle(CallbackScheduler *, int, Channel *);
 		~Handle();
 
 		Action *close_do(SimpleCallback *);
@@ -77,6 +81,7 @@ class IOSystem {
 
 	LogHandle log_;
 	handle_map_t handle_map_;
+	CallbackThread *handler_thread_;
 
 	IOSystem(void);
 	~IOSystem();

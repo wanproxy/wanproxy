@@ -37,8 +37,9 @@
 
 #define	IO_READ_BUFFER_SIZE	65536
 
-IOSystem::Handle::Handle(int fd, Channel *owner)
+IOSystem::Handle::Handle(CallbackScheduler *scheduler, int fd, Channel *owner)
 : log_("/io/system/handle"),
+  scheduler_(scheduler),
   fd_(fd),
   owner_(owner),
   read_offset_(-1),
@@ -258,7 +259,7 @@ IOSystem::Handle::read_schedule(void)
 {
 	ASSERT(log_, read_action_ == NULL);
 
-	EventCallback *cb = callback(this, &IOSystem::Handle::read_callback);
+	EventCallback *cb = callback(scheduler_, this, &IOSystem::Handle::read_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Readable, fd_, cb);
 	return (a);
 }
@@ -404,7 +405,7 @@ Action *
 IOSystem::Handle::write_schedule(void)
 {
 	ASSERT(log_, write_action_ == NULL);
-	EventCallback *cb = callback(this, &IOSystem::Handle::write_callback);
+	EventCallback *cb = callback(scheduler_, this, &IOSystem::Handle::write_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Writable, fd_, cb);
 	return (a);
 }

@@ -28,13 +28,16 @@
 #include <signal.h>
 #include <unistd.h>
 
+#include <event/callback_thread.h>
 #include <event/event_callback.h>
+#include <event/event_system.h>
 
 #include <io/io_system.h>
 
 IOSystem::IOSystem(void)
 : log_("/io/system"),
-  handle_map_()
+  handle_map_(),
+  handler_thread_(new CallbackThread("IOThread"))
 {
 	/*
 	 * Prepare system to handle IO.
@@ -74,6 +77,10 @@ IOSystem::IOSystem(void)
 	} else {
 		INFO(log_) << "Unable to get file descriptor limit.";
 	}
+
+	handler_thread_->start();
+
+	EventSystem::instance()->thread_wait(handler_thread_);
 }
 
 IOSystem::~IOSystem()
@@ -85,7 +92,7 @@ void
 IOSystem::attach(int fd, Channel *owner)
 {
 	ASSERT(log_, handle_map_.find(handle_key_t(fd, owner)) == handle_map_.end());
-	handle_map_[handle_key_t(fd, owner)] = new IOSystem::Handle(fd, owner);
+	handle_map_[handle_key_t(fd, owner)] = new IOSystem::Handle(handler_thread_, fd, owner);
 }
 
 void
