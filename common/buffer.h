@@ -31,6 +31,16 @@
 #include <deque>
 #include <vector>
 
+/*
+ * XXX MT XXX
+ * NB:
+ *
+ * So, a Buffer cannot be shared between threads, but a BufferSegment can.
+ * So we should use a read-write lock for BufferSegments, or is atomic
+ * refcounting plus write locks sufficient?  Need to think more about this,
+ * but fixing this will be a crucial part of multithreading.
+ */
+
 struct iovec;
 
 /*
