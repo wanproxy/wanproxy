@@ -39,6 +39,13 @@
  * So we should use a read-write lock for BufferSegments, or is atomic
  * refcounting plus write locks sufficient?  Need to think more about this,
  * but fixing this will be a crucial part of multithreading.
+ *
+ * Atomic reference counting should be sufficient.  The only case where it
+ * could have shortcomings even in theory would be transitions from a count
+ * of 1, at which point only the running thread should have access to the
+ * BufferSegment pointer unless a Buffer is being shared between threads
+ * without synchronization which itself would be violently-broken.  So some
+ * kind of atomics and reference counting should suffice.
  */
 
 struct iovec;
