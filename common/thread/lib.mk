@@ -6,4 +6,6 @@ SRCS+=	mutex_${THREAD_MODEL}.cc
 SRCS+=	sleep_queue_${THREAD_MODEL}.cc
 SRCS+=	thread_${THREAD_MODEL}.cc
 
+CFLAGS+=-DTHREADS
+
 LDADD+=	-lpthread
