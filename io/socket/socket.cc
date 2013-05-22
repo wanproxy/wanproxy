@@ -243,7 +243,7 @@ struct socket_address {
 		}
 		case AF_UNIX:
 			addr_.unix_.sun_family = domain;
-			strncpy(addr_.unix_.sun_path, str.c_str(), sizeof addr_.unix_.sun_path);
+			snprintf(addr_.unix_.sun_path, sizeof addr_.unix_.sun_path, "%s", str.c_str());
 			addrlen_ = sizeof addr_.unix_;
 #if !defined(__linux__) && !defined(__sun__) && !defined(__OPENNT)
 			addr_.unix_.sun_len = addrlen_;
