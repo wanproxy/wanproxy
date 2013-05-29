@@ -57,6 +57,38 @@ CallbackThread::schedule(CallbackBase *cb)
 	return (cancellation(this, &CallbackThread::cancel, cb));
 }
 
+/*
+ * XXX
+ * Unless a callback can only be cancelled from within the CallbackThread,
+ * there is a race on inflight callbacks.
+ *
+ * 	Thread X			CallbackThread
+ * 	lock(Foo)
+ * 	cb = callback(Foo, Foo::handle)
+ * 	a = schedule(cb)
+ * 	unlock(Foo)
+ * 					lock(mtx_)
+ * 					cb = queue_.front()
+ * 					inflight_ = cb
+ * 					unlock(mtx_)
+ * 	lock(Foo)			cb->execute()
+ * 					Foo::handle()
+ * 	a->cancel()			lock(Foo) -- blocks
+ * 	lock(mtx_)
+ * 	inflight_ = NULL
+ * 	unlock(mtx_)
+ * 	a = NULL
+ * 	unlock(Foo)			lock(Foo) -- completes
+ * 					a->cancel() -- NULL deref
+ *
+ * Note that other bad things are possible than the NULL deref.  Foo may no longer exist.
+ *
+ * If we keep mtx_ locked, then the race is limited to the NULL deref, but performance
+ * suffers.  If callbacks had mutexes associated with them and we could interlock, this
+ * would be better.
+ *
+ * Changing how Action works could help, too.  More details on that later.
+ */
 void
 CallbackThread::cancel(CallbackBase *cb)
 {
