@@ -29,9 +29,11 @@
 
 EventThread::EventThread(void)
 : CallbackThread("EventThread"),
+  interest_queue_mtx_("EventThread::interest_queue"),
   interest_queue_()
 { }
 
+#if 0
 void
 EventThread::final(void)
 {
@@ -47,3 +49,4 @@ EventThread::final(void)
 	}
 #endif
 }
+#endif

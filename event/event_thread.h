@@ -36,6 +36,7 @@ enum EventInterest {
 };
 
 class EventThread : public CallbackThread {
+	Mutex interest_queue_mtx_;
 	std::map<EventInterest, CallbackQueue *> interest_queue_;
 public:
 	EventThread(void);
@@ -45,21 +46,16 @@ public:
 
 	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
 	{
-		mtx_.lock();
+		ScopedLock _(&interest_queue_mtx_);
 		CallbackQueue *cbq = interest_queue_[interest];
 		if (cbq == NULL) {
 			cbq = new CallbackQueue();
 			interest_queue_[interest] = cbq;
 		}
 		Action *a = cbq->schedule(cb);
-		mtx_.unlock();
 		return (a);
 	}
 
-private:
-	void final(void);
-
-public:
 	static EventThread *self(void)
 	{
 		Thread *td = Thread::self();

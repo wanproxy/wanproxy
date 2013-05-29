@@ -33,10 +33,13 @@
 #include <event/callback.h>
 
 /* XXX Convert from WorkerThread to Thread so we can make stop() DTRT.  */
-class CallbackThread : public WorkerThread, public CallbackScheduler {
+class CallbackThread : public Thread, public CallbackScheduler {
 protected:
 	LogHandle log_;
 private:
+	Mutex mtx_;
+	SleepQueue sleepq_;
+	bool idle_;
 	std::deque<CallbackBase *> queue_;
 	CallbackBase *inflight_;
 public:
@@ -50,7 +53,17 @@ public:
 private:
 	void cancel(CallbackBase *);
 
-	void work(void);
+	void main(void);
+
+public:
+	virtual void stop(void)
+	{
+		ScopedLock _(&mtx_);
+		if (stop_)
+			return;
+		stop_ = true;
+		sleepq_.signal();
+	}
 };
 
 #endif /* !EVENT_CALLBACK_THREAD_H */

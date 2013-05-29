@@ -29,8 +29,11 @@
 #include <event/event_system.h>
 
 CallbackThread::CallbackThread(const std::string& name)
-: WorkerThread(name),
+: Thread(name),
   log_("/callback/thread/" + name),
+  mtx_(name),
+  sleepq_(name, &mtx_),
+  idle_(false),
   queue_(),
   inflight_(NULL)
 { }
@@ -47,10 +50,8 @@ CallbackThread::schedule(CallbackBase *cb)
 	mtx_.lock();
 	bool need_wakeup = queue_.empty();
 	queue_.push_back(cb);
-	if (need_wakeup && !pending_) {
-		pending_ = true;
+	if (need_wakeup && idle_)
 		sleepq_.signal();
-	}
 	mtx_.unlock();
 
 	return (cancellation(this, &CallbackThread::cancel, cb));
@@ -80,40 +81,50 @@ CallbackThread::cancel(CallbackBase *cb)
 }
 
 void
-CallbackThread::work(void)
+CallbackThread::main(void)
 {
 	mtx_.lock();
 	for (;;) {
-		if (queue_.empty() || stop_) {
-			mtx_.unlock();
-			return;
+		if (queue_.empty())
+			idle_ = true;
+		while (queue_.empty()) {
+			if (stop_) {
+				mtx_.unlock();
+				return;
+			}
+			sleepq_.wait();
 		}
+		if (idle_)
+			idle_ = false;
 
-		CallbackBase *cb = queue_.front();
-		queue_.pop_front();
-		inflight_ = cb;
-		mtx_.unlock();
+		while (!queue_.empty()) {
+			CallbackBase *cb = queue_.front();
+			queue_.pop_front();
+			inflight_ = cb;
+			mtx_.unlock();
 
-		/*
-		 * XXX
-		 * Could batch these to improve throughput with lots of
-		 * callbacks at once.  Have a set of in-flight callbacks
-		 * as well as the current one, and a second lock for the
-		 * callbacks in-flight, and check that as a last resort
-		 * in the cancel path.
-		 *
-		 * Right now fixated on performance with one callback at
-		 * a time, for which it won't help a lot, so it's worth
-		 * not overthinking.  Moving to lockless append on a
-		 * per-thread basis would be reasonable, and then a
-		 * lockless move of the whole queue out at a time.  That
-		 * would avoid the serious lock overhead involved here.
-		 */
-		cb->execute();
-		delete cb;
+			/*
+			 * XXX
+			 * Could batch these to improve throughput with lots of
+			 * callbacks at once.  Have a set of in-flight callbacks
+			 * as well as the current one, and a second lock for the
+			 * callbacks in-flight, and check that as a last resort
+			 * in the cancel path.
+			 *
+			 * Right now fixated on performance with one callback at
+			 * a time, for which it won't help a lot, so it's worth
+			 * not overthinking.  Moving to lockless append on a
+			 * per-thread basis would be reasonable, and then a
+			 * lockless move of the whole queue out at a time.  That
+			 * would avoid the serious lock overhead involved here.
+			 */
+			cb->execute();
+			delete cb;
 
-		mtx_.lock();
-		if (inflight_ != NULL)
-			HALT(log_) << "Callback not cancelled in execution.";
+			mtx_.lock();
+			if (inflight_ != NULL)
+				HALT(log_) << "Callback not cancelled in execution.";
+		}
 	}
+	mtx_.unlock();
 }
