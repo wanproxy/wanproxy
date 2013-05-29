@@ -31,6 +31,15 @@
 #include <deque>
 #include <vector>
 
+/* XXX Make depend on #ifdef THREADS. */
+/* XXX Should we just have a RefCount class which handles atomic or not?  */
+/* XXX Run through the logic of various refcount checks to ensure their atomicity is right,
+ *     or at least that the failure case is slowness rather than breakage.  (Note, for
+ *     example, the care taken to avoid races between two threads calling unref() and thus
+ *     neither of them taking responsibility for freeing storage.
+ */
+#include <common/thread/atomic.h>
+
 /*
  * XXX MT XXX
  * NB:
@@ -97,7 +106,7 @@ class BufferSegment {
 	uint8_t *data_;
 	buffer_segment_size_t offset_;
 	buffer_segment_size_t length_;
-	unsigned ref_;
+	Atomic<unsigned> ref_;
 
 	/*
 	 * Creates a new, empty BufferSegment with a single reference.
@@ -117,7 +126,7 @@ class BufferSegment {
 	 */
 	~BufferSegment()
 	{
-		ASSERT("/buffer/segment", ref_ == 0);
+		ASSERT("/buffer/segment", ref_.load() == 0);
 
 		if (data_ != NULL) {
 			free(data_);
@@ -133,9 +142,9 @@ public:
 	{
 		if (!segment_cache.empty()) {
 			BufferSegment *seg = segment_cache.front();
-			ASSERT("/buffer/segment", seg->ref_ == 0);
+			ASSERT("/buffer/segment", seg->ref_.load() == 0);
 			segment_cache.pop_front();
-			seg->ref_++;
+			seg->ref_.add(1);
 
 			seg->offset_ = 0;
 			seg->length_ = 0;
@@ -167,8 +176,8 @@ public:
 	 */
 	void ref(void)
 	{
-		ASSERT("/buffer/segment", ref_ != 0);
-		ref_++;
+		ASSERT("/buffer/segment", ref_.load() != 0);
+		ref_.add(1);
 	}
 
 	/*
@@ -177,8 +186,16 @@ public:
 	 */
 	void unref(void)
 	{
-		ASSERT("/buffer/segment", ref_ != 0);
-		if (--ref_ == 0) {
+		ASSERT("/buffer/segment", ref_.load() != 0);
+
+		unsigned r;
+		for (;;) {
+			r = ref_.load();
+			if (ref_.cmpset(r, r - 1))
+				break;
+		}
+
+		if (r == 1) {
 			if (segment_cache.size() == BUFFER_SEGMENT_CACHE_LIMIT)
 				delete this;
 			else
@@ -188,11 +205,15 @@ public:
 
 	/*
 	 * Return the number of outstanding references.
+	 *
+	 * XXX The only meaningful interpretation of return values is that
+	 *     1 is an exclusively-owned BufferSegment and any other value
+	 *     may or may not be or become an exclusively-owned BufferSegment.
 	 */
 	unsigned refs(void) const
 	{
-		ASSERT("/buffer/segment", ref_ != 0);
-		return (ref_);
+		ASSERT("/buffer/segment", ref_.load() != 0);
+		return (ref_.load());
 	}
 
 	/*
@@ -200,7 +221,7 @@ public:
 	 */
 	uint8_t *head(void)
 	{
-		ASSERT("/buffer/segment", ref_ == 1);
+		ASSERT("/buffer/segment", ref_.load() == 1);
 		return (&data_[offset_]);
 	}
 
@@ -210,7 +231,7 @@ public:
 	 */
 	uint8_t *tail(void)
 	{
-		ASSERT("/buffer/segment", ref_ == 1);
+		ASSERT("/buffer/segment", ref_.load() == 1);
 		return (&data_[offset_ + length_]);
 	}
 
@@ -222,7 +243,7 @@ public:
 		ASSERT("/buffer/segment", buf != NULL);
 		ASSERT("/buffer/segment", len != 0);
 		ASSERT("/buffer/segment", len <= avail());
-		if (ref_ != 1) {
+		if (ref_.load() != 1) {
 			BufferSegment *seg;
 
 			seg = this->copy();
@@ -323,7 +344,7 @@ public:
 	void pullup(void)
 	{
 		ASSERT("/buffer/segment", length_ != 0);
-		ASSERT("/buffer/segment", ref_ == 1);
+		ASSERT("/buffer/segment", ref_.load() == 1);
 		if (offset_ == 0)
 			return;
 		memmove(data_, data(), length());
@@ -336,7 +357,7 @@ public:
 	 */
 	void set_length(size_t len)
 	{
-		ASSERT("/buffer/segment", ref_ == 1);
+		ASSERT("/buffer/segment", ref_.load() == 1);
 		ASSERT("/buffer/segment", offset_ == 0);
 		ASSERT("/buffer/segment", len <= BUFFER_SEGMENT_SIZE);
 		length_ = len;
@@ -351,7 +372,7 @@ public:
 		ASSERT("/buffer/segment", bytes != 0);
 		ASSERT("/buffer/segment", bytes < length());
 
-		if (ref_ != 1) {
+		if (ref_.load() != 1) {
 			BufferSegment *seg;
 
 			seg = BufferSegment::create(this->data() + bytes, this->length() - bytes);
@@ -374,7 +395,7 @@ public:
 		ASSERT("/buffer/segment", bytes != 0);
 		ASSERT("/buffer/segment", bytes < length());
 
-		if (ref_ != 1) {
+		if (ref_.load() != 1) {
 			BufferSegment *seg;
 
 			seg = BufferSegment::create(this->data(), this->length() - bytes);
@@ -401,7 +422,7 @@ public:
 		if (offset + bytes == length())
 			return (this->trim(bytes));
 
-		if (ref_ != 1) {
+		if (ref_.load() != 1) {
 			BufferSegment *seg;
 
 			seg = BufferSegment::create(this->data(), offset);
