@@ -103,6 +103,20 @@ struct MutexState {
 	}
 
 	/*
+	 * Acquire ownership of this mutex without blocking.
+	 */
+	bool lock_acquire_try(void)
+	{
+		if (owner_ != NULL)
+			return (false);
+
+		Thread *self = Thread::self();
+		ASSERT("/mutex/posix/state", self != NULL);
+		owner_ = self;
+		return (true);
+	}
+
+	/*
 	 * Release the underlying lock.
 	 */
 	void unlock(void)

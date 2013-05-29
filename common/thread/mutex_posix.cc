@@ -84,6 +84,15 @@ Mutex::lock(void)
 	state_->unlock();
 }
 
+bool
+Mutex::try_lock(void)
+{
+	state_->lock();
+	bool success = state_->lock_acquire_try();
+	state_->unlock();
+	return (success);
+}
+
 void
 Mutex::unlock(void)
 {

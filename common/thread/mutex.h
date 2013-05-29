@@ -41,6 +41,7 @@ public:
 
 	void assert_owned(bool, const LogHandle&, const std::string&, unsigned, const std::string&);
 	void lock(void);
+	bool try_lock(void);
 	void unlock(void);
 };
 
