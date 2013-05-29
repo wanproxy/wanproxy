@@ -79,10 +79,6 @@ CallbackThread::cancel(CallbackBase *cb)
 	NOTREACHED(log_);
 }
 
-/*
- * XXX
- * Locking?
- */
 void
 CallbackThread::work(void)
 {
