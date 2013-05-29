@@ -1,3 +1,8 @@
+o) Fix the race noted in CallbackThread for inflight callbacks being cancelled
+   by another thread.  This could require substantial work, or just passing a
+   mutex to callbacks.  If we move to passing a mutex to callbacks, we can go
+   the distance of having multiple CallbackThreads immediately.  But how many
+   classes would that impact?
 o) Fix races with kqueue EventPoll.
 o) Proper stop handling for EventThread.
 o) Convert other poll mechanisms.
