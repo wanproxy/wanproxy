@@ -86,7 +86,11 @@ struct iovec;
  * likely than trim().
  */
 #define	BUFFER_SEGMENT_SIZE		(2048)
+#if 0 /* XXX MT should be thread-local.  */
 #define	BUFFER_SEGMENT_CACHE_LIMIT	((1024 * 1024) / BUFFER_SEGMENT_SIZE)
+#else
+#define	BUFFER_SEGMENT_CACHE_LIMIT	(0)
+#endif
 
 typedef	unsigned buffer_segment_size_t;
 
