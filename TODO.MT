@@ -1,3 +1,4 @@
+o) Fix races with kqueue EventPoll.
 o) Proper stop handling for EventThread.
 o) Convert other poll mechanisms.
 o) Make TimeoutQueue/CallbackQueue suck less.
