@@ -109,6 +109,16 @@ EventPoll::cancel(const Type& type, int fd)
 {
 	ScopedLock _(&mtx_);
 
+	/*
+	 * XXX MT XXX
+	 * Needs to delete the evfilter.
+	 * Also we need to handle the race
+	 * between kevent returning and the lock
+	 * being acquired in ::wait(), by
+	 * checking if the fd is no longer
+	 * present in the map.  Too bad we can't
+	 * have kevent drop the lock for us.
+	 */
 	EventPoll::PollHandler *poll_handler;
 	switch (type) {
 	case EventPoll::Readable:
