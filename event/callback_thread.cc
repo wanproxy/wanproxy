@@ -117,17 +117,20 @@ CallbackThread::main(void)
 {
 	mtx_.lock();
 	for (;;) {
-		if (queue_.empty())
+		if (queue_.empty()) {
 			idle_ = true;
-		while (queue_.empty()) {
-			if (stop_) {
-				mtx_.unlock();
-				return;
+			for (;;) {
+				if (stop_) {
+					mtx_.unlock();
+					return;
+				}
+				sleepq_.wait();
+				if (queue_.empty())
+					continue;
+				idle_ = false;
+				break;
 			}
-			sleepq_.wait();
 		}
-		if (idle_)
-			idle_ = false;
 
 		while (!queue_.empty()) {
 			CallbackBase *cb = queue_.front();
