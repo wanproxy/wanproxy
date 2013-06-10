@@ -8,6 +8,7 @@ o) Proper stop handling for EventThread.
 o) Convert other poll mechanisms.
 o) Make TimeoutQueue/CallbackQueue suck less.
 o) Make signals suck slightly less, maybe.
+   XXX Seriously, signal interrupt handling sucks.
 o) Since XCodec pipes are consumer-producer now, we can defer production to a
    thread, or at least do the real work in a thread and then have the pipes get
    work to and from the thread.  It should be easy enough to abstract.  It
