@@ -95,7 +95,7 @@ private:
 	Action *poll(const Type&, int, EventCallback *);
 	void cancel(const Type&, int);
 	void wait(void);
-	void signal(void);
+	void signal(bool);
 
 	bool idle(void) const
 	{

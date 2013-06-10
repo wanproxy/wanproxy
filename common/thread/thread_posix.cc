@@ -145,17 +145,21 @@ ThreadState::signal_stop(int sig)
 		Thread *td = *it;
 		ThreadState *state = td->state_;
 
-		if (state->td_ == self) {
-			td->stop_ = true;
-			continue;
-		}
-
+		/*
+		 * XXX
+		 * Could deadlock, stop() implementations need to be careful
+		 * about locking (e.g. to avoid locking if the calling thread
+		 * is the thread being stopped.
+		 */
 		td->stop();
 
 		/*
 		 * Also send SIGUSR1 to interrupt any blocking syscalls.
+		 *
+		 * XXX Use pthread_cancel instead?
 		 */
-		pthread_kill(state->td_, SIGUSR1);
+		if (state->td_ != self)
+			pthread_kill(state->td_, SIGUSR1);
 	}
 	thread_start_mutex.unlock();
 }

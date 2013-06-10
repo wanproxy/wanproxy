@@ -42,7 +42,7 @@ EventPollThread::poll(const EventPoll::Type& type, int fd, EventCallback *cb)
 {
 	ScopedLock _(&mtx_);
 	Action *a = poll_.poll(type, fd, cb);
-	poll_.signal();
+	poll_.signal(false);
 	return (a);
 }
 
@@ -65,5 +65,5 @@ EventPollThread::stop(void)
 	if (stop_)
 		return;
 	stop_ = true;
-	poll_.signal();
+	poll_.signal(true);
 }

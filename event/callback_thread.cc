@@ -161,5 +161,4 @@ CallbackThread::main(void)
 				HALT(log_) << "Callback not cancelled in execution.";
 		}
 	}
-	mtx_.unlock();
 }
