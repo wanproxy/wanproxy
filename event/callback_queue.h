@@ -62,12 +62,10 @@ class CallbackQueue : public CallbackScheduler {
 
 	Mutex mtx_;
 	std::deque<CallbackAction *> queue_;
-	uint64_t generation_;
 public:
 	CallbackQueue(void)
 	: mtx_("CallbackQueue"),
-	  queue_(),
-	  generation_(0)
+	  queue_()
 	{ }
 
 	~CallbackQueue()
