@@ -32,7 +32,6 @@
 
 #include <event/callback.h>
 
-/* XXX Convert from WorkerThread to Thread so we can make stop() DTRT.  */
 class CallbackThread : public Thread, public CallbackScheduler {
 protected:
 	LogHandle log_;
