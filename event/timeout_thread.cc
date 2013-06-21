@@ -23,6 +23,18 @@
  * SUCH DAMAGE.
  */
 
+/*
+ * XXX
+ * Because this is just a WorkerThread, and not specialized like CallbackThread,
+ * it will exit on stop().  This is not desirable!  In fact, it should act like
+ * CallbackThread and only exit once stop *and* nothing to run.  Or maybe this
+ * functionality shouldn't be separate from CallbackThread after all.
+ *
+ * Most of the time this shouldn't matter, as on stop() we should be running stop
+ * handlers for anything that would have registered a timeout, but there are some
+ * known degenerate cases (such as SpeedTest.)
+ */
+
 #include <event/event_callback.h>
 #include <event/timeout_thread.h>
 #include <event/event_system.h>
