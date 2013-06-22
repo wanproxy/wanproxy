@@ -68,6 +68,8 @@ private:
 		handler_.cancel();
 
 		INFO("/example/callback/handler/speed1") << "Timer expired; " << callback_count_ << " callbacks.";
+
+		EventSystem::instance()->stop();
 	}
 };
 
