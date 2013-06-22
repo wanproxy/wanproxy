@@ -1,3 +1,6 @@
+o) Merge TimeoutThread into CallbackThread?  Some functional reasons to do so,
+   namely related to exiting, but is it aesthetic or correct?  Should every
+   thread that can run Callbacks also be able to schedule timeouts?
 o) Fix the race noted in CallbackThread for inflight callbacks being cancelled
    by another thread.  This could require substantial work, or just passing a
    mutex to callbacks.  If we move to passing a mutex to callbacks, we can go
