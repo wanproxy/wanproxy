@@ -100,6 +100,11 @@ public:
 		td_.stop();
 		poll_.stop();
 		timeout_.stop();
+		std::deque<Thread *>::const_iterator it;
+		for (it = threads_.begin(); it != threads_.end(); ++it) {
+			Thread *td = *it;
+			td->stop();
+		}
 	}
 
 	static EventSystem *instance(void)
