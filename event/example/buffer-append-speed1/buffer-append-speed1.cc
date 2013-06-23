@@ -55,6 +55,8 @@ private:
 	void finish(void)
 	{
 		INFO("/example/buffer/append/speed1") << "Timer expired; " << bytes_ << " bytes appended.";
+
+		EventSystem::instance()->stop();
 	}
 };
 
