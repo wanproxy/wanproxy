@@ -12,6 +12,8 @@ o) Merge TimeoutThread into CallbackThread?  Some functional reasons to do so,
       o) Remember to handle wakeups on cancel, too, in this case.  So for the
          EventPoll code, we would want to wakeup the sleeping thread if we've
          just killed the last poll handler and stop_ is true.
+   o) Get rid of WorkerThread once this is all done, or create a new class
+      based on the common traits of our now much richer set of Threads.
 o) Fix the race noted in CallbackThread for inflight callbacks being cancelled
    by another thread.  This could require substantial work, or just passing a
    mutex to callbacks.  If we move to passing a mutex to callbacks, we can go
