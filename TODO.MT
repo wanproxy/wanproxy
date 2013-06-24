@@ -1,6 +1,14 @@
 o) Merge TimeoutThread into CallbackThread?  Some functional reasons to do so,
    namely related to exiting, but is it aesthetic or correct?  Should every
    thread that can run Callbacks also be able to schedule timeouts?
+   o) It seems like the right solution to this is pretty unsurprising.  Just
+      have each thread have its own predicates that need to be satisfied before
+      it will actuall heed a stop request, like the CallbackThread does.  So
+      EventPoll waits for no more registered handlers, the I/O thread does
+      likewise, the timeout code does likewise, etc.  We'd want to be a little
+      more conservative somehow, since we might have one fd being worked on and
+      need to service multiple reads or writes before quitting, right?  Also,
+      this all moves up the need for stop callbacks to actually get called!
 o) Fix the race noted in CallbackThread for inflight callbacks being cancelled
    by another thread.  This could require substantial work, or just passing a
    mutex to callbacks.  If we move to passing a mutex to callbacks, we can go
