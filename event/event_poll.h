@@ -29,11 +29,11 @@
 #include <map>
 
 #include <common/thread/mutex.h>
+#include <common/thread/thread.h>
 
 struct EventPollState;
 
-class EventPoll {
-	friend class EventPollThread;
+class EventPoll : public Thread {
 	friend class PollAction;
 
 public:
@@ -89,18 +89,18 @@ private:
 	poll_handler_map_t write_poll_;
 	EventPollState *state_;
 
+public:
 	EventPoll(void);
 	~EventPoll();
 
 	Action *poll(const Type&, int, EventCallback *);
-	void cancel(const Type&, int);
-	void wait(void);
-	void signal(bool);
 
-	bool idle(void) const
-	{
-		return (read_poll_.empty() && write_poll_.empty());
-	}
+private:
+	void cancel(const Type&, int);
+	void main(void);
+
+public:
+	void stop(void);
 };
 
 #endif /* !EVENT_EVENT_POLL_H */

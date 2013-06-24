@@ -39,7 +39,8 @@ struct EventPollState {
 };
 
 EventPoll::EventPoll(void)
-: log_("/event/poll"),
+: Thread("EventPoll"),
+  log_("/event/poll"),
   mtx_("EventPoll"),
   read_poll_(),
   write_poll_(),
@@ -74,6 +75,12 @@ EventPoll::~EventPoll()
 Action *
 EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 {
+	/*
+	 * XXX
+	 * A wakeup isn't necessary because kqueue provides synchronization, right?
+	 * It *is* necessary in the stop() case.
+	 */
+
 	ScopedLock _(&mtx_);
 
 	ASSERT(log_, fd != -1);
@@ -111,13 +118,7 @@ EventPoll::cancel(const Type& type, int fd)
 
 	/*
 	 * XXX MT XXX
-	 * Needs to delete the evfilter.
-	 * Also we need to handle the race
-	 * between kevent returning and the lock
-	 * being acquired in ::wait(), by
-	 * checking if the fd is no longer
-	 * present in the map.  Too bad we can't
-	 * have kevent drop the lock for us.
+	 * Needs to delete the evfilter iff unfired.
 	 */
 	EventPoll::PollHandler *poll_handler;
 	switch (type) {
@@ -137,74 +138,89 @@ EventPoll::cancel(const Type& type, int fd)
 }
 
 void
-EventPoll::wait(void)
+EventPoll::main(void)
 {
 	static const unsigned kevcnt = 128;
 	struct kevent kev[kevcnt];
-	int evcnt = kevent(state_->kq_, NULL, 0, kev, kevcnt, NULL);
-	if (evcnt == -1) {
-		if (errno == EINTR) {
-			INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";
-			return;
-		}
-		HALT(log_) << "Could not poll kqueue.";
-	}
 
-	ScopedLock _(&mtx_);
-	int i;
-	for (i = 0; i < evcnt; i++) {
-		struct kevent *ev = &kev[i];
-		EventPoll::PollHandler *poll_handler;
-		switch (ev->filter) {
-		case EVFILT_READ:
-			ASSERT(log_, read_poll_.find(ev->ident) != read_poll_.end());
-			poll_handler = &read_poll_[ev->ident];
-			break;
-		case EVFILT_WRITE:
-			ASSERT(log_, write_poll_.find(ev->ident) !=
-			       write_poll_.end());
-			poll_handler = &write_poll_[ev->ident];
-			break;
-		case EVFILT_USER:
-			/* A user event was triggered to wake us up.  Ignore it.  */
-			ASSERT(log_, ev->ident == SIGNAL_IDENT);
-			continue;
-		default:
-			NOTREACHED(log_);
+	for (;;) {
+		int evcnt = kevent(state_->kq_, NULL, 0, kev, kevcnt, NULL);
+		if (evcnt == -1) {
+			if (errno == EINTR) {
+				INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";
+				return;
+			}
+			HALT(log_) << "Could not poll kqueue.";
 		}
-		if ((ev->flags & EV_ERROR) != 0) {
-			poll_handler->callback(Event(Event::Error, ev->fflags));
-			continue;
-		}
-		if ((ev->flags & EV_EOF) != 0 && ev->filter == EVFILT_READ) {
-			poll_handler->callback(Event(Event::EOS, ev->fflags));
-			continue;
-		}
+
 		/*
-		 * XXX
-		 * We do not currently have a way to indicate that the reader
-		 * has called shutdown and will no longer read data.  We just
-		 * indicate Done and let the next write fail.
+		 * NB: We could acquire and drop the lock for each item in the
+		 * loop, but isn't this more humane?
 		 */
-		poll_handler->callback(Event(Event::Done, ev->fflags));
+		ScopedLock _(&mtx_);
+		int i;
+		for (i = 0; i < evcnt; i++) {
+			struct kevent *ev = &kev[i];
+			EventPoll::PollHandler *poll_handler;
+			poll_handler_map_t::iterator it;
+
+			switch (ev->filter) {
+			case EVFILT_READ:
+				it = read_poll_.find(ev->ident);
+				if (it == read_poll_.end()) {
+					DEBUG(log_) << "Dropping read event lost in race.";
+					continue;
+				}
+				break;
+			case EVFILT_WRITE:
+				it = write_poll_.find(ev->ident);
+				if (it == write_poll_.end()) {
+					DEBUG(log_) << "Dropping write event lost in race.";
+					continue;
+				}
+				break;
+			case EVFILT_USER:
+				/* A user event was triggered to wake us up.  Ignore it.  */
+				ASSERT(log_, ev->ident == SIGNAL_IDENT);
+				continue;
+			default:
+				NOTREACHED(log_);
+			}
+			poll_handler = &it->second;
+			if ((ev->flags & EV_ERROR) != 0) {
+				poll_handler->callback(Event(Event::Error, ev->fflags));
+				continue;
+			}
+			if ((ev->flags & EV_EOF) != 0 && ev->filter == EVFILT_READ) {
+				poll_handler->callback(Event(Event::EOS, ev->fflags));
+				continue;
+			}
+			/*
+			 * XXX
+			 * We do not currently have a way to indicate that the reader
+			 * has called shutdown and will no longer read data.  We just
+			 * indicate Done and let the next write fail.
+			 */
+			poll_handler->callback(Event(Event::Done, ev->fflags));
+		}
+
+		if (stop_)
+			break;
 	}
 }
 
 void
-EventPoll::signal(bool stop)
+EventPoll::stop(void)
 {
-	/*
-	 * XXX
-	 * This isn't necessary because kqueue provides synchronization, right?
-	 * It *is* necessary in the stop() case...  Another good argument for
-	 * integrating EventPollThread and EventPoll more closely.
-	 */
-	if (stop) {
-		struct kevent kev;
-		EV_SET(&kev, SIGNAL_IDENT, EVFILT_USER, 0, NOTE_TRIGGER, 0, NULL);
-		int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
-		if (evcnt == -1)
-			HALT(log_) << "Could not trigger self-signal event in kqueue.";
-		ASSERT(log_, evcnt == 0);
-	}
+	ScopedLock _(&mtx_);
+	if (stop_)
+		return;
+	struct kevent kev;
+	EV_SET(&kev, SIGNAL_IDENT, EVFILT_USER, 0, NOTE_TRIGGER, 0, NULL);
+	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
+	if (evcnt == -1)
+		HALT(log_) << "Could not trigger self-signal event in kqueue.";
+	ASSERT(log_, evcnt == 0);
+
+	stop_ = true;
 }

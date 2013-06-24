@@ -26,7 +26,7 @@
 #ifndef	EVENT_EVENT_SYSTEM_H
 #define	EVENT_EVENT_SYSTEM_H
 
-#include <event/event_poll_thread.h>
+#include <event/event_poll.h>
 #include <event/event_thread.h>
 #include <event/timeout_thread.h>
 
@@ -38,7 +38,7 @@
 
 class EventSystem {
 	EventThread td_;
-	EventPollThread poll_;
+	EventPoll poll_;
 	TimeoutThread timeout_;
 	std::deque<Thread *> threads_;
 private:
