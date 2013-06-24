@@ -125,15 +125,57 @@ EventPoll::cancel(const Type& type, int fd)
 	case EventPoll::Readable:
 		ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
 		poll_handler = &read_poll_[fd];
-		poll_handler->cancel();
-		read_poll_.erase(fd);
 		break;
 	case EventPoll::Writable:
 		ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
 		poll_handler = &write_poll_[fd];
-		poll_handler->cancel();
+		break;
+	default:
+		NOTREACHED(log_);
+	}
+
+	/*
+	 * If the event never fired, delete the filter for it.
+	 * The common case should be that we don't need to do this, now that
+	 * we have one-shot filters by default.
+	 */
+	if (poll_handler->callback_ != NULL) {
+		struct kevent kev;
+		switch (type) {
+		case EventPoll::Readable:
+			EV_SET(&kev, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+			break;
+		case EventPoll::Writable:
+			EV_SET(&kev, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+			break;
+		default:
+			NOTREACHED(log_);
+		}
+		/*
+		 * NB:
+		 * We avoid checking the return value because we can lose a
+		 * race with the main kevent(2) call in ::main(), which by
+		 * necessity runs without a lock held.  For example, it is
+		 * very likely that we could get an error because the filter
+		 * was removed, i.e. it fired (since they're all one-shot
+		 * now), just after we entered this function and acquired
+		 * the lock, in which case ::main() would now be blocking on
+		 * the mutex, and about to find that it lost the race with
+		 * us.  But there is no more filter to remove.
+		 */
+		(void)::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
+	}
+	poll_handler->cancel();
+
+	switch (type) {
+	case EventPoll::Readable:
+		read_poll_.erase(fd);
+		break;
+	case EventPoll::Writable:
 		write_poll_.erase(fd);
 		break;
+	default:
+		NOTREACHED(log_);
 	}
 }
 
