@@ -31,3 +31,4 @@ o) Since XCodec pipes are consumer-producer now, we can defer production to a
    might be nice to have a generic framework for doing pipe processing for any
    kind of pipe or maybe just a consumer-producer pipe in a specified thread.
    Then the XCodec could just create a thread for each instance.
+o) Finally split callbacks and actions from event into callback?
