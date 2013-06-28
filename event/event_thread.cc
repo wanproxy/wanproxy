@@ -33,20 +33,19 @@ EventThread::EventThread(void)
   interest_queue_()
 { }
 
-#if 0
 void
-EventThread::final(void)
+EventThread::stop(void)
 {
-#if 0
 	/*
 	 * If we have been told to stop, fire all shutdown events.
 	 */
-	if (!interest_queue_[EventInterestStop].empty()) {
-		INFO(log_) << "Running stop handlers.";
-		if (interest_queue_[EventInterestStop].drain())
-			ERROR(log_) << "Stop handlers added other stop handlers.";
-		INFO(log_) << "Stop handlers have been run.";
+	interest_queue_mtx_.lock();
+	CallbackQueue *q = interest_queue_[EventInterestStop];
+	if (q != NULL && !q->empty()) {
+		INFO(log_) << "Queueing stop handlers.";
+		q->drain();
 	}
-#endif
+	interest_queue_mtx_.unlock();
+
+	CallbackThread::stop();
 }
-#endif

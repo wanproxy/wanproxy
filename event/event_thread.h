@@ -61,6 +61,8 @@ public:
 		Thread *td = Thread::self();
 		return (dynamic_cast<EventThread *>(td));
 	}
+
+	void stop(void);
 };
 
 #endif /* !EVENT_EVENT_THREAD_H */
