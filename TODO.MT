@@ -21,6 +21,7 @@ o) Fix the race noted in CallbackThread for inflight callbacks being cancelled
    classes would that impact?
 o) Fix races with kqueue EventPoll.
 o) Proper stop handling for EventThread.
+   XXX What is there now is clearly not entirely right.
 o) Convert other poll mechanisms.
 o) Make TimeoutQueue/CallbackQueue suck less.
 o) Make signals suck slightly less, maybe.
