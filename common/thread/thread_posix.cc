@@ -154,12 +154,13 @@ ThreadState::signal_stop(int sig)
 		td->stop();
 
 		/*
-		 * Also send SIGUSR1 to interrupt any blocking syscalls.
+		 * Also cancel any blocking syscalls.
 		 *
-		 * XXX Use pthread_cancel instead?
+		 * XXX NB We use to use pthread_kill(..., SIGUSR1);
+		 *     Need to ensure no regressions.
 		 */
 		if (state->td_ != self)
-			pthread_kill(state->td_, SIGUSR1);
+			pthread_cancel(state->td_);
 	}
 	thread_start_mutex.unlock();
 }
