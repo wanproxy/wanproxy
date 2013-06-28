@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,12 +31,14 @@ struct MutexState {
 	pthread_mutexattr_t mutex_attr_;
 	pthread_cond_t cond_;
 	Thread *owner_;
+	unsigned waiters_;
 
 	MutexState(void)
 	: mutex_(),
 	  mutex_attr_(),
 	  cond_(),
-	  owner_(NULL)
+	  owner_(NULL),
+	  waiters_(0)
 	{
 		int rv;
 
@@ -91,9 +93,27 @@ struct MutexState {
 		Thread *self = Thread::self();
 		ASSERT("/mutex/posix/state", self != NULL);
 
-		while (owner_ != NULL)
-			pthread_cond_wait(&cond_, &mutex_);
+		if (owner_ != NULL) {
+			waiters_++;
+			while (owner_ != NULL)
+				pthread_cond_wait(&cond_, &mutex_);
+			waiters_--;
+		}
 		owner_ = self;
+	}
+
+	/*
+	 * Acquire ownership of this mutex without blocking.
+	 */
+	bool lock_acquire_try(void)
+	{
+		if (owner_ != NULL)
+			return (false);
+
+		Thread *self = Thread::self();
+		ASSERT("/mutex/posix/state", self != NULL);
+		owner_ = self;
+		return (true);
 	}
 
 	/*
@@ -122,7 +142,8 @@ struct MutexState {
 		ASSERT("/mutex/posix/state", owner_ == self);
 		owner_ = NULL;
 
-		pthread_cond_signal(&cond_);
+		if (waiters_ != 0)
+			pthread_cond_signal(&cond_);
 	}
 };
 

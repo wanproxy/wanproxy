@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2011-2013 Juli Malett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,12 +33,12 @@
 
 static Mutex test_mtx("TestMutex");
 
-class TestThread : public Thread {
+class TestThread : public WorkerThread {
 	Test *test_main_;
 	Test *test_destroy_;
 public:
 	TestThread(Test *test_main, Test *test_destroy)
-	: Thread("TestThread"),
+	: WorkerThread("TestThread"),
 	  test_main_(test_main),
 	  test_destroy_(test_destroy)
 	{ }
@@ -48,7 +48,7 @@ public:
 		test_destroy_->pass();
 	}
 
-	void main(void)
+	void work(void)
 	{
 		test_main_->pass();
 
@@ -82,13 +82,15 @@ public:
 			ASSERT_LOCK_OWNED("/test/thread", &test_mtx);
 		}
 		ASSERT_LOCK_NOT_OWNED("/test/thread", &test_mtx);
+
+		stop();
 	}
 };
 
 int
 main(void)
 {
-	Thread *threads[NTHREAD];
+	WorkerThread *threads[NTHREAD];
 	Test *test_main[NTHREAD], *test_destroy[NTHREAD];
 
 	TestGroup g("/test/scopedlock1", "ScopedLock #1");
@@ -104,6 +106,9 @@ main(void)
 
 		for (i = 0; i < NTHREAD; i++)
 			threads[i]->start();
+
+		for (i = 0; i < NTHREAD; i++)
+			threads[i]->submit();
 
 		for (i = 0; i < NTHREAD; i++)
 			threads[i]->join();

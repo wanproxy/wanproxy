@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,7 +28,7 @@
 
 template<typename T>
 class Atomic {
-	T val_;
+	volatile T val_;
 public:
 	Atomic(void)
 	: val_()
@@ -79,9 +79,24 @@ public:
 	}
 
 	template<typename To, typename Tn>
-	T cmpset(Ta oldval, Tn newval)
+	bool cmpset(To oldval, Tn newval)
 	{
-		return (__sync_val_compare_and_swap(&val_, oldval, newval));
+		return (__sync_bool_compare_and_swap(&val_, oldval, newval));
+	}
+
+	/* XXX GCC doesn't provide atomic loads/stores.  */
+	T load(void) const
+	{
+		return (val_);
+	}
+
+	template<typename Ta>
+	void store(Ta val)
+	{
+		for (;;) {
+			if (cmpset(load(), val))
+				return;
+		}
 	}
 #else
 #error "No support for atomic operations for your compiler.  Why not add some?"

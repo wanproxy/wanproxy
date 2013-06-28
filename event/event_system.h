@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,7 +26,9 @@
 #ifndef	EVENT_EVENT_SYSTEM_H
 #define	EVENT_EVENT_SYSTEM_H
 
+#include <event/event_poll.h>
 #include <event/event_thread.h>
+#include <event/timeout_thread.h>
 
 /*
  * XXX
@@ -36,9 +38,14 @@
 
 class EventSystem {
 	EventThread td_;
+	EventPoll poll_;
+	TimeoutThread timeout_;
+	std::deque<Thread *> threads_;
 private:
 	EventSystem(void)
-	: td_()
+	: td_(),
+	  poll_(),
+	  timeout_()
 	{ }
 
 	~EventSystem()
@@ -47,7 +54,7 @@ private:
 public:
 	Action *poll(const EventPoll::Type& type, int fd, EventCallback *cb)
 	{
-		return (td_.poll(type, fd, cb));
+		return (poll_.poll(type, fd, cb));
 	}
 
 	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
@@ -62,26 +69,48 @@ public:
 
 	Action *timeout(unsigned ms, SimpleCallback *cb)
 	{
-		return (td_.timeout(ms, cb));
+		return (timeout_.timeout(ms, cb));
+	}
+
+	void thread_wait(Thread *td)
+	{
+		threads_.push_back(td);
 	}
 
 	void start(void)
 	{
 		td_.start();
+		thread_wait(&td_);
+
+		poll_.start();
+		thread_wait(&poll_);
+
+		timeout_.start();
+		thread_wait(&timeout_);
 	}
 
 	void join(void)
 	{
-		td_.join();
+		while (!threads_.empty()) {
+			threads_.front()->join();
+			threads_.pop_front();
+		}
+	}
+
+	void stop(void)
+	{
+		std::deque<Thread *>::const_iterator it;
+		for (it = threads_.begin(); it != threads_.end(); ++it) {
+			Thread *td = *it;
+			td->stop();
+		}
 	}
 
 	static EventSystem *instance(void)
 	{
-		static EventSystem *instance;
+		static EventSystem instance;
 
-		if (instance == NULL)
-			instance = new EventSystem();
-		return (instance);
+		return (&instance);
 	}
 };
 

@@ -77,6 +77,8 @@ private:
 		}
 
 		INFO("/example/callback/manyspeed1") << "Timer expired; " << callback_count_ << " callbacks.";
+
+		EventSystem::instance()->stop();
 	}
 };
 

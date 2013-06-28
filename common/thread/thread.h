@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +26,9 @@
 #ifndef	COMMON_THREAD_THREAD_H
 #define	COMMON_THREAD_THREAD_H
 
+#include <common/thread/mutex.h>
+#include <common/thread/sleep_queue.h>
+
 struct ThreadState;
 
 class Thread {
@@ -33,8 +36,9 @@ class Thread {
 
 	std::string name_;
 	ThreadState *state_;
-
 protected:
+	bool stop_;
+
 	Thread(const std::string&);
 
 public:
@@ -44,11 +48,91 @@ public:
 	void start(void);
 
 	virtual void main(void) = 0;
+	virtual void stop(void) = 0;
 
 public:
 	static Thread *self(void);
+};
 
-	static bool stop_;
+class WorkerThread : public Thread {
+protected:
+	Mutex mtx_;
+	SleepQueue sleepq_;
+	bool pending_;
+
+	WorkerThread(const std::string& name)
+	: Thread(name),
+	  mtx_("Thread"),
+	  sleepq_("Thread", &mtx_),
+	  pending_(false)
+	{ }
+
+public:
+	virtual ~WorkerThread()
+	{ }
+
+protected:
+	void main(void)
+	{
+		mtx_.lock();
+		while (!stop_) {
+			if (pending_) {
+				pending_ = false;
+				mtx_.unlock();
+
+				work();
+
+				mtx_.lock();
+				continue;
+			}
+
+			wait();
+		}
+		mtx_.unlock();
+
+		final();
+	}
+
+public:
+	void submit(void)
+	{
+		signal(false);
+	}
+
+	void stop(void)
+	{
+		signal(true);
+	}
+
+protected:
+	virtual void work(void) = 0;
+
+	virtual void wait(void)
+	{
+		ASSERT_LOCK_OWNED("/thread", &mtx_);
+		ASSERT("/thread", !pending_);
+		ASSERT("/thread", !stop_);
+		sleepq_.wait();
+	}
+
+	virtual void final(void)
+	{
+	}
+
+	virtual void signal(bool stop)
+	{
+		ScopedLock _(&mtx_);
+		if (!stop) {
+			if (pending_)
+				return;
+			pending_ = true;
+		} else {
+			if (stop_)
+				return;
+			stop_ = true;
+		}
+		sleepq_.signal();
+	}
 };
 
 class NullThread : public Thread {
@@ -62,6 +146,11 @@ public:
 
 private:
 	void main(void)
+	{
+		NOTREACHED("/thread/null");
+	}
+
+	void stop(void)
 	{
 		NOTREACHED("/thread/null");
 	}

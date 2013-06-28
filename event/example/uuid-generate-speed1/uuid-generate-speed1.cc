@@ -57,6 +57,8 @@ private:
 	void finish(void)
 	{
 		INFO("/example/uuid/generate/speed1") << "Timer expired; " << uuids_ << " UUIDs generated.";
+
+		EventSystem::instance()->stop();
 	}
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,13 +26,13 @@
 #ifndef	COMMON_THREAD_SLEEP_QUEUE_H
 #define	COMMON_THREAD_SLEEP_QUEUE_H
 
+struct NanoTime;
+
 /*
  * We don't call this a condition variable because that name is in use in the
  * event system, which also sees more general use.  Since this is only used for
  * limited internal facilities, the more obscure name is acceptable, but it's
  * basically a condition variable.
- *
- * XXX Should support timed wait.
  */
 
 struct SleepQueueState;
@@ -46,7 +46,7 @@ public:
 	~SleepQueue();
 
 	void signal(void);
-	void wait(void);
+	void wait(const NanoTime * = NULL);
 };
 
 #endif /* !COMMON_THREAD_SLEEP_QUEUE_H */

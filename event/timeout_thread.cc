@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,59 +23,57 @@
  * SUCH DAMAGE.
  */
 
+/*
+ * XXX
+ * Because this is just a WorkerThread, and not specialized like CallbackThread,
+ * it will exit on stop().  This is not desirable!  In fact, it should act like
+ * CallbackThread and only exit once stop *and* nothing to run.  Or maybe this
+ * functionality shouldn't be separate from CallbackThread after all.
+ *
+ * Most of the time this shouldn't matter, as on stop() we should be running stop
+ * handlers for anything that would have registered a timeout, but there are some
+ * known degenerate cases (such as SpeedTest.)
+ */
+
 #include <event/event_callback.h>
-#include <event/event_main.h>
+#include <event/timeout_thread.h>
 #include <event/event_system.h>
 
-#define	TIMER1_MS	100
-#define	TIMER2_MS	2000
+TimeoutThread::TimeoutThread(void)
+: WorkerThread("TimeoutThread"),
+  log_("/event/timeout/thread"),
+  timeout_queue_()
+{ }
 
-class TimeoutTest {
-	Action *action_;
-public:
-	TimeoutTest(void)
-	: action_(NULL)
-	{
-		INFO("/example/timeout/test1") << "Arming timer 1.";
-		action_ = EventSystem::instance()->timeout(TIMER1_MS, callback(this, &TimeoutTest::timer1));
-	}
-
-	~TimeoutTest()
-	{
-		ASSERT("/example/timeout/test1", action_ == NULL);
-	}
-
-private:
-	void timer1(void)
-	{
-		action_->cancel();
-		action_ = NULL;
-
-		INFO("/example/timeout/test1") << "Timer 1 expired, arming timer 2.";
-
-		action_ = EventSystem::instance()->timeout(TIMER2_MS, callback(this, &TimeoutTest::timer2));
-	}
-
-	void timer2(void)
-	{
-		action_->cancel();
-		action_ = NULL;
-
-		INFO("/example/timeout/test1") << "Timer 2 expired.";
-
-		EventSystem::instance()->stop();
-	}
-};
-
-int
-main(void)
+/*
+ * XXX
+ * Locking?
+ */
+void
+TimeoutThread::work(void)
 {
-	INFO("/example/timeout/test1") << "Timer 1 delay: " << TIMER1_MS;
-	INFO("/example/timeout/test1") << "Timer 2 delay: " << TIMER2_MS;
+	if (!timeout_queue_.empty()) {
+		/*
+		 * XXX
+		 * We need to manage the queue here and schedule the
+		 * callbacks in the main EventThread, not just
+		 * execute them in this thread directly.
+		 */
+		while (timeout_queue_.ready())
+			timeout_queue_.perform();
+	}
+}
 
-	TimeoutTest *tt = new TimeoutTest();
+void
+TimeoutThread::wait(void)
+{
+	if (timeout_queue_.empty()) {
+		WorkerThread::wait();
+		return;
+	}
+	NanoTime deadline = timeout_queue_.deadline();
+	sleepq_.wait(&deadline);
 
-	event_main();
-
-	delete tt;
+	if (!pending_ && !timeout_queue_.empty() && timeout_queue_.ready())
+		pending_ = true;
 }

@@ -28,6 +28,7 @@
 #include <crypto/crypto_encryption.h>
 
 #include <event/event_main.h>
+#include <event/event_system.h>
 
 class CryptoTest {
 	TestGroup& group_;
@@ -89,6 +90,8 @@ public:
 			if (e.buffer_.equal(&ciphertext_))
 				_.pass();
 		}
+
+		EventSystem::instance()->stop();
 	}
 };
 

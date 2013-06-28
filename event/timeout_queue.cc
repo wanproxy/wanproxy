@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,29 +33,18 @@
 Action *
 TimeoutQueue::append(uintmax_t ms, SimpleCallback *cb)
 {
-	NanoTime now = NanoTime::current_time();
+	NanoTime deadline = NanoTime::current_time();
 
-	now.seconds_ += ms / 1000;
-	now.nanoseconds_ += (ms % 1000) * 1000000;
+	deadline.seconds_ += ms / 1000;
+	deadline.nanoseconds_ += (ms % 1000) * 1000000;
 
-	CallbackQueue& queue = timeout_queue_[now];
-	Action *a = queue.schedule(cb);
+	CallbackQueue *queue = timeout_queue_[deadline];
+	if (queue == NULL) {
+		queue = new CallbackQueue();
+		timeout_queue_[deadline] = queue;
+	}
+	Action *a = queue->schedule(cb);
 	return (a);
-}
-
-uintmax_t
-TimeoutQueue::interval(void) const
-{
-	NanoTime now = NanoTime::current_time();
-	timeout_map_t::const_iterator it = timeout_queue_.begin();
-	if (it == timeout_queue_.end())
-		return (0);
-	if (it->first < now)
-		return (0);
-
-	NanoTime expiry = it->first;
-	expiry -= now;
-	return ((expiry.seconds_ * 1000) + (expiry.nanoseconds_ / 1000000));
 }
 
 void
@@ -67,10 +56,10 @@ TimeoutQueue::perform(void)
 	NanoTime now = NanoTime::current_time();
 	if (it->first > now)
 		return;
-	CallbackQueue& queue = it->second;
-	while (!queue.empty())
-		queue.perform();
+	CallbackQueue *queue = it->second;
 	timeout_queue_.erase(it);
+	queue->drain();
+	delete queue;
 }
 
 bool

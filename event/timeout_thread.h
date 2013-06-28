@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,64 +23,32 @@
  * SUCH DAMAGE.
  */
 
-#ifndef	COMMON_THREAD_LOCK_H
-#define	COMMON_THREAD_LOCK_H
+#ifndef	EVENT_TIMEOUT_THREAD_H
+#define	EVENT_TIMEOUT_THREAD_H
 
-class Lock {
-	std::string name_;
-protected:
-	Lock(const std::string& name)
-	: name_(name)
-	{ }
+#include <common/thread/thread.h>
+#include <event/callback_queue.h>
+#include <event/timeout_queue.h>
+
+class TimeoutThread : public WorkerThread {
+	LogHandle log_;
+	TimeoutQueue timeout_queue_;
 public:
-	virtual ~Lock()
+	TimeoutThread(void);
+
+	~TimeoutThread()
 	{ }
 
-	virtual void assert_owned(bool, const LogHandle&, const std::string&, unsigned, const std::string&) = 0;
-	virtual void lock(void) = 0;
-	virtual bool try_lock(void) = 0;
-	virtual void unlock(void) = 0;
+	Action *timeout(unsigned secs, SimpleCallback *cb)
+	{
+		Action *a = timeout_queue_.append(secs, cb);
+		submit();
+		return (a);
+	}
 
 private:
-	Lock(const Lock&); /* XXX Disable copy.  */
+	void work(void);
+	void wait(void);
 };
 
-#define	ASSERT_LOCK_OWNED(log, lock)					\
-	((lock)->assert_owned(true, log, __FILE__, __LINE__, __PRETTY_FUNCTION__))
-#define	ASSERT_LOCK_NOT_OWNED(log, lock)				\
-	((lock)->assert_owned(false, log, __FILE__, __LINE__, __PRETTY_FUNCTION__))
-
-class ScopedLock {
-	Lock *lock_;
-public:
-	ScopedLock(Lock *lock)
-	: lock_(lock)
-	{
-		ASSERT("/scoped/lock", lock_ != NULL);
-		lock_->lock();
-	}
-
-	~ScopedLock()
-	{
-		if (lock_ != NULL) {
-			lock_->unlock();
-			lock_ = NULL;
-		}
-	}
-
-	void acquire(Lock *lock)
-	{
-		ASSERT("/scoped/lock", lock_ == NULL);
-		lock_ = lock;
-		lock_->lock();
-	}
-
-	void drop(void)
-	{
-		ASSERT("/scoped/lock", lock_ != NULL);
-		lock_->unlock();
-		lock_ = NULL;
-	}
-};
-
-#endif /* !COMMON_THREAD_LOCK_H */
+#endif /* !EVENT_TIMEOUT_THREAD_H */

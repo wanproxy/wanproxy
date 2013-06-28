@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,26 +28,28 @@
 
 #include <deque>
 
+#include <common/thread/mutex.h>
+
 #include <event/callback.h>
 
 class CallbackQueue : public CallbackScheduler {
 	class CallbackAction : public Cancellable {
 	public:
 		CallbackQueue *const queue_;
-		const uint64_t generation_;
 		CallbackBase *callback_;
+		Action *action_;
 
-		CallbackAction(CallbackQueue *queue, uint64_t generation, CallbackBase *callback)
+		CallbackAction(CallbackQueue *queue, CallbackBase *callback)
 		: Cancellable(),
 		  queue_(queue),
-		  generation_(generation),
-		  callback_(callback)
+		  callback_(callback),
+		  action_(NULL)
 		{ }
 
 		~CallbackAction()
 		{
-			delete callback_;
-			callback_ = NULL;
+			ASSERT("/callback/queue/action", callback_ == NULL);
+			ASSERT("/callback/queue/action", action_ == NULL);
 		}
 
 		void cancel(void)
@@ -58,12 +60,12 @@ class CallbackQueue : public CallbackScheduler {
 
 	friend class CallbackAction;
 
+	Mutex mtx_;
 	std::deque<CallbackAction *> queue_;
-	uint64_t generation_;
 public:
 	CallbackQueue(void)
-	: queue_(),
-	  generation_(0)
+	: mtx_("CallbackQueue"),
+	  queue_()
 	{ }
 
 	~CallbackQueue()
@@ -73,55 +75,61 @@ public:
 
 	Action *schedule(CallbackBase *cb)
 	{
-		CallbackAction *a = new CallbackAction(this, generation_, cb);
+		CallbackAction *a = new CallbackAction(this, cb);
+
+		mtx_.lock();
 		queue_.push_back(a);
+		mtx_.unlock();
+
 		return (a);
 	}
 
-	/*
-	 * Runs all callbacks that have already been queued, but none that
-	 * are added by callbacks that are called as part of the drain
-	 * operation.  Returns true if there are queued callbacks that were
-	 * added during drain.
-	 */
-	bool drain(void)
+	void drain(void)
 	{
-		if (queue_.empty())
-			return (false);
-
-		generation_++;
+		ScopedLock _(&mtx_);
 		while (!queue_.empty()) {
 			CallbackAction *a = queue_.front();
 			ASSERT("/callback/queue", a->queue_ == this);
-			if (a->generation_ >= generation_)
-				return (true);
-			a->callback_->execute();
+			a->action_ = a->callback_->schedule();
+			a->callback_ = NULL;
+			queue_.pop_front();
 		}
-		return (false);
 	}
 
-	bool empty(void) const
+	/* XXX Is not const because of the Mutex.  */
+	bool empty(void)
 	{
+		ScopedLock _(&mtx_);
 		return (queue_.empty());
-	}
-
-	void perform(void)
-	{
-		if (queue_.empty())
-			return;
-		CallbackAction *a = queue_.front();
-		ASSERT("/callback/queue", a->queue_ == this);
-		a->callback_->execute();
 	}
 
 private:
 	void cancel(CallbackAction *a)
 	{
-		std::deque<CallbackAction *>::iterator it;
+		/*
+		 * XXX
+		 * We need to synchronize access here.
+		 *
+		 * The problem is that a CallbackQueue may be deleted while a
+		 * callback from it is scheduled but not executed.  Really, the
+		 * structure here is a bit wrong, and perhaps drain should wait
+		 * for all the actions to have been deleted?
+		 */
+		if (a->action_ != NULL) {
+			a->action_->cancel();
+			a->action_ = NULL;
+			return;
+		}
 
+		ScopedLock _(&mtx_);
+		std::deque<CallbackAction *>::iterator it;
 		for (it = queue_.begin(); it != queue_.end(); ++it) {
 			if (*it != a)
 				continue;
+
+			delete a->callback_;
+			a->callback_ = NULL;
+
 			queue_.erase(it);
 			return;
 		}

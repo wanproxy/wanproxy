@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,10 +28,12 @@
 
 #include <map>
 
+#include <common/thread/mutex.h>
+#include <common/thread/thread.h>
+
 struct EventPollState;
 
-class EventPoll {
-	friend class EventThread;
+class EventPoll : public Thread {
 	friend class PollAction;
 
 public:
@@ -82,31 +84,23 @@ private:
 	typedef std::map<int, PollHandler> poll_handler_map_t;
 
 	LogHandle log_;
+	Mutex mtx_;
 	poll_handler_map_t read_poll_;
 	poll_handler_map_t write_poll_;
 	EventPollState *state_;
 
+public:
 	EventPoll(void);
 	~EventPoll();
 
 	Action *poll(const Type&, int, EventCallback *);
+
+private:
 	void cancel(const Type&, int);
-	void wait(int);
+	void main(void);
 
-	bool idle(void) const
-	{
-		return (read_poll_.empty() && write_poll_.empty());
-	}
-
-	void poll(void)
-	{
-		wait(0);
-	}
-
-	void wait(void)
-	{
-		wait(-1);
-	}
+public:
+	void stop(void);
 };
 
 #endif /* !EVENT_EVENT_POLL_H */

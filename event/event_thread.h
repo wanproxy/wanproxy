@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,64 +26,43 @@
 #ifndef	EVENT_EVENT_THREAD_H
 #define	EVENT_EVENT_THREAD_H
 
-#include <common/thread/thread.h>
+#include <map>
+
 #include <event/callback_queue.h>
-#include <event/event_poll.h>
-#include <event/timeout_queue.h>
+#include <event/callback_thread.h>
 
 enum EventInterest {
-	EventInterestReload,
 	EventInterestStop
 };
 
-class EventThread : public Thread {
-	LogHandle log_;
-	CallbackQueue queue_;
-	bool reload_;
-	std::map<EventInterest, CallbackQueue> interest_queue_;
-	TimeoutQueue timeout_queue_;
-	EventPoll poll_;
+class EventThread : public CallbackThread {
+	Mutex interest_queue_mtx_;
+	std::map<EventInterest, CallbackQueue *> interest_queue_;
 public:
 	EventThread(void);
 
 	~EventThread()
 	{ }
 
-public:
-	Action *poll(const EventPoll::Type& type, int fd, EventCallback *cb)
-	{
-		Action *a = poll_.poll(type, fd, cb);
-		return (a);
-	}
-
 	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
 	{
-		Action *a = interest_queue_[interest].schedule(cb);
+		ScopedLock _(&interest_queue_mtx_);
+		CallbackQueue *cbq = interest_queue_[interest];
+		if (cbq == NULL) {
+			cbq = new CallbackQueue();
+			interest_queue_[interest] = cbq;
+		}
+		Action *a = cbq->schedule(cb);
 		return (a);
 	}
-
-	Action *schedule(CallbackBase *cb)
-	{
-		Action *a = queue_.schedule(cb);
-		return (a);
-	}
-
-	Action *timeout(unsigned secs, SimpleCallback *cb)
-	{
-		Action *a = timeout_queue_.append(secs, cb);
-		return (a);
-	}
-
-private:
-	void main(void);
-public:
-	void reload(void);
 
 	static EventThread *self(void)
 	{
 		Thread *td = Thread::self();
 		return (dynamic_cast<EventThread *>(td));
 	}
+
+	void stop(void);
 };
 
 #endif /* !EVENT_EVENT_THREAD_H */

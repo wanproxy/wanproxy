@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,6 +31,22 @@
 #include <deque>
 #include <vector>
 
+#include <common/refcount.h>
+
+/*
+ * MT NB:
+ *
+ * So, a Buffer cannot be shared between threads without higher-level
+ * synchronization, but a BufferSegment can.
+ *
+ * Atomic reference counting should be sufficient.  The only case where it
+ * could have shortcomings even in theory would be transitions from a count
+ * of 1, at which point only the running thread should have access to the
+ * BufferSegment pointer unless a Buffer is being shared between threads
+ * without synchronization which itself would be violently-broken.  So some
+ * kind of atomics and reference counting should suffice.
+ */
+
 struct iovec;
 
 /*
@@ -60,7 +76,11 @@ struct iovec;
  * likely than trim().
  */
 #define	BUFFER_SEGMENT_SIZE		(2048)
+#if 0 /* XXX MT should be thread-local.  */
 #define	BUFFER_SEGMENT_CACHE_LIMIT	((1024 * 1024) / BUFFER_SEGMENT_SIZE)
+#else
+#define	BUFFER_SEGMENT_CACHE_LIMIT	(0)
+#endif
 
 typedef	unsigned buffer_segment_size_t;
 
@@ -80,7 +100,7 @@ class BufferSegment {
 	uint8_t *data_;
 	buffer_segment_size_t offset_;
 	buffer_segment_size_t length_;
-	unsigned ref_;
+	RefCount ref_;
 
 	/*
 	 * Creates a new, empty BufferSegment with a single reference.
@@ -89,7 +109,7 @@ class BufferSegment {
 	: data_(NULL),
 	  offset_(0),
 	  length_(0),
-	  ref_(1)
+	  ref_()
 	{
 		/* XXX Built-in slab allocator?  */
 		data_ = (uint8_t *)malloc(BUFFER_SEGMENT_SIZE);
@@ -100,8 +120,6 @@ class BufferSegment {
 	 */
 	~BufferSegment()
 	{
-		ASSERT("/buffer/segment", ref_ == 0);
-
 		if (data_ != NULL) {
 			free(data_);
 			data_ = NULL;
@@ -116,9 +134,9 @@ public:
 	{
 		if (!segment_cache.empty()) {
 			BufferSegment *seg = segment_cache.front();
-			ASSERT("/buffer/segment", seg->ref_ == 0);
+			ASSERT("/buffer/segment", !seg->ref_.inuse());
 			segment_cache.pop_front();
-			seg->ref_++;
+			seg->ref_.hold();
 
 			seg->offset_ = 0;
 			seg->length_ = 0;
@@ -150,8 +168,7 @@ public:
 	 */
 	void ref(void)
 	{
-		ASSERT("/buffer/segment", ref_ != 0);
-		ref_++;
+		ref_.hold();
 	}
 
 	/*
@@ -160,8 +177,7 @@ public:
 	 */
 	void unref(void)
 	{
-		ASSERT("/buffer/segment", ref_ != 0);
-		if (--ref_ == 0) {
+		if (ref_.drop()) {
 			if (segment_cache.size() == BUFFER_SEGMENT_CACHE_LIMIT)
 				delete this;
 			else
@@ -170,12 +186,11 @@ public:
 	}
 
 	/*
-	 * Return the number of outstanding references.
+	 * Returns true if the BufferSegment is held exclusively.
 	 */
-	unsigned refs(void) const
+	bool exclusive(void) const
 	{
-		ASSERT("/buffer/segment", ref_ != 0);
-		return (ref_);
+		return (ref_.exclusive());
 	}
 
 	/*
@@ -183,7 +198,7 @@ public:
 	 */
 	uint8_t *head(void)
 	{
-		ASSERT("/buffer/segment", ref_ == 1);
+		ASSERT("/buffer/segment", ref_.exclusive());
 		return (&data_[offset_]);
 	}
 
@@ -193,7 +208,7 @@ public:
 	 */
 	uint8_t *tail(void)
 	{
-		ASSERT("/buffer/segment", ref_ == 1);
+		ASSERT("/buffer/segment", ref_.exclusive());
 		return (&data_[offset_ + length_]);
 	}
 
@@ -205,7 +220,7 @@ public:
 		ASSERT("/buffer/segment", buf != NULL);
 		ASSERT("/buffer/segment", len != 0);
 		ASSERT("/buffer/segment", len <= avail());
-		if (ref_ != 1) {
+		if (!ref_.exclusive()) {
 			BufferSegment *seg;
 
 			seg = this->copy();
@@ -306,7 +321,7 @@ public:
 	void pullup(void)
 	{
 		ASSERT("/buffer/segment", length_ != 0);
-		ASSERT("/buffer/segment", ref_ == 1);
+		ASSERT("/buffer/segment", ref_.exclusive());
 		if (offset_ == 0)
 			return;
 		memmove(data_, data(), length());
@@ -319,7 +334,7 @@ public:
 	 */
 	void set_length(size_t len)
 	{
-		ASSERT("/buffer/segment", ref_ == 1);
+		ASSERT("/buffer/segment", ref_.exclusive());
 		ASSERT("/buffer/segment", offset_ == 0);
 		ASSERT("/buffer/segment", len <= BUFFER_SEGMENT_SIZE);
 		length_ = len;
@@ -334,7 +349,7 @@ public:
 		ASSERT("/buffer/segment", bytes != 0);
 		ASSERT("/buffer/segment", bytes < length());
 
-		if (ref_ != 1) {
+		if (!ref_.exclusive()) {
 			BufferSegment *seg;
 
 			seg = BufferSegment::create(this->data() + bytes, this->length() - bytes);
@@ -357,7 +372,7 @@ public:
 		ASSERT("/buffer/segment", bytes != 0);
 		ASSERT("/buffer/segment", bytes < length());
 
-		if (ref_ != 1) {
+		if (!ref_.exclusive()) {
 			BufferSegment *seg;
 
 			seg = BufferSegment::create(this->data(), this->length() - bytes);
@@ -384,7 +399,7 @@ public:
 		if (offset + bytes == length())
 			return (this->trim(bytes));
 
-		if (ref_ != 1) {
+		if (!ref_.exclusive()) {
 			BufferSegment *seg;
 
 			seg = BufferSegment::create(this->data(), offset);
@@ -689,7 +704,7 @@ public:
 		if (len < BUFFER_SEGMENT_SIZE && !data_.empty()) {
 			segment_list_t::reverse_iterator it = data_.rbegin();
 			seg = *it;
-			if (seg->refs() == 1 && seg->avail() >= len) {
+			if (seg->exclusive() && seg->avail() >= len) {
 				seg = seg->append(buf, len);
 				*it = seg;
 				length_ += len;

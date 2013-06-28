@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2013 Juli Malett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,7 +29,13 @@
 #include <event/action.h>
 #include <event/callback.h>
 #include <event/dropbox.h>
+#include <event/event_callback.h>
 #include <event/event_main.h>
+#include <event/event_system.h>
+
+namespace {
+	static unsigned outstanding;
+}
 
 struct DropboxTest {
 	unsigned key_;
@@ -82,6 +88,9 @@ struct DropboxTest {
 				_.pass();
 		}
 
+		if (outstanding-- == 1)
+			EventSystem::instance()->stop();
+
 		delete this;
 	}
 };
@@ -90,6 +99,8 @@ int
 main(void)
 {
 	TestGroup g("/test/dropbox1", "Dropbox #1");
+
+	outstanding = 100;
 
 	unsigned i;
 	for (i = 0; i < 100; i++) {

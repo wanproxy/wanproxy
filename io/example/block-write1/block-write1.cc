@@ -28,6 +28,7 @@
 
 #include <event/event_callback.h>
 #include <event/event_main.h>
+#include <event/event_system.h>
 
 #include <io/block_handle.h>
 
@@ -93,6 +94,8 @@ public:
 	{
 		close_action_->cancel();
 		close_action_ = NULL;
+
+		EventSystem::instance()->stop();
 	}
 };
 

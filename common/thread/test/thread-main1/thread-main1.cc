@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,19 +25,30 @@
 
 #include <common/test.h>
 
+#include <common/thread/mutex.h>
 #include <common/thread/thread.h>
 
 #define	NTHREAD		8
 #define	ROUNDS		1024
 
-class TestThread : public Thread {
+class TestThread : public WorkerThread {
+	Mutex test_mutex_;
+	TestGroup& test_group_;
 	Test *test_main_;
 	Test *test_destroy_;
+	Test test_ready_called_;
+	Test test_ready_received_;
+	bool test_ready_;
 public:
-	TestThread(Test *test_main, Test *test_destroy)
-	: Thread("TestThread"),
+	TestThread(TestGroup& test_group, Test *test_main, Test *test_destroy)
+	: WorkerThread("TestThread"),
+	  test_mutex_("TestMutex"),
+	  test_group_(test_group),
 	  test_main_(test_main),
-	  test_destroy_(test_destroy)
+	  test_destroy_(test_destroy),
+	  test_ready_called_(test_group_, "TestThread::ready() called"),
+	  test_ready_received_(test_group_, "TestThread::work() after TestThread::ready()"),
+	  test_ready_(false)
 	{ }
 
 	~TestThread()
@@ -45,16 +56,29 @@ public:
 		test_destroy_->pass();
 	}
 
-	void main(void)
+	void work(void)
 	{
 		test_main_->pass();
+
+		ScopedLock _(&test_mutex_);
+		if (test_ready_)
+			test_ready_received_.pass();
+		stop();
+	}
+
+	void ready(void)
+	{
+		ScopedLock _(&test_mutex_);
+		test_ready_ = true;
+		test_ready_called_.pass();
+		submit();
 	}
 };
 
 int
 main(void)
 {
-	Thread *threads[NTHREAD];
+	TestThread *threads[NTHREAD];
 	Test *test_main[NTHREAD], *test_destroy[NTHREAD];
 
 	TestGroup g("/test/thread/main1", "Thread::main #1");
@@ -65,11 +89,14 @@ main(void)
 		for (i = 0; i < NTHREAD; i++) {
 			test_main[i] = new Test(g, "Main function called.");
 			test_destroy[i] = new Test(g, "Destructor called.");
-			threads[i] = new TestThread(test_main[i], test_destroy[i]);
+			threads[i] = new TestThread(g, test_main[i], test_destroy[i]);
 		}
 
 		for (i = 0; i < NTHREAD; i++)
 			threads[i]->start();
+
+		for (i = 0; i < NTHREAD; i++)
+			threads[i]->ready();
 
 		for (i = 0; i < NTHREAD; i++)
 			threads[i]->join();

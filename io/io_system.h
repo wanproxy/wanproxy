@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,19 +28,23 @@
 
 #include <map>
 
+#include <common/thread/mutex.h>
+
 #include <io/io_system.h>
 
+class CallbackScheduler;
+class CallbackThread;
 class Channel;
 
 class IOSystem {
 	struct Handle {
 		LogHandle log_;
 
+		Mutex mtx_;
+		CallbackScheduler *scheduler_;
+
 		int fd_;
 		Channel *owner_;
-
-		SimpleCallback *close_callback_;
-		Action *close_action_;
 
 		off_t read_offset_;
 		size_t read_amount_;
@@ -53,12 +57,10 @@ class IOSystem {
 		EventCallback *write_callback_;
 		Action *write_action_;
 
-		Handle(int, Channel *);
+		Handle(CallbackScheduler *, int, Channel *);
 		~Handle();
 
-		void close_callback(void);
-		void close_cancel(void);
-		Action *close_schedule(void);
+		Action *close_do(SimpleCallback *);
 
 		void read_callback(Event);
 		void read_cancel(void);
@@ -81,7 +83,9 @@ class IOSystem {
 	typedef std::map<handle_key_t, Handle *> handle_map_t;
 
 	LogHandle log_;
+	Mutex mtx_;
 	handle_map_t handle_map_;
+	CallbackThread *handler_thread_;
 
 	IOSystem(void);
 	~IOSystem();

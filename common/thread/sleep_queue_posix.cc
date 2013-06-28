@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +29,9 @@
 #include <common/thread/sleep_queue.h>
 #include <common/thread/thread.h>
 
+#include <common/time/time.h>
+
+#include "mutex_posix.h"
 #include "sleep_queue_posix.h"
 
 SleepQueue::SleepQueue(const std::string& name, Mutex *mutex)
@@ -58,9 +61,9 @@ SleepQueue::signal(void)
 }
 
 void
-SleepQueue::wait(void)
+SleepQueue::wait(const NanoTime *deadline)
 {
 	ASSERT_LOCK_OWNED("/sleep/queue", mutex_);
-	state_->wait();
+	state_->wait(deadline);
 	ASSERT_LOCK_OWNED("/sleep/queue", mutex_);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,64 +23,46 @@
  * SUCH DAMAGE.
  */
 
-#ifndef	COMMON_THREAD_LOCK_H
-#define	COMMON_THREAD_LOCK_H
+#ifndef	EVENT_CALLBACK_THREAD_H
+#define	EVENT_CALLBACK_THREAD_H
 
-class Lock {
-	std::string name_;
+#include <deque>
+
+#include <common/thread/thread.h>
+
+#include <event/callback.h>
+
+class CallbackThread : public Thread, public CallbackScheduler {
 protected:
-	Lock(const std::string& name)
-	: name_(name)
-	{ }
+	LogHandle log_;
+private:
+	Mutex mtx_;
+	SleepQueue sleepq_;
+	bool idle_;
+	std::deque<CallbackBase *> queue_;
+	CallbackBase *inflight_;
 public:
-	virtual ~Lock()
+	CallbackThread(const std::string&);
+
+	~CallbackThread()
 	{ }
 
-	virtual void assert_owned(bool, const LogHandle&, const std::string&, unsigned, const std::string&) = 0;
-	virtual void lock(void) = 0;
-	virtual bool try_lock(void) = 0;
-	virtual void unlock(void) = 0;
+	Action *schedule(CallbackBase *);
 
 private:
-	Lock(const Lock&); /* XXX Disable copy.  */
-};
+	void cancel(CallbackBase *);
 
-#define	ASSERT_LOCK_OWNED(log, lock)					\
-	((lock)->assert_owned(true, log, __FILE__, __LINE__, __PRETTY_FUNCTION__))
-#define	ASSERT_LOCK_NOT_OWNED(log, lock)				\
-	((lock)->assert_owned(false, log, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+	void main(void);
 
-class ScopedLock {
-	Lock *lock_;
 public:
-	ScopedLock(Lock *lock)
-	: lock_(lock)
+	virtual void stop(void)
 	{
-		ASSERT("/scoped/lock", lock_ != NULL);
-		lock_->lock();
-	}
-
-	~ScopedLock()
-	{
-		if (lock_ != NULL) {
-			lock_->unlock();
-			lock_ = NULL;
-		}
-	}
-
-	void acquire(Lock *lock)
-	{
-		ASSERT("/scoped/lock", lock_ == NULL);
-		lock_ = lock;
-		lock_->lock();
-	}
-
-	void drop(void)
-	{
-		ASSERT("/scoped/lock", lock_ != NULL);
-		lock_->unlock();
-		lock_ = NULL;
+		ScopedLock _(&mtx_);
+		if (stop_)
+			return;
+		stop_ = true;
+		sleepq_.signal();
 	}
 };
 
-#endif /* !COMMON_THREAD_LOCK_H */
+#endif /* !EVENT_CALLBACK_THREAD_H */

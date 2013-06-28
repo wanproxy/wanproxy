@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,55 +23,51 @@
  * SUCH DAMAGE.
  */
 
-#include <event/event_callback.h>
-#include <event/event_main.h>
-#include <event/event_system.h>
+#ifndef	COMMON_REFCOUNT_H
+#define	COMMON_REFCOUNT_H
 
-class ReloadTest {
-	Action *action_;
-	Action *reload_action_;
-	unsigned reload_count_;
+/* XXX If !THREADS, do not use atomics.  */
+#include <common/thread/atomic.h>
+
+class RefCount {
+	Atomic<unsigned> refs_;
 public:
-	ReloadTest(void)
-	: action_(NULL),
-	  reload_action_(NULL),
-	  reload_count_(0)
+	RefCount(void)
+	: refs_(1)
+	{ }
+
+	~RefCount()
 	{
-		action_ = callback(this, &ReloadTest::forever)->schedule();
-		reload_action_ = EventSystem::instance()->register_interest(EventInterestReload, callback(this, &ReloadTest::reload));
+		ASSERT("/refcount", refs_.load() == 0);
 	}
 
-	~ReloadTest()
+	bool exclusive(void) const
 	{
-		ASSERT("/example/callback/manyspeed1", action_ == NULL);
+		return (refs_.load() == 1);
 	}
 
-private:
-	void forever(void)
+	bool inuse(void) const
 	{
-		action_->cancel();
-		action_ = NULL;
-
-		action_ = callback(this, &ReloadTest::forever)->schedule();
+		return (refs_.load() != 0);
 	}
 
-	void reload(void)
+	void hold(void)
 	{
-		reload_action_->cancel();
-		reload_action_ = NULL;
+		refs_.add(1);
+	}
 
-		INFO("/event/reload/test1") << "Reload #" << ++reload_count_;
-
-		reload_action_ = EventSystem::instance()->register_interest(EventInterestReload, callback(this, &ReloadTest::reload));
+	/*
+	 * Drops a reference and returns true if that was the last reference.
+	 */
+	bool drop(void)
+	{
+		for (;;) {
+			unsigned r = refs_.load();
+			if (!refs_.cmpset(r, r - 1))
+				continue;
+			return (r == 1);
+		}
 	}
 };
 
-int
-main(void)
-{
-	ReloadTest *tt = new ReloadTest();
-
-	event_main();
-
-	delete tt;
-}
+#endif /* !COMMON_REFCOUNT_H */

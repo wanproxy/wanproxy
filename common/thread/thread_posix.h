@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -47,6 +47,8 @@ struct ThreadState {
 		pthread_setname_np(td->name_.c_str());
 #endif
 	}
+
+	static void signal_stop(int);
 };
 
 #endif /* !COMMON_THREAD_THREAD_POSIX_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +26,8 @@
 #ifndef	COMMON_THREAD_SLEEP_QUEUE_POSIX_H
 #define	COMMON_THREAD_SLEEP_QUEUE_POSIX_H
 
+#include <common/time/time.h>
+
 #include "mutex_posix.h"
 
 struct SleepQueueState {
@@ -36,9 +38,22 @@ struct SleepQueueState {
 	: cond_(),
 	  mutex_state_(mutex_state)
 	{
+		pthread_condattr_t attr;
 		int rv;
 
-		rv = pthread_cond_init(&cond_, NULL);
+		rv = pthread_condattr_init(&attr);
+		ASSERT("/sleep/queue/posix/state", rv != -1);
+
+		/* Match behaviour/clock of NanoTime.  */
+#if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
+		rv = pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
+		ASSERT("/sleep/queue/posix/state", rv != -1);
+#endif
+
+		rv = pthread_cond_init(&cond_, &attr);
+		ASSERT("/sleep/queue/posix/state", rv != -1);
+
+		rv = pthread_condattr_destroy(&attr);
 		ASSERT("/sleep/queue/posix/state", rv != -1);
 	}
 
@@ -62,13 +77,23 @@ struct SleepQueueState {
 		ASSERT("/sleep/queue/posix/state", rv != -1);
 	}
 
-	void wait(void)
+	void wait(const NanoTime *deadline)
 	{
+		struct timespec ts;
+		NanoTime nt;
 		int rv;
+
+		if (deadline != NULL) {
+			ts.tv_sec = deadline->seconds_;
+			ts.tv_nsec = deadline->nanoseconds_;
+		}
 
 		mutex_state_->lock();
 		mutex_state_->lock_release();
-		rv = pthread_cond_wait(&cond_, &mutex_state_->mutex_);
+		if (deadline == NULL)
+			rv = pthread_cond_wait(&cond_, &mutex_state_->mutex_);
+		else
+			rv = pthread_cond_timedwait(&cond_, &mutex_state_->mutex_, &ts);
 		ASSERT("/sleep/queue/posix/state", rv != -1);
 		mutex_state_->lock_acquire();
 		mutex_state_->unlock();
