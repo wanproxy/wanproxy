@@ -80,15 +80,17 @@ public:
 	void start(void)
 	{
 		td_.start();
+		thread_wait(&td_);
+
 		poll_.start();
+		thread_wait(&poll_);
+
 		timeout_.start();
+		thread_wait(&timeout_);
 	}
 
 	void join(void)
 	{
-		td_.join();
-		poll_.join();
-		timeout_.join();
 		while (!threads_.empty()) {
 			threads_.front()->join();
 			threads_.pop_front();
@@ -97,9 +99,6 @@ public:
 
 	void stop(void)
 	{
-		td_.stop();
-		poll_.stop();
-		timeout_.stop();
 		std::deque<Thread *>::const_iterator it;
 		for (it = threads_.begin(); it != threads_.end(); ++it) {
 			Thread *td = *it;
