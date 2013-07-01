@@ -69,10 +69,9 @@ namespace {
 	 * XXX
 	 * Like a non-trivial amount of other code, this has been
 	 * written a bit fast-and-loose.  The usage of the dh_ and
-	 * k_ in particularly are a bit dodgy and need to be freed
-	 * in the destructor.
+	 * k_ in particularly are a bit dodgy.
 	 *
-	 * Need to add assertions and frees.
+	 * Need to add assertions and frees where possible.
 	 */
 	template<CryptoHash::Algorithm hash_algorithm>
 	class DiffieHellmanGroupExchange : public SSH::KeyExchange {
@@ -92,7 +91,16 @@ namespace {
 		{ }
 
 		~DiffieHellmanGroupExchange()
-		{ }
+		{
+			if (dh_ != NULL) {
+				DH_free(dh_);
+				dh_ = NULL;
+			}
+			if (k_ != NULL) {
+				BN_free(k_);
+				k_ = NULL;
+			}
+		}
 
 		KeyExchange *clone(void) const
 		{
