@@ -14,5 +14,9 @@ o) Figure out a naming scheme.  Packet, payload, MACs, etc., all have lots of
    different names.  Hard because we sometimes need to have a Buffer and a
    uint8_t array for the same data.  But the code is hard to read due to all the
    inconsistency and duplication.
+o) Figure out a non-OpenSSL BN/mpint representation to use for WANProxy
+   generally.
+o) Make encode and decode methods have descriptive names rather than having only
+   descriptive namespaces.
 o) Split up the key exchange input method.  It's harder to check whether its
    variables are used safely since they're in a big, combined lump.
