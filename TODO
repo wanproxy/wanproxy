@@ -35,6 +35,10 @@ High-priority:
 	each thread specify a timeout for sleeping, mostly useful for the
 	callback thread.
 
+o) Something like EventHandler to ease event cancellation proxies in classes that
+   may defer callbacks.  An extension of it to handle management of associated
+   resources (i.e. Buffers, really) would be the top ideal.
+
 Make it so that Actions can be given a callback after they are created, and
 then the source of the Action from that gets the hint to start and where to
 continue after the asynchronous action.  This has the nice benefit of getting
