@@ -177,7 +177,12 @@ void
 PipeProducer::produce_error(void)
 {
 	ASSERT(log_, !error_);
-	ASSERT(log_, !output_eos_);
+
+	if (output_eos_) {
+		ASSERT(log_, output_callback_ == NULL);
+		ERROR(log_) << "Produced error after EOS; consumer will not receive error.";
+		return;
+	}
 
 	error_ = true;
 	output_buffer_.clear();
