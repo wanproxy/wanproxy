@@ -64,6 +64,7 @@ class SSHConnection {
 		uint32_t remote_channel_;
 		uint32_t remote_window_size_;
 		uint32_t remote_packet_size_;
+		Buffer remote_window_;
 
 		std::map<std::string, Buffer> environment_;
 
@@ -75,6 +76,7 @@ class SSHConnection {
 		  remote_channel_(remote_channel),
 		  remote_window_size_(remote_window_size),
 		  remote_packet_size_(remote_packet_size),
+		  remote_window_(),
 		  environment_()
 		{ }
 	};
@@ -145,6 +147,7 @@ private:
 
 		Buffer service;
 		Buffer type;
+		Buffer data;
 		Buffer msg;
 		SSHChannel *channel;
 		uint32_t recipient_channel, sender_channel, window_size, packet_size;
@@ -328,8 +331,51 @@ private:
 			break;
 		case SSH::Message::ConnectionChannelWindowAdjust:
 			/* Follow our peer's lead on window adjustments.  */
+			break;
 		case SSH::Message::ConnectionChannelData:
 			/* For now, just ignore data.  Will pass to something shell-like eventually.  */
+			e.buffer_.skip(1);
+			if (e.buffer_.empty()) {
+				ERROR(log_) << "No channel after channel data.";
+				return;
+			}
+			if (!SSH::UInt32::decode(&recipient_channel, &e.buffer_)) {
+				ERROR(log_) << "Could not decode recipient channel.";
+				return;
+			}
+			if (!SSH::String::decode(&data, &e.buffer_)) {
+				ERROR(log_) << "Could not decode channel data.";
+				return;
+			}
+			if (!e.buffer_.empty()) {
+				ERROR(log_) << "Extraneous data after channel data.";
+				return;
+			}
+
+			/* Just ignore empty data.  */
+			if (data.empty())
+				break;
+
+			chit = channel_map_.find(recipient_channel);
+			if (chit == channel_map_.end()) {
+				/* XXX Send some kind of error.  */
+				break;
+			}
+			channel = chit->second;
+			data.moveout(&channel->remote_window_);
+
+			/*
+			 * If more than half of the window is in-use, increase remote window size
+			 * by the amount that we have buffered.
+			 */
+			if ((channel->remote_window_.length() * 2) >= channel->remote_window_size_) {
+				msg.append(SSH::Message::ConnectionChannelWindowAdjust);
+				SSH::UInt32::encode(&msg, channel->remote_channel_);
+				SSH::UInt32::encode(&msg, channel->remote_window_.length());
+				pipe_->send(&msg);
+
+				channel->remote_window_.clear();
+			}
 			break;
 		default:
 			DEBUG(log_) << "Unhandled message:" << std::endl << e.buffer_.hexdump();
