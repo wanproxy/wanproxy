@@ -150,6 +150,14 @@ namespace {
 				else if (n > max)
 					n = max;
 
+				/*
+				 * XXX
+				 * Do we want to reuse dh_?
+				 */
+				if (dh_ != NULL) {
+					DH_free(dh_);
+					dh_ = NULL;
+				}
 #ifdef USE_TEST_GROUP
 				group.append(test_prime_and_generator, sizeof test_prime_and_generator);
 				dh_ = DH_new();
@@ -182,6 +190,10 @@ namespace {
 				in->skip(1);
 				key_exchange_.append(in);
 
+				if (dh_ != NULL) {
+					DH_free(dh_);
+					dh_ = NULL;
+				}
 				dh_ = DH_new();
 				if (dh_ == NULL) {
 					ERROR(log_) << "DH_new failed.";
@@ -209,6 +221,10 @@ namespace {
 			case DiffieHellmanGroupExchangeInitialize:
 				if (session_->role_ != SSH::ServerRole) {
 					ERROR(log_) << "Received group exchange initialization as client.";
+					return (false);
+				}
+				if (dh_ == NULL) {
+					ERROR(log_) << "Received premature group exchange initialization.";
 					return (false);
 				}
 				in->skip(1);
@@ -246,6 +262,10 @@ namespace {
 			case DiffieHellmanGroupExchangeReply:
 				if (session_->role_ != SSH::ClientRole) {
 					ERROR(log_) << "Received group exchange reply as client.";
+					return (false);
+				}
+				if (dh_ == NULL) {
+					ERROR(log_) << "Received premature group exchange reply.";
 					return (false);
 				}
 				in->skip(1);
