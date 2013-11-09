@@ -232,15 +232,19 @@ namespace {
 				if (!SSH::MPInt::decode(&e, in))
 					return (false);
 
-				if (!DH_generate_key(dh_))
+				if (!DH_generate_key(dh_)) {
+					BN_free(e);
 					return (false);
+				}
 				f = dh_->pub_key;
 
 				SSH::MPInt::encode(&key_exchange_, f);
 				if (!exchange_finish(e)) {
 					ERROR(log_) << "Server key exchange finish failed.";
+					BN_free(e);
 					return (false);
 				}
+				BN_free(e);
 
 				key = session_->chosen_algorithms_.server_host_key_;
 				if (!key->sign(&signature, &session_->exchange_hash_))
@@ -273,20 +277,25 @@ namespace {
 					return (false);
 				if (!SSH::MPInt::decode(&f, in))
 					return (false);
-				if (!SSH::String::decode(&signature, in))
+				if (!SSH::String::decode(&signature, in)) {
+					BN_free(f);
 					return (false);
+				}
 
 				key = session_->chosen_algorithms_.server_host_key_;
 				if (!key->decode_public_key(&server_public_key)) {
 					ERROR(log_) << "Could not decode server public key:" << std::endl << server_public_key.hexdump();
+					BN_free(f);
 					return (false);
 				}
 
 				SSH::MPInt::encode(&key_exchange_, f);
 				if (!exchange_finish(f)) {
 					ERROR(log_) << "Client key exchange finish failed.";
+					BN_free(f);
 					return (false);
 				}
+				BN_free(f);
 
 				if (!key->verify(&signature, &session_->exchange_hash_)) {
 					ERROR(log_) << "Failed to verify exchange hash.";

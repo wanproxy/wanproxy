@@ -52,7 +52,12 @@ namespace {
 		}
 
 		~RSAServerHostKey()
-		{ }
+		{
+			if (rsa_ != NULL) {
+				RSA_free(rsa_);
+				rsa_ = NULL;
+			}
+		}
 
 		SSH::ServerHostKey *clone(void) const
 		{
