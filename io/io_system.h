@@ -30,8 +30,6 @@
 
 #include <common/thread/mutex.h>
 
-#include <io/io_system.h>
-
 class CallbackScheduler;
 class CallbackThread;
 class Channel;
