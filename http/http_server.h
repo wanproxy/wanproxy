@@ -63,8 +63,8 @@ template<typename T, typename Th, typename Ta = void>
 class HTTPServer : public SimpleServer<T> {
 	Ta arg_;
 public:
-	HTTPServer(Ta arg, SocketAddressFamily family, const std::string& interface)
-	: SimpleServer<T>("/http/server", family, interface),
+	HTTPServer(Ta arg, SocketImpl impl, SocketAddressFamily family, const std::string& interface)
+	: SimpleServer<T>("/http/server", impl, family, interface),
 	  arg_(arg)
 	{ }
 
@@ -80,8 +80,8 @@ public:
 template<typename T, typename Th>
 class HTTPServer<T, Th, void> : public SimpleServer<T> {
 public:
-	HTTPServer(SocketAddressFamily family, const std::string& interface)
-	: SimpleServer<T>("/http/server", family, interface)
+	HTTPServer(SocketImpl impl, SocketAddressFamily family, const std::string& interface)
+	: SimpleServer<T>("/http/server", impl, family, interface)
 	{ }
 
 	~HTTPServer()

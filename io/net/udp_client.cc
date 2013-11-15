@@ -29,8 +29,9 @@
 
 #include <io/net/udp_client.h>
 
-UDPClient::UDPClient(SocketAddressFamily family)
+UDPClient::UDPClient(SocketImpl impl, SocketAddressFamily family)
 : log_("/udp/client"),
+  impl_(impl),
   family_(family),
   socket_(NULL),
   close_action_(NULL),
@@ -57,7 +58,7 @@ UDPClient::connect(const std::string& iface, const std::string& name, SocketEven
 	ASSERT(log_, connect_callback_ == NULL);
 	ASSERT(log_, socket_ == NULL);
 
-	socket_ = Socket::create(family_, SocketTypeDatagram, "udp", name);
+	socket_ = Socket::create(impl_, family_, SocketTypeDatagram, "udp", name);
 	if (socket_ == NULL) {
 		ccb->param(Event::Error, NULL);
 		Action *a = ccb->schedule();
@@ -138,15 +139,15 @@ UDPClient::close_complete(void)
 }
 
 Action *
-UDPClient::connect(SocketAddressFamily family, const std::string& name, SocketEventCallback *cb)
+UDPClient::connect(SocketImpl impl, SocketAddressFamily family, const std::string& name, SocketEventCallback *cb)
 {
-	UDPClient *udp = new UDPClient(family);
+	UDPClient *udp = new UDPClient(impl, family);
 	return (udp->connect("", name, cb));
 }
 
 Action *
-UDPClient::connect(SocketAddressFamily family, const std::string& iface, const std::string& name, SocketEventCallback *cb)
+UDPClient::connect(SocketImpl impl, SocketAddressFamily family, const std::string& iface, const std::string& name, SocketEventCallback *cb)
 {
-	UDPClient *udp = new UDPClient(family);
+	UDPClient *udp = new UDPClient(impl, family);
 	return (udp->connect(iface, name, cb));
 }

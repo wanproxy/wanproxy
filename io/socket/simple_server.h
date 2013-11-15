@@ -41,14 +41,14 @@ class SimpleServer {
 	Action *close_action_;
 	Action *stop_action_;
 public:
-	SimpleServer(LogHandle log, SocketAddressFamily family, const std::string& interface)
+	SimpleServer(LogHandle log, SocketImpl impl, SocketAddressFamily family, const std::string& interface)
 	: log_(log),
 	  server_(NULL),
 	  accept_action_(NULL),
 	  close_action_(NULL),
 	  stop_action_(NULL)
 	{
-		server_ = L::listen(family, interface);
+		server_ = L::listen(impl, family, interface);
 		if (server_ == NULL)
 			HALT(log_) << "Unable to create listener.";
 

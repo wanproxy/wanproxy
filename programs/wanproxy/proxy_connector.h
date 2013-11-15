@@ -57,7 +57,7 @@ class ProxyConnector {
 	Action *splice_action_;
 
 public:
-	ProxyConnector(const std::string&, PipePair *, Socket *, SocketAddressFamily, const std::string&);
+	ProxyConnector(const std::string&, PipePair *, Socket *, SocketImpl, SocketAddressFamily, const std::string&);
 private:
 	~ProxyConnector();
 

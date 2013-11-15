@@ -26,6 +26,11 @@
 #ifndef	IO_SOCKET_SOCKET_TYPES_H
 #define	IO_SOCKET_SOCKET_TYPES_H
 
+enum SocketImpl {
+	SocketImplOS,
+	SocketImplUinet
+};
+
 enum SocketAddressFamily {
 	SocketAddressFamilyIP,
 	SocketAddressFamilyIPv4,

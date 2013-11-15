@@ -29,8 +29,9 @@
 
 #include <io/net/tcp_client.h>
 
-TCPClient::TCPClient(SocketAddressFamily family)
+TCPClient::TCPClient(SocketImpl impl, SocketAddressFamily family)
 : log_("/tcp/client"),
+  impl_(impl),
   family_(family),
   socket_(NULL),
   close_action_(NULL),
@@ -57,7 +58,7 @@ TCPClient::connect(const std::string& iface, const std::string& name, SocketEven
 	ASSERT(log_, connect_callback_ == NULL);
 	ASSERT(log_, socket_ == NULL);
 
-	socket_ = Socket::create(family_, SocketTypeStream, "tcp", name);
+	socket_ = Socket::create(impl_, family_, SocketTypeStream, "tcp", name);
 	if (socket_ == NULL) {
 		ccb->param(Event::Error, NULL);
 		Action *a = ccb->schedule();
@@ -146,15 +147,15 @@ TCPClient::close_complete(void)
 }
 
 Action *
-TCPClient::connect(SocketAddressFamily family, const std::string& name, SocketEventCallback *cb)
+TCPClient::connect(SocketImpl impl, SocketAddressFamily family, const std::string& name, SocketEventCallback *cb)
 {
-	TCPClient *tcp = new TCPClient(family);
+	TCPClient *tcp = new TCPClient(impl, family);
 	return (tcp->connect("", name, cb));
 }
 
 Action *
-TCPClient::connect(SocketAddressFamily family, const std::string& iface, const std::string& name, SocketEventCallback *cb)
+TCPClient::connect(SocketImpl impl, SocketAddressFamily family, const std::string& iface, const std::string& name, SocketEventCallback *cb)
 {
-	TCPClient *tcp = new TCPClient(family);
+	TCPClient *tcp = new TCPClient(impl, family);
 	return (tcp->connect(iface, name, cb));
 }

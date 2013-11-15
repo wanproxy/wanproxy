@@ -38,12 +38,12 @@ IOSystem::IOSystem(void)
 : log_("/io/system"),
   mtx_("IOSystem"),
   handle_map_(),
-  handler_thread_(new CallbackThread("IOThread"))
+  handler_thread_(new CallbackThread("System IOThread"))
 {
 	/*
 	 * Prepare system to handle IO.
 	 */
-	INFO(log_) << "Starting IO system.";
+	INFO(log_) << "Starting OS IO system.";
 
 	/*
 	 * Disable SIGPIPE.

@@ -30,6 +30,7 @@
 
 class TCPClient {
 	LogHandle log_;
+	SocketImpl impl_;
 	SocketAddressFamily family_;
 	Socket *socket_;
 
@@ -38,7 +39,7 @@ class TCPClient {
 	Action *connect_action_;
 	SocketEventCallback *connect_callback_;
 
-	TCPClient(SocketAddressFamily);
+	TCPClient(SocketImpl, SocketAddressFamily);
 	~TCPClient();
 
 	Action *connect(const std::string&, const std::string&, SocketEventCallback *);
@@ -48,8 +49,8 @@ class TCPClient {
 	void close_complete(void);
 
 public:
-	static Action *connect(SocketAddressFamily, const std::string&, SocketEventCallback *);
-	static Action *connect(SocketAddressFamily, const std::string&, const std::string&, SocketEventCallback *);
+	static Action *connect(SocketImpl, SocketAddressFamily, const std::string&, SocketEventCallback *);
+	static Action *connect(SocketImpl, SocketAddressFamily, const std::string&, const std::string&, SocketEventCallback *);
 };
 
 #endif /* !IO_NET_TCP_CLIENT_H */

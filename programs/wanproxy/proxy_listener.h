@@ -36,11 +36,12 @@ class ProxyListener : public SimpleServer<TCPServer> {
 	std::string name_;
 	WANProxyCodec *interface_codec_;
 	WANProxyCodec *remote_codec_;
+	SocketImpl remote_impl_;
 	SocketAddressFamily remote_family_;
 	std::string remote_name_;
 public:
-	ProxyListener(const std::string&, WANProxyCodec *, WANProxyCodec *, SocketAddressFamily,
-		      const std::string&, SocketAddressFamily,
+	ProxyListener(const std::string&, WANProxyCodec *, WANProxyCodec *, SocketImpl, SocketAddressFamily,
+		      const std::string&, SocketImpl, SocketAddressFamily,
 		      const std::string&);
 	~ProxyListener();
 

@@ -251,7 +251,7 @@ ProxySocksConnection::write_complete(Event e)
 		family = SocketAddressFamilyIPv4;
 	}
 
-	new ProxyConnector(name_, NULL, client_, family, remote_name.str());
+	new ProxyConnector(name_, NULL, client_, SocketImplOS, family, remote_name.str());
 
 	client_ = NULL;
 	delete this;

@@ -61,7 +61,7 @@ public:
 		return (socket_->read(0, cb));
 	}
 
-	static UDPServer *listen(SocketAddressFamily, const std::string&);
+	static UDPServer *listen(SocketImpl, SocketAddressFamily, const std::string&);
 };
 
 #endif /* !IO_NET_UDP_SERVER_H */

@@ -32,7 +32,7 @@ Action *
 UnixClient::connect(Socket **socketp, const std::string& name,
 		   EventCallback *cb)
 {
-	Socket *socket = Socket::create(SocketAddressFamilyUnix, SocketTypeStream);
+	Socket *socket = Socket::create(SocketImplOS, SocketAddressFamilyUnix, SocketTypeStream);
 	*socketp = socket;
 	if (socket != NULL)
 		return (socket->connect(name, cb));

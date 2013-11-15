@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010 Juli Mallett. All rights reserved.
+ * Copyright (c) 2013 Patrick Kelsey. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,29 +23,52 @@
  * SUCH DAMAGE.
  */
 
+
+#include <event/callback_thread.h>
 #include <event/event_callback.h>
+#include <event/event_system.h>
 
-#include <io/socket/socket.h>
+#include <io/io_uinet.h>
 
-#include <io/net/udp_server.h>
+#include <uinet_api.h>
 
-UDPServer *
-UDPServer::listen(SocketImpl impl, SocketAddressFamily family, const std::string& name)
+IOUinet::IOUinet(void)
+	: log_("/io/uinet"),
+	  handler_thread_(new CallbackThread("UINET IOThread"))
 {
-	Socket *socket = Socket::create(impl, family, SocketTypeDatagram, "udp", name);
-	if (socket == NULL) {
-		ERROR("/udp/server") << "Unable to create socket.";
-		return (NULL);
-	}
 	/*
-	 * XXX
-	 * After this we could leak a socket, sigh.  Need a blocking close, or
-	 * a pool to return the socket to.
+	 * Prepare system to handle UINET IO.
 	 */
-	if (!socket->bind(name)) {
-		ERROR("/udp/server") << "Socket bind failed, leaking socket.";
-		return (NULL);
+	INFO(log_) << "Starting UINET IO system.";
+
+#if 0
+	for (i = 0; i < num_ifs; i++) {
+		uinet_config_if(ifnames[i], 0, i + 1);
 	}
-	UDPServer *server = new UDPServer(socket);
-	return (server);
+#endif
+
+	/*
+	 * XXX number of CPUs and limit on number of mbuf clusters should be
+	 * configurable
+	 */
+	uinet_init(1, 128*1024);
+
+	uinet_config_blackhole(UINET_BLACKHOLE_TCP_ALL);
+	uinet_config_blackhole(UINET_BLACKHOLE_UDP_ALL);
+
+#if 0
+	for (i = 0; i < num_ifs; i++) {
+		uinet_interface_up(ifnames[i], 0);
+	}
+
+#endif
+	handler_thread_->start();
+
+	EventSystem::instance()->thread_wait(handler_thread_);
 }
+
+
+IOUinet::~IOUinet()
+{
+}
+

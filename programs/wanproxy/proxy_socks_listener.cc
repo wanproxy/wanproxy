@@ -36,7 +36,7 @@
 #include "proxy_socks_listener.h"
 
 ProxySocksListener::ProxySocksListener(const std::string& name, SocketAddressFamily family, const std::string& interface)
-: SimpleServer<TCPServer>("/wanproxy/proxy/" + name + "/socks/listener", family, interface),
+: SimpleServer<TCPServer>("/wanproxy/proxy/" + name + "/socks/listener", SocketImplOS, family, interface),
   name_(name)
 { }
 

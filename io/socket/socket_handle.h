@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2009-2010 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2012 Juli Mallett. All rights reserved.
+ * Copyright (c) 2013 Patrick Kelsey. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,29 +24,47 @@
  * SUCH DAMAGE.
  */
 
-#include <event/event_callback.h>
+#ifndef	IO_SOCKET_SOCKET_HANDLE_H
+#define	IO_SOCKET_SOCKET_HANDLE_H
 
+
+#include <io/stream_handle.h>
 #include <io/socket/socket.h>
 
-#include <io/net/udp_server.h>
 
-UDPServer *
-UDPServer::listen(SocketImpl impl, SocketAddressFamily family, const std::string& name)
-{
-	Socket *socket = Socket::create(impl, family, SocketTypeDatagram, "udp", name);
-	if (socket == NULL) {
-		ERROR("/udp/server") << "Unable to create socket.";
-		return (NULL);
-	}
-	/*
-	 * XXX
-	 * After this we could leak a socket, sigh.  Need a blocking close, or
-	 * a pool to return the socket to.
-	 */
-	if (!socket->bind(name)) {
-		ERROR("/udp/server") << "Socket bind failed, leaking socket.";
-		return (NULL);
-	}
-	UDPServer *server = new UDPServer(socket);
-	return (server);
-}
+class SocketHandle : public Socket, public StreamHandle {
+using StreamHandle::close;
+
+	LogHandle log_;
+	Action *accept_action_;
+	SocketEventCallback *accept_callback_;
+	EventCallback *connect_callback_;
+	Action *connect_action_;
+
+	SocketHandle(int, int, int, int);
+public:
+	~SocketHandle();
+
+	virtual Action *accept(SocketEventCallback *);
+	virtual bool bind(const std::string&);
+	virtual Action *connect(const std::string&, EventCallback *);
+	virtual bool listen(void);
+	virtual Action *shutdown(bool, bool, EventCallback *);
+
+	virtual std::string getpeername(void) const;
+	virtual std::string getsockname(void) const;
+
+private:
+	void accept_callback(Event);
+	void accept_cancel(void);
+	Action *accept_schedule(void);
+
+	void connect_callback(Event);
+	void connect_cancel(void);
+	Action *connect_schedule(void);
+
+public:
+	static SocketHandle *create(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");
+};
+
+#endif /* !IO_SOCKET_SOCKET_HANDLE_H */

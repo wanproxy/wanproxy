@@ -61,7 +61,7 @@ public:
 		return (socket_->getsockname());
 	}
 
-	static TCPServer *listen(SocketAddressFamily, const std::string&);
+	static TCPServer *listen(SocketImpl, SocketAddressFamily, const std::string&);
 };
 
 #endif /* !IO_NET_TCP_SERVER_H */

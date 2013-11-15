@@ -30,9 +30,9 @@
 #include <io/net/tcp_server.h>
 
 TCPServer *
-TCPServer::listen(SocketAddressFamily family, const std::string& name)
+TCPServer::listen(SocketImpl impl, SocketAddressFamily family, const std::string& name)
 {
-	Socket *socket = Socket::create(family, SocketTypeStream, "tcp", name);
+	Socket *socket = Socket::create(impl, family, SocketTypeStream, "tcp", name);
 	if (socket == NULL) {
 		ERROR("/tcp/server") << "Unable to create socket.";
 		return (NULL);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008-2012 Juli Mallett. All rights reserved.
+ * Copyright (c) 2013 Patrick Kelsey. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,45 +31,36 @@
 #include <event/object_callback.h>
 #include <event/typed_pair_callback.h>
 
-#include <io/stream_handle.h>
+#include <io/channel.h>
 #include <io/socket/socket_types.h>
 
 typedef	class TypedPairCallback<Event, Socket *> SocketEventCallback;
 
-class Socket : public StreamHandle {
-	LogHandle log_;
+class Socket : public virtual StreamChannel {
+protected:
 	int domain_;
 	int socktype_;
 	int protocol_;
-	Action *accept_action_;
-	SocketEventCallback *accept_callback_;
-	EventCallback *connect_callback_;
-	Action *connect_action_;
 
-	Socket(int, int, int, int);
+	Socket(int domain, int socktype, int protocol)
+	: domain_(domain),
+	  socktype_(socktype),
+	  protocol_(protocol)
+	{ }
 public:
-	~Socket();
+	virtual ~Socket()
+	{ }
 
-	virtual Action *accept(SocketEventCallback *);
-	bool bind(const std::string&);
-	Action *connect(const std::string&, EventCallback *);
-	bool listen(void);
-	Action *shutdown(bool, bool, EventCallback *);
+	virtual Action *accept(SocketEventCallback *) = 0;
+	virtual bool bind(const std::string&) = 0;
+	virtual Action *connect(const std::string&, EventCallback *) = 0;
+	virtual bool listen(void) = 0;
 
-	std::string getpeername(void) const;
-	std::string getsockname(void) const;
-
-private:
-	void accept_callback(Event);
-	void accept_cancel(void);
-	Action *accept_schedule(void);
-
-	void connect_callback(Event);
-	void connect_cancel(void);
-	Action *connect_schedule(void);
+	virtual std::string getpeername(void) const = 0;
+	virtual std::string getsockname(void) const = 0;
 
 public:
-	static Socket *create(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");
+	static Socket *create(SocketImpl, SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");
 };
 
 #endif /* !IO_SOCKET_SOCKET_H */

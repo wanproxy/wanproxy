@@ -65,7 +65,7 @@ class SSHProxyConnector {
 	SplicePair *splice_pair_;
 	Action *splice_action_;
 public:
-	SSHProxyConnector(const std::string&, PipePair *, Socket *, SocketAddressFamily, const std::string&, WANProxyCodec *, WANProxyCodec *);
+	SSHProxyConnector(const std::string&, PipePair *, Socket *, SocketImpl, SocketAddressFamily, const std::string&, WANProxyCodec *, WANProxyCodec *);
 private:
 	~SSHProxyConnector();
 

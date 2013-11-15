@@ -40,14 +40,17 @@
 SSHProxyListener::SSHProxyListener(const std::string& name,
 				   WANProxyCodec *interface_codec,
 				   WANProxyCodec *remote_codec,
+				   SocketImpl interface_impl,
 				   SocketAddressFamily interface_family,
 				   const std::string& interface,
+				   SocketImpl remote_impl,
 				   SocketAddressFamily remote_family,
 				   const std::string& remote_name)
-: SimpleServer<TCPServer>("/wanproxy/proxy/" + name + "/listener", interface_family, interface),
+: SimpleServer<TCPServer>("/wanproxy/proxy/" + name + "/listener", interface_impl, interface_family, interface),
   name_(name),
   interface_codec_(interface_codec),
   remote_codec_(remote_codec),
+  remote_impl_(remote_impl),
   remote_family_(remote_family),
   remote_name_(remote_name)
 { }
@@ -59,5 +62,5 @@ void
 SSHProxyListener::client_connected(Socket *socket)
 {
 	PipePair *pipe_pair = new WANProxyCodecPipePair(interface_codec_, remote_codec_);
-	new SSHProxyConnector(name_, pipe_pair, socket, remote_family_, remote_name_, interface_codec_, remote_codec_);
+	new SSHProxyConnector(name_, pipe_pair, socket, remote_impl_, remote_family_, remote_name_, interface_codec_, remote_codec_);
 }

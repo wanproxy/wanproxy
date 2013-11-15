@@ -54,7 +54,7 @@ WANProxyConfigClassMonitor::Instance::activate(const ConfigObject *co)
 	if (interface->host_ == "" || interface->port_ == "")
 		return (false);
 	std::string interface_address = '[' + interface->host_ + ']' + ':' + interface->port_;
-	new HTTPServer<TCPServer, MonitorClient, Config *>(co->config_, interface->family_, interface_address);
+	new HTTPServer<TCPServer, MonitorClient, Config *>(co->config_, SocketImplOS, interface->family_, interface_address);
 
 	return (true);
 }

@@ -41,6 +41,7 @@
 
 ProxyConnector::ProxyConnector(const std::string& name,
 			 PipePair *pipe_pair, Socket *local_socket,
+			 SocketImpl impl,
 			 SocketAddressFamily family,
 			 const std::string& remote_name)
 : log_("/wanproxy/proxy/" + name + "/connector"),
@@ -63,7 +64,7 @@ ProxyConnector::ProxyConnector(const std::string& name,
 	}
 
 	SocketEventCallback *cb = callback(this, &ProxyConnector::connect_complete);
-	remote_action_ = TCPClient::connect(family, remote_name, cb);
+	remote_action_ = TCPClient::connect(impl, family, remote_name, cb);
 
 	SimpleCallback *scb = callback(this, &ProxyConnector::stop);
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);

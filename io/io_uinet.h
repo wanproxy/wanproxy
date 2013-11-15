@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010 Juli Mallett. All rights reserved.
+ * Copyright (c) 2013 Patrick Kelsey. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,29 +23,40 @@
  * SUCH DAMAGE.
  */
 
-#include <event/event_callback.h>
+#ifndef	IO_IO_UINET_H
+#define	IO_IO_UINET_H
 
-#include <io/socket/socket.h>
 
-#include <io/net/udp_server.h>
+#include <event/callback_thread.h>
 
-UDPServer *
-UDPServer::listen(SocketImpl impl, SocketAddressFamily family, const std::string& name)
-{
-	Socket *socket = Socket::create(impl, family, SocketTypeDatagram, "udp", name);
-	if (socket == NULL) {
-		ERROR("/udp/server") << "Unable to create socket.";
-		return (NULL);
-	}
+class CallbackScheduler;
+class CallbackThread;
+class Channel;
+
+class IOUinet {
+
+	LogHandle log_;
+	CallbackThread *handler_thread_;
+
+	IOUinet(void);
+	~IOUinet();
+
+public:
+	int add_interface(const std::string&, int, unsigned int);
+
+	CallbackScheduler *scheduler(void) const { return handler_thread_; }
+
 	/*
-	 * XXX
-	 * After this we could leak a socket, sigh.  Need a blocking close, or
-	 * a pool to return the socket to.
+	 * XXX doesn't this need to be MT-safe? (ditto IOSystem::instance)
 	 */
-	if (!socket->bind(name)) {
-		ERROR("/udp/server") << "Socket bind failed, leaking socket.";
-		return (NULL);
+	static IOUinet *instance(void)
+	{
+		static IOUinet *instance_;
+
+		if (instance_ == NULL)
+			instance_ = new IOUinet();
+		return (instance_);
 	}
-	UDPServer *server = new UDPServer(socket);
-	return (server);
-}
+};
+
+#endif /* !IO_IO_UINET_H */

@@ -28,7 +28,7 @@
 
 #include <io/channel.h>
 
-class StreamHandle : public StreamChannel {
+class StreamHandle : public virtual StreamChannel {
 	LogHandle log_;
 protected:
 	int fd_;

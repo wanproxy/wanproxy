@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010 Juli Mallett. All rights reserved.
+ * Copyright (c) 2013 Patrick Kelsey. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,29 +23,54 @@
  * SUCH DAMAGE.
  */
 
-#include <event/event_callback.h>
+#ifndef	IO_SOCKET_SOCKET_UINET_H
+#define	IO_SOCKET_SOCKET_UINET_H
+
 
 #include <io/socket/socket.h>
 
-#include <io/net/udp_server.h>
+struct uinet_socket;
 
-UDPServer *
-UDPServer::listen(SocketImpl impl, SocketAddressFamily family, const std::string& name)
-{
-	Socket *socket = Socket::create(impl, family, SocketTypeDatagram, "udp", name);
-	if (socket == NULL) {
-		ERROR("/udp/server") << "Unable to create socket.";
-		return (NULL);
-	}
-	/*
-	 * XXX
-	 * After this we could leak a socket, sigh.  Need a blocking close, or
-	 * a pool to return the socket to.
-	 */
-	if (!socket->bind(name)) {
-		ERROR("/udp/server") << "Socket bind failed, leaking socket.";
-		return (NULL);
-	}
-	UDPServer *server = new UDPServer(socket);
-	return (server);
-}
+class CallbackScheduler;
+
+class SocketUinet : public Socket {
+
+	struct uinet_socket *so_;
+	LogHandle log_;
+	CallbackScheduler *scheduler_;
+	bool accept_schedule_;
+	Action *accept_action_;
+	SocketEventCallback *accept_caller_callback_;
+	EventCallback *accept_upcall_callback_;
+
+
+	SocketUinet(struct uinet_socket *, int, int, int);
+public:
+	~SocketUinet();
+
+	virtual Action *close(SimpleCallback *);
+	virtual Action *read(size_t, EventCallback *);
+	virtual Action *write(Buffer *, EventCallback *);
+
+	virtual Action *accept(SocketEventCallback *);
+	virtual bool bind(const std::string&);
+	virtual Action *connect(const std::string&, EventCallback *);
+	virtual bool listen(void);
+	virtual Action *shutdown(bool, bool, EventCallback *);
+
+	virtual std::string getpeername(void) const;
+	virtual std::string getsockname(void) const;
+
+private:
+	static int receive_upcall(void *, int);
+
+	void do_accept(void);
+	static void accept_wouldblock_handler(void *);
+	void accept_callback(Event);
+	void accept_cancel(void);
+
+public:
+	static SocketUinet *create(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");
+};
+
+#endif /* !IO_SOCKET_SOCKET_UINET_H */
