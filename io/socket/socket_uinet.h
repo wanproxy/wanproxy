@@ -38,10 +38,9 @@ class SocketUinet : public Socket {
 	struct uinet_socket *so_;
 	LogHandle log_;
 	CallbackScheduler *scheduler_;
-	bool accept_schedule_;
+	bool accept_do_;
 	Action *accept_action_;
-	SocketEventCallback *accept_caller_callback_;
-	EventCallback *accept_upcall_callback_;
+	SocketEventCallback *accept_callback_;
 
 
 	SocketUinet(struct uinet_socket *, int, int, int);
@@ -66,7 +65,6 @@ private:
 
 	void do_accept(void);
 	static void accept_wouldblock_handler(void *);
-	void accept_callback(Event);
 	void accept_cancel(void);
 
 public:

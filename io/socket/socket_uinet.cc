@@ -37,10 +37,9 @@ SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int 
   so_(so),
   log_("/socket/uinet"),
   scheduler_(IOUinet::instance()->scheduler()),
-  accept_schedule_(false),
+  accept_do_(false),
   accept_action_(NULL),
-  accept_caller_callback_(NULL),
-  accept_upcall_callback_(NULL)
+  accept_callback_(NULL)
 {
 	ASSERT(log_, so_ != NULL);
 }
@@ -48,10 +47,9 @@ SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int 
 
 SocketUinet::~SocketUinet()
 {
-	ASSERT(log_, accept_schedule_ == false);
+	ASSERT(log_, accept_do_ == false);
 	ASSERT(log_, accept_action_ == NULL);
-	ASSERT(log_, accept_caller_callback_ == NULL);
-	ASSERT(log_, accept_upcall_callback_ == NULL);
+	ASSERT(log_, accept_callback_ == NULL);
 }
 
 
@@ -62,10 +60,13 @@ SocketUinet::receive_upcall(void *arg, int wait_flag)
 
 	(void)wait_flag;
 
-	if (s->accept_schedule_) {
-		s->accept_schedule_ = false;
-		s->accept_upcall_callback_->param(Event(Event::Done));
-		s->accept_action_ = s->accept_upcall_callback_->schedule();
+	if (s->accept_do_) {
+		/*
+		 * NB: accept_do_ needs to be cleared before calling
+		 * accept_do() as accept_do() may need to set it again.
+		 */
+		s->accept_do_ = false;
+		s->do_accept();
 	}
 
 	return (UINET_SU_OK);
@@ -75,11 +76,16 @@ SocketUinet::receive_upcall(void *arg, int wait_flag)
 Action *
 SocketUinet::accept(SocketEventCallback *cb)
 {
+	/*
+	 * These asserts enforce the requirement that once SockUinet::accept
+	 * is invoked, it is not invoked again until the cancellation
+	 * returned from the first invocation is canceled.
+	 */
+	ASSERT(log_, accept_do_ == false);
 	ASSERT(log_, accept_action_ == NULL);
-	ASSERT(log_, accept_upcall_callback_ == NULL);
-	ASSERT(log_, accept_caller_callback_ == NULL);
+	ASSERT(log_, accept_callback_ == NULL);
 
-	accept_caller_callback_ = cb;
+	accept_callback_ = cb;
 	do_accept();
 
 	return (cancellation(this, &SocketUinet::accept_cancel));
@@ -95,9 +101,9 @@ SocketUinet::do_accept(void)
 	switch (error) {
 	case 0: {
 		SocketUinet *child = new SocketUinet(aso, domain_, socktype_, protocol_);
-		accept_caller_callback_->param(Event::Done, child);
-		accept_action_ = accept_caller_callback_->schedule();
-		accept_caller_callback_ = NULL;
+		accept_callback_->param(Event::Done, child);
+		accept_action_ = accept_callback_->schedule();
+		accept_callback_ = NULL;
 		break;
 	}
 	case UINET_EWOULDBLOCK:
@@ -106,53 +112,24 @@ SocketUinet::do_accept(void)
 		 */
 		break;
 	default:
-		accept_caller_callback_->param(Event(Event::Error, error), NULL);
-		accept_action_ = accept_caller_callback_->schedule();
-		accept_caller_callback_ = NULL;;
+		accept_callback_->param(Event(Event::Error, error), NULL);
+		accept_action_ = accept_callback_->schedule();
+		accept_callback_ = NULL;;
 		break;
 	}
 }
 
 
+/*
+ * Invoked from within uinet_soaccept when the result will be EWOULDBLOCK,
+ * before the lock that provides mutual exlcusion with upcalls is released.
+ */
 void
 SocketUinet::accept_wouldblock_handler(void *arg)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 
-	s->accept_schedule_ = true;
-
-	/* XXX shouldn't this callback just be created once during SocketUinet construction? */
-	s->accept_upcall_callback_ = callback(s->scheduler_, s, &SocketUinet::accept_callback);
-}
-
-
-void
-SocketUinet::accept_callback(Event e)
-{
-	accept_action_->cancel();
-	accept_action_ = NULL;
-
-	delete accept_upcall_callback_;
-	accept_upcall_callback_ = NULL;
-
-	switch (e.type_) {
-	case Event::Done:
-		break;
-	case Event::EOS:
-		DEBUG(log_) << "Got EOS while waiting for accept: " << e;
-		e.type_ = Event::Error;
-		/* fallthrough */
-	case Event::Error:
-		accept_caller_callback_->param(e, NULL);
-		accept_action_ = accept_caller_callback_->schedule();
-		accept_caller_callback_ = NULL;
-		return;
-	default:
-		HALT(log_) << "Unexpected event: " << e;
-	}
-
-	
-	do_accept();
+	s->accept_do_ = true;
 }
 
 
@@ -160,25 +137,26 @@ void
 SocketUinet::accept_cancel(void)
 {
 	uinet_soupcall_lock(so_, UINET_SO_RCV);
-	/* If waiting for upcall to schedule a callback, disable that. */
-	if (accept_schedule_) {
-		accept_schedule_ = false;
+	/* If waiting for upcall to complete the work, disable that. */
+	if (accept_do_) {
+		accept_do_ = false;
 	}
 	uinet_soupcall_unlock(so_, UINET_SO_RCV);
 
+	/*
+	 * Because accept_do_ is guaranteed to be false at all times between
+	 * the above lock release and the end of this routine, there is no
+	 * chance that accept_action_ and accept_callback_ will be modified
+	 * by the upcall while the code below executes.
+	 */
 	if (accept_action_ != NULL) {
 		accept_action_->cancel();
 		accept_action_ = NULL;
 	}
 
-	if (accept_upcall_callback_ != NULL) {
-		delete accept_upcall_callback_;
-		accept_upcall_callback_ = NULL;
-	}
-
-	if (accept_caller_callback_ != NULL) {
-		delete accept_caller_callback_;
-		accept_caller_callback_ = NULL;
+	if (accept_callback_ != NULL) {
+		delete accept_callback_;
+		accept_callback_ = NULL;
 	}
 }
 
