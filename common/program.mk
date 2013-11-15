@@ -46,6 +46,7 @@ OSNAME:=$(shell uname -s)
 
 CFLAGS+=-pipe
 CPPFLAGS+=-I${TOPDIR}
+CPPFLAGS+=-I${TOPDIR}/network/uinet/lib/libuinet/include
 ifdef NDEBUG
 CFLAGS+=-O2
 CPPFLAGS+=-DNDEBUG=1
@@ -97,7 +98,7 @@ $(foreach _lib, ${USE_LIBS}, $(eval $(call __library_conditionals,$(subst /,_,${
 OBJS+=  $(patsubst %.cc,%.o,$(patsubst %.c,%.o,${SRCS}))
 
 ${PROGRAM}: ${OBJS}
-	${CXX} ${CXXFLAGS} ${CFLAGS} ${LDFLAGS} -o $@ ${OBJS} ${LDADD}
+	${CXX} ${LDFLAGS} -o $@ ${OBJS} ${LDADD}
 
 .cc.o:
 	${CXX} ${CPPFLAGS} ${CXXFLAGS} ${CFLAGS} -c -o $@ $<
