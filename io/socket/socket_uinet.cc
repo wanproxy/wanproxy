@@ -24,9 +24,12 @@
  */
 
 
+#include <errno.h>
+
 #include <event/event_callback.h>
 
 #include <io/io_uinet.h>
+#include <io/socket/resolver.h>
 #include <io/socket/socket_uinet.h>
 
 #include <uinet_api.h>
@@ -39,7 +42,10 @@ SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int 
   scheduler_(IOUinet::instance()->scheduler()),
   accept_do_(false),
   accept_action_(NULL),
-  accept_callback_(NULL)
+  accept_callback_(NULL),
+  connect_do_(false),
+  connect_action_(NULL),
+  connect_callback_(NULL)
 {
 	ASSERT(log_, so_ != NULL);
 }
@@ -54,10 +60,11 @@ SocketUinet::~SocketUinet()
 
 
 int
-SocketUinet::receive_upcall(void *arg, int wait_flag)
+SocketUinet::receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
-
+	
+	(void)so;
 	(void)wait_flag;
 
 	if (s->accept_do_) {
@@ -112,7 +119,7 @@ SocketUinet::do_accept(void)
 		 */
 		break;
 	default:
-		accept_callback_->param(Event(Event::Error, error), NULL);
+		accept_callback_->param(Event(Event::Error, uinet_errno_to_os(error)), NULL);
 		accept_action_ = accept_callback_->schedule();
 		accept_callback_ = NULL;;
 		break;
@@ -161,6 +168,152 @@ SocketUinet::accept_cancel(void)
 }
 
 
+bool
+SocketUinet::bind(const std::string& name)
+{
+	socket_address addr;
+
+	if (!addr(domain_, socktype_, protocol_, name)) {
+		ERROR(log_) << "Invalid name for bind: " << name;
+		return (false);
+	}
+
+	int on = 1;
+	int error = uinet_sosetsockopt(so_, UINET_SOL_SOCKET, UINET_SO_REUSEADDR, &on, sizeof on);
+	if (error != 0) {
+		ERROR(log_) << "Could not setsockopt(SO_REUSEADDR): " << strerror(uinet_errno_to_os(error));
+	}
+
+	/* XXX assuming that OS sockaddr internals are laid out the same as UINET sockaddr internals */
+	error = uinet_sobind(so_, reinterpret_cast<struct uinet_sockaddr *>(&addr.addr_.sockaddr_));
+	if (error != 0) {
+		ERROR(log_) << "Could not bind: " << strerror(uinet_errno_to_os(error));
+		return (false);
+	}
+
+	return (true);
+}
+
+
+int
+SocketUinet::connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+{
+	SocketUinet *s = static_cast<SocketUinet *>(arg);
+	EventCallback *cb = s->connect_callback_;
+	int state;
+	
+	(void)wait_flag;
+
+	if (s->connect_do_) {
+		state = uinet_sogetstate(s->so_);
+	
+		if (state & UINET_SS_ISCONNECTED) {
+			cb->param(Event::Done);
+			s->connect_action_ = cb->schedule();
+			s->connect_do_ = false;
+
+			uinet_soupcall_set(so, UINET_SO_RCV, SocketUinet::receive_upcall, s);
+		} else if (state & UINET_SS_ISDISCONNECTED) {
+			int error = uinet_sogeterror(s->so_);
+
+			cb->param(Event(Event::Error, uinet_errno_to_os(error)));
+			s->connect_action_ = cb->schedule();
+			s->connect_do_ = false;
+		}
+	}
+
+	return (UINET_SU_OK);
+}
+
+
+Action *
+SocketUinet::connect(const std::string& name, EventCallback *cb)
+{
+	ASSERT(log_, connect_do_ == false);
+	ASSERT(log_, connect_callback_ == NULL);
+	ASSERT(log_, connect_action_ == NULL);
+
+	socket_address addr;
+
+	if (!addr(domain_, socktype_, protocol_, name)) {
+		ERROR(log_) << "Invalid name for connect: " << name;
+		cb->param(Event(Event::Error, EINVAL));
+		return (cb->schedule());
+	}
+
+	connect_callback_ = cb;
+	connect_do_ = true;
+
+	/* XXX assuming that OS sockaddr internals are laid out the same as UINET sockaddr internals */
+	int error = uinet_soconnect(so_, reinterpret_cast<struct uinet_sockaddr *>(&addr.addr_.sockaddr_));
+	if (error != 0) {
+		connect_do_ = false;
+		cb->param(Event(Event::Error, uinet_errno_to_os(error)));
+		connect_action_ = cb->schedule();
+		connect_callback_ = NULL;
+	}
+
+	return (cancellation(this, &SocketUinet::connect_cancel));
+}
+
+
+void
+SocketUinet::connect_cancel(void)
+{
+	uinet_soupcall_lock(so_, UINET_SO_RCV);
+	if (connect_do_)
+		connect_do_ = false;
+	uinet_soupcall_lock(so_, UINET_SO_RCV);
+
+	if (connect_action_ != NULL) {
+		connect_action_->cancel();
+		connect_action_ = NULL;
+	}
+
+	if (connect_callback_ != NULL) {
+		delete connect_callback_;
+		connect_callback_ = NULL;
+	}
+}
+
+
+bool
+SocketUinet::listen(void)
+{
+	/* XXX should have a knob to adjust somaxconn */
+	int error = uinet_solisten(so_, 128);
+	if (error != 0)
+		return (false);
+	return (true);
+}
+
+
+Action *
+SocketUinet::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
+{
+	int how;
+
+	if (shut_read && shut_write)
+		how = UINET_SHUT_RDWR;
+	else if (shut_read)
+		how = UINET_SHUT_RD;
+	else if (shut_write)
+		how = UINET_SHUT_WR;
+	else {
+		NOTREACHED(log_);
+		return (NULL);
+	}
+
+	int error = uinet_soshutdown(so_, how);
+	if (error != 0) {
+		cb->param(Event(Event::Error, uinet_errno_to_os(error)));
+		return (cb->schedule());
+	}
+	cb->param(Event::Done);
+	return (cb->schedule());
+}
+
+
 Action *
 SocketUinet::close(SimpleCallback *cb)
 {
@@ -179,6 +332,49 @@ SocketUinet::close(SimpleCallback *cb)
 	}
 
 	return (cb->schedule());
+}
+
+
+std::string
+SocketUinet::getpeername(void) const
+{
+	socket_address sa;
+	struct uinet_sockaddr *usa;
+
+	int error = uinet_sogetpeeraddr(so_, &usa);
+	if (error != 0)
+		return ("<unknown>");
+
+	/* XXX Check len.  */
+
+	/* XXX assuming that OS sockaddr internals are laid out the same as UINET sockaddr internals */
+	sa.addrlen_ = usa->sa_len;
+	::memcpy(&sa.addr_.sockaddr_, usa, sa.addrlen_); 
+
+	uinet_free_sockaddr(usa);
+
+	return ((std::string)sa);
+}
+
+std::string
+SocketUinet::getsockname(void) const
+{
+	socket_address sa;
+	struct uinet_sockaddr *usa;
+
+	int error = uinet_sogetsockaddr(so_, &usa);
+	if (error != 0)
+		return ("<unknown>");
+
+	/* XXX Check len.  */
+
+	/* XXX assuming that OS sockaddr internals are laid out the same as UINET sockaddr internals */
+	sa.addrlen_ = usa->sa_len;
+	::memcpy(&sa.addr_.sockaddr_, usa, sa.addrlen_); 
+
+	uinet_free_sockaddr(usa);
+
+	return ((std::string)sa);
 }
 
 
@@ -293,6 +489,8 @@ SocketUinet::create(SocketAddressFamily family, SocketType type, const std::stri
 		ERROR("/socket/uinet") << "Could not create socket: " << strerror(uinet_errno_to_os(error));
 		return (NULL);
 	}
+
+	uinet_sosetnonblocking(so, 1);
 
 	return (new SocketUinet(so, domainnum, typenum, protonum));
 }
