@@ -1,5 +1,6 @@
 VPATH+=	${TOPDIR}/io/socket
 
+SRCS+=	resolver.cc
 SRCS+=	socket.cc
 SRCS+=	socket_handle.cc
 SRCS+=	socket_uinet.cc
