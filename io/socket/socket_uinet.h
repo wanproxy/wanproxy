@@ -55,6 +55,12 @@ class SocketUinet : public Socket {
 	uint64_t read_amount_remaining_;
 	Buffer read_buffer_;
 
+	bool write_do_;
+	Action *write_action_;
+	EventCallback *write_callback_;
+	uint64_t write_amount_remaining_;
+	Buffer write_buffer_;
+
 	SocketUinet(struct uinet_socket *, int, int, int);
 public:
 	~SocketUinet();
@@ -75,6 +81,7 @@ public:
 private:
 	static int passive_receive_upcall(struct uinet_socket *, void *, int);
 	static int active_receive_upcall(struct uinet_socket *, void *, int);
+	static int active_send_upcall(struct uinet_socket *, void *, int);
 	static int connect_upcall(struct uinet_socket *, void *, int);
 
 	void accept_do(void);
@@ -83,11 +90,15 @@ private:
 
 	void connect_cancel(void);
 
-	
 	void read_schedule(void);
 	void read_callback(void);
 	static void receive_upcall_prep(struct uinet_socket *, void *, int64_t);
 	void read_cancel(void);
+
+	void write_schedule(void);
+	void write_callback(void);
+	static void send_upcall_prep(struct uinet_socket *, void *, int64_t);
+	void write_cancel(void);
 
 public:
 	static SocketUinet *create(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");

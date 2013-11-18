@@ -55,7 +55,12 @@ SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int 
   read_action_(NULL),
   read_callback_(NULL),
   read_amount_remaining_(0),
-  read_buffer_()
+  read_buffer_(),
+  write_do_(false),
+  write_action_(NULL),
+  write_callback_(NULL),
+  write_amount_remaining_(0),
+  write_buffer_()
 {
 	ASSERT(log_, so_ != NULL);
 }
@@ -75,6 +80,11 @@ SocketUinet::~SocketUinet()
 	ASSERT(log_, read_action_ == NULL);
 	ASSERT(log_, read_callback_ == NULL);
 	ASSERT(log_, read_amount_remaining_ == 0);
+
+	ASSERT(log_, write_do_ == false);
+	ASSERT(log_, write_action_ == NULL);
+	ASSERT(log_, write_callback_ == NULL);
+	ASSERT(log_, write_amount_remaining_ == 0);
 }
 
 
@@ -127,6 +137,15 @@ SocketUinet::accept_do(void)
 	switch (error) {
 	case 0: {
 		SocketUinet *child = new SocketUinet(aso, domain_, socktype_, protocol_);
+
+		uinet_sosetupcallprep(child->so_,
+				      NULL, NULL,
+				      SocketUinet::receive_upcall_prep, child,
+				      SocketUinet::send_upcall_prep, child);
+
+		uinet_soupcall_set(child->so_, UINET_SO_RCV, SocketUinet::active_receive_upcall, child);
+		uinet_soupcall_set(child->so_, UINET_SO_SND, SocketUinet::active_send_upcall, child);
+
 		accept_callback_->param(Event::Done, child);
 		accept_action_ = accept_callback_->schedule();
 		accept_callback_ = NULL;
@@ -232,6 +251,7 @@ SocketUinet::connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 			s->connect_do_ = false;
 
 			uinet_soupcall_set(so, UINET_SO_RCV, SocketUinet::active_receive_upcall, s);
+			uinet_soupcall_set(so, UINET_SO_SND, SocketUinet::active_send_upcall, s);
 		} else if (state & UINET_SS_ISDISCONNECTED) {
 			int error = uinet_sogeterror(s->so_);
 
@@ -259,6 +279,11 @@ SocketUinet::connect(const std::string& name, EventCallback *cb)
 		cb->param(Event(Event::Error, EINVAL));
 		return (cb->schedule());
 	}
+
+	uinet_sosetupcallprep(so_,
+			      NULL, NULL,
+			      SocketUinet::receive_upcall_prep, this,
+			      SocketUinet::send_upcall_prep, this);
 
 	uinet_soupcall_set(so_, UINET_SO_RCV, SocketUinet::connect_upcall, this);
 
@@ -301,6 +326,10 @@ SocketUinet::connect_cancel(void)
 bool
 SocketUinet::listen(void)
 {
+	uinet_sosetupcallprep(so_,
+			      SocketUinet::accept_upcall_prep, this,
+			      NULL, NULL, NULL, NULL);
+
 	uinet_soupcall_set(so_, UINET_SO_RCV, SocketUinet::passive_receive_upcall, this);
 
 	/* XXX should have a knob to adjust somaxconn */
@@ -463,14 +492,14 @@ SocketUinet::read_callback(void)
 			read_schedule();
 		}
 		/*
-		  else
-
-		  This was a partial read due to lack of data. The next read
-		  will be scheduled during the next upcall (which may have
-		  happened already).
+		 * else
+		 *
+		 * This was a partial read due to lack of data. The next read
+		 * will be scheduled during the next upcall (which may have
+		 * happened already).
 		 */
 		break;
-	case EWOULDBLOCK:
+	case UINET_EWOULDBLOCK:
 		/*
 		 * There is not any data available currently, but the socket
 		 * is still open and able to receive.  The next upcall will
@@ -525,6 +554,166 @@ SocketUinet::read_cancel(void)
 	if (read_callback_ != NULL) {
 		delete read_callback_;
 		read_callback_ = NULL;
+	}
+}
+
+
+int
+SocketUinet::active_send_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+{
+	SocketUinet *s = static_cast<SocketUinet *>(arg);
+	
+	(void)so;
+	(void)wait_flag;
+
+	if (s->write_do_) {
+		/*
+		 * NB: write_do_ needs to be cleared before calling write_do()
+		 * as the callback scheduled by write_schedule() may need to
+		 * set it again, and that callback will execute
+		 * asynchronously to this context.
+		 */
+		s->write_do_ = false;
+		s->write_schedule();
+	}
+
+	return (UINET_SU_OK);
+}
+
+
+Action *
+SocketUinet::write(Buffer *buffer, EventCallback *cb)
+{
+	ASSERT(log_, write_do_ == false);
+	ASSERT(log_, write_callback_ == NULL);
+	ASSERT(log_, write_action_ == NULL);
+	ASSERT(log_, write_buffer_.empty());
+
+	buffer->moveout(&write_buffer_);
+	write_callback_ = cb;
+
+	write_schedule();
+
+	return (cancellation(this, &SocketUinet::write_cancel));
+}
+
+
+void
+SocketUinet::write_schedule(void)
+{
+	ASSERT(log_, write_action_ == NULL);
+
+	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::write_callback);
+	write_action_ = cb->schedule();
+}
+
+
+void
+SocketUinet::write_callback(void)
+{
+	write_action_->cancel();
+	write_action_ = NULL;
+
+	struct iovec buf_iov[IOV_MAX];
+	size_t iovcnt = write_buffer_.fill_iovec(buf_iov, std::min(IOV_MAX, UINET_IOV_MAX));
+	ASSERT(log_, iovcnt != 0);
+
+	struct uinet_iovec iov[UINET_IOV_MAX];
+	uint64_t write_amount = 0;
+	for (unsigned int i; i < iovcnt; i++) {
+		iov[i].iov_base = buf_iov[i].iov_base;
+		iov[i].iov_len = buf_iov[i].iov_len;
+		write_amount += buf_iov[i].iov_len;
+	}
+	
+
+	struct uinet_uio uio;
+
+	uio.uio_iov = iov;
+	uio.uio_iovcnt = iovcnt;
+	uio.uio_offset = 0;
+	uio.uio_resid = write_amount;
+	int error = uinet_sosend(so_, NULL, &uio, 0);
+	
+	uint64_t bytes_written = write_amount - uio.uio_resid;
+	if (bytes_written > 0) {
+		write_buffer_.skip(bytes_written);
+	}
+	
+	switch (error) {
+	case 0:
+		if (write_buffer_.empty()) {
+			write_callback_->param(Event::Done);
+			write_action_ = write_callback_->schedule();
+			write_callback_ = NULL;
+		} else if (0 == uio.uio_resid) {
+			/*
+			 * This individual write was completely performed,
+			 * but we have more to write.
+			 */
+			write_schedule();
+		}
+		/*
+		 * else
+		 *
+		 * This was a partial write due to lack of space. The next
+		 * write will be scheduled during the next upcall (which may
+		 * have happened already).
+		 */
+		break;
+	case UINET_EWOULDBLOCK:
+		/*
+		 * Out of space, but the socket is still open and able to
+		 * write.  The next upcall will schedule the next write (and
+		 * perhaps already has).
+		 */
+		break;
+	case UINET_EPIPE:
+		/* XXX we can report the number of bytes written, if that's of any use */
+		/* fallthrough */
+	default:
+		write_callback_->param(Event(Event::Error, uinet_errno_to_os(error)));
+		write_action_ = write_callback_->schedule();
+		write_callback_ = NULL;
+		break;
+	}
+}
+
+
+void
+SocketUinet::send_upcall_prep(struct uinet_socket *so, void *arg, int64_t resid)
+{
+	SocketUinet *s = static_cast<SocketUinet *>(arg);
+
+	(void)so;
+	(void)resid;
+
+	s->write_do_ = true;
+}
+
+
+void
+SocketUinet::write_cancel(void)
+{
+	uinet_soupcall_lock(so_, UINET_SO_RCV);
+	if (write_do_)
+		write_do_ = false;
+	uinet_soupcall_unlock(so_, UINET_SO_RCV);
+
+	/*
+	 * Because write_do_ is guaranteed to be false at all times between
+	 * the above lock release and the end of this routine, there is no
+	 * chance that write_action_ will be modified by the upcall while the
+	 * code below executes.
+	 */
+	if (write_action_ != NULL) {
+		write_action_->cancel();
+		write_action_ = NULL;
+	}
+
+	if (write_callback_ != NULL) {
+		delete write_callback_;
+		write_callback_ = NULL;
 	}
 }
 
