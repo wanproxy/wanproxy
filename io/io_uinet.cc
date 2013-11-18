@@ -51,10 +51,7 @@ IOUinet::IOUinet(void)
 	 * XXX number of CPUs and limit on number of mbuf clusters should be
 	 * configurable
 	 */
-	uinet_init(1, 128*1024);
-
-	uinet_config_blackhole(UINET_BLACKHOLE_TCP_ALL);
-	uinet_config_blackhole(UINET_BLACKHOLE_UDP_ALL);
+	uinet_init(1, 128*1024, 1);
 
 #if 0
 	for (i = 0; i < num_ifs; i++) {
@@ -62,6 +59,7 @@ IOUinet::IOUinet(void)
 	}
 
 #endif
+
 	handler_thread_->start();
 
 	EventSystem::instance()->thread_wait(handler_thread_);

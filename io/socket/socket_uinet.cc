@@ -39,7 +39,6 @@
 
 #define UINET_READ_BUFFER_SIZE (64*1024)
 
-
 SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int protocol)
 : Socket(domain, socktype, protocol),
   so_(so),
@@ -89,12 +88,14 @@ SocketUinet::~SocketUinet()
 
 
 int
-SocketUinet::passive_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+passive_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 	
 	(void)so;
 	(void)wait_flag;
+
+	TRACE(s->log_);
 
 	if (s->accept_do_) {
 		/*
@@ -112,6 +113,8 @@ SocketUinet::passive_receive_upcall(struct uinet_socket *so, void *arg, int wait
 Action *
 SocketUinet::accept(SocketEventCallback *cb)
 {
+	TRACE(log_);
+
 	/*
 	 * These asserts enforce the requirement that once SockUinet::accept
 	 * is invoked, it is not invoked again until the cancellation
@@ -131,6 +134,8 @@ SocketUinet::accept(SocketEventCallback *cb)
 void
 SocketUinet::accept_do(void)
 {
+	TRACE(log_);
+
 	uinet_socket *aso;
 
 	int error = uinet_soaccept(so_, NULL, &aso);
@@ -140,11 +145,11 @@ SocketUinet::accept_do(void)
 
 		uinet_sosetupcallprep(child->so_,
 				      NULL, NULL,
-				      SocketUinet::receive_upcall_prep, child,
-				      SocketUinet::send_upcall_prep, child);
+				      receive_upcall_prep, child,
+				      send_upcall_prep, child);
 
-		uinet_soupcall_set(child->so_, UINET_SO_RCV, SocketUinet::active_receive_upcall, child);
-		uinet_soupcall_set(child->so_, UINET_SO_SND, SocketUinet::active_send_upcall, child);
+		uinet_soupcall_set(child->so_, UINET_SO_RCV, active_receive_upcall, child);
+		uinet_soupcall_set(child->so_, UINET_SO_SND, active_send_upcall, child);
 
 		accept_callback_->param(Event::Done, child);
 		accept_action_ = accept_callback_->schedule();
@@ -170,9 +175,11 @@ SocketUinet::accept_do(void)
  * before the lock that provides mutual exlcusion with upcalls is released.
  */
 void
-SocketUinet::accept_upcall_prep(struct uinet_socket *, void *arg)
+accept_upcall_prep(struct uinet_socket *, void *arg)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
+
+	TRACE(s->log_);
 
 	s->accept_do_ = true;
 }
@@ -181,6 +188,8 @@ SocketUinet::accept_upcall_prep(struct uinet_socket *, void *arg)
 void
 SocketUinet::accept_cancel(void)
 {
+	TRACE(log_);
+
 	uinet_soupcall_lock(so_, UINET_SO_RCV);
 	/* If waiting for upcall to complete the work, disable that. */
 	if (accept_do_) {
@@ -209,6 +218,8 @@ SocketUinet::accept_cancel(void)
 bool
 SocketUinet::bind(const std::string& name)
 {
+	TRACE(log_);
+
 	socket_address addr;
 
 	if (!addr(domain_, socktype_, protocol_, name)) {
@@ -234,13 +245,15 @@ SocketUinet::bind(const std::string& name)
 
 
 int
-SocketUinet::connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 	EventCallback *cb = s->connect_callback_;
 	int state;
 	
 	(void)wait_flag;
+
+	TRACE(s->log_);
 
 	if (s->connect_do_) {
 		state = uinet_sogetstate(s->so_);
@@ -250,8 +263,8 @@ SocketUinet::connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 			s->connect_action_ = cb->schedule();
 			s->connect_do_ = false;
 
-			uinet_soupcall_set(so, UINET_SO_RCV, SocketUinet::active_receive_upcall, s);
-			uinet_soupcall_set(so, UINET_SO_SND, SocketUinet::active_send_upcall, s);
+			uinet_soupcall_set(so, UINET_SO_RCV, active_receive_upcall, s);
+			uinet_soupcall_set(so, UINET_SO_SND, active_send_upcall, s);
 		} else if (state & UINET_SS_ISDISCONNECTED) {
 			int error = uinet_sogeterror(s->so_);
 
@@ -268,6 +281,8 @@ SocketUinet::connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 Action *
 SocketUinet::connect(const std::string& name, EventCallback *cb)
 {
+	TRACE(log_);
+
 	ASSERT(log_, connect_do_ == false);
 	ASSERT(log_, connect_callback_ == NULL);
 	ASSERT(log_, connect_action_ == NULL);
@@ -282,17 +297,28 @@ SocketUinet::connect(const std::string& name, EventCallback *cb)
 
 	uinet_sosetupcallprep(so_,
 			      NULL, NULL,
-			      SocketUinet::receive_upcall_prep, this,
-			      SocketUinet::send_upcall_prep, this);
+			      receive_upcall_prep, this,
+			      send_upcall_prep, this);
 
-	uinet_soupcall_set(so_, UINET_SO_RCV, SocketUinet::connect_upcall, this);
+	uinet_soupcall_set(so_, UINET_SO_SND, connect_upcall, this);
 
 	connect_callback_ = cb;
 	connect_do_ = true;
 
 	/* XXX assuming that OS sockaddr internals are laid out the same as UINET sockaddr internals */
 	int error = uinet_soconnect(so_, reinterpret_cast<struct uinet_sockaddr *>(&addr.addr_.sockaddr_));
-	if (error != 0) {
+	switch (error) {
+	case 0:
+	case UINET_EINPROGRESS:
+		/*
+		 * A zero return indicates the connection is already
+		 * complete.  UINET_INPROGRESS indicates the connection is
+		 * being attempted but has not yet completed.  In either
+		 * case, the upcall will schedule the callback.
+		 */
+		break;
+	default:
+		/* Error - there will be no upcall */
 		connect_do_ = false;
 		cb->param(Event(Event::Error, uinet_errno_to_os(error)));
 		connect_action_ = cb->schedule();
@@ -306,10 +332,12 @@ SocketUinet::connect(const std::string& name, EventCallback *cb)
 void
 SocketUinet::connect_cancel(void)
 {
-	uinet_soupcall_lock(so_, UINET_SO_RCV);
+	TRACE(log_);
+
+	uinet_soupcall_lock(so_, UINET_SO_SND);
 	if (connect_do_)
 		connect_do_ = false;
-	uinet_soupcall_unlock(so_, UINET_SO_RCV);
+	uinet_soupcall_unlock(so_, UINET_SO_SND);
 
 	if (connect_action_ != NULL) {
 		connect_action_->cancel();
@@ -326,11 +354,13 @@ SocketUinet::connect_cancel(void)
 bool
 SocketUinet::listen(void)
 {
+	TRACE(log_);
+
 	uinet_sosetupcallprep(so_,
-			      SocketUinet::accept_upcall_prep, this,
+			      accept_upcall_prep, this,
 			      NULL, NULL, NULL, NULL);
 
-	uinet_soupcall_set(so_, UINET_SO_RCV, SocketUinet::passive_receive_upcall, this);
+	uinet_soupcall_set(so_, UINET_SO_RCV, passive_receive_upcall, this);
 
 	/* XXX should have a knob to adjust somaxconn */
 	int error = uinet_solisten(so_, 128);
@@ -343,6 +373,8 @@ SocketUinet::listen(void)
 Action *
 SocketUinet::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 {
+	TRACE(log_);
+
 	int how;
 
 	if (shut_read && shut_write)
@@ -369,6 +401,8 @@ SocketUinet::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 Action *
 SocketUinet::close(SimpleCallback *cb)
 {
+	TRACE(log_);
+
 	int error = uinet_soclose(so_);
 	if (error != 0) {
 		/*
@@ -388,12 +422,14 @@ SocketUinet::close(SimpleCallback *cb)
 
 
 int
-SocketUinet::active_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+active_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 	
 	(void)so;
 	(void)wait_flag;
+
+	TRACE(s->log_);
 
 	if (s->read_do_) {
 		/*
@@ -413,6 +449,8 @@ SocketUinet::active_receive_upcall(struct uinet_socket *so, void *arg, int wait_
 Action *
 SocketUinet::read(size_t amount, EventCallback *cb)
 {
+	TRACE(log_);
+
 	ASSERT(log_, read_do_ == false);
 	ASSERT(log_, read_callback_ == NULL);
 	ASSERT(log_, read_action_ == NULL);
@@ -430,6 +468,8 @@ SocketUinet::read(size_t amount, EventCallback *cb)
 void
 SocketUinet::read_schedule(void)
 {
+	TRACE(log_);
+
 	ASSERT(log_, read_action_ == NULL);
 
 	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::read_callback);
@@ -440,6 +480,8 @@ SocketUinet::read_schedule(void)
 void
 SocketUinet::read_callback(void)
 {
+	TRACE(log_);
+
 	read_action_->cancel();
 	read_action_ = NULL;
 
@@ -455,7 +497,8 @@ SocketUinet::read_callback(void)
 	uio.uio_iovcnt = 1;
 	uio.uio_offset = 0;
 	uio.uio_resid = read_amount;
-	int error = uinet_soreceive(so_, NULL, &uio, NULL);
+	int flags = UINET_MSG_DONTWAIT | UINET_MSG_NBIO;
+	int error = uinet_soreceive(so_, NULL, &uio, &flags);
 	
 	uint64_t bytes_read = read_amount - uio.uio_resid;
 	if (bytes_read > 0) {
@@ -521,12 +564,14 @@ SocketUinet::read_callback(void)
 
 
 void
-SocketUinet::receive_upcall_prep(struct uinet_socket *so, void *arg, int64_t resid)
+receive_upcall_prep(struct uinet_socket *so, void *arg, int64_t resid)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 
 	(void)so;
 	(void)resid;
+
+	TRACE(s->log_);
 
 	s->read_do_ = true;
 }
@@ -535,6 +580,8 @@ SocketUinet::receive_upcall_prep(struct uinet_socket *so, void *arg, int64_t res
 void
 SocketUinet::read_cancel(void)
 {
+	TRACE(log_);
+
 	uinet_soupcall_lock(so_, UINET_SO_RCV);
 	if (read_do_)
 		read_do_ = false;
@@ -559,12 +606,14 @@ SocketUinet::read_cancel(void)
 
 
 int
-SocketUinet::active_send_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+active_send_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 	
 	(void)so;
 	(void)wait_flag;
+
+	TRACE(s->log_);
 
 	if (s->write_do_) {
 		/*
@@ -584,6 +633,8 @@ SocketUinet::active_send_upcall(struct uinet_socket *so, void *arg, int wait_fla
 Action *
 SocketUinet::write(Buffer *buffer, EventCallback *cb)
 {
+	TRACE(log_);
+
 	ASSERT(log_, write_do_ == false);
 	ASSERT(log_, write_callback_ == NULL);
 	ASSERT(log_, write_action_ == NULL);
@@ -601,6 +652,8 @@ SocketUinet::write(Buffer *buffer, EventCallback *cb)
 void
 SocketUinet::write_schedule(void)
 {
+	TRACE(log_);
+
 	ASSERT(log_, write_action_ == NULL);
 
 	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::write_callback);
@@ -611,6 +664,8 @@ SocketUinet::write_schedule(void)
 void
 SocketUinet::write_callback(void)
 {
+	TRACE(log_);
+
 	write_action_->cancel();
 	write_action_ = NULL;
 
@@ -633,7 +688,7 @@ SocketUinet::write_callback(void)
 	uio.uio_iovcnt = iovcnt;
 	uio.uio_offset = 0;
 	uio.uio_resid = write_amount;
-	int error = uinet_sosend(so_, NULL, &uio, 0);
+	int error = uinet_sosend(so_, NULL, &uio, UINET_MSG_DONTWAIT | UINET_MSG_NBIO);
 	
 	uint64_t bytes_written = write_amount - uio.uio_resid;
 	if (bytes_written > 0) {
@@ -681,12 +736,14 @@ SocketUinet::write_callback(void)
 
 
 void
-SocketUinet::send_upcall_prep(struct uinet_socket *so, void *arg, int64_t resid)
+send_upcall_prep(struct uinet_socket *so, void *arg, int64_t resid)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 
 	(void)so;
 	(void)resid;
+
+	TRACE(s->log_);
 
 	s->write_do_ = true;
 }
@@ -695,10 +752,12 @@ SocketUinet::send_upcall_prep(struct uinet_socket *so, void *arg, int64_t resid)
 void
 SocketUinet::write_cancel(void)
 {
-	uinet_soupcall_lock(so_, UINET_SO_RCV);
+	TRACE(log_);
+
+	uinet_soupcall_lock(so_, UINET_SO_SND);
 	if (write_do_)
 		write_do_ = false;
-	uinet_soupcall_unlock(so_, UINET_SO_RCV);
+	uinet_soupcall_unlock(so_, UINET_SO_SND);
 
 	/*
 	 * Because write_do_ is guaranteed to be false at all times between

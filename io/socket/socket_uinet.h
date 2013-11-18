@@ -33,7 +33,26 @@ struct uinet_socket;
 
 class CallbackScheduler;
 
+extern "C" {
+	void accept_upcall_prep(struct uinet_socket *, void *);
+	void receive_upcall_prep(struct uinet_socket *, void *, int64_t);
+	void send_upcall_prep(struct uinet_socket *, void *, int64_t);
+
+	int passive_receive_upcall(struct uinet_socket *, void *, int);
+	int active_receive_upcall(struct uinet_socket *, void *, int);
+	int active_send_upcall(struct uinet_socket *, void *, int);
+	int connect_upcall(struct uinet_socket *, void *, int);
+};
+
+
 class SocketUinet : public Socket {
+	friend void accept_upcall_prep(struct uinet_socket *, void *);
+	friend void receive_upcall_prep(struct uinet_socket *, void *, int64_t);
+	friend void send_upcall_prep(struct uinet_socket *, void *, int64_t);
+	friend int passive_receive_upcall(struct uinet_socket *, void *, int);
+	friend int active_receive_upcall(struct uinet_socket *, void *, int);
+	friend int active_send_upcall(struct uinet_socket *, void *, int);
+	friend int connect_upcall(struct uinet_socket *, void *, int);
 
 	struct uinet_socket *so_;
 	LogHandle log_;
@@ -79,25 +98,17 @@ public:
 	virtual std::string getsockname(void) const;
 
 private:
-	static int passive_receive_upcall(struct uinet_socket *, void *, int);
-	static int active_receive_upcall(struct uinet_socket *, void *, int);
-	static int active_send_upcall(struct uinet_socket *, void *, int);
-	static int connect_upcall(struct uinet_socket *, void *, int);
-
 	void accept_do(void);
-	static void accept_upcall_prep(struct uinet_socket *, void *);
 	void accept_cancel(void);
 
 	void connect_cancel(void);
 
 	void read_schedule(void);
 	void read_callback(void);
-	static void receive_upcall_prep(struct uinet_socket *, void *, int64_t);
 	void read_cancel(void);
 
 	void write_schedule(void);
 	void write_callback(void);
-	static void send_upcall_prep(struct uinet_socket *, void *, int64_t);
 	void write_cancel(void);
 
 public:
