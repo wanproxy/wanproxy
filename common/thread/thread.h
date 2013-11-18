@@ -51,7 +51,10 @@ public:
 	virtual void stop(void) = 0;
 
 public:
+	typedef void * ID;
+
 	static Thread *self(void);
+	static Thread::ID selfID(void);
 };
 
 class WorkerThread : public Thread {

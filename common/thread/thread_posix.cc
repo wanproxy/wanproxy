@@ -35,6 +35,8 @@
 #include <common/thread/sleep_queue.h>
 #include <common/thread/thread.h>
 
+#include <uinet_api.h>
+
 #include "thread_posix.h"
 
 namespace {
@@ -125,6 +127,12 @@ Thread::self(void)
 	return ((Thread *)ptr);
 }
 
+Thread::ID
+Thread::selfID(void)
+{
+	return ((Thread::ID)pthread_self());
+}
+
 void
 ThreadState::signal_stop(int sig)
 {
@@ -201,6 +209,8 @@ namespace {
 		thread_start_mutex.lock();
 		thread_start_sleepq.signal();
 		thread_start_mutex.unlock();
+
+		uinet_initialize_thread();
 
 		td->main();
 

@@ -70,9 +70,9 @@ struct SleepQueueState {
 		int rv;
 
 		mutex_state_->lock();
-		ASSERT("/sleep/queue/posix/state", mutex_state_->owner_ == Thread::self());
+		ASSERT("/sleep/queue/posix/state", mutex_state_->owner_ == Thread::selfID());
 		rv = pthread_cond_signal(&cond_);
-		ASSERT("/sleep/queue/posix/state", mutex_state_->owner_ == Thread::self());
+		ASSERT("/sleep/queue/posix/state", mutex_state_->owner_ == Thread::selfID());
 		mutex_state_->unlock();
 		ASSERT("/sleep/queue/posix/state", rv != -1);
 	}

@@ -30,7 +30,7 @@ struct MutexState {
 	pthread_mutex_t mutex_;
 	pthread_mutexattr_t mutex_attr_;
 	pthread_cond_t cond_;
-	Thread *owner_;
+	Thread::ID owner_;
 	unsigned waiters_;
 
 	MutexState(void)
@@ -68,7 +68,7 @@ struct MutexState {
 		ASSERT("/mutex/posix/state", rv != -1);
 
 #if 0 /* XXX What about extern Mutexes?  */
-		Thread *self = Thread::self();
+		Thread::ID self = Thread::selfID();
 		ASSERT("/mutex/posix/state", self != NULL);
 		ASSERT("/mutex/posix/state", owner_ == self);
 #endif
@@ -90,7 +90,7 @@ struct MutexState {
 	 */
 	void lock_acquire(void)
 	{
-		Thread *self = Thread::self();
+		Thread::ID self = Thread::selfID();
 		ASSERT("/mutex/posix/state", self != NULL);
 
 		if (owner_ != NULL) {
@@ -110,7 +110,7 @@ struct MutexState {
 		if (owner_ != NULL)
 			return (false);
 
-		Thread *self = Thread::self();
+		Thread::ID self = Thread::selfID();
 		ASSERT("/mutex/posix/state", self != NULL);
 		owner_ = self;
 		return (true);
@@ -132,7 +132,7 @@ struct MutexState {
 	 */
 	void lock_release(void)
 	{
-		Thread *self = Thread::self();
+		Thread::ID self = Thread::selfID();
 		ASSERT("/mutex/posix/state", self != NULL);
 
 		if (owner_ == NULL) {
