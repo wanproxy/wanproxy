@@ -49,6 +49,11 @@ class SocketUinet : public Socket {
 	Action *connect_action_;
 	EventCallback *connect_callback_;
 
+	bool read_do_;
+	Action *read_action_;
+	EventCallback *read_callback_;
+	uint64_t read_amount_remaining_;
+	Buffer read_buffer_;
 
 	SocketUinet(struct uinet_socket *, int, int, int);
 public:
@@ -68,14 +73,21 @@ public:
 	virtual std::string getsockname(void) const;
 
 private:
-	static int receive_upcall(struct uinet_socket *, void *, int);
+	static int passive_receive_upcall(struct uinet_socket *, void *, int);
+	static int active_receive_upcall(struct uinet_socket *, void *, int);
 	static int connect_upcall(struct uinet_socket *, void *, int);
 
-	void do_accept(void);
-	static void accept_wouldblock_handler(void *);
+	void accept_do(void);
+	static void accept_upcall_prep(struct uinet_socket *, void *);
 	void accept_cancel(void);
 
 	void connect_cancel(void);
+
+	
+	void read_schedule(void);
+	void read_callback(void);
+	static void receive_upcall_prep(struct uinet_socket *, void *, int64_t);
+	void read_cancel(void);
 
 public:
 	static SocketUinet *create(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");

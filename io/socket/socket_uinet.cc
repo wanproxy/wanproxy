@@ -24,6 +24,8 @@
  */
 
 
+#include <algorithm>
+
 #include <errno.h>
 
 #include <event/event_callback.h>
@@ -33,6 +35,9 @@
 #include <io/socket/socket_uinet.h>
 
 #include <uinet_api.h>
+
+
+#define UINET_READ_BUFFER_SIZE (64*1024)
 
 
 SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int protocol)
@@ -45,7 +50,12 @@ SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int 
   accept_callback_(NULL),
   connect_do_(false),
   connect_action_(NULL),
-  connect_callback_(NULL)
+  connect_callback_(NULL),
+  read_do_(false),
+  read_action_(NULL),
+  read_callback_(NULL),
+  read_amount_remaining_(0),
+  read_buffer_()
 {
 	ASSERT(log_, so_ != NULL);
 }
@@ -56,11 +66,20 @@ SocketUinet::~SocketUinet()
 	ASSERT(log_, accept_do_ == false);
 	ASSERT(log_, accept_action_ == NULL);
 	ASSERT(log_, accept_callback_ == NULL);
+
+	ASSERT(log_, connect_do_ == false);
+	ASSERT(log_, connect_action_ == NULL);
+	ASSERT(log_, connect_callback_ == NULL);
+
+	ASSERT(log_, read_do_ == false);
+	ASSERT(log_, read_action_ == NULL);
+	ASSERT(log_, read_callback_ == NULL);
+	ASSERT(log_, read_amount_remaining_ == 0);
 }
 
 
 int
-SocketUinet::receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+SocketUinet::passive_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 	
@@ -73,7 +92,7 @@ SocketUinet::receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 		 * accept_do() as accept_do() may need to set it again.
 		 */
 		s->accept_do_ = false;
-		s->do_accept();
+		s->accept_do();
 	}
 
 	return (UINET_SU_OK);
@@ -93,14 +112,14 @@ SocketUinet::accept(SocketEventCallback *cb)
 	ASSERT(log_, accept_callback_ == NULL);
 
 	accept_callback_ = cb;
-	do_accept();
+	accept_do();
 
 	return (cancellation(this, &SocketUinet::accept_cancel));
 }
 
 
 void
-SocketUinet::do_accept(void)
+SocketUinet::accept_do(void)
 {
 	uinet_socket *aso;
 
@@ -115,7 +134,7 @@ SocketUinet::do_accept(void)
 	}
 	case UINET_EWOULDBLOCK:
 		/*
-		 * uinet_soaccept() invoked accept_wouldblock_handler() before returning.
+		 * uinet_soaccept() invoked accept_upcall_prep() before returning.
 		 */
 		break;
 	default:
@@ -132,7 +151,7 @@ SocketUinet::do_accept(void)
  * before the lock that provides mutual exlcusion with upcalls is released.
  */
 void
-SocketUinet::accept_wouldblock_handler(void *arg)
+SocketUinet::accept_upcall_prep(struct uinet_socket *, void *arg)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 
@@ -212,7 +231,7 @@ SocketUinet::connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 			s->connect_action_ = cb->schedule();
 			s->connect_do_ = false;
 
-			uinet_soupcall_set(so, UINET_SO_RCV, SocketUinet::receive_upcall, s);
+			uinet_soupcall_set(so, UINET_SO_RCV, SocketUinet::active_receive_upcall, s);
 		} else if (state & UINET_SS_ISDISCONNECTED) {
 			int error = uinet_sogeterror(s->so_);
 
@@ -241,6 +260,8 @@ SocketUinet::connect(const std::string& name, EventCallback *cb)
 		return (cb->schedule());
 	}
 
+	uinet_soupcall_set(so_, UINET_SO_RCV, SocketUinet::connect_upcall, this);
+
 	connect_callback_ = cb;
 	connect_do_ = true;
 
@@ -263,7 +284,7 @@ SocketUinet::connect_cancel(void)
 	uinet_soupcall_lock(so_, UINET_SO_RCV);
 	if (connect_do_)
 		connect_do_ = false;
-	uinet_soupcall_lock(so_, UINET_SO_RCV);
+	uinet_soupcall_unlock(so_, UINET_SO_RCV);
 
 	if (connect_action_ != NULL) {
 		connect_action_->cancel();
@@ -280,6 +301,8 @@ SocketUinet::connect_cancel(void)
 bool
 SocketUinet::listen(void)
 {
+	uinet_soupcall_set(so_, UINET_SO_RCV, SocketUinet::passive_receive_upcall, this);
+
 	/* XXX should have a knob to adjust somaxconn */
 	int error = uinet_solisten(so_, 128);
 	if (error != 0)
@@ -332,6 +355,177 @@ SocketUinet::close(SimpleCallback *cb)
 	}
 
 	return (cb->schedule());
+}
+
+
+int
+SocketUinet::active_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+{
+	SocketUinet *s = static_cast<SocketUinet *>(arg);
+	
+	(void)so;
+	(void)wait_flag;
+
+	if (s->read_do_) {
+		/*
+		 * NB: read_do_ needs to be cleared before calling read_do()
+		 * as the callback scheduled by read_schedule() may need to
+		 * set it again, and that callback will execute
+		 * asynchronously to this context.
+		 */
+		s->read_do_ = false;
+		s->read_schedule();
+	}
+
+	return (UINET_SU_OK);
+}
+
+
+Action *
+SocketUinet::read(size_t amount, EventCallback *cb)
+{
+	ASSERT(log_, read_do_ == false);
+	ASSERT(log_, read_callback_ == NULL);
+	ASSERT(log_, read_action_ == NULL);
+	ASSERT(log_, read_amount_remaining_ == 0);
+
+	read_amount_remaining_ = amount;
+	read_callback_ = cb;
+
+	read_schedule();
+
+	return (cancellation(this, &SocketUinet::read_cancel));
+}
+
+
+void
+SocketUinet::read_schedule(void)
+{
+	ASSERT(log_, read_action_ == NULL);
+
+	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::read_callback);
+	read_action_ = cb->schedule();
+}
+
+
+void
+SocketUinet::read_callback(void)
+{
+	read_action_->cancel();
+	read_action_ = NULL;
+
+	uint64_t read_amount = std::min(read_amount_remaining_, (uint64_t)UINET_READ_BUFFER_SIZE);
+
+	struct uinet_iovec iov;
+	struct uinet_uio uio;
+	uint8_t read_data[UINET_READ_BUFFER_SIZE];
+
+	uio.uio_iov = &iov;
+	iov.iov_base = read_data;
+	iov.iov_len = sizeof(read_data);
+	uio.uio_iovcnt = 1;
+	uio.uio_offset = 0;
+	uio.uio_resid = read_amount;
+	int error = uinet_soreceive(so_, NULL, &uio, NULL);
+	
+	uint64_t bytes_read = read_amount - uio.uio_resid;
+	if (bytes_read > 0) {
+		read_buffer_.append(read_data, bytes_read);
+		read_amount_remaining_ -= bytes_read;
+	}
+	
+	switch (error) {
+	case 0:
+		if (0 == bytes_read) {
+			/*
+			 * A zero-length result with no error indicates the other
+			 * end of the socket has been closed, otherwise a
+			 * zero-length result would be reported with EWOULDBLOCK.
+			 */
+			read_callback_->param(Event(Event::EOS, read_buffer_));
+			read_action_ = read_callback_->schedule();
+			read_callback_ = NULL;
+			read_buffer_.clear();
+			read_amount_remaining_ = 0;
+		} else if (0 == read_amount_remaining_) {
+			/*
+			 * No more reads to do, so pass it all along.
+			 */
+			read_callback_->param(Event(Event::Done, read_buffer_));
+			read_action_ = read_callback_->schedule();
+			read_callback_ = NULL;
+			read_buffer_.skip(bytes_read);
+		} else if (0 == uio.uio_resid) {
+			/*
+			 * This individual read was completely fulfilled,
+			 * but we have more to read to get to the total.
+			 */
+			read_schedule();
+		}
+		/*
+		  else
+
+		  This was a partial read due to lack of data. The next read
+		  will be scheduled during the next upcall (which may have
+		  happened already).
+		 */
+		break;
+	case EWOULDBLOCK:
+		/*
+		 * There is not any data available currently, but the socket
+		 * is still open and able to receive.  The next upcall will
+		 * schedule the next read (and perhaps already has).
+		 */
+		break;
+	default:
+		/*
+		 * Deliver the error along with whatever data we have.
+		 */
+		read_callback_->param(Event(Event::Error, uinet_errno_to_os(error), read_buffer_));
+		read_action_ = read_callback_->schedule();
+		read_callback_ = NULL;
+		read_buffer_.clear();
+		read_amount_remaining_ = 0;
+		break;
+	}
+}
+
+
+void
+SocketUinet::receive_upcall_prep(struct uinet_socket *so, void *arg, int64_t resid)
+{
+	SocketUinet *s = static_cast<SocketUinet *>(arg);
+
+	(void)so;
+	(void)resid;
+
+	s->read_do_ = true;
+}
+
+
+void
+SocketUinet::read_cancel(void)
+{
+	uinet_soupcall_lock(so_, UINET_SO_RCV);
+	if (read_do_)
+		read_do_ = false;
+	uinet_soupcall_unlock(so_, UINET_SO_RCV);
+
+	/*
+	 * Because read_do_ is guaranteed to be false at all times between
+	 * the above lock release and the end of this routine, there is no
+	 * chance that read_action_ will be modified by the upcall while the
+	 * code below executes.
+	 */
+	if (read_action_ != NULL) {
+		read_action_->cancel();
+		read_action_ = NULL;
+	}
+
+	if (read_callback_ != NULL) {
+		delete read_callback_;
+		read_callback_ = NULL;
+	}
 }
 
 
