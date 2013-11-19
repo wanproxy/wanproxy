@@ -30,6 +30,9 @@
 #include <event/event_main.h>
 
 #include <io/socket/socket.h>
+#include <io/io_uinet.h>
+
+static SocketImpl impl = SocketImplUinet;
 
 static uint8_t data[65536];
 
@@ -48,7 +51,7 @@ public:
 	{
 		{
 			Test _(group_, "Socket::create");
-			socket_ = Socket::create(SocketAddressFamilyIPv4, SocketTypeStream, "tcp");
+			socket_ = Socket::create(impl, SocketAddressFamilyIPv4, SocketTypeStream, "tcp");
 			if (socket_ == NULL)
 				return;
 			_.pass();
@@ -158,7 +161,7 @@ public:
 	{
 		{
 			Test _(group_, "Socket::create");
-			socket_ = Socket::create(SocketAddressFamilyIPv4, SocketTypeStream, "tcp");
+			socket_ = Socket::create(impl, SocketAddressFamilyIPv4, SocketTypeStream, "tcp");
 			if (socket_ == NULL)
 				return;
 			_.pass();
@@ -306,6 +309,12 @@ int
 main(void)
 {
 	unsigned i;
+
+	/*
+	 * Forcing UINET to init here ensures the initial thread is
+	 * initialized for uinet access.
+	 */
+	IOUinet::instance();
 
 	for (i = 0; i < sizeof data; i++)
 		data[i] = random() % 0xff;
