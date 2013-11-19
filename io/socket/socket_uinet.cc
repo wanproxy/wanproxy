@@ -41,7 +41,6 @@
 
 SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int protocol)
 : Socket(domain, socktype, protocol),
-  so_(so),
   log_("/socket/uinet"),
   scheduler_(IOUinet::instance()->scheduler()),
   accept_do_(false),
@@ -62,7 +61,8 @@ SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int 
   write_callback_(NULL),
   write_amount_remaining_(0),
   write_buffer_(),
-  write_mtx_("SocketUinet:write")
+  write_mtx_("SocketUinet:write"),
+  so_(so)
 {
 	ASSERT(log_, so_ != NULL);
 }
@@ -865,119 +865,96 @@ SocketUinet::getsockname(void) const
 }
 
 
-SocketUinet *
-SocketUinet::create(SocketAddressFamily family, SocketType type, const std::string& protocol, const std::string& hint)
+int SocketUinet::gettypenum(SocketType type)
 {
-	int typenum;
-
 	switch (type) {
-	case SocketTypeStream:
-		typenum = UINET_SOCK_STREAM;
-		break;
-
-	case SocketTypeDatagram:
-		typenum = UINET_SOCK_DGRAM;
-		break;
-
+	case SocketTypeStream: return (UINET_SOCK_STREAM);
+#if 0 /* not yet */
+	case SocketTypeDatagram: return (UINET_SOCK_DGRAM);
+#endif
 	default:
 		ERROR("/socket/uinet") << "Unsupported socket type.";
-		return (NULL);
+		return (-1);
 	}
+}
 
-	int protonum;
 
+int SocketUinet::getprotonum(const std::string& protocol)
+{
 	if (protocol == "") {
-		protonum = 0;
+		return(0);
 	} else {
 		if (protocol == "tcp" || protocol == "TCP") {
-			protonum = UINET_IPPROTO_TCP;
+			return (UINET_IPPROTO_TCP);
 		} else if (protocol == "udp" || protocol == "UDP") {
-			protonum = UINET_IPPROTO_UDP;
+			return (UINET_IPPROTO_UDP);
 		} else {
 			ERROR("/socket/uinet") << "Invalid protocol: " << protocol;
-			return (NULL);
+			return (-1);
 		}
 	}
+}
 
-	int domainnum;
 
+int SocketUinet::getdomainnum(SocketAddressFamily family, const std::string& hint)
+{
 	switch (family) {
-#if 0
+#if 0 /* not yet */
 	case SocketAddressFamilyIP:
 		if (uinet_inet6_enabled()) {
 			if (hint == "") {
 				ERROR("/socket/uinet") << "Must specify hint address for IP sockets or specify IPv4 or IPv6 explicitly.";
-				return (NULL);
+				return (-1);
 			} else {
 				/ * XXX evaluate hint */
 				socket_address addr;
 
 				if (!addr(UINET_AF_UNSPEC, typenum, protonum, hint)) {
 					ERROR("/socket/uinet") << "Invalid hint: " << hint;
-					return (NULL);
+					return (-1);
 				}
 
 				/* XXX Just make socket_address::operator() smarter about AF_UNSPEC?  */
 				switch (addr.addr_.sockaddr_.sa_family) {
-				case AF_INET:
-					domainnum = UINET_AF_INET;
-					break;
-
-				case AF_INET6:
-					domainnum = UINET_AF_INET6;
-					break;
-
+				case AF_INET: return (UINET_AF_INET);
+				case AF_INET6: return(UINET_AF_INET6);
 				default:
 					ERROR("/socket/uinet") << "Unsupported address family for hint: " << hint;
-					return (NULL);
+					return (-1);
 				}
 				break;
 			}
 		} else {
 			(void)hint;
-			domainnum = UINET_AF_INET;
+			return (UINET_AF_INET);
 		}
 		break;
+#else
+		(void)hint;
 #endif
 
 	case SocketAddressFamilyIPv4:
-		domainnum = UINET_AF_INET;
+		return(UINET_AF_INET);
 		break;
 
 	case SocketAddressFamilyIPv6:
 		if (uinet_inet6_enabled()) {
-			domainnum = UINET_AF_INET6;
+			return (UINET_AF_INET6);
 		} else {
 			ERROR("/socket/uinet") << "Unsupported address family.";
-			return (NULL);
+			return (-1);
 		}
 		break;
 
 	default:
 		ERROR("/socket/uinet") << "Unsupported address family.";
-		return (NULL);
+		return (-1);
 	}
+}
 
-	struct uinet_socket *so;
-	int error = uinet_socreate(domainnum, &so, typenum, protonum);
-	if (error != 0) {
-		/*
-		 * If we were trying to create an IPv6 socket for a request that
-		 * did not specify IPv4 vs. IPv6 and the system claims that the
-		 * protocol is not supported, try explicitly creating an IPv4
-		 * socket.
-		 */
-		if (uinet_inet6_enabled() && error == UINET_EPROTONOSUPPORT && domainnum == UINET_AF_INET6 &&
-		    family == SocketAddressFamilyIP) {
-			DEBUG("/socket/uinet") << "IPv6 socket create failed; trying IPv4.";
-			return (SocketUinet::create(SocketAddressFamilyIPv4, type, protocol, hint));
-		}
 
-		ERROR("/socket/uinet") << "Could not create socket: " << strerror(uinet_errno_to_os(error));
-		return (NULL);
-	}
-
-	uinet_sosetnonblocking(so, 1);
-
-	return (new SocketUinet(so, domainnum, typenum, protonum));
+SocketUinet *
+SocketUinet::create(SocketAddressFamily family, SocketType type, const std::string& protocol, const std::string& hint)
+{
+	return (create_basic<SocketUinet>(family, type, protocol, hint));
 }

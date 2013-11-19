@@ -23,51 +23,52 @@
  * SUCH DAMAGE.
  */
 
-#ifndef	IO_IO_UINET_H
-#define	IO_IO_UINET_H
+#ifndef	IO_SOCKET_SOCKET_UINET_PROMISC_H
+#define	IO_SOCKET_SOCKET_UINET_PROMISC_H
+
+#include <event/typed_callback.h>
+
+#include <io/socket/socket_uinet.h>
 
 
-#include <event/callback_thread.h>
+extern "C" {
+	int synfilter_callback(struct uinet_socket *, void *, uinet_api_synfilter_cookie_t);	
+}
 
-#include <uinet_api.h>
 
-class CallbackScheduler;
-class CallbackThread;
-
-class IOUinet {
-	struct InterfaceConfig {
-		std::string name;
-		uinet_iftype_t type;
-		unsigned int cdom;
-		int cpu;
+class SocketUinetPromisc : public SocketUinet {
+public:
+	struct SynfilterCallbackParam {
+		struct uinet_in_conninfo *inc;
+		struct uinet_in_l2info *l2i;
+		uinet_api_synfilter_cookie_t cookie;
+		int *result;
 	};
-	
+
+	typedef	class TypedCallback<SynfilterCallbackParam> SynfilterCallback;
+
+private:
+	friend class SocketUinet; /* So create_basic can invoke the constructor. */
+	friend int synfilter_callback(struct uinet_socket *, void *, uinet_api_synfilter_cookie_t);
 
 	LogHandle log_;
-	CallbackThread *handler_thread_;
-	std::vector<InterfaceConfig> interfaces_;
+	unsigned int cdom_;
+	SynfilterCallback *synfilter_callback_;
 
-	IOUinet(void);
-	~IOUinet();
+protected:
+	SocketUinetPromisc(struct uinet_socket *, int, int, int);
 
 public:
-	int add_interface(const std::string&, uinet_iftype_t, unsigned int, int);
+	~SocketUinetPromisc();
 
-	CallbackScheduler *scheduler(void) const { return handler_thread_; }
+	int setl2info(struct uinet_in_l2info *);
+	int setsynfilter(SynfilterCallback *);
+	
+	uinet_synf_deferral_t synfdefer(uinet_api_synfilter_cookie_t);
+	int synfdeferraldeliver(uinet_synf_deferral_t, int);
 
-	void start(bool enable_lo0);
-
-	/*
-	 * XXX doesn't this need to be MT-safe? (ditto IOSystem::instance)
-	 */
-	static IOUinet *instance(void)
-	{
-		static IOUinet *instance_;
-
-		if (instance_ == NULL)
-			instance_ = new IOUinet();
-		return (instance_);
-	}
+public:
+	static SocketUinetPromisc *create(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "", unsigned int = 0);
 };
 
-#endif /* !IO_IO_UINET_H */
+#endif /* !IO_SOCKET_SOCKET_UINET_PROMISC_H */

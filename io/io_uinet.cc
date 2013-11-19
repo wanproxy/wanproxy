@@ -36,33 +36,6 @@ IOUinet::IOUinet(void)
 	: log_("/io/uinet"),
 	  handler_thread_(new CallbackThread("UINET IOThread"))
 {
-	/*
-	 * Prepare system to handle UINET IO.
-	 */
-	INFO(log_) << "Starting UINET IO system.";
-
-#if 0
-	for (i = 0; i < num_ifs; i++) {
-		uinet_config_if(ifnames[i], 0, i + 1);
-	}
-#endif
-
-	/*
-	 * XXX number of CPUs and limit on number of mbuf clusters should be
-	 * configurable
-	 */
-	uinet_init(1, 128*1024, 1);
-
-#if 0
-	for (i = 0; i < num_ifs; i++) {
-		uinet_interface_up(ifnames[i], 0);
-	}
-
-#endif
-
-	handler_thread_->start();
-
-	EventSystem::instance()->thread_wait(handler_thread_);
 }
 
 
@@ -70,3 +43,48 @@ IOUinet::~IOUinet()
 {
 }
 
+
+int
+IOUinet::add_interface(const std::string& name, uinet_iftype_t type, unsigned int cdom, int cpu)
+{
+	InterfaceConfig cfg;
+
+	cfg.name = name;
+	cfg.type = type;
+	cfg.cdom = cdom;
+	cfg.cpu = cpu;
+
+	interfaces_.push_back(cfg);
+
+	return (0);
+}
+
+
+void
+IOUinet::start(bool enable_lo0)
+{
+	/*
+	 * Prepare system to handle UINET IO.
+	 */
+	INFO(log_) << "Starting UINET IO system.";
+
+	std::vector<InterfaceConfig>::const_iterator iter;
+	for (iter = interfaces_.begin(); iter != interfaces_.end(); ++iter) {
+		uinet_config_if(iter->name.c_str(), iter->type, iter->cdom, iter->cpu);
+	}
+
+	/*
+	 * XXX number of CPUs and limit on number of mbuf clusters should be
+	 * configurable
+	 */
+	uinet_init(1, 128*1024, enable_lo0);
+
+	for (iter = interfaces_.begin(); iter != interfaces_.end(); ++iter) {
+		/* XXX qno should really come from the name */
+		uinet_interface_up(iter->name.c_str(), 0, iter->cdom != 0);
+	}
+
+	handler_thread_->start();
+
+	EventSystem::instance()->thread_wait(handler_thread_);
+}

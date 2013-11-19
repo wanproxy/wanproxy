@@ -4,6 +4,7 @@ SRCS+=	resolver.cc
 SRCS+=	socket.cc
 SRCS+=	socket_handle.cc
 SRCS+=	socket_uinet.cc
+SRCS+=	socket_uinet_promisc.cc
 SRCS+=	unix_client.cc
 SRCS+=	unix_server.cc
 

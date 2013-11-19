@@ -31,7 +31,7 @@
 
 #include <io/socket/socket.h>
 
-struct uinet_socket;
+#include <uinet_api.h>
 
 class CallbackScheduler;
 
@@ -44,7 +44,7 @@ extern "C" {
 	int active_receive_upcall(struct uinet_socket *, void *, int);
 	int active_send_upcall(struct uinet_socket *, void *, int);
 	int connect_upcall(struct uinet_socket *, void *, int);
-};
+}
 
 
 class SocketUinet : public Socket {
@@ -56,11 +56,8 @@ class SocketUinet : public Socket {
 	friend int active_send_upcall(struct uinet_socket *, void *, int);
 	friend int connect_upcall(struct uinet_socket *, void *, int);
 
-	struct uinet_socket *so_;
 	LogHandle log_;
 	CallbackScheduler *scheduler_;
-
-	int last_upcall_state_;
 
 	bool accept_do_;
 	Action *accept_action_;
@@ -85,9 +82,13 @@ class SocketUinet : public Socket {
 	Buffer write_buffer_;
 	Mutex write_mtx_;
 
+protected:
 	SocketUinet(struct uinet_socket *, int, int, int);
+
+	struct uinet_socket *so_;
+
 public:
-	~SocketUinet();
+	virtual ~SocketUinet();
 
 	virtual Action *close(SimpleCallback *);
 	virtual Action *read(size_t, EventCallback *);
@@ -101,6 +102,14 @@ public:
 
 	virtual std::string getpeername(void) const;
 	virtual std::string getsockname(void) const;
+
+protected:
+	static int gettypenum(SocketType);
+	static int getprotonum(const std::string&);
+	static int getdomainnum(SocketAddressFamily, const std::string&);
+
+	template <class S>
+	static S *create_basic(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");
 
 private:
 	void accept_do(void);
@@ -119,5 +128,46 @@ private:
 public:
 	static SocketUinet *create(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");
 };
+
+
+template <class S>
+S *
+SocketUinet::create_basic(SocketAddressFamily family, SocketType type, const std::string& protocol, const std::string& hint)
+{
+	int typenum = gettypenum(type);
+	if (-1 == type)
+		return (NULL);
+
+	int protonum = getprotonum(protocol);
+	if (-1 == protonum)
+		return (NULL);
+
+	int domainnum = getdomainnum(family, hint);
+	if (-1 == domainnum)
+		return (NULL);
+
+	struct uinet_socket *so;
+	int error = uinet_socreate(domainnum, &so, typenum, protonum);
+	if (error != 0) {
+		/*
+		 * If we were trying to create an IPv6 socket for a request that
+		 * did not specify IPv4 vs. IPv6 and the system claims that the
+		 * protocol is not supported, try explicitly creating an IPv4
+		 * socket.
+		 */
+		if (uinet_inet6_enabled() && error == UINET_EPROTONOSUPPORT && domainnum == UINET_AF_INET6 &&
+		    family == SocketAddressFamilyIP) {
+			DEBUG("/socket/uinet") << "IPv6 socket create failed; trying IPv4.";
+			return (S::create(SocketAddressFamilyIPv4, type, protocol, hint));
+		}
+
+		ERROR("/socket/uinet") << "Could not create socket: " << strerror(uinet_errno_to_os(error));
+		return (NULL);
+	}
+
+	uinet_sosetnonblocking(so, 1);
+
+	return (new S(so, domainnum, typenum, protonum));
+}
 
 #endif /* !IO_SOCKET_SOCKET_UINET_H */
