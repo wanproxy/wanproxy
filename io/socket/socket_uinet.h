@@ -27,6 +27,8 @@
 #define	IO_SOCKET_SOCKET_UINET_H
 
 
+#include <common/thread/mutex.h>
+
 #include <io/socket/socket.h>
 
 struct uinet_socket;
@@ -35,7 +37,7 @@ class CallbackScheduler;
 
 extern "C" {
 	void accept_upcall_prep(struct uinet_socket *, void *);
-	void receive_upcall_prep(struct uinet_socket *, void *, int64_t);
+	void receive_upcall_prep(struct uinet_socket *, void *, int64_t, int64_t);
 	void send_upcall_prep(struct uinet_socket *, void *, int64_t);
 
 	int passive_receive_upcall(struct uinet_socket *, void *, int);
@@ -47,7 +49,7 @@ extern "C" {
 
 class SocketUinet : public Socket {
 	friend void accept_upcall_prep(struct uinet_socket *, void *);
-	friend void receive_upcall_prep(struct uinet_socket *, void *, int64_t);
+	friend void receive_upcall_prep(struct uinet_socket *, void *, int64_t, int64_t);
 	friend void send_upcall_prep(struct uinet_socket *, void *, int64_t);
 	friend int passive_receive_upcall(struct uinet_socket *, void *, int);
 	friend int active_receive_upcall(struct uinet_socket *, void *, int);
@@ -63,6 +65,7 @@ class SocketUinet : public Socket {
 	bool accept_do_;
 	Action *accept_action_;
 	SocketEventCallback *accept_callback_;
+	Mutex accept_connect_mtx_;
 
 	bool connect_do_;
 	Action *connect_action_;
@@ -73,12 +76,14 @@ class SocketUinet : public Socket {
 	EventCallback *read_callback_;
 	uint64_t read_amount_remaining_;
 	Buffer read_buffer_;
+	Mutex read_mtx_;
 
 	bool write_do_;
 	Action *write_action_;
 	EventCallback *write_callback_;
 	uint64_t write_amount_remaining_;
 	Buffer write_buffer_;
+	Mutex write_mtx_;
 
 	SocketUinet(struct uinet_socket *, int, int, int);
 public:
