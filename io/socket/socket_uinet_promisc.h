@@ -61,6 +61,8 @@ protected:
 public:
 	~SocketUinetPromisc();
 
+	void getconninfo(struct uinet_in_conninfo *inc);
+	int getl2info(struct uinet_in_l2info *);
 	int setl2info(struct uinet_in_l2info *);
 	int setsynfilter(SynfilterCallback *);
 	

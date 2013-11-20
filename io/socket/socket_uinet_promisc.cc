@@ -46,6 +46,21 @@ SocketUinetPromisc::~SocketUinetPromisc()
 
 
 
+void
+SocketUinetPromisc::getconninfo(struct uinet_in_conninfo *inc)
+{
+	uinet_sogetconninfo(so_, inc);
+}
+
+
+int
+SocketUinetPromisc::getl2info(struct uinet_in_l2info *l2i)
+{
+	int error = uinet_getl2info(so_, l2i);
+	return (uinet_errno_to_os(error));
+}
+
+
 int
 SocketUinetPromisc::setl2info(struct uinet_in_l2info *l2i)
 {
