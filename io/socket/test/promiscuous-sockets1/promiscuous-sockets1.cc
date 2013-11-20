@@ -252,6 +252,21 @@ public:
 		listen_socket_ = NULL;
 	}
 
+	
+	/*
+	 * This will get invoked for every SYN received on listen_socket_.
+	 * The connection details for the SYN are tracked in the
+	 * connections_ table for two reasons.  The first is that we only
+	 * want to take action (that is, open an outbound connection to the
+	 * destination) for a given SYN once, not each time it may be
+	 * retransmitted.  The second is that when a SYN is accepted by the
+	 * filter, the stack then processes it in the normal path, resulting
+	 * in a subsequent accept, and that accept has to be able to locate
+	 * the outbound connection made by the filter and associate it with
+	 * the inbound connection being accepted.  There is no way to pass
+	 * any context to that subsequent accept from this syn filter
+	 * through the stack (because, syncookies).
+	 */
 	void synfilter(SocketUinetPromisc::SynfilterCallbackParam param)
 	{
 		ScopedLock _(&mtx_);
@@ -392,6 +407,8 @@ public:
 			listen_socket_->synfdeferraldeliver(si.deferral, UINET_SYNF_ACCEPT);
 			break;
 		default:
+			connections_.erase(ci);
+			listen_socket_->synfdeferraldeliver(si.deferral, UINET_SYNF_REJECT);
 			ERROR(log_) << "Unexpected event: " << e;
 			break;
 		}
