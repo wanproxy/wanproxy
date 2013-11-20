@@ -310,11 +310,7 @@ main(void)
 {
 	unsigned i;
 
-	/*
-	 * Forcing UINET to init here ensures the initial thread is
-	 * initialized for uinet access.
-	 */
-	IOUinet::instance();
+	IOUinet::instance()->start(true);
 
 	for (i = 0; i < sizeof data; i++)
 		data[i] = random() % 0xff;
