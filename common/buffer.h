@@ -132,6 +132,7 @@ public:
 	 */
 	static BufferSegment *create(void)
 	{
+#if BUFFER_SEGMENT_CACHE_LIMIT > 0
 		if (!segment_cache.empty()) {
 			BufferSegment *seg = segment_cache.front();
 			ASSERT("/buffer/segment", !seg->ref_.inuse());
@@ -143,6 +144,7 @@ public:
 
 			return (seg);
 		}
+#endif
 		return (new BufferSegment());
 	}
 
@@ -178,10 +180,14 @@ public:
 	void unref(void)
 	{
 		if (ref_.drop()) {
+#if BUFFER_SEGMENT_CACHE_LIMIT > 0
 			if (segment_cache.size() == BUFFER_SEGMENT_CACHE_LIMIT)
+#endif
 				delete this;
+#if BUFFER_SEGMENT_CACHE_LIMIT > 0
 			else
 				segment_cache.push_back(this);
+#endif
 		}
 	}
 
@@ -458,8 +464,10 @@ public:
 		return (equal(seg->data(), seg->length()));
 	}
 
+#if BUFFER_SEGMENT_CACHE_LIMIT > 0
 private:
 	static std::deque<BufferSegment *> segment_cache;
+#endif
 };
 
 /*
