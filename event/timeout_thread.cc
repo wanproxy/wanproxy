@@ -71,7 +71,7 @@ TimeoutThread::wait(void)
 		WorkerThread::wait();
 		return;
 	}
-	NanoTime deadline = timeout_queue_.deadline();
+	NanoTime deadline = timeout_queue_.next_deadline();
 	sleepq_.wait(&deadline);
 
 	if (!pending_ && !timeout_queue_.empty() && timeout_queue_.ready())

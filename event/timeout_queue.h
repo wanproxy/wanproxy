@@ -76,7 +76,7 @@ public:
 		return (true);
 	}
 
-	NanoTime deadline(void) const
+	NanoTime next_deadline(void) const
 	{
 		ASSERT(log_, !timeout_queue_.empty());
 		return (timeout_queue_.begin()->first);
