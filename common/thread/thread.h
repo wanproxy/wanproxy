@@ -122,10 +122,10 @@ protected:
 	{
 	}
 
-	virtual void signal(bool stop)
+	virtual void signal(bool want_stop)
 	{
 		ScopedLock _(&mtx_);
-		if (!stop) {
+		if (!want_stop) {
 			if (pending_)
 				return;
 			pending_ = true;

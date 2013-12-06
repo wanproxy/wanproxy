@@ -32,7 +32,9 @@
 
 #include <common/buffer.h>
 
+#if BUFFER_SEGMENT_CACHE_LIMIT > 0
 std::deque<BufferSegment *> BufferSegment::segment_cache;
+#endif
 
 size_t
 Buffer::fill_iovec(struct iovec *iov, size_t niov) const
