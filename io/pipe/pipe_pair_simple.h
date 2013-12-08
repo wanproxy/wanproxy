@@ -26,7 +26,6 @@
 #ifndef	IO_PIPE_PIPE_PAIR_SIMPLE_H
 #define	IO_PIPE_PIPE_PAIR_SIMPLE_H
 
-#include <io/pipe/pipe_simple.h>
 #include <io/pipe/pipe_simple_wrapper.h>
 
 class PipePairSimple : public PipePair {
