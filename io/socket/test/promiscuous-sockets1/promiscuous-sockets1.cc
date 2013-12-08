@@ -225,6 +225,14 @@ public:
 
 		listen_socket_->setsynfilter(synfilter_callback_);
 
+		/*
+		 * Setting l2info with a tag count of -1 on a listen socket
+		 * means to listen on all VLANs.  A tag count of 0 (default)
+		 * would mean only listen for untagged traffic.
+		 */
+		if (0 != listen_socket_->setl2info2(NULL, NULL, NULL, 0, -1))
+			return;
+
 		if (!listen_socket_->bind(where))
 			return;	
 
@@ -297,16 +305,8 @@ public:
 			/*
 			 * Use the L2 details of the foreign host that sent this SYN.
 			 */
-			/* It's OK to modify the l2info whose pointer was given to us in param. */
-			/* XXX maybe provide the old setl2info api again
-			 * that takes the items individually, in order to
-			 * minmize copies */
-			uint8_t temp_addr[UINET_IN_L2INFO_ADDR_MAX];
-			memcpy(temp_addr, l2i->inl2i_local_addr, UINET_IN_L2INFO_ADDR_MAX);
-			memcpy(l2i->inl2i_local_addr, l2i->inl2i_foreign_addr, UINET_IN_L2INFO_ADDR_MAX);
-			memcpy(l2i->inl2i_foreign_addr, temp_addr, UINET_IN_L2INFO_ADDR_MAX);
-
-			si.outbound->setl2info(l2i);
+			si.outbound->setl2info2(l2i->inl2i_foreign_addr, l2i->inl2i_local_addr,
+						l2i->inl2i_tags, l2i->inl2i_mask, l2i->inl2i_cnt);
 
 			/*
 			 * Use the IP address and port number of the foreign

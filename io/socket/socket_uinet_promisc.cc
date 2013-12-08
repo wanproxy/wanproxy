@@ -70,6 +70,14 @@ SocketUinetPromisc::setl2info(struct uinet_in_l2info *l2i)
 
 
 int
+SocketUinetPromisc::setl2info2(uint8_t *laddr, uint8_t *faddr, uint32_t *tags, uint32_t tagmask, int tagcnt)
+{
+	int error = uinet_setl2info2(so_, laddr, faddr, tags, tagmask, tagcnt);
+	return (uinet_errno_to_os(error));
+}
+
+
+int
 SocketUinetPromisc::setsynfilter(SynfilterCallback *cb)
 {
 	ASSERT(log_, synfilter_callback_ == NULL);
