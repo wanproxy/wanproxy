@@ -32,112 +32,11 @@
 #include <event/typed_callback.h>
 #include <event/event_main.h>
 
+#include <io/pipe/splice.h>
+#include <io/pipe/splice_pair.h>
 #include <io/socket/resolver.h>
 #include <io/socket/socket_uinet_promisc.h>
 #include <io/io_uinet.h>
-
-
-
-class Connector {
-	LogHandle log_;
-	Mutex mtx_;
-	Action *action_;
-	Socket *readfrom_;
-	Socket *writeto_;
-	Buffer read_buffer_;
-
-public:
-	Connector(Socket *readfrom, Socket *writeto)
-	: log_("/connector"),
-	  mtx_("Connector"),
-	  action_(NULL),
-	  readfrom_(readfrom),
-	  writeto_(writeto),
-	  read_buffer_()
-	{
-
-		{
-			ScopedLock _(&mtx_);
-			
-			EventCallback *cb = callback(this, &Connector::read_complete);
-			action_ = readfrom_->read(0, cb);
-		}
-	}
-
-	~Connector()
-	{
-	}
-
-	void read_complete(Event e)
-	{
-		ScopedLock _(&mtx_);
-
-		action_->cancel();
-		action_ = NULL;
-
-		switch (e.type_) {
-		case Event::Done:
-			read_buffer_.append(e.buffer_);
-			break;
-		case Event::EOS:
-			read_buffer_.append(e.buffer_);
-			DEBUG(log_) << "Read EOS";
-			break;
-		default:
-			ERROR(log_) << "Unexpected event: " << e;
-			return;
-		}
-
-		if (!read_buffer_.empty()) {
-			EventCallback *cb = callback(this, &Connector::write_complete);
-			action_ = writeto_->write(&read_buffer_, cb);
-		}
-	}
-	
-	void write_complete(Event e)
-	{
-		/* XXX lock probably not necessary since this is launched
-		 * from the same event thread that will process it.
-		 */
-		ScopedLock _(&mtx_);
-
-		action_->cancel();
-		action_ = NULL;
-
-		switch (e.type_) {
-		case Event::Done:
-			break;
-		default:
-			ERROR(log_) << "Unexpected event: " << e;
-			return;
-		}
-
-		EventCallback *cb = callback(this, &Connector::read_complete);
-		action_ = readfrom_->read(0, cb);
-	}
-
-};
-
-
-class Splice {
-	LogHandle log_;
-	Connector inbound_to_outbound_;
-	Connector outbound_to_inbound_;
-
-public:
-	Splice(Socket *inbound, Socket *outbound)
-	: log_("/splice"),
-	  inbound_to_outbound_(inbound, outbound),
-	  outbound_to_inbound_(outbound, inbound)
-	{
-	}
-
-	~Splice()
-	{
-	}
-};
-
-
 
 class Listener {
 	struct ConnInfo {
@@ -170,11 +69,16 @@ class Listener {
 	};
 
 	struct SpliceInfo {
+		ConnInfo conninfo;
 		uinet_synf_deferral_t deferral;
 		Action *connect_action;
 		SocketUinetPromisc *inbound;
 		SocketUinetPromisc *outbound;
-		Splice *splice;
+		Splice *splice_inbound;
+		Splice *splice_outbound;
+		SplicePair *splice_pair;
+		Action *splice_action;
+		Action *close_action;
 	};
 
 	struct ConnInfoHasher {
@@ -285,8 +189,10 @@ public:
 
 		if (connections_.find(ci) == connections_.end()) {
 
-			SpliceInfo si;
 			struct uinet_in_l2info *l2i = param.l2i;
+
+			SpliceInfo& si = connections_[ci];
+			si.conninfo = ci;
 
 			/*
 			 * Get deferral context for the SYN filter result.
@@ -344,8 +250,6 @@ public:
 
 			*param.result = UINET_SYNF_DEFER;
 
-			connections_[ci] = si;
-
 			return;
 		}
 
@@ -355,11 +259,8 @@ public:
 
 	void accept_complete(Event e, Socket *socket)
 	{
-
 		ScopedLock _(&mtx_);
 			
-		(void)socket;
-
 		action_->cancel();
 		action_ = NULL;
 
@@ -370,17 +271,17 @@ public:
 			
 			SocketUinetPromisc *promisc = (SocketUinetPromisc *)socket;
 			ConnInfo ci;
-			SpliceInfo si;
 
 			promisc->getconninfo(&ci.inc);
 			promisc->getl2info(&ci.l2i);
 
-			si = connections_[ci];
-			
+			SpliceInfo& si = connections_[ci];
 			si.inbound = promisc;
-			si.splice = new Splice(si.inbound, si.outbound);
-
-			connections_[ci] = si;
+			si.splice_inbound = new Splice(log_ + "/inbound", si.inbound, NULL, si.outbound);
+			si.splice_outbound = new Splice(log_ + "/outbound", si.outbound, NULL, si.inbound);
+			si.splice_pair = new SplicePair(si.splice_inbound, si.splice_outbound);
+			EventCallback *cb = callback(this, &Listener::splice_complete, ci);
+			si.splice_action = si.splice_pair->start(cb);
 
 			break;
 		}
@@ -396,8 +297,7 @@ public:
 	void connect_complete(Event e, ConnInfo ci)
 	{
 		ScopedLock _(&mtx_);
-
-		SpliceInfo si = connections_[ci];
+		SpliceInfo& si = connections_[ci];
 
 		si.connect_action->cancel();
 		si.connect_action = NULL;
@@ -409,10 +309,64 @@ public:
 		default:
 			connections_.erase(ci);
 			listen_socket_->synfdeferraldeliver(si.deferral, UINET_SYNF_REJECT);
+			/* XXX Close socket?  */
 			ERROR(log_) << "Unexpected event: " << e;
 			break;
 		}
 
+	}
+
+	void splice_complete(Event e, ConnInfo ci)
+	{
+		ScopedLock _(&mtx_);
+		SpliceInfo& si = connections_[ci];
+		si.splice_action->cancel();
+		si.splice_action = NULL;
+
+		switch (e.type_) {
+		case Event::Done:
+			break;
+		default:
+			ERROR(log_) << "Splice exiting unexpectedly: " << e;
+			break;
+		}
+
+		ASSERT(log_, si.splice_pair != NULL);
+		delete si.splice_pair;
+		si.splice_pair = NULL;
+
+		ASSERT(log_, si.splice_inbound != NULL);
+		delete si.splice_inbound;
+		si.splice_inbound = NULL;
+
+		ASSERT(log_, si.splice_outbound != NULL);
+		delete si.splice_outbound;
+		si.splice_outbound = NULL;
+
+		SimpleCallback *cb = callback(this, &Listener::close_complete, ci);
+		si.close_action = si.outbound->close(cb);
+	}
+
+	void close_complete(ConnInfo ci)
+	{
+		ScopedLock _(&mtx_);
+		SpliceInfo& si = connections_[ci];
+		si.close_action->cancel();
+		si.close_action = NULL;
+
+		if (si.outbound != NULL) {
+			delete si.outbound;
+			si.outbound = NULL;
+
+			SimpleCallback *cb = callback(this, &Listener::close_complete, ci);
+			si.close_action = si.inbound->close(cb);
+			return;
+		}
+
+		delete si.inbound;
+		si.inbound = NULL;
+
+		connections_.erase(ci);
 	}
 };
 
@@ -420,8 +374,8 @@ public:
 int
 main(void)
 {
-	IOUinet::instance()->add_interface("em1", UINET_IFTYPE_NETMAP, 1, -1);
-	IOUinet::instance()->add_interface("em2", UINET_IFTYPE_NETMAP, 2, -1);
+	IOUinet::instance()->add_interface("vale0:1", UINET_IFTYPE_NETMAP, 1, -1);
+	IOUinet::instance()->add_interface("vale1:1", UINET_IFTYPE_NETMAP, 2, -1);
 	IOUinet::instance()->start(false);
 
 

@@ -1,5 +1,5 @@
 TEST=promiscuous-sockets1
 
 TOPDIR=../../../..
-USE_LIBS=common common/thread common/time event io io/socket
+USE_LIBS=common common/thread common/time event io io/pipe io/socket
 include ${TOPDIR}/common/program.mk
