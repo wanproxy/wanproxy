@@ -374,10 +374,13 @@ public:
 int
 main(void)
 {
-	IOUinet::instance()->add_interface("vale0:1", UINET_IFTYPE_NETMAP, 1, -1);
-	IOUinet::instance()->add_interface("vale1:1", UINET_IFTYPE_NETMAP, 2, -1);
 	IOUinet::instance()->start(false);
 
+	IOUinet::instance()->add_interface("vale0:1", UINET_IFTYPE_NETMAP, 1, -1);
+	IOUinet::instance()->interface_up("vale0:1", 0, true);
+
+	IOUinet::instance()->add_interface("vale1:1", UINET_IFTYPE_NETMAP, 2, -1);
+	IOUinet::instance()->interface_up("vale1:1", 0, true);
 
 	Listener *l = new Listener("[0.0.0.0]:0", 1, 2);
 

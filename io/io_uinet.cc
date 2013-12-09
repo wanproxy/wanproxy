@@ -47,16 +47,30 @@ IOUinet::~IOUinet()
 int
 IOUinet::add_interface(const std::string& name, uinet_iftype_t type, unsigned int cdom, int cpu)
 {
-	InterfaceConfig cfg;
+	int error;
 
-	cfg.name = name;
-	cfg.type = type;
-	cfg.cdom = cdom;
-	cfg.cpu = cpu;
+	error = uinet_ifcreate(name.c_str(), type, cdom, cpu);
+	return (uinet_errno_to_os(error));
+}
 
-	interfaces_.push_back(cfg);
 
-	return (0);
+int
+IOUinet::remove_interface(const std::string& name)
+{
+	int error;
+
+	error = uinet_ifdestroy(name.c_str());
+	return (uinet_errno_to_os(error));
+}
+
+
+int
+IOUinet::interface_up(const std::string& name, unsigned int qno, bool ispromisc)
+{
+	int error;
+
+	error = uinet_interface_up(name.c_str(), qno, ispromisc);
+	return (uinet_errno_to_os(error));
 }
 
 
@@ -68,21 +82,11 @@ IOUinet::start(bool enable_lo0)
 	 */
 	INFO(log_) << "Starting UINET IO system.";
 
-	std::vector<InterfaceConfig>::const_iterator iter;
-	for (iter = interfaces_.begin(); iter != interfaces_.end(); ++iter) {
-		uinet_config_if(iter->name.c_str(), iter->type, iter->cdom, iter->cpu);
-	}
-
 	/*
 	 * XXX number of CPUs and limit on number of mbuf clusters should be
 	 * configurable
 	 */
 	uinet_init(1, 128*1024, enable_lo0);
-
-	for (iter = interfaces_.begin(); iter != interfaces_.end(); ++iter) {
-		/* XXX qno should really come from the name */
-		uinet_interface_up(iter->name.c_str(), 0, iter->cdom != 0);
-	}
 
 	handler_thread_->start();
 

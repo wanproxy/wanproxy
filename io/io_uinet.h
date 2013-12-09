@@ -35,23 +35,16 @@ class CallbackScheduler;
 class CallbackThread;
 
 class IOUinet {
-	struct InterfaceConfig {
-		std::string name;
-		uinet_iftype_t type;
-		unsigned int cdom;
-		int cpu;
-	};
-	
-
 	LogHandle log_;
 	CallbackThread *handler_thread_;
-	std::vector<InterfaceConfig> interfaces_;
 
 	IOUinet(void);
 	~IOUinet();
 
 public:
 	int add_interface(const std::string&, uinet_iftype_t, unsigned int, int);
+	int interface_up(const std::string&, unsigned int, bool);
+	int remove_interface(const std::string&);
 
 	CallbackScheduler *scheduler(void) const { return handler_thread_; }
 
