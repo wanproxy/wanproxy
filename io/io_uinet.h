@@ -42,8 +42,8 @@ class IOUinet {
 	~IOUinet();
 
 public:
-	int add_interface(const std::string&, uinet_iftype_t, unsigned int, int);
-	int interface_up(const std::string&, unsigned int, bool);
+	int add_interface(uinet_iftype_t, const std::string&, const std::string&, unsigned int, int);
+	int interface_up(const std::string&, bool);
 	int remove_interface(const std::string&);
 
 	CallbackScheduler *scheduler(void) const { return handler_thread_; }

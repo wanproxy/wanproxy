@@ -45,11 +45,11 @@ IOUinet::~IOUinet()
 
 
 int
-IOUinet::add_interface(const std::string& name, uinet_iftype_t type, unsigned int cdom, int cpu)
+IOUinet::add_interface(uinet_iftype_t type, const std::string& configstr, const std::string& alias, unsigned int cdom, int cpu)
 {
 	int error;
 
-	error = uinet_ifcreate(name.c_str(), type, cdom, cpu);
+	error = uinet_ifcreate(type, configstr.c_str(), alias.c_str(), cdom, cpu, NULL);
 	return (uinet_errno_to_os(error));
 }
 
@@ -59,17 +59,17 @@ IOUinet::remove_interface(const std::string& name)
 {
 	int error;
 
-	error = uinet_ifdestroy(name.c_str());
+	error = uinet_ifdestroy_byname(name.c_str());
 	return (uinet_errno_to_os(error));
 }
 
 
 int
-IOUinet::interface_up(const std::string& name, unsigned int qno, bool ispromisc)
+IOUinet::interface_up(const std::string& name, bool ispromisc)
 {
 	int error;
 
-	error = uinet_interface_up(name.c_str(), qno, ispromisc);
+	error = uinet_interface_up(name.c_str(), ispromisc);
 	return (uinet_errno_to_os(error));
 }
 
