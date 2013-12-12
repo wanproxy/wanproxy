@@ -117,11 +117,6 @@ public:
 
 		listen_socket_->setsynfilter(synfilter_callback_);
 
-		/*
-		 * Setting l2info with a tag count of -1 on a listen socket
-		 * means to listen on all VLANs.  A tag count of 0 (default)
-		 * would mean only listen for untagged traffic.
-		 */
 		if (0 != listen_socket_->setl2info2(NULL, NULL, UINET_INL2I_TAG_ANY, NULL))
 			return;
 
