@@ -52,17 +52,8 @@ class Listener {
 			    (inc.inc_ie.ie_fport != other.inc.inc_ie.ie_fport))
 				return (false);
 
-			/* XXX this comparison should be provided by UINET */
-			if ((l2i.inl2i_cnt != other.l2i.inl2i_cnt) ||
-			    ((l2i.inl2i_cnt > 0) &&
-			     (l2i.inl2i_mask != other.l2i.inl2i_mask)))
+			if (0 != uinet_l2tagstack_cmp(&l2i.inl2i_tagstack, &other.l2i.inl2i_tagstack))
 				return (false);
-
-			for (int i = 0; i < l2i.inl2i_cnt; i++) {
-				if ((l2i.inl2i_tags[i] & l2i.inl2i_mask) !=
-				    (other.l2i.inl2i_tags[i] & other.l2i.inl2i_mask))
-					return (false);
-			}
 
 			return (true);
 		}
@@ -91,12 +82,9 @@ class Listener {
 			    ci.inc.inc_ie.ie_laddr.s_addr ^
 			    ci.inc.inc_ie.ie_lport ^
 			    ci.inc.inc_ie.ie_faddr.s_addr ^
-			    ci.inc.inc_ie.ie_fport ^
-			    ci.l2i.inl2i_cnt;
+			    ci.inc.inc_ie.ie_fport;
 			
-			for (int i = 0; i < ci.l2i.inl2i_cnt; i++) {
-				hash ^= ci.l2i.inl2i_tags[i] & ci.l2i.inl2i_mask;
-			}
+			hash ^= uinet_l2tagstack_hash(&ci.l2i.inl2i_tagstack);
 			
 			return (hash);
 		} 
@@ -134,7 +122,7 @@ public:
 		 * means to listen on all VLANs.  A tag count of 0 (default)
 		 * would mean only listen for untagged traffic.
 		 */
-		if (0 != listen_socket_->setl2info2(NULL, NULL, NULL, 0, -1))
+		if (0 != listen_socket_->setl2info2(NULL, NULL, UINET_INL2I_TAG_ANY, NULL))
 			return;
 
 		if (!listen_socket_->bind(where))
@@ -212,7 +200,7 @@ public:
 			 * Use the L2 details of the foreign host that sent this SYN.
 			 */
 			si.outbound->setl2info2(l2i->inl2i_foreign_addr, l2i->inl2i_local_addr,
-						l2i->inl2i_tags, l2i->inl2i_mask, l2i->inl2i_cnt);
+						l2i->inl2i_flags, &l2i->inl2i_tagstack);
 
 			/*
 			 * Use the IP address and port number of the foreign
