@@ -260,8 +260,8 @@ connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 			s->connect_callback_ = NULL;
 			s->connect_do_ = false;
 
-			uinet_soupcall_set(so, UINET_SO_RCV, active_receive_upcall, s);
-			uinet_soupcall_set(so, UINET_SO_SND, active_send_upcall, s);
+			uinet_soupcall_set_locked(so, UINET_SO_RCV, active_receive_upcall, s);
+			uinet_soupcall_set_locked(so, UINET_SO_SND, active_send_upcall, s);
 		} else if (state & UINET_SS_ISDISCONNECTED) {
 			int error = uinet_sogeterror(s->so_);
 
