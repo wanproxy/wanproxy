@@ -399,6 +399,11 @@ SocketUinet::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 Action *
 SocketUinet::close(SimpleCallback *cb)
 {
+	ASSERT(log_, so_ != NULL);
+
+	uinet_soupcall_clear(so_, UINET_SO_RCV);
+	uinet_soupcall_clear(so_, UINET_SO_SND);
+
 	int error = uinet_soclose(so_);
 	if (error != 0) {
 		/*
@@ -412,6 +417,7 @@ SocketUinet::close(SimpleCallback *cb)
 		 */
 		ERROR(log_) << "Close returned error: " << strerror(uinet_errno_to_os(error));
 	}
+	so_ = NULL;
 
 	return (cb->schedule());
 }
