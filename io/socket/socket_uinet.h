@@ -135,7 +135,7 @@ S *
 SocketUinet::create_basic(SocketAddressFamily family, SocketType type, const std::string& protocol, const std::string& hint)
 {
 	int typenum = gettypenum(type);
-	if (-1 == type)
+	if (-1 == typenum)
 		return (NULL);
 
 	int protonum = getprotonum(protocol);
