@@ -272,7 +272,7 @@ main(int argc, char *argv[])
 		Log::mask(".?", Log::Info);
 	}
 
-	new HTTPServer<TCPServer, WebsplatClient, WebsplatConfig>(WebsplatConfig(root), SocketAddressFamilyIP, interface);
+	new HTTPServer<TCPServer, WebsplatClient, WebsplatConfig>(WebsplatConfig(root), SocketImplOS, SocketAddressFamilyIP, interface);
 
 	event_main();
 }

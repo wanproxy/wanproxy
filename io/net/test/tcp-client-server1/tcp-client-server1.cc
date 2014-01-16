@@ -51,7 +51,7 @@ public:
 		test_ = new Test(group_, "TCPClient::connect");
 		SocketEventCallback *cb =
 			callback(this, &Connector::connect_complete);
-		action_ = TCPClient::connect(family, remote, cb);
+		action_ = TCPClient::connect(SocketImplOS, family, remote, cb);
 	}
 
 	~Connector()
@@ -160,7 +160,7 @@ public:
 	{
 		{
 			Test _(group_, "TCPServer::listen");
-			server_ = TCPServer::listen(family, name);
+			server_ = TCPServer::listen(SocketImplOS, family, name);
 			if (server_ == NULL)
 				return;
 			_.pass();

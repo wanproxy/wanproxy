@@ -151,7 +151,7 @@ public:
 class ChargenListener : public SimpleServer<TCPServer> {
 public:
 	ChargenListener(void)
-	: SimpleServer<TCPServer>("/chargen/listener", SocketAddressFamilyIP, "[::]:0")
+	: SimpleServer<TCPServer>("/chargen/listener", SocketImplOS, SocketAddressFamilyIP, "[::]:0")
 	{ }
 
 	~ChargenListener()

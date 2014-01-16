@@ -51,7 +51,7 @@ public:
 		test_ = new Test(group_, "UDPClient::connect");
 		SocketEventCallback *cb =
 			callback(this, &Connector::connect_complete);
-		action_ = UDPClient::connect(family, remote, cb);
+		action_ = UDPClient::connect(SocketImplOS, family, remote, cb);
 	}
 
 	~Connector()
@@ -158,7 +158,7 @@ public:
 	{
 		{
 			Test _(group_, "UDPServer::listen");
-			server_ = UDPServer::listen(family, name);
+			server_ = UDPServer::listen(SocketImplOS, family, name);
 			if (server_ == NULL)
 				return;
 			_.pass();

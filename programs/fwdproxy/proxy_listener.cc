@@ -38,7 +38,7 @@ ProxyListener::ProxyListener(const std::string& name,
 			     const std::string& interface,
 			     SocketAddressFamily remote_family,
 			     const std::string& remote_name)
-: SimpleServer<TCPServer>("/fwdproxy/proxy/" + name + "/listener", interface_family, interface),
+: SimpleServer<TCPServer>("/fwdproxy/proxy/" + name + "/listener", SocketImplOS, interface_family, interface),
   name_(name),
   remote_family_(remote_family),
   remote_name_(remote_name)

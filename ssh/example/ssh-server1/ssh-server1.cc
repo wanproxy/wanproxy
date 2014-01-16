@@ -458,7 +458,7 @@ private:
 class SSHServer : public SimpleServer<TCPServer> {
 public:
 	SSHServer(SocketAddressFamily family, const std::string& interface)
-	: SimpleServer<TCPServer>("/ssh/server", family, interface)
+	: SimpleServer<TCPServer>("/ssh/server", SocketImplOS, family, interface)
 	{ }
 
 	~SSHServer()

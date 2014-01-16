@@ -165,7 +165,7 @@ public:
 	  connect_action_(NULL)
 	{
 		SocketEventCallback *cb = callback(this, &SSHClient::connect_complete);
-		connect_action_ = TCPClient::connect(family, interface, cb);
+		connect_action_ = TCPClient::connect(SocketImplOS, family, interface, cb);
 	}
 
 	~SSHClient()
