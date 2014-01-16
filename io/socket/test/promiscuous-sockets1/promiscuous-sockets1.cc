@@ -203,11 +203,14 @@ public:
 			 */
 			/* XXX perhaps resolver could support us a bit better here */
 			socket_address addr1;
-			addr1.addr_.inet_.sin_len = sizeof(struct sockaddr_in); 
+			addr1.addrlen_ = sizeof(struct sockaddr_in);
+/* XXX */
+#if !defined(__linux__)
+			addr1.addr_.inet_.sin_len = addr1.addlen_;
+#endif
 			addr1.addr_.inet_.sin_family = AF_INET; 
 			addr1.addr_.inet_.sin_port = ci.inc.inc_ie.ie_fport; 
 			addr1.addr_.inet_.sin_addr.s_addr = ci.inc.inc_ie.ie_faddr.s_addr;
-			addr1.addrlen_ = addr1.addr_.inet_.sin_len;
 			si.outbound->bind(addr1);
 			
 			/*
@@ -222,11 +225,14 @@ public:
 			 */
 			EventCallback *cb = callback(this, &Listener::connect_complete, ci);
 			socket_address addr2;
-			addr2.addr_.inet_.sin_len = sizeof(struct sockaddr_in); 
+			addr2.addrlen_ = sizeof(struct sockaddr_in);
+/* XXX */
+#if !defined(__linux__)
+                        addr2.addr_.inet_.sin_len = addr2.addlen_;
+#endif
 			addr2.addr_.inet_.sin_family = AF_INET; 
 			addr2.addr_.inet_.sin_port = ci.inc.inc_ie.ie_lport; 
 			addr2.addr_.inet_.sin_addr.s_addr = ci.inc.inc_ie.ie_laddr.s_addr;
-			addr2.addrlen_ = addr2.addr_.inet_.sin_len;
 			si.connect_action = si.outbound->connect(addr2, cb);
 
 			DEBUG(log_) << "Outbound from " << (std::string)addr1 << " to " << (std::string)addr2;
