@@ -27,6 +27,7 @@
 #include <algorithm>
 
 #include <errno.h>
+#include <limits.h>
 
 #include <event/event_callback.h>
 
