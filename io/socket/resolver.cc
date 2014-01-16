@@ -25,7 +25,9 @@
  */
 
 
+
 #include <netdb.h>
+#include <stdio.h>
 
 #include <io/socket/resolver.h>
 
