@@ -46,7 +46,6 @@ OSNAME:=$(shell uname -s)
 
 CFLAGS+=-pipe
 CPPFLAGS+=-I${TOPDIR}
-CPPFLAGS+=-I${TOPDIR}/network/uinet/lib/libuinet/api_include
 ifdef NDEBUG
 CFLAGS+=-O2
 CPPFLAGS+=-DNDEBUG=1

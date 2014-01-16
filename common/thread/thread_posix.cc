@@ -35,7 +35,9 @@
 #include <common/thread/sleep_queue.h>
 #include <common/thread/thread.h>
 
+#if defined(HAVE_UINET)
 #include <uinet_api.h>
+#endif
 
 #include "thread_posix.h"
 
@@ -210,7 +212,9 @@ namespace {
 		thread_start_sleepq.signal();
 		thread_start_mutex.unlock();
 
+#if defined(HAVE_UINET)
 		uinet_initialize_thread();
+#endif
 
 		td->main();
 

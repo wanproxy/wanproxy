@@ -3,10 +3,11 @@ VPATH+=	${TOPDIR}/io/socket
 SRCS+=	resolver.cc
 SRCS+=	socket.cc
 SRCS+=	socket_handle.cc
-SRCS+=	socket_uinet.cc
-SRCS+=	socket_uinet_promisc.cc
 SRCS+=	unix_client.cc
 SRCS+=	unix_server.cc
+
+SRCS_network_uinet+=	socket_uinet.cc
+SRCS_network_uinet+=	socket_uinet_promisc.cc
 
 ifeq "${OSNAME}" "Haiku"
 # Required for sockets.
@@ -18,6 +19,4 @@ ifeq "${OSNAME}" "SunOS"
 LDADD+=		-lnsl
 LDADD+=		-lsocket
 endif
-
-LDADD+=		-L${TOPDIR}/network/uinet/lib/libuinet -luinet
 

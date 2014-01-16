@@ -27,7 +27,10 @@
 #include <event/event_callback.h>
 
 #include <io/socket/socket_handle.h>
+
+#if defined(HAVE_UINET)
 #include <io/socket/socket_uinet.h>
+#endif
 
 Socket *
 Socket::create(SocketImpl impl, SocketAddressFamily family, SocketType type, const std::string& protocol, const std::string& hint)
@@ -39,9 +42,11 @@ Socket::create(SocketImpl impl, SocketAddressFamily family, SocketType type, con
 		newSocket = SocketHandle::create(family, type, protocol, hint);
 		break;
 
+#if defined(HAVE_UINET)
 	case SocketImplUinet:
 		newSocket = SocketUinet::create(family, type, protocol, hint);
 		break;
+#endif
 
 	default:
 		ERROR("/socket") << "Unsupported socket type.";
