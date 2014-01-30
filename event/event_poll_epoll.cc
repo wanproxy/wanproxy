@@ -141,28 +141,28 @@ EventPoll::cancel(const Type& type, int fd)
 	bool unique = true;
 	eev.data.fd = fd;
 	switch (type) {
-		case EventPoll::Readable:
-			ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
-			unique = write_poll_.find(fd) == write_poll_.end();
-			poll_handler = &read_poll_[fd];
-			poll_handler->cancel();
-			read_poll_.erase(fd);
-			if (unique)
-				eev.events = 0;
-			else
-				eev.events = EPOLLOUT;
-			break;
-		case EventPoll::Writable:
-			ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
-			unique = read_poll_.find(fd) == read_poll_.end();
-			poll_handler = &write_poll_[fd];
-			poll_handler->cancel();
-			write_poll_.erase(fd);
-			if (unique)
-				eev.events = 0;
-			else
-				eev.events = EPOLLOUT;
-			break;
+	case EventPoll::Readable:
+		ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
+		unique = write_poll_.find(fd) == write_poll_.end();
+		poll_handler = &read_poll_[fd];
+		poll_handler->cancel();
+		read_poll_.erase(fd);
+		if (unique)
+			eev.events = 0;
+		else
+			eev.events = EPOLLOUT;
+		break;
+	case EventPoll::Writable:
+		ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
+		unique = read_poll_.find(fd) == read_poll_.end();
+		poll_handler = &write_poll_[fd];
+		poll_handler->cancel();
+		write_poll_.erase(fd);
+		if (unique)
+			eev.events = 0;
+		else
+			eev.events = EPOLLOUT;
+		break;
 	}
 	int rv = ::epoll_ctl(state_->ep_, unique ? EPOLL_CTL_DEL : EPOLL_CTL_MOD, fd, &eev);
 	if (rv == -1)
@@ -216,20 +216,16 @@ EventPoll::main(void)
 					poll_handler->callback(Event::Error);
 				} else if ((ev->events & EPOLLHUP) != 0) {
 					poll_handler->callback(Event::EOS);
-				} else {
-					DEBUG(log_) << "Unexpected poll events with reader: " << ev->events;
 				}
 			}
 
 			if ((it = write_poll_.find(ev->data.fd)) != write_poll_.end()) {
 				poll_handler = &it->second;
 
-				if ((ev->events & EPOLLIN) != 0) {
+				if ((ev->events & EPOLLOUT) != 0) {
 					poll_handler->callback(Event::Done);
 				} else if ((ev->events & EPOLLERR) != 0) {
 					poll_handler->callback(Event::Error);
-				} else {
-					DEBUG(log_) << "Unexpected poll events with writer: " << ev->events;
 				}
 			}
 		}
