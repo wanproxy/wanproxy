@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,28 +26,42 @@
 #include <sys/types.h>
 #include <sys/epoll.h>
 #include <sys/errno.h>
+#include <sys/eventfd.h>
 #include <sys/time.h>
 #include <unistd.h>
 
-#include <common/buffer.h>
-
 #include <event/event_callback.h>
 #include <event/event_poll.h>
+
+#define	SIGNAL_IDENT	(0x5c0276ef) /* A random number. */
 
 #define	EPOLL_EVENT_COUNT	128
 
 struct EventPollState {
 	int ep_;
+	int fd_;
 };
 
 EventPoll::EventPoll(void)
-: log_("/event/poll"),
+: Thread("EventPoll"),
+  log_("/event/poll"),
+  mtx_("EventPoll"),
   read_poll_(),
   write_poll_(),
   state_(new EventPollState())
 {
 	state_->ep_ = epoll_create(EPOLL_EVENT_COUNT);
 	ASSERT(log_, state_->ep_ != -1);
+
+	state_->fd_ = eventfd(0, 0);
+	ASSERT(log_, state_->fd_ != -1);
+
+	struct epoll_event eev;
+	eev.data.fd = state_->fd_;
+	eev.events = EPOLLIN;
+	int rv = ::epoll_ctl(state_->ep_, EPOLL_CTL_ADD, state_->fd_, &eev);
+	if (rv == -1)
+		HALT(log_) << "Could not add eventfd to epoll.";
 }
 
 EventPoll::~EventPoll()
@@ -60,6 +74,10 @@ EventPoll::~EventPoll()
 			close(state_->ep_);
 			state_->ep_ = -1;
 		}
+		if (state_->fd_ != -1) {
+			close(state_->fd_);
+			state_->fd_ = -1;
+		}
 		delete state_;
 		state_ = NULL;
 	}
@@ -68,6 +86,14 @@ EventPoll::~EventPoll()
 Action *
 EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 {
+	/*
+	 * XXX
+	 * A wakeup isn't necessary because kqueue provides synchronization, right?
+	 * It *is* necessary in the stop() case.
+	 */
+
+	ScopedLock _(&mtx_);
+
 	ASSERT(log_, fd != -1);
 
 	EventPoll::PollHandler *poll_handler;
@@ -79,13 +105,17 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 		ASSERT(log_, read_poll_.find(fd) == read_poll_.end());
 		unique = write_poll_.find(fd) == write_poll_.end();
 		poll_handler = &read_poll_[fd];
-		eev.events = EPOLLIN | (unique ? 0 : EPOLLOUT);
+		eev.events = EPOLLIN;
+		if (!unique)
+			eev.events |= EPOLLOUT;
 		break;
 	case EventPoll::Writable:
 		ASSERT(log_, write_poll_.find(fd) == write_poll_.end());
 		unique = read_poll_.find(fd) == read_poll_.end();
 		poll_handler = &write_poll_[fd];
-		eev.events = EPOLLOUT | (unique ? 0 : EPOLLIN);
+		eev.events = EPOLLOUT;
+		if (!unique)
+			eev.events |= EPOLLIN;
 		break;
 	default:
 		NOTREACHED(log_);
@@ -103,28 +133,36 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 void
 EventPoll::cancel(const Type& type, int fd)
 {
+	ScopedLock _(&mtx_);
+
 	EventPoll::PollHandler *poll_handler;
 
 	struct epoll_event eev;
 	bool unique = true;
 	eev.data.fd = fd;
 	switch (type) {
-	case EventPoll::Readable:
-		ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
-		unique = write_poll_.find(fd) == write_poll_.end();
-		poll_handler = &read_poll_[fd];
-		poll_handler->cancel();
-		read_poll_.erase(fd);
-		eev.events = unique ? 0 : EPOLLOUT;
-		break;
-	case EventPoll::Writable:
-		ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
-		unique = read_poll_.find(fd) == read_poll_.end();
-		poll_handler = &write_poll_[fd];
-		poll_handler->cancel();
-		write_poll_.erase(fd);
-		eev.events = unique ? 0 : EPOLLIN;
-		break;
+		case EventPoll::Readable:
+			ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
+			unique = write_poll_.find(fd) == write_poll_.end();
+			poll_handler = &read_poll_[fd];
+			poll_handler->cancel();
+			read_poll_.erase(fd);
+			if (unique)
+				eev.events = 0;
+			else
+				eev.events = EPOLLOUT;
+			break;
+		case EventPoll::Writable:
+			ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
+			unique = read_poll_.find(fd) == read_poll_.end();
+			poll_handler = &write_poll_[fd];
+			poll_handler->cancel();
+			write_poll_.erase(fd);
+			if (unique)
+				eev.events = 0;
+			else
+				eev.events = EPOLLOUT;
+			break;
 	}
 	int rv = ::epoll_ctl(state_->ep_, unique ? EPOLL_CTL_DEL : EPOLL_CTL_MOD, fd, &eev);
 	if (rv == -1)
@@ -133,75 +171,84 @@ EventPoll::cancel(const Type& type, int fd)
 }
 
 void
-EventPoll::wait(int ms)
+EventPoll::main(void)
 {
-	struct timespec ts;
-
-	ts.tv_sec = ms / 1000;
-	ts.tv_nsec = (ms % 1000) * 1000000;
-
-	if (idle()) {
-		if (ms != -1) {
-			int rv;
-
-			rv = nanosleep(&ts, NULL);
-			ASSERT(log_, rv != -1);
-		}
-		return;
-	}
-
 	struct epoll_event eev[EPOLL_EVENT_COUNT];
-	int evcnt = ::epoll_wait(state_->ep_, eev, EPOLL_EVENT_COUNT, ms);
-	if (evcnt == -1) {
-		if (errno == EINTR) {
-			INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";
-			return;
-		}
-		HALT(log_) << "Could not poll epoll.";
-	}
 
-	int i;
-	for (i = 0; i < evcnt; i++) {
-		struct epoll_event *ev = &eev[i];
-		EventPoll::PollHandler *poll_handler;
-		if ((ev->events & EPOLLIN) != 0) {
-			ASSERT(log_, read_poll_.find(ev->data.fd) != read_poll_.end());
-			poll_handler = &read_poll_[ev->data.fd];
-			poll_handler->callback(Event::Done);
+	for (;;) {
+		int evcnt = ::epoll_wait(state_->ep_, eev, EPOLL_EVENT_COUNT, -1);
+		if (evcnt == -1) {
+			if (errno == EINTR) {
+				INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";
+				return;
+			}
+			HALT(log_) << "Could not poll epoll.";
 		}
 
-		if ((ev->events & EPOLLOUT) != 0) {
-			ASSERT(log_, write_poll_.find(ev->data.fd) != write_poll_.end());
-			poll_handler = &write_poll_[ev->data.fd];
-			poll_handler->callback(Event::Done);
-		}
+		/*
+		 * NB: We could acquire and drop the lock for each item in the
+		 * loop, but isn't this more humane?
+		 */
+		ScopedLock _(&mtx_);
+		int i;
+		for (i = 0; i < evcnt; i++) {
+			struct epoll_event *ev = &eev[i];
+			EventPoll::PollHandler *poll_handler;
+			poll_handler_map_t::iterator it;
 
-		if ((ev->events & EPOLLIN) == 0 && (ev->events & EPOLLOUT) == 0) {
-			if (read_poll_.find(ev->data.fd) != read_poll_.end()) {
-				poll_handler = &read_poll_[ev->data.fd];
-			} else if (write_poll_.find(ev->data.fd) != write_poll_.end()) {
-				poll_handler = &write_poll_[ev->data.fd];
+			if (ev->data.fd == state_->fd_) {
+				ASSERT(log_, (ev->events & EPOLLIN) != 0);
+				/* A user event was triggered to wake us up.  Clear it.  */
+				uint64_t cnt;
+				ssize_t len = read(state_->fd_, &cnt, sizeof cnt);
+				if (len != sizeof cnt)
+					ERROR(log_) << "Short read from eventfd.";
+				DEBUG(log_) << "Got " << cnt << " wakeup requests.";
+				continue;
+			}
 
-				if ((ev->events & (EPOLLERR | EPOLLHUP)) == EPOLLHUP) {
-					DEBUG(log_) << "Got EPOLLHUP on write poll.";
-					continue;
+			if ((it = read_poll_.find(ev->data.fd)) != read_poll_.end()) {
+				poll_handler = &it->second;
+
+				if ((ev->events & EPOLLIN) != 0) {
+					poll_handler->callback(Event::Done);
+				} else if ((ev->events & EPOLLERR) != 0) {
+					poll_handler->callback(Event::Error);
+				} else if ((ev->events & EPOLLHUP) != 0) {
+					poll_handler->callback(Event::EOS);
+				} else {
+					DEBUG(log_) << "Unexpected poll events with reader: " << ev->events;
 				}
-			} else {
-				HALT(log_) << "Unexpected poll fd.";
-				continue;
 			}
 
-			if ((ev->events & EPOLLERR) != 0) {
-				poll_handler->callback(Event::Error);
-				continue;
-			}
+			if ((it = write_poll_.find(ev->data.fd)) != write_poll_.end()) {
+				poll_handler = &it->second;
 
-			if ((ev->events & EPOLLHUP) != 0) {
-				poll_handler->callback(Event::EOS);
-				continue;
+				if ((ev->events & EPOLLIN) != 0) {
+					poll_handler->callback(Event::Done);
+				} else if ((ev->events & EPOLLERR) != 0) {
+					poll_handler->callback(Event::Error);
+				} else {
+					DEBUG(log_) << "Unexpected poll events with writer: " << ev->events;
+				}
 			}
-
-			HALT(log_) << "Unexpected poll events: " << ev->events;
 		}
+
+		if (stop_)
+			break;
 	}
+}
+
+void
+EventPoll::stop(void)
+{
+	ScopedLock _(&mtx_);
+	if (stop_)
+		return;
+	uint64_t cnt = 1;
+	ssize_t len = write(state_->fd_, &cnt, sizeof cnt);
+	if (len != sizeof cnt)
+		HALT(log_) << "Short write to eventfd.";
+
+	stop_ = true;
 }
