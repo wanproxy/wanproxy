@@ -161,8 +161,10 @@ EventPoll::cancel(const Type& type, int fd)
 		if (unique)
 			eev.events = 0;
 		else
-			eev.events = EPOLLOUT;
+			eev.events = EPOLLIN;
 		break;
+	default:
+		NOTREACHED(log_);
 	}
 	int rv = ::epoll_ctl(state_->ep_, unique ? EPOLL_CTL_DEL : EPOLL_CTL_MOD, fd, &eev);
 	if (rv == -1)
@@ -179,8 +181,11 @@ EventPoll::main(void)
 		int evcnt = ::epoll_wait(state_->ep_, eev, EPOLL_EVENT_COUNT, -1);
 		if (evcnt == -1) {
 			if (errno == EINTR) {
-				INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";
-				return;
+				if (stop_) {
+					INFO(log_) << "Received interrupt, ceasing polling until stop handlers have run.";
+					return;
+				}
+				continue;
 			}
 			HALT(log_) << "Could not poll epoll.";
 		}
