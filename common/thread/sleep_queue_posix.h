@@ -33,10 +33,12 @@
 struct SleepQueueState {
 	pthread_cond_t cond_;
 	MutexState *mutex_state_;
+	bool waiting_;
 
 	SleepQueueState(MutexState *mutex_state)
 	: cond_(),
-	  mutex_state_(mutex_state)
+	  mutex_state_(mutex_state),
+	  waiting_(false)
 	{
 		pthread_condattr_t attr;
 		int rv;
@@ -69,6 +71,9 @@ struct SleepQueueState {
 	{
 		int rv;
 
+		if (!waiting_)
+			return;
+
 		mutex_state_->lock();
 		ASSERT("/sleep/queue/posix/state", mutex_state_->owner_ == Thread::selfID());
 		rv = pthread_cond_signal(&cond_);
@@ -88,6 +93,8 @@ struct SleepQueueState {
 			ts.tv_nsec = deadline->nanoseconds_;
 		}
 
+		waiting_ = true;
+
 		mutex_state_->lock();
 		mutex_state_->lock_release();
 		if (deadline == NULL)
@@ -97,6 +104,8 @@ struct SleepQueueState {
 		ASSERT("/sleep/queue/posix/state", rv != -1);
 		mutex_state_->lock_acquire();
 		mutex_state_->unlock();
+
+		waiting_ = false;
 	}
 };
 
