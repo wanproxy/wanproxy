@@ -75,7 +75,7 @@ public:
 	~TackNullCache()
 	{ }
 
-	BufferSegment *lookup(const uint64_t&) const
+	BufferSegment *lookup(const uint64_t&)
 	{
 		return (NULL);
 	}
@@ -126,7 +126,7 @@ public:
 		fd_ = -1;
 	}
 
-	BufferSegment *lookup(const uint64_t& hash) const
+	BufferSegment *lookup(const uint64_t& hash)
 	{
 		return (cache_->lookup(hash));
 	}

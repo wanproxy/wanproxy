@@ -38,30 +38,30 @@
  * we need this wrapper structure to throw our hashes into so that GCC's hash
  * function can be reliably defined to use them.
  */
-struct Hash64 {
-	uint64_t hash_;
+struct Tag64 {
+	uint64_t tag_;
 
-	Hash64(const uint64_t& hash)
-	: hash_(hash)
+	Tag64(const uint64_t& tag)
+	: tag_(tag)
 	{ }
 
-	bool operator== (const Hash64& hash) const
+	bool operator== (const Tag64& tag) const
 	{
-		return (hash_ == hash.hash_);
+		return (tag_ == tag.tag_);
 	}
 
-	bool operator< (const Hash64& hash) const
+	bool operator< (const Tag64& tag) const
 	{
-		return (hash_ < hash.hash_);
+		return (tag_ < tag.tag_);
 	}
 };
 
 namespace __gnu_cxx {
 	template<>
-	struct hash<Hash64> {
-		size_t operator() (const Hash64& x) const
+	struct hash<Tag64> {
+		size_t operator() (const Tag64& x) const
 		{
-			return (x.hash_);
+			return (x.tag_);
 		}
 	};
 }
@@ -79,7 +79,7 @@ public:
 	{ }
 
 	virtual void enter(const uint64_t&, BufferSegment *) = 0;
-	virtual BufferSegment *lookup(const uint64_t&) const = 0;
+	virtual BufferSegment *lookup(const uint64_t&) = 0;
 	virtual bool out_of_band(void) const = 0;
 
 	bool uuid_encode(Buffer *buf) const
@@ -109,32 +109,95 @@ private:
 };
 
 class XCodecMemoryCache : public XCodecCache {
-	typedef __gnu_cxx::hash_map<Hash64, BufferSegment *> segment_hash_map_t;
+	/*
+	 * XXX
+	 * We use a 64-bit counter/tag/timestamp for the LRU.  This ought
+	 * to be enough for anyone, but hey; we should handle collisions
+	 * more gracefully all the same.  Or use a 32-bit counter and
+	 * handle wraps explicitly.
+	 */
+	struct CacheEntry {
+		BufferSegment *seg_;
+		uint64_t counter_;
+
+		CacheEntry(BufferSegment *seg)
+		: seg_(seg),
+		  counter_(0)
+		{
+			seg_->ref();
+		}
+
+		CacheEntry(const CacheEntry& src)
+		: seg_(src.seg_),
+		  counter_(src.counter_)
+		{
+			seg_->ref();
+		}
+
+		~CacheEntry()
+		{
+			seg_->unref();
+			seg_ = NULL;
+		}
+	};
+
+	typedef __gnu_cxx::hash_map<Tag64, CacheEntry> segment_hash_map_t;
+	typedef	__gnu_cxx::hash_map<Tag64, uint64_t> segment_lru_map_t;
 
 	LogHandle log_;
 	segment_hash_map_t segment_hash_map_;
+	segment_lru_map_t segment_lru_map_;
+	uint64_t segment_lru_counter_;
+	size_t memory_cache_limit_;
 public:
 	XCodecMemoryCache(const UUID& uuid)
 	: XCodecCache(uuid),
 	  log_("/xcodec/cache/memory"),
-	  segment_hash_map_()
+	  segment_hash_map_(),
+	  segment_lru_map_(),
+	  segment_lru_counter_(0),
+	  memory_cache_limit_(0)
+	{ }
+
+	XCodecMemoryCache(const UUID& uuid, size_t memory_cache_limit_bytes)
+	: XCodecCache(uuid),
+	  log_("/xcodec/cache/memory"),
+	  segment_hash_map_(),
+	  segment_lru_map_(),
+	  segment_lru_counter_(0),
+	  memory_cache_limit_(memory_cache_limit_bytes / XCODEC_SEGMENT_LENGTH)
 	{ }
 
 	~XCodecMemoryCache()
-	{
-		segment_hash_map_t::const_iterator it;
-		for (it = segment_hash_map_.begin();
-		     it != segment_hash_map_.end(); ++it)
-			it->second->unref();
-		segment_hash_map_.clear();
-	}
+	{ }
 
 	void enter(const uint64_t& hash, BufferSegment *seg)
 	{
+		if (memory_cache_limit_ != 0 &&
+		    segment_hash_map_.size() == memory_cache_limit_) {
+			/*
+			 * Find the oldest hash.
+			 */
+			segment_lru_map_t::iterator lit = segment_lru_map_.begin();
+			ASSERT(log_, lit != segment_lru_map_.end());
+			uint64_t ohash = lit->second;
+			segment_lru_map_.erase(lit);
+
+			/*
+			 * Remove the oldest hash.
+			 */
+			segment_hash_map_t::iterator oit = segment_hash_map_.find(ohash);
+			ASSERT(log_, oit != segment_hash_map_.end());
+			segment_hash_map_.erase(oit);
+		}
 		ASSERT(log_, seg->length() == XCODEC_SEGMENT_LENGTH);
 		ASSERT(log_, segment_hash_map_.find(hash) == segment_hash_map_.end());
-		seg->ref();
-		segment_hash_map_[hash] = seg;
+		CacheEntry entry(seg);
+		if (memory_cache_limit_ != 0) {
+			entry.counter_ = ++segment_lru_counter_;
+			segment_lru_map_[entry.counter_] = hash;
+		}
+		segment_hash_map_.insert(segment_hash_map_t::value_type(hash, entry));
 	}
 
 	bool out_of_band(void) const
@@ -146,18 +209,30 @@ public:
 		return (false);
 	}
 
-	BufferSegment *lookup(const uint64_t& hash) const
+	BufferSegment *lookup(const uint64_t& hash)
 	{
 		segment_hash_map_t::const_iterator it;
 		it = segment_hash_map_.find(hash);
 		if (it == segment_hash_map_.end())
 			return (NULL);
 
-		BufferSegment *seg;
+		CacheEntry& entry = it->second;
+		/*
+		 * If we have a limit and if we aren't also the last hash to
+		 * be used, update our position in the LRU.
+		 */
+		if (memory_cache_limit_ != 0 && entry.counter_ != segment_lru_counter_) {
+			segment_lru_map_t::iterator lit = segment_lru_map_.find(entry.counter_);
+			ASSERT(log_, lit != segment_lru_map_.end());
+			ASSERT(log_, lit->second == hash);
+			segment_lru_map_.erase(lit);
 
-		seg = it->second;
-		seg->ref();
-		return (seg);
+			entry.counter_ = ++segment_lru_counter_;
+			segment_lru_map_[entry.counter_] = hash;
+		}
+
+		entry.seg_->ref();
+		return (entry.seg_);
 	}
 };
 
