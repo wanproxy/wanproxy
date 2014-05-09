@@ -115,6 +115,12 @@ class XCodecMemoryCache : public XCodecCache {
 	 * to be enough for anyone, but hey; we should handle collisions
 	 * more gracefully all the same.  Or use a 32-bit counter and
 	 * handle wraps explicitly.
+	 *
+	 * NB
+	 * For now we're using an ordered map to get the sorted behaviour,
+	 * but we could also use an unordered (i.e. hash) map and keep
+	 * track of the lowest counter in the LRU pretty easily.  The
+	 * lookups would be quicker and the counter overhead minimal.
 	 */
 	struct CacheEntry {
 		BufferSegment *seg_;
@@ -142,7 +148,7 @@ class XCodecMemoryCache : public XCodecCache {
 	};
 
 	typedef __gnu_cxx::hash_map<Tag64, CacheEntry> segment_hash_map_t;
-	typedef	__gnu_cxx::hash_map<Tag64, uint64_t> segment_lru_map_t;
+	typedef	std::map<uint64_t, uint64_t> segment_lru_map_t;
 
 	LogHandle log_;
 	segment_hash_map_t segment_hash_map_;
