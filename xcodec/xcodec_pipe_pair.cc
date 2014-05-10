@@ -167,8 +167,6 @@
 
 #define	XCODEC_PIPE_MAX_FRAME	(32768)
 
-static void encode_frame(Buffer *, Buffer *);
-
 void
 XCodecPipePair::decoder_consume(Buffer *buf)
 {
@@ -349,16 +347,41 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 				if (decoder_buffer_.length() < sizeof op + sizeof len + len)
 					return;
 
+				decoder_buffer_.moveout(&decoder_frame_buffer_, sizeof op + sizeof len, len);
+
 				/*
-				 * XXX
 				 * Track the length of each frame in a vector so
 				 * that we can tell below how many frames we've
 				 * finished with, for the sake of OP_ADVANCE.
 				 */
-
-				decoder_buffer_.moveout(&decoder_frame_buffer_, sizeof op + sizeof len, len);
+				decoder_frame_lengths_.push_back(len);
 			}
 			break;
+		case XCODEC_PIPE_OP_ADVANCE:
+			if (encoder_ == NULL) {
+				ERROR(log_) << "Got <ADVANCE> before sending <HELLO>.";
+				decoder_error();
+				return;
+			} else {
+				uint32_t count;
+				if (decoder_buffer_.length() < sizeof op + sizeof count)
+					return;
+				decoder_buffer_.moveout(&count, sizeof op);
+				count = BigEndian::decode(count);
+
+				if (count == 0 || count > encoder_reference_frames_.size()) {
+					ERROR(log_) << "Invalid frame advance count.";
+					decoder_error();
+					return;
+				}
+
+				DEBUG(log_) << "Peer advanced frame count by: " << count;
+				while (count != 0) {
+					encoder_reference_frame_advance();
+					count--;
+				}
+			}
+			continue; /* Advance doesn't affect our decoding, so go to the next op.  */
 		default:
 			ERROR(log_) << "Unsupported operation in pipe stream.";
 			decoder_error();
@@ -383,11 +406,42 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 			continue;
 		}
 
+		size_t frame_buffer_consumed = decoder_frame_buffer_.length();
 		Buffer output;
 		if (!decoder_->decode(&output, &decoder_frame_buffer_, decoder_unknown_hashes_)) {
 			ERROR(log_) << "Decoder exiting with error.";
 			decoder_error();
 			return;
+		}
+
+		frame_buffer_consumed -= decoder_frame_buffer_.length();
+		if (frame_buffer_consumed != 0) {
+			uint32_t frame_buffer_advance = 0;
+			for (;;) {
+				std::list<uint16_t>::iterator dflit;
+				dflit = decoder_frame_lengths_.begin();
+
+				size_t first_frame_length = *dflit;
+				if (frame_buffer_consumed < first_frame_length) {
+					*dflit = first_frame_length - frame_buffer_consumed;
+					break;
+				}
+				frame_buffer_consumed -= first_frame_length;
+				frame_buffer_advance++;
+
+				decoder_frame_lengths_.pop_front();
+
+				if (frame_buffer_consumed == 0)
+					break;
+			}
+			if (frame_buffer_advance != 0) {
+				Buffer advance;
+
+				advance.append(XCODEC_PIPE_OP_ADVANCE);
+				frame_buffer_advance = BigEndian::encode(frame_buffer_advance);
+				advance.append(&frame_buffer_advance);
+				encoder_produce(&advance);
+			}
 		}
 
 		if (!output.empty()) {
@@ -490,16 +544,49 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 
 	if (!buf->empty()) {
 		/*
-		 * XXX
-		 * We should encode XCODEC_PIPE_MAX_FRAME / 2 bytes at a time,
+		 * We must encode XCODEC_PIPE_MAX_FRAME / 2 bytes at a time,
 		 * since at worst we double the size of data, and that way we
-		 * could ensure that each frame is self-contained!
+		 * can ensure that each frame is self-contained!
 		 */
-		Buffer encoded;
-		encoder_->encode(&encoded, buf);
-		ASSERT(log_, !encoded.empty());
+		for (;;) {
+			uint16_t framelen;
+			if (buf->length() <= XCODEC_PIPE_MAX_FRAME / 2)
+				framelen = buf->length();
+			else
+				framelen = XCODEC_PIPE_MAX_FRAME / 2;
 
-		encode_frame(&output, &encoded);
+			Buffer frame;
+			buf->moveout(&frame, framelen);
+
+			std::map<uint64_t, BufferSegment *> *refmap =
+				new std::map<uint64_t, BufferSegment *>;
+
+			Buffer encoded;
+			encoder_->encode(&encoded, &frame, refmap);
+			ASSERT(log_, !encoded.empty());
+
+			/*
+			 * Track all references associated with this frame, so
+			 * that we can guarantee we can answer any <ASK> for it
+			 * until the peer has said they're finished with it.
+			 */
+			encoder_reference_frames_.push_back(refmap);
+
+			/*
+			 * Now wrap the encoded data frame.
+			 */
+			ASSERT(log_, encoded.length() <= XCODEC_PIPE_MAX_FRAME);
+
+			framelen = encoded.length();
+			framelen = BigEndian::encode(framelen);
+
+			output.append(XCODEC_PIPE_OP_FRAME);
+			output.append(&framelen);
+			output.append(encoded);
+
+			if (buf->empty())
+				break;
+		}
 	} else {
 		ASSERT(log_, !encoder_sent_eos_);
 		output.append(XCODEC_PIPE_OP_EOS);
@@ -507,26 +594,4 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 	}
 	ASSERT(log_, !output.empty());
 	encoder_produce(&output);
-}
-
-static void
-encode_frame(Buffer *out, Buffer *in)
-{
-	ASSERT("/xcodec/pipe/encode_frame", !in->empty());
-	while (!in->empty()) {
-		uint16_t framelen;
-		if (in->length() <= XCODEC_PIPE_MAX_FRAME)
-			framelen = in->length();
-		else
-			framelen = XCODEC_PIPE_MAX_FRAME;
-
-		Buffer frame;
-		in->moveout(&frame, framelen);
-
-		framelen = BigEndian::encode(framelen);
-
-		out->append(XCODEC_PIPE_OP_FRAME);
-		out->append(&framelen);
-		out->append(frame);
-	}
 }
