@@ -54,12 +54,14 @@ class XCodecPipePair : public PipePair {
 	bool decoder_sent_eos_;
 	Buffer decoder_buffer_;
 	Buffer decoder_frame_buffer_;
+	std::vector<uint16_t> decoder_frame_lengths_;
 	PipeProducerWrapper<XCodecPipePair> *decoder_pipe_;
 
 	XCodecEncoder *encoder_;
 	bool encoder_produced_eos_;
 	bool encoder_sent_eos_;
 	bool encoder_sent_eos_ack_;
+	std::list<std::map<uint64_t, BufferSegment *> *> encoder_reference_frames_;
 	PipeProducerWrapper<XCodecPipePair> *encoder_pipe_;
 public:
 	XCodecPipePair(const LogHandle& log, XCodec *codec, XCodecPipePairType type)
@@ -74,11 +76,13 @@ public:
 	  decoder_sent_eos_(false),
 	  decoder_buffer_(),
 	  decoder_frame_buffer_(),
+	  decoder_frame_lengths_(),
 	  decoder_pipe_(NULL),
 	  encoder_(NULL),
 	  encoder_produced_eos_(false),
 	  encoder_sent_eos_(false),
 	  encoder_sent_eos_ack_(false),
+	  encoder_reference_frames_(),
 	  encoder_pipe_(NULL)
 	{
 		decoder_pipe_ = new PipeProducerWrapper<XCodecPipePair>(log_ + "/decoder", this, &XCodecPipePair::decoder_consume);
@@ -87,6 +91,19 @@ public:
 
 	~XCodecPipePair()
 	{
+		while (!encoder_reference_frames_.empty()) {
+			std::map<uint64_t, BufferSegment *> *refmap = encoder_reference_frames_.front();
+			encoder_reference_frames_.pop_front();
+
+			std::map<uint64_t, BufferSegment *>::iterator it;
+			while ((it = refmap->begin()) != refmap->end()) {
+				it->second->unref();
+				refmap->erase(it);
+			}
+
+			delete refmap;
+		}
+
 		if (decoder_ != NULL) {
 			delete decoder_;
 			decoder_ = NULL;
