@@ -146,7 +146,8 @@
  * 	Frames an encoded chunk.
  *
  * Side-effects:
- * 	None.
+ * 	The other party will send <OP_ADVANCE> when it has processed one or
+ * 	more frames successfully in their entirety.
  */
 #define	XCODEC_PIPE_OP_FRAME	((uint8_t)0x00)
 
