@@ -26,6 +26,8 @@
 #ifndef	XCODEC_XCODEC_PIPE_PAIR_H
 #define	XCODEC_XCODEC_PIPE_PAIR_H
 
+#include <list>
+
 #include <io/pipe/pipe_producer.h>
 #include <io/pipe/pipe_producer_wrapper.h>
 
