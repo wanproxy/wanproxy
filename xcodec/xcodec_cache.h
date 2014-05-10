@@ -217,7 +217,7 @@ public:
 
 	BufferSegment *lookup(const uint64_t& hash)
 	{
-		segment_hash_map_t::const_iterator it;
+		segment_hash_map_t::iterator it;
 		it = segment_hash_map_.find(hash);
 		if (it == segment_hash_map_.end())
 			return (NULL);
