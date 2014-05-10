@@ -348,6 +348,13 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 				if (decoder_buffer_.length() < sizeof op + sizeof len + len)
 					return;
 
+				/*
+				 * XXX
+				 * Track the length of each frame in a vector so
+				 * that we can tell below how many frames we've
+				 * finished with, for the sake of OP_ADVANCE.
+				 */
+
 				decoder_buffer_.moveout(&decoder_frame_buffer_, sizeof op + sizeof len, len);
 			}
 			break;
