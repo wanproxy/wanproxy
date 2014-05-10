@@ -17,3 +17,8 @@ o) Decide whether to keep a std::set (or something fancier) of hashes associated
 o) Do lookups in the peer's dictionary and ours at the same time.
 o) Put a generation number in the hashes so that if the remote side recycles a
    hash, we can do something about it.
+o) Actually, just use names instead of hashes, but look up data by hash and then
+   use its symbolic name to refer to it.  Names could just be incrementing 64-bit
+   integers, or a mix of the hash with a counter, or any number of things.  The
+   key here is to limit, or detect, reuse.  If we use a 56-bit hash, we can keep
+   the top 8 bits for a generation number.  Other possibilities arise.
