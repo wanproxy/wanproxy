@@ -481,6 +481,12 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 	}
 
 	if (!buf->empty()) {
+		/*
+		 * XXX
+		 * We should encode XCODEC_PIPE_MAX_FRAME / 2 bytes at a time,
+		 * since at worst we double the size of data, and that way we
+		 * could ensure that each frame is self-contained!
+		 */
 		Buffer encoded;
 		encoder_->encode(&encoded, buf);
 		ASSERT(log_, !encoded.empty());
