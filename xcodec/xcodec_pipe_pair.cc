@@ -247,9 +247,26 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 				decoder_buffer_.moveout(&hash);
 				hash = BigEndian::decode(hash);
 
-				BufferSegment *oseg = codec_->cache()->lookup(hash);
-				if (oseg == NULL) {
-					ERROR(log_) << "Unknown hash in <ASK>: " << hash;
+				if (encoder_reference_frames_.empty()) {
+					ERROR(log_) << "Got <ASK> when all encoded frames have been processed.";
+					decoder_error();
+					return;
+				}
+
+				/*
+				 * XXX
+				 * It seems like we should only get an <ASK> for
+				 * the topmost frame, because <ADVANCE> is sent
+				 * out ahead of <ASK> when processing multiple
+				 * frames.  Mind, we process one frame at a time
+				 * these days.
+				 */
+				std::map<uint64_t, BufferSegment *> *refmap =
+					encoder_reference_frames_.front();
+				std::map<uint64_t, BufferSegment *>::const_iterator it;
+				it = refmap->find(hash);
+				if (it == refmap->end()) {
+					ERROR(log_) << "Hash in <ASK> not in top frame: " << hash;
 					decoder_error();
 					return;
 				}
@@ -258,8 +275,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 
 				Buffer learn;
 				learn.append(XCODEC_PIPE_OP_LEARN);
-				learn.append(oseg);
-				oseg->unref();
+				learn.append(it->second);
 
 				encoder_produce(&learn);
 			}
