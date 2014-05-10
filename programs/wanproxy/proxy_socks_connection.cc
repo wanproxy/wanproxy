@@ -39,7 +39,7 @@ ProxySocksConnection::ProxySocksConnection(const std::string& name, Socket *clie
   action_(NULL),
   state_(GetSOCKSVersion),
   network_port_(0),
-  network_address_(0),
+  network_address_(),
   socks5_authenticated_(false),
   socks5_remote_name_()
 {
@@ -109,8 +109,8 @@ ProxySocksConnection::read_complete(Event e)
 		schedule_read(4);
 		break;
 	case GetSOCKS4Address:
-		e.buffer_.extract(&network_address_);
-		network_address_ = BigEndian::decode(network_address_);
+		ASSERT(log_, e.buffer_.length() == 4);
+		network_address_ = e.buffer_;
 
 		state_ = GetSOCKS4User;
 		schedule_read(1);
@@ -168,15 +168,25 @@ ProxySocksConnection::read_complete(Event e)
 			state_ = GetSOCKS5NameLength;
 			schedule_read(1);
 			break;
-		case 0x04: /* XXX IPv6 */
+		case 0x04:
+			state_ = GetSOCKS5Address6;
+			schedule_read(16);
+			break;
 		default:
 			schedule_close();
 			break;
 		}
 		break;
 	case GetSOCKS5Address:
-		e.buffer_.extract(&network_address_);
-		network_address_ = BigEndian::decode(network_address_);
+		ASSERT(log_, e.buffer_.length() == 4);
+		network_address_ = e.buffer_;
+
+		state_ = GetSOCKS5Port;
+		schedule_read(2);
+		break;
+	case GetSOCKS5Address6:
+		ASSERT(log_, e.buffer_.length() == 16);
+		network_address_ = e.buffer_;
 
 		state_ = GetSOCKS5Port;
 		schedule_read(2);
@@ -220,7 +230,7 @@ ProxySocksConnection::write_complete(Event e)
 	if (state_ == GetSOCKS5Auth) {
 		ASSERT(log_, !socks5_authenticated_);
 		ASSERT(log_, socks5_remote_name_ == "");
-		ASSERT(log_, network_address_ == 0);
+		ASSERT(log_, network_address_.empty());
 		ASSERT(log_, network_port_ == 0);
 
 		socks5_authenticated_ = true;
@@ -234,21 +244,49 @@ ProxySocksConnection::write_complete(Event e)
 	SocketAddressFamily family;
 	if (state_ == GetSOCKS5Port && socks5_remote_name_ != "") {
 		ASSERT(log_, socks5_authenticated_);
-		ASSERT(log_, network_address_ == 0);
+		ASSERT(log_, network_address_.empty());
 
 		remote_name << '[' << socks5_remote_name_ << ']' << ':' << network_port_;
 
 		family = SocketAddressFamilyIP;
 	} else {
 		remote_name << '[';
-		remote_name << ((network_address_ >> 24) & 0xff) << '.';
-		remote_name << ((network_address_ >> 16) & 0xff) << '.';
-		remote_name << ((network_address_ >>  8) & 0xff) << '.';
-		remote_name << ((network_address_ >>  0) & 0xff);
+		switch (network_address_.length()) {
+		case 4:
+			remote_name << (unsigned)network_address_.peek() << '.';
+			network_address_.skip(1);
+			remote_name << (unsigned)network_address_.peek() << '.';
+			network_address_.skip(1);
+			remote_name << (unsigned)network_address_.peek() << '.';
+			network_address_.skip(1);
+			remote_name << (unsigned)network_address_.peek();
+			network_address_.skip(1);
+			family = SocketAddressFamilyIPv4;
+			break;
+		case 16:
+			for (;;) {
+				uint8_t bytes[2];
+				char hex[5];
+
+				network_address_.moveout(bytes, sizeof bytes);
+
+				if (bytes[0] == 0 && bytes[1] == 0)
+					strlcpy(hex, "0", sizeof hex);
+				else
+					snprintf(hex, sizeof hex, "%0x%02x", bytes[0], bytes[1]);
+				remote_name << hex;
+
+				if (network_address_.empty())
+					break;
+				remote_name << ":";
+			}
+			family = SocketAddressFamilyIPv6;
+			break;
+		default:
+			NOTREACHED(log_);
+		}
 		remote_name << ']';
 		remote_name << ':' << network_port_;
-
-		family = SocketAddressFamilyIPv4;
 	}
 
 	new ProxyConnector(name_, NULL, client_, SocketImplOS, family, remote_name.str());
@@ -317,12 +355,14 @@ ProxySocksConnection::schedule_write(void)
 		response.append(socks5_connected, sizeof socks5_connected);
 
 		/* XXX It's fun to lie about what kind of name we were given.  */
-		if (socks5_remote_name_ != "" || network_address_ == 0) {
+		if (socks5_remote_name_ != "" || network_address_.empty()) {
 			response.append((uint8_t)0x03);
 			response.append((uint8_t)socks5_remote_name_.length());
 			response.append(socks5_remote_name_);
 		} else {
-			uint32_t address = BigEndian::encode(network_address_);
+			uint32_t address;
+			network_address_.extract(&address);
+			address = BigEndian::encode(address);
 
 			response.append((uint8_t)0x01);
 			response.append(&address);

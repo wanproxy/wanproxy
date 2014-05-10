@@ -41,6 +41,7 @@ class ProxySocksConnection {
 		GetSOCKS5Reserved,
 		GetSOCKS5AddressType,
 		GetSOCKS5Address,
+		GetSOCKS5Address6,
 		GetSOCKS5NameLength,
 		GetSOCKS5Name,
 		GetSOCKS5Port,
@@ -52,7 +53,7 @@ class ProxySocksConnection {
 	Action *action_;
 	State state_;
 	uint16_t network_port_;
-	uint32_t network_address_;
+	Buffer network_address_;
 	bool socks5_authenticated_;
 	std::string socks5_remote_name_;
 
