@@ -24,6 +24,13 @@ o) Actually, just use names instead of hashes, but look up data by hash and then
    for each UUID we speak to, even.  All the hashes for a 2GB cache would add up
    to 8MB.  Surely that's worth it?  Should we just keep generation numbers for
    every hash we've ever generated?
+
+   Really, we need a master index of hashes, because this is effectively what we
+   want for a good two-level cache system.  Then we can store a generation number
+   there, and modify the protocol to send a generation number along with the
+   hash.  This is more overhead, but by keeping it out of the hash we avoid the
+   need for a two-level lookup, of finding name by hash.  Then on each reference
+   or definition, the peer can simply decide whether we need to make an eviction.
 o) Allow the user to limit how many frames we send without receiving an ADVANCE.
    That's not trivial because we have to be able to restart the encoder once we
    get ADVANCE.  Still, only a few hours of work.
