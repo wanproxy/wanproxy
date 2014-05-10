@@ -1,0 +1,3 @@
+[submodule "network/uinet"]
+	path = network/uinet
+	url = git://github.com/pkelsey/libuinet.git
