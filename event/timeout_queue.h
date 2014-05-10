@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,21 +28,25 @@
 
 #include <map>
 
+#include <common/thread/mutex.h>
 #include <common/time/time.h>
 
 class TimeoutQueue {
 	typedef std::map<NanoTime, CallbackQueue *> timeout_map_t;
 
 	LogHandle log_;
+	Mutex mtx_;
 	timeout_map_t timeout_queue_;
 public:
 	TimeoutQueue(void)
 	: log_("/event/timeout/queue"),
+	  mtx_("TimeoutQueue"),
 	  timeout_queue_()
 	{ }
 
 	~TimeoutQueue()
 	{
+		ScopedLock _(&mtx_);
 		timeout_map_t::iterator it;
 
 		for (it = timeout_queue_.begin(); it != timeout_queue_.end(); ++it)
@@ -53,6 +57,7 @@ public:
 	/* XXX Can't be const because CallbackQueue::empty can't be due to locking.  */
 	bool empty(void)
 	{
+		ScopedLock _(&mtx_);
 		timeout_map_t::iterator it;
 
 		/*
@@ -76,15 +81,25 @@ public:
 		return (true);
 	}
 
-	NanoTime next_deadline(void) const
+	/* Like ::empty() and ::ready(), has to possibly ignore empty queues.  */
+	NanoTime next_deadline(void)
 	{
+		ScopedLock _(&mtx_);
+		timeout_map_t::iterator it;
+
 		ASSERT(log_, !timeout_queue_.empty());
-		return (timeout_queue_.begin()->first);
+		for (it = timeout_queue_.begin(); it != timeout_queue_.end(); ++it) {
+			if (it->second->empty())
+				continue;
+			return (it->first);
+		}
+		/* XXX Almost NOTREACHED */
+		return (NanoTime());
 	}
 
 	Action *append(uintmax_t, SimpleCallback *);
 	void perform(void);
-	bool ready(void) const;
+	bool ready(void);
 };
 
 #endif /* !EVENT_TIMEOUT_QUEUE_H */

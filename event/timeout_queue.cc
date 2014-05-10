@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,6 +33,7 @@
 Action *
 TimeoutQueue::append(uintmax_t ms, SimpleCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	NanoTime deadline = NanoTime::current_time();
 
 	deadline.seconds_ += ms / 1000;
@@ -50,6 +51,7 @@ TimeoutQueue::append(uintmax_t ms, SimpleCallback *cb)
 void
 TimeoutQueue::perform(void)
 {
+	mtx_.lock();
 	timeout_map_t::iterator it = timeout_queue_.begin();
 	if (it == timeout_queue_.end())
 		return;
@@ -58,13 +60,15 @@ TimeoutQueue::perform(void)
 		return;
 	CallbackQueue *queue = it->second;
 	timeout_queue_.erase(it);
+	mtx_.unlock();
+
 	queue->drain();
-	delete queue;
 }
 
 bool
-TimeoutQueue::ready(void) const
+TimeoutQueue::ready(void)
 {
+	ScopedLock _(&mtx_);
 	timeout_map_t::const_iterator it = timeout_queue_.begin();
 	if (it == timeout_queue_.end())
 		return (false);
