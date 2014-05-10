@@ -56,7 +56,7 @@ class XCodecPipePair : public PipePair {
 	bool decoder_sent_eos_;
 	Buffer decoder_buffer_;
 	Buffer decoder_frame_buffer_;
-	std::list<uint16_t> decoder_frame_lengths_;
+	std::list<uint32_t> decoder_frame_lengths_;
 	PipeProducerWrapper<XCodecPipePair> *decoder_pipe_;
 
 	XCodecEncoder *encoder_;

@@ -140,7 +140,7 @@
 
 /*
  * Usage:
- * 	<OP_FRAME> length[uint16_t] data[uint8_t x length]
+ * 	<OP_FRAME> length[uint32_t] data[uint8_t x length]
  *
  * Effects:
  * 	Frames an encoded chunk.
@@ -149,7 +149,7 @@
  * 	The other party will send <OP_ADVANCE> when it has processed one or
  * 	more frames successfully in their entirety.
  */
-#define	XCODEC_PIPE_OP_FRAME	((uint8_t)0x00)
+#define	XCODEC_PIPE_OP_FRAME	((uint8_t)0x02)
 
 /*
  * Usage:
@@ -165,7 +165,10 @@
  */
 #define	XCODEC_PIPE_OP_ADVANCE	((uint8_t)0x01)
 
-#define	XCODEC_PIPE_MAX_FRAME	(32768)
+/*
+ * Allow up to 1MB of data per encoded frame.
+ */
+#define	XCODEC_PIPE_MAX_FRAME	(1024 * 1024)
 
 void
 XCodecPipePair::decoder_consume(Buffer *buf)
@@ -349,7 +352,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 				decoder_error();
 				return;
 			} else {
-				uint16_t len;
+				uint32_t len;
 				if (decoder_buffer_.length() < sizeof op + sizeof len)
 					return;
 				decoder_buffer_.extract(&len, sizeof op);
@@ -391,7 +394,6 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 					return;
 				}
 
-				DEBUG(log_) << "Peer advanced frame count by: " << count;
 				while (count != 0) {
 					encoder_reference_frame_advance();
 					count--;
@@ -434,7 +436,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 		if (frame_buffer_consumed != 0) {
 			uint32_t frame_buffer_advance = 0;
 			for (;;) {
-				std::list<uint16_t>::iterator dflit;
+				std::list<uint32_t>::iterator dflit;
 				dflit = decoder_frame_lengths_.begin();
 
 				size_t first_frame_length = *dflit;
@@ -565,7 +567,7 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 		 * can ensure that each frame is self-contained!
 		 */
 		for (;;) {
-			uint16_t framelen;
+			uint32_t framelen;
 			if (buf->length() <= XCODEC_PIPE_MAX_FRAME / 2)
 				framelen = buf->length();
 			else
