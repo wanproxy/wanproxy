@@ -22,3 +22,9 @@ o) Actually, just use names instead of hashes, but look up data by hash and then
    integers, or a mix of the hash with a counter, or any number of things.  The
    key here is to limit, or detect, reuse.  If we use a 56-bit hash, we can keep
    the top 8 bits for a generation number.  Other possibilities arise.
+
+   For now can we just track hashes that have been evicted and not reuse them, or
+   warn every remote peer when they first connect?  Like, keep an eviction list
+   for each UUID we speak to, even.  All the hashes for a 2GB cache would add up
+   to 8MB.  Surely that's worth it?  Should we just keep generation numbers for
+   every hash we've ever generated?
