@@ -116,6 +116,11 @@ class XCodecMemoryCache : public XCodecCache {
 	 * more gracefully all the same.  Or use a 32-bit counter and
 	 * handle wraps explicitly.
 	 *
+	 * At 1 billion segments per second, it'd take half a millenium
+	 * for us to need to care about the 64-bit counter wrapping.  So
+	 * we needn't worry about that.  But perhaps it's better to use
+	 * a 32-bit counter and handle wraps all the same?
+	 *
 	 * NB
 	 * For now we're using an ordered map to get the sorted behaviour,
 	 * but we could also use an unordered (i.e. hash) map and keep
