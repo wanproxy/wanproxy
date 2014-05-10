@@ -40,6 +40,10 @@
 class XCodecWindow {
 	uint64_t window_[XCODEC_WINDOW_COUNT];
 	unsigned cursor_;
+	/*
+	 * XXX
+	 * Combine these two maps.  This is wasteful.
+	 */
 	std::map<uint64_t, unsigned> present_;
 	std::map<uint64_t, BufferSegment *> segments_;
 public:
@@ -105,6 +109,14 @@ public:
 		return (seg);
 	}
 
+	/*
+	 * XXX
+	 * We need to pass in the BufferSegment here, too, so that we can
+	 * verify that the copy in the window by hash has the same contents
+	 * as the hash being referred to by the caller.  If we switch to
+	 * generation numbers, that will just need to be used here alongside
+	 * the hash as well.
+	 */
 	bool present(uint64_t hash, uint8_t *c) const
 	{
 		std::map<uint64_t, unsigned>::const_iterator it = present_.find(hash);
