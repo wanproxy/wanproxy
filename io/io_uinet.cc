@@ -65,11 +65,11 @@ IOUinet::remove_interface(const std::string& name)
 
 
 int
-IOUinet::interface_up(const std::string& name, bool ispromisc)
+IOUinet::interface_up(const std::string& name, bool ispromisc, bool ispromiscinet)
 {
 	int error;
 
-	error = uinet_interface_up(name.c_str(), ispromisc);
+	error = uinet_interface_up(name.c_str(), ispromisc, ispromiscinet);
 	return (uinet_errno_to_os(error));
 }
 

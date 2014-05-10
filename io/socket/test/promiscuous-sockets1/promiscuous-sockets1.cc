@@ -23,7 +23,19 @@
  * SUCH DAMAGE.
  */
 
+/*
+ * Seems at least some versions of clang++ put unordered_map in the std
+ * namespace even if building for something earlier than c++11.
+ */ 
+#ifndef FORCE_CXX11_OR_LATER
+#define FORCE_CXX11_OR_LATER 1
+#endif
+
+#if (__cplusplus > 199711L) || FORCE_CXX11_OR_LATER
+#include <unordered_map>
+#else
 #include <tr1/unordered_map>
+#endif
 
 #include <common/buffer.h>
 #include <common/test.h>
@@ -37,6 +49,16 @@
 #include <io/socket/resolver.h>
 #include <io/socket/socket_uinet_promisc.h>
 #include <io/io_uinet.h>
+
+#if (__cplusplus > 199711L) || FORCE_CXX11_OR_LATER
+namespace umns {
+	using namespace ::std;
+};
+#else
+namespace umns {
+	using namespace ::std::tr1;
+};
+#endif
 
 class Listener {
 	struct ConnInfo {
@@ -98,7 +120,7 @@ class Listener {
 	unsigned int outbound_cdom_;
 	SocketUinetPromisc::SynfilterCallback *synfilter_callback_;
 
-	std::tr1::unordered_map<ConnInfo,SpliceInfo,ConnInfoHasher> connections_;
+	umns::unordered_map<ConnInfo,SpliceInfo,ConnInfoHasher> connections_;
 
 
 public:
@@ -206,7 +228,7 @@ public:
 			addr1.addrlen_ = sizeof(struct sockaddr_in);
 /* XXX */
 #if !defined(__linux__)
-			addr1.addr_.inet_.sin_len = addr1.addlen_;
+			addr1.addr_.inet_.sin_len = addr1.addrlen_;
 #endif
 			addr1.addr_.inet_.sin_family = AF_INET; 
 			addr1.addr_.inet_.sin_port = ci.inc.inc_ie.ie_fport; 
@@ -228,7 +250,7 @@ public:
 			addr2.addrlen_ = sizeof(struct sockaddr_in);
 /* XXX */
 #if !defined(__linux__)
-                        addr2.addr_.inet_.sin_len = addr2.addlen_;
+                        addr2.addr_.inet_.sin_len = addr2.addrlen_;
 #endif
 			addr2.addr_.inet_.sin_family = AF_INET; 
 			addr2.addr_.inet_.sin_port = ci.inc.inc_ie.ie_lport; 
@@ -243,7 +265,7 @@ public:
 		}
 
 	out:
-		*param.result = UINET_SYNF_REJECT;
+		*param.result = UINET_SYNF_REJECT_SILENT;
 	}
 
 	void accept_complete(Event e, Socket *socket)
@@ -297,7 +319,7 @@ public:
 			break;
 		default:
 			connections_.erase(ci);
-			listen_socket_->synfdeferraldeliver(si.deferral, UINET_SYNF_REJECT);
+			listen_socket_->synfdeferraldeliver(si.deferral, UINET_SYNF_REJECT_RST);
 			/* XXX Close socket?  */
 			ERROR(log_) << "Unexpected event: " << e;
 			break;
@@ -366,10 +388,10 @@ main(void)
 	IOUinet::instance()->start(false);
 
 	IOUinet::instance()->add_interface(UINET_IFTYPE_NETMAP, "vale0:1", "proxy-a-side", 1, -1);
-	IOUinet::instance()->interface_up("proxy-a-side", true);
+	IOUinet::instance()->interface_up("proxy-a-side", true, true);
 
 	IOUinet::instance()->add_interface(UINET_IFTYPE_NETMAP, "vale1:1", "proxy-b-side", 2, -1);
-	IOUinet::instance()->interface_up("proxy-b-side", true);
+	IOUinet::instance()->interface_up("proxy-b-side", true, true);
 
 	Listener *l = new Listener("[0.0.0.0]:0", 1, 2);
 

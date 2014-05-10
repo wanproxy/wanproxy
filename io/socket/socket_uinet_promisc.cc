@@ -105,7 +105,7 @@ synfilter_callback(struct uinet_socket *listener, void *arg, uinet_api_synfilter
 	uinet_synfilter_getconninfo(cookie, &inc);
 	uinet_synfilter_getl2info(cookie, &l2i);
 
-	int synfilter_decision = UINET_SYNF_REJECT;
+	int synfilter_decision = UINET_SYNF_REJECT_SILENT;
 
 	info.inc = &inc;
 	info.l2i = &l2i;
