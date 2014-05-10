@@ -360,12 +360,8 @@ ProxySocksConnection::schedule_write(void)
 			response.append((uint8_t)socks5_remote_name_.length());
 			response.append(socks5_remote_name_);
 		} else {
-			uint32_t address;
-			network_address_.extract(&address);
-			address = BigEndian::encode(address);
-
 			response.append((uint8_t)0x01);
-			response.append(&address);
+			response.append(&network_address_);
 		}
 
 		uint16_t port = BigEndian::encode(network_port_);
