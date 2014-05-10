@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,11 +40,11 @@ public:
 	XCodecEncoder(XCodecCache *);
 	~XCodecEncoder();
 
-	void encode(Buffer *, Buffer *);
+	void encode(Buffer *, Buffer *, std::map<uint64_t, BufferSegment *> * = NULL);
 private:
-	void encode_declaration(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment **);
+	void encode_declaration(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment **, std::map<uint64_t, BufferSegment *> *);
 	void encode_escape(Buffer *, Buffer *, unsigned);
-	bool encode_reference(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment *);
+	bool encode_reference(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment *, std::map<uint64_t, BufferSegment *> *);
 };
 
 #endif /* !XCODEC_XCODEC_ENCODER_H */

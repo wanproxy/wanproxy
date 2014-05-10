@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2011 Juli Mallett. All rights reserved.
+ * Copyright (c) 2009-2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,9 +51,12 @@ XCodecEncoder::~XCodecEncoder()
  * This takes a view of a data stream and turns it into a series of references
  * to other data, declarations of data to be referenced, and data that needs
  * escaped.
+ *
+ * The caller may request to retain a map of hashes and segments referenced by
+ * this stream.
  */
 void
-XCodecEncoder::encode(Buffer *output, Buffer *input)
+XCodecEncoder::encode(Buffer *output, Buffer *input, std::map<uint64_t, BufferSegment *> *refmap)
 {
 	if (input->empty())
 		return;
@@ -164,7 +167,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 			 */
 			if (candidate.set_ && candidate.offset_ + XCODEC_SEGMENT_LENGTH <= start) {
 				BufferSegment *nseg;
-				encode_declaration(output, &outq, candidate.offset_, candidate.symbol_, &nseg);
+				encode_declaration(output, &outq, candidate.offset_, candidate.symbol_, &nseg, refmap);
 
 				o -= candidate.offset_ + XCODEC_SEGMENT_LENGTH;
 				start = o - XCODEC_SEGMENT_LENGTH;
@@ -182,7 +185,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 					 * Skip trying to use this hash as a reference,
 					 * too, and go on to the next one.
 					 */
-					if (!encode_reference(output, &outq, start, hash, nseg)) {
+					if (!encode_reference(output, &outq, start, hash, nseg, refmap)) {
 						nseg->unref();
 						DEBUG(log_) << "Collision in adjacent-declare pass.";
 						continue;
@@ -214,7 +217,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 				 * identical to this chunk of data, then that's
 				 * positively fantastic.
 				 */
-				if (encode_reference(output, &outq, start, hash, oseg)) {
+				if (encode_reference(output, &outq, start, hash, oseg, refmap)) {
 					oseg->unref();
 
 					o = 0;
@@ -286,7 +289,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 	 */
 	if (candidate.set_) {
 		ASSERT(log_, !outq.empty());
-		encode_declaration(output, &outq, candidate.offset_, candidate.symbol_, NULL);
+		encode_declaration(output, &outq, candidate.offset_, candidate.symbol_, NULL, refmap);
 		candidate.set_ = false;
 	}
 
@@ -304,7 +307,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input)
 }
 
 void
-XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, BufferSegment **segp)
+XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, BufferSegment **segp, std::map<uint64_t, BufferSegment *> *refmap)
 {
 	if (offset != 0) {
 		encode_escape(output, input, offset);
@@ -319,7 +322,7 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 		/*
 		 * Declarations occur out-of-band.
 		 */
-		if (!encode_reference(output, input, 0, hash, nseg)) /* XXX Pass NULL not nseg to skip check?  */
+		if (!encode_reference(output, input, 0, hash, nseg, refmap)) /* XXX Pass NULL not nseg to skip check?  */
 			NOTREACHED(log_);
 		if (segp == NULL)
 			nseg->unref();
@@ -376,7 +379,7 @@ XCodecEncoder::encode_escape(Buffer *output, Buffer *input, unsigned length)
 }
 
 bool
-XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, BufferSegment *oseg)
+XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, BufferSegment *oseg, std::map<uint64_t, BufferSegment *> *refmap)
 {
 	uint8_t data[XCODEC_SEGMENT_LENGTH];
 	input->copyout(data, offset, sizeof data);
@@ -408,6 +411,15 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 		output->append(&behash);
 
 		window_.declare(hash, oseg);
+	}
+
+	if (refmap != NULL) {
+		std::map<uint64_t, BufferSegment *>::const_iterator it;
+		it = refmap->find(hash);
+		if (it == refmap->end()) {
+			oseg->ref();
+			refmap->insert(std::map<uint64_t, BufferSegment *>::value_type(hash, oseg));
+		}
 	}
 
 	return (true);
