@@ -41,11 +41,13 @@ EventThread::stop(void)
 	 */
 	interest_queue_mtx_.lock();
 	CallbackQueue *q = interest_queue_[EventInterestStop];
+	if (q != NULL)
+		interest_queue_.erase(EventInterestStop);
+	interest_queue_mtx_.unlock();
 	if (q != NULL && !q->empty()) {
 		INFO(log_) << "Queueing stop handlers.";
 		q->drain();
 	}
-	interest_queue_mtx_.unlock();
 
 	CallbackThread::stop();
 }

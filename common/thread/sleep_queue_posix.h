@@ -26,6 +26,8 @@
 #ifndef	COMMON_THREAD_SLEEP_QUEUE_POSIX_H
 #define	COMMON_THREAD_SLEEP_QUEUE_POSIX_H
 
+#include <unistd.h> /* For _POSIX_TIMERS */
+
 #include <common/time/time.h>
 
 #include "mutex_posix.h"
@@ -41,52 +43,51 @@ struct SleepQueueState {
 	  waiting_(false)
 	{
 		pthread_condattr_t attr;
-		int rv;
+		int error;
 
-		rv = pthread_condattr_init(&attr);
-		ASSERT("/sleep/queue/posix/state", rv != -1);
+		error = pthread_condattr_init(&attr);
+		ASSERT("/sleep/queue/posix/state", error == 0);
 
 		/* Match behaviour/clock of NanoTime.  */
 #if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
-		rv = pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
-		ASSERT("/sleep/queue/posix/state", rv != -1);
+		error = pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
+		ASSERT("/sleep/queue/posix/state", error == 0);
 #endif
 
-		rv = pthread_cond_init(&cond_, &attr);
-		ASSERT("/sleep/queue/posix/state", rv != -1);
+		error = pthread_cond_init(&cond_, &attr);
+		ASSERT("/sleep/queue/posix/state", error == 0);
 
-		rv = pthread_condattr_destroy(&attr);
-		ASSERT("/sleep/queue/posix/state", rv != -1);
+		error = pthread_condattr_destroy(&attr);
+		ASSERT("/sleep/queue/posix/state", error == 0);
 	}
 
 	~SleepQueueState()
 	{
-		int rv;
+		int error;
 
-		rv = pthread_cond_destroy(&cond_);
-		ASSERT("/sleep/queue/posix/state", rv != -1);
+		error = pthread_cond_destroy(&cond_);
+		ASSERT("/sleep/queue/posix/state", error == 0);
 	}
 
 	void signal(void)
 	{
-		int rv;
+		int error;
 
 		if (!waiting_)
 			return;
 
 		mutex_state_->lock();
 		ASSERT("/sleep/queue/posix/state", mutex_state_->owner_ == Thread::selfID());
-		rv = pthread_cond_signal(&cond_);
+		error = pthread_cond_signal(&cond_);
 		ASSERT("/sleep/queue/posix/state", mutex_state_->owner_ == Thread::selfID());
 		mutex_state_->unlock();
-		ASSERT("/sleep/queue/posix/state", rv != -1);
+		ASSERT("/sleep/queue/posix/state", error == 0);
 	}
 
 	void wait(const NanoTime *deadline)
 	{
 		struct timespec ts;
-		NanoTime nt;
-		int rv;
+		int error;
 
 		if (deadline != NULL) {
 			ts.tv_sec = deadline->seconds_;
@@ -97,11 +98,13 @@ struct SleepQueueState {
 
 		mutex_state_->lock();
 		mutex_state_->lock_release();
-		if (deadline == NULL)
-			rv = pthread_cond_wait(&cond_, &mutex_state_->mutex_);
-		else
-			rv = pthread_cond_timedwait(&cond_, &mutex_state_->mutex_, &ts);
-		ASSERT("/sleep/queue/posix/state", rv != -1);
+		if (deadline == NULL) {
+			error = pthread_cond_wait(&cond_, &mutex_state_->mutex_);
+			ASSERT("/sleep/queue/posix/state", error == 0);
+		} else {
+			error = pthread_cond_timedwait(&cond_, &mutex_state_->mutex_, &ts);
+			ASSERT("/sleep/queue/posix/state", error == 0 || error == ETIMEDOUT);
+		}
 		mutex_state_->lock_acquire();
 		mutex_state_->unlock();
 

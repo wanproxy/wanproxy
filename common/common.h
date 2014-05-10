@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2009-2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,6 +25,9 @@
 
 #ifndef	COMMON_COMMON_H
 #define	COMMON_COMMON_H
+
+#define	__STDC_CONSTANT_MACROS
+#define	__STDC_LIMIT_MACROS
 
 #include <common/debug.h>
 #include <common/log.h>

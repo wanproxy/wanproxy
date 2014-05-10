@@ -29,6 +29,7 @@
 #include <deque>
 
 #include <common/thread/mutex.h>
+#include <common/thread/sleep_queue.h>
 
 #include <event/callback.h>
 
@@ -61,11 +62,15 @@ class CallbackQueue : public CallbackScheduler {
 	friend class CallbackAction;
 
 	Mutex mtx_;
+	SleepQueue sleepq_;
 	std::deque<CallbackAction *> queue_;
+	bool draining_;
 public:
 	CallbackQueue(void)
 	: mtx_("CallbackQueue"),
-	  queue_()
+	  sleepq_("CallbackQueue draining", &mtx_),
+	  queue_(),
+	  draining_(false)
 	{ }
 
 	~CallbackQueue()
@@ -78,6 +83,7 @@ public:
 		CallbackAction *a = new CallbackAction(this, cb);
 
 		mtx_.lock();
+		ASSERT("/callback/queue", !draining_);
 		queue_.push_back(a);
 		mtx_.unlock();
 
@@ -86,14 +92,28 @@ public:
 
 	void drain(void)
 	{
-		ScopedLock _(&mtx_);
-		while (!queue_.empty()) {
-			CallbackAction *a = queue_.front();
+		std::deque<CallbackAction *>::iterator it;
+
+		mtx_.lock();
+		ASSERT("/callback/queue", !draining_);
+		draining_ = true;
+		for (it = queue_.begin(); it != queue_.end(); ++it) {
+			CallbackAction *a = *it;
 			ASSERT("/callback/queue", a->queue_ == this);
 			a->action_ = a->callback_->schedule();
 			a->callback_ = NULL;
-			queue_.pop_front();
 		}
+
+		/*
+		 * The problem is that a CallbackQueue may be drained while a
+		 * callback from it is scheduled but not executed.  So drain must
+		 * wait for all the actions to have been cancelled before
+		 * deleting the queue.
+		 */
+		while (!queue_.empty())
+			sleepq_.wait();
+		mtx_.unlock();
+		delete this;
 	}
 
 	/* XXX Is not const because of the Mutex.  */
@@ -106,31 +126,26 @@ public:
 private:
 	void cancel(CallbackAction *a)
 	{
-		/*
-		 * XXX
-		 * We need to synchronize access here.
-		 *
-		 * The problem is that a CallbackQueue may be deleted while a
-		 * callback from it is scheduled but not executed.  Really, the
-		 * structure here is a bit wrong, and perhaps drain should wait
-		 * for all the actions to have been deleted?
-		 */
-		if (a->action_ != NULL) {
-			a->action_->cancel();
-			a->action_ = NULL;
-			return;
-		}
-
 		ScopedLock _(&mtx_);
 		std::deque<CallbackAction *>::iterator it;
 		for (it = queue_.begin(); it != queue_.end(); ++it) {
 			if (*it != a)
 				continue;
 
-			delete a->callback_;
-			a->callback_ = NULL;
+			if (a->action_ != NULL) {
+				a->action_->cancel();
+				a->action_ = NULL;
+				ASSERT("/callback/queue", a->callback_ == NULL);
+			} else {
+				ASSERT("/callback/queue", a->callback_ != NULL);
+				delete a->callback_;
+				a->callback_ = NULL;
+			}
 
 			queue_.erase(it);
+
+			if (draining_ && queue_.empty())
+				sleepq_.signal();
 			return;
 		}
 		NOTREACHED("/callback/queue");
