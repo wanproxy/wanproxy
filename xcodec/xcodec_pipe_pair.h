@@ -119,6 +119,7 @@ public:
 
 private:
 	void decoder_consume(Buffer *);
+	void decoder_decode(void);
 
 	void decoder_error(void)
 	{
