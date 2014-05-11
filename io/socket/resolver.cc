@@ -24,19 +24,15 @@
  * SUCH DAMAGE.
  */
 
-
-
 #include <netdb.h>
 #include <stdio.h>
 
 #include <io/socket/resolver.h>
 
-
 /*
  * XXX Presently using AF_INET6 as the test for what is supported, but that is
  * wrong in many, many ways.
  */
-
 
 #if defined(__OPENNT)
 struct addrinfo {
@@ -153,7 +149,6 @@ getnameinfo(const struct sockaddr *sa, socklen_t salen, char *host,
 }
 #endif /* __OPENNT */
 
-
 bool
 socket_address::operator() (int domain, int socktype, int protocol, const std::string& str)
 {
@@ -234,7 +229,6 @@ socket_address::operator() (int domain, int socktype, int protocol, const std::s
 	return (true);
 }
 
-
 socket_address::operator std::string (void) const
 {
 	std::ostringstream str;
@@ -268,6 +262,3 @@ socket_address::operator std::string (void) const
 
 	return (str.str());
 }
-
-
-

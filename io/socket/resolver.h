@@ -58,7 +58,4 @@ struct socket_address {
 	operator std::string (void) const;
 };
 
-
-
-
 #endif /* !IO_SOCKET_RESOLVER_H */
