@@ -81,9 +81,11 @@ PipeProducer::output(EventCallback *cb)
 	ASSERT(log_, output_action_ == NULL);
 	ASSERT(log_, output_callback_ == NULL);
 
-	Action *a = output_do(cb);
-	if (a != NULL)
-		return (a);
+	if (output_cork_ == 0) {
+		Action *a = output_do(cb);
+		if (a != NULL)
+			return (a);
+	}
 
 	output_callback_ = cb;
 
@@ -109,8 +111,7 @@ PipeProducer::output_cancel(void)
 Action *
 PipeProducer::output_do(EventCallback *cb)
 {
-	if (output_cork_ > 0 )
-		return (NULL);
+	ASSERT(log_, output_cork_ == 0);
 
 	if (error_) {
 		ASSERT(log_, output_buffer_.empty());
@@ -146,6 +147,9 @@ PipeProducer::produce(Buffer *buf)
 		output_eos_ = true;
 	}
 
+	if (output_cork_ != 0)
+		return;
+
 	if (output_callback_ != NULL) {
 		ASSERT(log_, output_action_ == NULL);
 
@@ -167,6 +171,9 @@ PipeProducer::produce_eos(Buffer *buf)
 		buf->moveout(&output_buffer_);
 	}
 	output_eos_ = true;
+
+	if (output_cork_ != 0)
+		return;
 
 	if (output_callback_ != NULL) {
 		ASSERT(log_, output_action_ == NULL);
@@ -192,6 +199,9 @@ PipeProducer::produce_error(void)
 
 	error_ = true;
 	output_buffer_.clear();
+
+	if (output_cork_ != 0)
+		return;
 
 	if (output_callback_ != NULL) {
 		ASSERT(log_, output_action_ == NULL);
