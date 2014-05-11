@@ -120,7 +120,6 @@ PipeProducer::output_do(EventCallback *cb)
 	}
 
 	if (!output_buffer_.empty()) {
-		DEBUG(log_) << "Pipe output size: " << output_buffer_.length();
 		cb->param(Event(Event::Done, output_buffer_));
 		output_buffer_.clear();
 		return (cb->schedule());
