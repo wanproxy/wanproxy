@@ -191,16 +191,38 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 	buf->moveout(&decoder_buffer_);
 
 	/*
+	 * While we process data, we need to cork the encoder in case we generate any
+	 * output as a result.
+	 */
+	encoder_pipe_->cork();
+
+	/*
 	 * Decode as much data as we can.
 	 */
-	decoder_decode();
+	if (!decoder_decode()) {
+		decoder_error();
+		encoder_pipe_->uncork();
+		return;
+	}
+
+	/*
+	 * Decode any frames we extracted and process the data stream
+	 * state.
+	 */
+	if (!decoder_decode_data()) {
+		decoder_error();
+		encoder_pipe_->uncork();
+		return;
+	}
 
 	/*
 	 * If we have more data to decode, do not fall through to the EOS
-	 * checks that follow.
+	 * checks that follow, but we're clearly waiting for more data.
 	 */
-	if (!decoder_buffer_.empty() || !decoder_frame_buffer_.empty())
+	if (!decoder_buffer_.empty() || !decoder_frame_buffer_.empty()) {
+		encoder_pipe_->uncork();
 		return;
+	}
 
 	/*
 	 * If we have received EOS and not yet sent it, we can send it now.
@@ -239,9 +261,14 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 		encoder_produce_eos();
 		encoder_produced_eos_ = true;
 	}
+
+	/*
+	 * Done processing data, uncork.
+	 */
+	encoder_pipe_->uncork();
 }
 
-void
+bool
 XCodecPipePair::decoder_decode(void)
 {
 	while (!decoder_buffer_.empty()) {
@@ -250,21 +277,19 @@ XCodecPipePair::decoder_decode(void)
 		case XCODEC_PIPE_OP_HELLO:
 			if (decoder_cache_ != NULL) {
 				ERROR(log_) << "Got <HELLO> twice.";
-				decoder_error();
-				return;
+				return (false);
 			} else {
 				uint8_t len;
 				if (decoder_buffer_.length() < sizeof op + sizeof len)
-					return;
+					return (true);
 				decoder_buffer_.extract(&len, sizeof op);
 
 				if (decoder_buffer_.length() < sizeof op + sizeof len + len)
-					return;
+					return (true);
 
 				if (len != UUID_SIZE) {
 					ERROR(log_) << "Unsupported <HELLO> length: " << (unsigned)len;
-					decoder_error();
-					return;
+					return (false);
 				}
 
 				Buffer uubuf;
@@ -273,8 +298,7 @@ XCodecPipePair::decoder_decode(void)
 				UUID uuid;
 				if (!uuid.decode(&uubuf)) {
 					ERROR(log_) << "Invalid UUID in <HELLO>.";
-					decoder_error();
-					return;
+					return (false);
 				}
 
 				decoder_cache_ = XCodecCache::lookup(uuid);
@@ -292,12 +316,11 @@ XCodecPipePair::decoder_decode(void)
 		case XCODEC_PIPE_OP_ASK:
 			if (encoder_ == NULL) {
 				ERROR(log_) << "Got <ASK> before sending <HELLO>.";
-				decoder_error();
-				return;
+				return (false);
 			} else {
 				uint64_t hash;
 				if (decoder_buffer_.length() < sizeof op + sizeof hash)
-					return;
+					return (true);
 
 				decoder_buffer_.skip(sizeof op);
 
@@ -306,8 +329,7 @@ XCodecPipePair::decoder_decode(void)
 
 				if (encoder_reference_frames_.empty()) {
 					ERROR(log_) << "Got <ASK> when all encoded frames have been processed.";
-					decoder_error();
-					return;
+					return (false);
 				}
 
 				/*
@@ -324,8 +346,7 @@ XCodecPipePair::decoder_decode(void)
 				it = refmap->find(hash);
 				if (it == refmap->end()) {
 					ERROR(log_) << "Hash in <ASK> not in top frame: " << hash;
-					decoder_error();
-					return;
+					return (false);
 				}
 
 				DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
@@ -340,11 +361,10 @@ XCodecPipePair::decoder_decode(void)
 		case XCODEC_PIPE_OP_LEARN:
 			if (decoder_cache_ == NULL) {
 				ERROR(log_) << "Got <LEARN> before <HELLO>.";
-				decoder_error();
-				return;
+				return (false);
 			} else {
 				if (decoder_buffer_.length() < sizeof op + XCODEC_SEGMENT_LENGTH)
-					return;
+					return (true);
 
 				decoder_buffer_.skip(sizeof op);
 
@@ -365,8 +385,7 @@ XCodecPipePair::decoder_decode(void)
 						oseg->unref();
 						ERROR(log_) << "Collision in <LEARN>.";
 						seg->unref();
-						decoder_error();
-						return;
+						return (false);
 					}
 					oseg->unref();
 					DEBUG(log_) << "Redundant <LEARN>.";
@@ -380,8 +399,7 @@ XCodecPipePair::decoder_decode(void)
 		case XCODEC_PIPE_OP_EOS:
 			if (decoder_received_eos_) {
 				ERROR(log_) << "Duplicate <EOS>.";
-				decoder_error();
-				return;
+				return (false);
 			}
 			decoder_buffer_.skip(1);
 			decoder_received_eos_ = true;
@@ -389,13 +407,11 @@ XCodecPipePair::decoder_decode(void)
 		case XCODEC_PIPE_OP_EOS_ACK:
 			if (!encoder_sent_eos_) {
 				ERROR(log_) << "Got <EOS_ACK> before sending <EOS>.";
-				decoder_error();
-				return;
+				return (false);
 			}
 			if (decoder_received_eos_ack_) {
 				ERROR(log_) << "Duplicate <EOS_ACK>.";
-				decoder_error();
-				return;
+				return (false);
 			}
 			decoder_buffer_.skip(1);
 			decoder_received_eos_ack_ = true;
@@ -403,22 +419,20 @@ XCodecPipePair::decoder_decode(void)
 		case XCODEC_PIPE_OP_FRAME:
 			if (decoder_ == NULL) {
 				ERROR(log_) << "Got frame data before decoder initialized.";
-				decoder_error();
-				return;
+				return (false);
 			} else {
 				uint32_t len;
 				if (decoder_buffer_.length() < sizeof op + sizeof len)
-					return;
+					return (true);
 				decoder_buffer_.extract(&len, sizeof op);
 				len = BigEndian::decode(len);
 				if (len == 0 || len > XCODEC_PIPE_MAX_FRAME) {
 					ERROR(log_) << "Invalid framed data length.";
-					decoder_error();
-					return;
+					return (false);
 				}
 
 				if (decoder_buffer_.length() < sizeof op + sizeof len + len)
-					return;
+					return (true);
 
 				decoder_buffer_.moveout(&decoder_frame_buffer_, sizeof op + sizeof len, len);
 
@@ -433,19 +447,17 @@ XCodecPipePair::decoder_decode(void)
 		case XCODEC_PIPE_OP_ADVANCE:
 			if (encoder_ == NULL) {
 				ERROR(log_) << "Got <ADVANCE> before sending <HELLO>.";
-				decoder_error();
-				return;
+				return (false);
 			} else {
 				uint32_t count;
 				if (decoder_buffer_.length() < sizeof op + sizeof count)
-					return;
+					return (true);
 				decoder_buffer_.moveout(&count, sizeof op);
 				count = BigEndian::decode(count);
 
 				if (count == 0 || count > encoder_reference_frames_.size()) {
 					ERROR(log_) << "Invalid frame advance count.";
-					decoder_error();
-					return;
+					return (false);
 				}
 
 				while (count != 0) {
@@ -453,21 +465,20 @@ XCodecPipePair::decoder_decode(void)
 					count--;
 				}
 			}
-			continue; /* Advance doesn't affect our decoding, so go to the next op.  */
+			break;
 		default:
 			ERROR(log_) << "Unsupported operation in pipe stream.";
-			decoder_error();
-			return;
+			return (false);
 		}
-
-		decoder_decode_data();
 	}
+
+	return (true);
 }
 
 /*
  * Decode the actual framed data.
  */
-void
+bool
 XCodecPipePair::decoder_decode_data(void)
 {
 	if (decoder_frame_buffer_.empty()) {
@@ -480,20 +491,19 @@ XCodecPipePair::decoder_decode_data(void)
 			encoder_produce(&eos_ack);
 			encoder_sent_eos_ack_ = true;
 		}
-		return;
+		return (true);
 	}
 
 	if (!decoder_unknown_hashes_.empty()) {
 		DEBUG(log_) << "Waiting for unknown hashes to continue processing data.";
-		return;
+		return (true);
 	}
 
 	size_t frame_buffer_consumed = decoder_frame_buffer_.length();
 	Buffer output;
 	if (!decoder_->decode(&output, &decoder_frame_buffer_, decoder_unknown_hashes_)) {
 		ERROR(log_) << "Decoder exiting with error.";
-		decoder_error();
-		return;
+		return (false);
 	}
 
 	frame_buffer_consumed -= decoder_frame_buffer_.length();
@@ -556,6 +566,8 @@ XCodecPipePair::decoder_decode_data(void)
 		DEBUG(log_) << "Sending <ASK>s.";
 		encoder_produce(&ask);
 	}
+
+	return (true);
 }
 
 void
