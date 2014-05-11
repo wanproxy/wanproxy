@@ -177,7 +177,10 @@ public:
 	  segment_lru_map_(),
 	  segment_lru_counter_(0),
 	  memory_cache_limit_(memory_cache_limit_bytes / XCODEC_SEGMENT_LENGTH)
-	{ }
+	{
+		if (memory_cache_limit_bytes < XCODEC_SEGMENT_LENGTH)
+			memory_cache_limit_ = 1;
+	}
 
 	~XCodecMemoryCache()
 	{ }
