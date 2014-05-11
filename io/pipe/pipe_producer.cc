@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,6 +38,7 @@ PipeProducer::PipeProducer(const LogHandle& log)
   output_action_(NULL),
   output_callback_(NULL),
   output_eos_(false),
+  output_cork_(0),
   error_(false)
 {
 }
@@ -57,7 +58,9 @@ PipeProducer::input(Buffer *buf, EventCallback *cb)
 		 * Allow consume() to only consume part of buf, and to
 		 * delay further input.
 		 */
+		cork();
 		consume(buf);
+		uncork();
 		if (error_ && !buf->empty())
 			buf->clear();
 		ASSERT(log_, buf->empty());
@@ -106,6 +109,9 @@ PipeProducer::output_cancel(void)
 Action *
 PipeProducer::output_do(EventCallback *cb)
 {
+	if (output_cork_ > 0 )
+		return (NULL);
+
 	if (error_) {
 		ASSERT(log_, output_buffer_.empty());
 
@@ -114,6 +120,7 @@ PipeProducer::output_do(EventCallback *cb)
 	}
 
 	if (!output_buffer_.empty()) {
+		DEBUG(log_) << "Pipe output size: " << output_buffer_.length();
 		cb->param(Event(Event::Done, output_buffer_));
 		output_buffer_.clear();
 		return (cb->schedule());
@@ -186,6 +193,31 @@ PipeProducer::produce_error(void)
 
 	error_ = true;
 	output_buffer_.clear();
+
+	if (output_callback_ != NULL) {
+		ASSERT(log_, output_action_ == NULL);
+
+		Action *a = output_do(output_callback_);
+		if (a != NULL) {
+			output_action_ = a;
+			output_callback_ = NULL;
+		}
+	}
+}
+
+void
+PipeProducer::cork(void)
+{
+	output_cork_++;
+}
+
+void
+PipeProducer::uncork(void)
+{
+	ASSERT(log_, output_cork_ != 0);
+
+	if (--output_cork_ != 0)
+		return;
 
 	if (output_callback_ != NULL) {
 		ASSERT(log_, output_action_ == NULL);

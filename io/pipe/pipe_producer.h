@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,6 +37,7 @@ private:
 	Action *output_action_;
 	EventCallback *output_callback_;
 	bool output_eos_;
+	unsigned output_cork_;
 
 	bool error_;
 protected:
@@ -54,6 +55,9 @@ public:
 	void produce(Buffer *);
 	void produce_eos(Buffer * = NULL);
 	void produce_error(void);
+
+	void cork(void);
+	void uncork(void);
 
 protected:
 	virtual void consume(Buffer *) = 0;
