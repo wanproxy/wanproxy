@@ -135,18 +135,8 @@ PipeProducer::output_do(EventCallback *cb)
 }
 
 void
-PipeProducer::produce(Buffer *buf)
+PipeProducer::output_produced(void)
 {
-	ASSERT(log_, !error_);
-	ASSERT(log_, !output_eos_);
-
-	if (!buf->empty()) {
-		buf->moveout(&output_buffer_);
-	} else {
-		DEBUG(log_) << "Consider using produce_eos instead.";
-		output_eos_ = true;
-	}
-
 	if (output_cork_ != 0)
 		return;
 
@@ -162,6 +152,22 @@ PipeProducer::produce(Buffer *buf)
 }
 
 void
+PipeProducer::produce(Buffer *buf)
+{
+	ASSERT(log_, !error_);
+	ASSERT(log_, !output_eos_);
+
+	if (!buf->empty()) {
+		buf->moveout(&output_buffer_);
+	} else {
+		DEBUG(log_) << "Consider using produce_eos instead.";
+		output_eos_ = true;
+	}
+
+	output_produced();
+}
+
+void
 PipeProducer::produce_eos(Buffer *buf)
 {
 	ASSERT(log_, !error_);
@@ -172,18 +178,7 @@ PipeProducer::produce_eos(Buffer *buf)
 	}
 	output_eos_ = true;
 
-	if (output_cork_ != 0)
-		return;
-
-	if (output_callback_ != NULL) {
-		ASSERT(log_, output_action_ == NULL);
-
-		Action *a = output_do(output_callback_);
-		if (a != NULL) {
-			output_action_ = a;
-			output_callback_ = NULL;
-		}
-	}
+	output_produced();
 }
 
 void
@@ -200,18 +195,7 @@ PipeProducer::produce_error(void)
 	error_ = true;
 	output_buffer_.clear();
 
-	if (output_cork_ != 0)
-		return;
-
-	if (output_callback_ != NULL) {
-		ASSERT(log_, output_action_ == NULL);
-
-		Action *a = output_do(output_callback_);
-		if (a != NULL) {
-			output_action_ = a;
-			output_callback_ = NULL;
-		}
-	}
+	output_produced();
 }
 
 void
@@ -225,16 +209,7 @@ PipeProducer::uncork(void)
 {
 	ASSERT(log_, output_cork_ != 0);
 
-	if (--output_cork_ != 0)
-		return;
+	output_cork_--;
 
-	if (output_callback_ != NULL) {
-		ASSERT(log_, output_action_ == NULL);
-
-		Action *a = output_do(output_callback_);
-		if (a != NULL) {
-			output_action_ = a;
-			output_callback_ = NULL;
-		}
-	}
+	output_produced();
 }

@@ -50,6 +50,7 @@ protected:
 private:
 	void output_cancel(void);
 	Action *output_do(EventCallback *);
+	void output_produced(void);
 
 public:
 	void produce(Buffer *);
