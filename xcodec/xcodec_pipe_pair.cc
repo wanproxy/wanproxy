@@ -460,94 +460,102 @@ XCodecPipePair::decoder_decode(void)
 			return;
 		}
 
-		if (decoder_frame_buffer_.empty()) {
-			if (decoder_received_eos_ && !encoder_sent_eos_ack_) {
-				DEBUG(log_) << "Decoder finished, got <EOS>, sending <EOS_ACK>.";
+		decoder_decode_data();
+	}
+}
 
-				Buffer eos_ack;
-				eos_ack.append(XCODEC_PIPE_OP_EOS_ACK);
+/*
+ * Decode the actual framed data.
+ */
+void
+XCodecPipePair::decoder_decode_data(void)
+{
+	if (decoder_frame_buffer_.empty()) {
+		if (decoder_received_eos_ && !encoder_sent_eos_ack_) {
+			DEBUG(log_) << "Decoder finished, got <EOS>, sending <EOS_ACK>.";
 
-				encoder_produce(&eos_ack);
-				encoder_sent_eos_ack_ = true;
+			Buffer eos_ack;
+			eos_ack.append(XCODEC_PIPE_OP_EOS_ACK);
+
+			encoder_produce(&eos_ack);
+			encoder_sent_eos_ack_ = true;
+		}
+		return;
+	}
+
+	if (!decoder_unknown_hashes_.empty()) {
+		DEBUG(log_) << "Waiting for unknown hashes to continue processing data.";
+		return;
+	}
+
+	size_t frame_buffer_consumed = decoder_frame_buffer_.length();
+	Buffer output;
+	if (!decoder_->decode(&output, &decoder_frame_buffer_, decoder_unknown_hashes_)) {
+		ERROR(log_) << "Decoder exiting with error.";
+		decoder_error();
+		return;
+	}
+
+	frame_buffer_consumed -= decoder_frame_buffer_.length();
+	if (frame_buffer_consumed != 0) {
+		uint32_t frame_buffer_advance = 0;
+		for (;;) {
+			std::list<uint32_t>::iterator dflit;
+			dflit = decoder_frame_lengths_.begin();
+
+			size_t first_frame_length = *dflit;
+			if (frame_buffer_consumed < first_frame_length) {
+				*dflit = first_frame_length - frame_buffer_consumed;
+				break;
 			}
-			continue;
+			frame_buffer_consumed -= first_frame_length;
+			frame_buffer_advance++;
+
+			decoder_frame_lengths_.pop_front();
+
+			if (frame_buffer_consumed == 0)
+				break;
 		}
+		if (frame_buffer_advance != 0) {
+			Buffer advance;
 
-		if (!decoder_unknown_hashes_.empty()) {
-			DEBUG(log_) << "Waiting for unknown hashes to continue processing data.";
-			continue;
-		}
-
-		size_t frame_buffer_consumed = decoder_frame_buffer_.length();
-		Buffer output;
-		if (!decoder_->decode(&output, &decoder_frame_buffer_, decoder_unknown_hashes_)) {
-			ERROR(log_) << "Decoder exiting with error.";
-			decoder_error();
-			return;
-		}
-
-		frame_buffer_consumed -= decoder_frame_buffer_.length();
-		if (frame_buffer_consumed != 0) {
-			uint32_t frame_buffer_advance = 0;
-			for (;;) {
-				std::list<uint32_t>::iterator dflit;
-				dflit = decoder_frame_lengths_.begin();
-
-				size_t first_frame_length = *dflit;
-				if (frame_buffer_consumed < first_frame_length) {
-					*dflit = first_frame_length - frame_buffer_consumed;
-					break;
-				}
-				frame_buffer_consumed -= first_frame_length;
-				frame_buffer_advance++;
-
-				decoder_frame_lengths_.pop_front();
-
-				if (frame_buffer_consumed == 0)
-					break;
-			}
-			if (frame_buffer_advance != 0) {
-				Buffer advance;
-
-				advance.append(XCODEC_PIPE_OP_ADVANCE);
-				frame_buffer_advance = BigEndian::encode(frame_buffer_advance);
-				advance.append(&frame_buffer_advance);
-				encoder_produce(&advance);
-			}
-		}
-
-		if (!output.empty()) {
-			ASSERT(log_, !decoder_sent_eos_);
-			decoder_produce(&output);
-		} else {
-			/*
-			 * We should only get no output from the decoder if
-			 * we're waiting on the next frame or we need an
-			 * unknown hash.  It would be nice to make the
-			 * encoder framing aware so that it would not end
-			 * up with encoded data that straddles a frame
-			 * boundary.  (Fixing that would also allow us to
-			 * simplify length checking within the decoder
-			 * considerably.)
-			 */
-			ASSERT(log_, !decoder_frame_buffer_.empty() || !decoder_unknown_hashes_.empty());
-		}
-
-		Buffer ask;
-		std::set<uint64_t>::const_iterator it;
-		for (it = decoder_unknown_hashes_.begin(); it != decoder_unknown_hashes_.end(); ++it) {
-			uint64_t hash = *it;
-			hash = BigEndian::encode(hash);
-
-			ask.append(XCODEC_PIPE_OP_ASK);
-			ask.append(&hash);
-		}
-		if (!ask.empty()) {
-			DEBUG(log_) << "Sending <ASK>s.";
-			encoder_produce(&ask);
+			advance.append(XCODEC_PIPE_OP_ADVANCE);
+			frame_buffer_advance = BigEndian::encode(frame_buffer_advance);
+			advance.append(&frame_buffer_advance);
+			encoder_produce(&advance);
 		}
 	}
 
+	if (!output.empty()) {
+		ASSERT(log_, !decoder_sent_eos_);
+		decoder_produce(&output);
+	} else {
+		/*
+		 * We should only get no output from the decoder if
+		 * we're waiting on the next frame or we need an
+		 * unknown hash.  It would be nice to make the
+		 * encoder framing aware so that it would not end
+		 * up with encoded data that straddles a frame
+		 * boundary.  (Fixing that would also allow us to
+		 * simplify length checking within the decoder
+		 * considerably.)
+		 */
+		ASSERT(log_, !decoder_frame_buffer_.empty() || !decoder_unknown_hashes_.empty());
+	}
+
+	Buffer ask;
+	std::set<uint64_t>::const_iterator it;
+	for (it = decoder_unknown_hashes_.begin(); it != decoder_unknown_hashes_.end(); ++it) {
+		uint64_t hash = *it;
+		hash = BigEndian::encode(hash);
+
+		ask.append(XCODEC_PIPE_OP_ASK);
+		ask.append(&hash);
+	}
+	if (!ask.empty()) {
+		DEBUG(log_) << "Sending <ASK>s.";
+		encoder_produce(&ask);
+	}
 }
 
 void
