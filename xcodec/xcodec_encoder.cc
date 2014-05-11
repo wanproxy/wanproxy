@@ -82,7 +82,6 @@ XCodecEncoder::encode(Buffer *output, Buffer *input, std::map<uint64_t, BufferSe
 		 * stop looking.
 		 */
 		if (o + input->length() < XCODEC_SEGMENT_LENGTH) {
-			DEBUG(log_) << "Buffer couldn't yield a hash.";
 			input->moveout(&outq);
 			break;
 		}
