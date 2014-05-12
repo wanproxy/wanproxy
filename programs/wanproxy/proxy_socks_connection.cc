@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <stdio.h>
+
 #include <common/endian.h>
 
 #include <event/event_callback.h>
@@ -271,7 +273,7 @@ ProxySocksConnection::write_complete(Event e)
 				network_address_.moveout(bytes, sizeof bytes);
 
 				if (bytes[0] == 0 && bytes[1] == 0)
-					strlcpy(hex, "0", sizeof hex);
+					snprintf(hex, sizeof hex, "0");
 				else
 					snprintf(hex, sizeof hex, "%0x%02x", bytes[0], bytes[1]);
 				remote_name << hex;

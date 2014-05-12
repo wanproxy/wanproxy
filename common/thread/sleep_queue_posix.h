@@ -26,6 +26,7 @@
 #ifndef	COMMON_THREAD_SLEEP_QUEUE_POSIX_H
 #define	COMMON_THREAD_SLEEP_QUEUE_POSIX_H
 
+#include <errno.h> /* For ETIMEDOUT */
 #include <unistd.h> /* For _POSIX_TIMERS */
 
 #include <common/time/time.h>
