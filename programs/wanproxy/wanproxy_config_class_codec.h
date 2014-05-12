@@ -49,7 +49,7 @@ public:
 		: codec_(),
 		  codec_type_(WANProxyConfigCodecNone),
 		  compressor_(WANProxyConfigCompressorNone),
-		  compressor_level_(0),
+		  compressor_level_(-1),
 		  outgoing_to_codec_bytes_(0),
 		  codec_to_outgoing_bytes_(0),
 		  incoming_to_codec_bytes_(0),
