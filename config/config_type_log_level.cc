@@ -25,7 +25,7 @@
 
 #include <config/config_type_log_level.h>
 
-struct ConfigTypeLogLevel::Mapping config_type_log_level_map[] = {
+static struct ConfigTypeLogLevel::Mapping config_type_log_level_map[] = {
 	{ "EMERG",	Log::Emergency },
 	{ "ALERT",	Log::Alert },
 	{ "CRIT",	Log::Critical },
