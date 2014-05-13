@@ -39,7 +39,6 @@ programs/xcdump	XCodec stream decoder and pretty-printer.
 ssh		SSH protocol implementation.
 xcodec		The XCodec codec, which performs deduplication, and its
 		internal interfaces.
-xml		Trivial XML functions.
 zlib		Wrappers around zlib, providing Pipes that do inflate and
 		deflate.
 

@@ -8,7 +8,6 @@ SUBDIR+=network
 SUBDIR+=programs
 SUBDIR+=ssh
 SUBDIR+=xcodec
-SUBDIR+=xml
 SUBDIR+=zlib
 
 include common/subdir.mk
