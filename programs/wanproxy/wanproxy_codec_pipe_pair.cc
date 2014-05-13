@@ -79,7 +79,7 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 	std::deque<Pipe *> incoming_pipe_list, outgoing_pipe_list;
 
 	if (incoming != NULL) {
-		if (true) {
+		if (incoming->track_statistics_) {
 			Pipe *incoming_pipe = new PipeByteCount(incoming->incoming_to_codec_bytes_);
 			Pipe *outgoing_pipe = new PipeByteCount(incoming->codec_to_incoming_bytes_);
 
@@ -109,7 +109,7 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 			outgoing_pipe_list.push_front(pair->get_outgoing());
 		}
 
-		if (true) {
+		if (incoming->track_statistics_) {
 			Pipe *incoming_pipe = new PipeByteCount(incoming->codec_to_outgoing_bytes_);
 			Pipe *outgoing_pipe = new PipeByteCount(incoming->outgoing_to_codec_bytes_);
 
@@ -122,7 +122,7 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 	}
 
 	if (outgoing != NULL) {
-		if (true) {
+		if (outgoing->track_statistics_) {
 			Pipe *incoming_pipe = new PipeByteCount(outgoing->incoming_to_codec_bytes_);
 			Pipe *outgoing_pipe = new PipeByteCount(outgoing->codec_to_incoming_bytes_);
 
@@ -152,7 +152,7 @@ WANProxyCodecPipePair::WANProxyCodecPipePair(WANProxyCodec *incoming, WANProxyCo
 			pipes_.insert(inflate_pipe);
 		}
 
-		if (true) {
+		if (outgoing->track_statistics_) {
 			Pipe *incoming_pipe = new PipeByteCount(outgoing->codec_to_outgoing_bytes_);
 			Pipe *outgoing_pipe = new PipeByteCount(outgoing->outgoing_to_codec_bytes_);
 

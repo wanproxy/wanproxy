@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,35 +23,13 @@
  * SUCH DAMAGE.
  */
 
-#ifndef	PROGRAMS_WANPROXY_WANPROXY_CODEC_H
-#define	PROGRAMS_WANPROXY_WANPROXY_CODEC_H
+#ifndef	CONFIG_CONFIG_TYPE_boolean_H
+#define	CONFIG_CONFIG_TYPE_boolean_H
 
-class XCodec;
+#include <config/config_type_enum.h>
 
-struct WANProxyCodec {
-	std::string name_;
-	XCodec *codec_;
-	bool compressor_;
-	unsigned compressor_level_;
+typedef ConfigTypeEnum<bool> ConfigTypeBoolean;
 
-	bool track_statistics_;
+extern ConfigTypeBoolean config_type_boolean;
 
-	intmax_t *outgoing_to_codec_bytes_;
-	intmax_t *codec_to_outgoing_bytes_;
-	intmax_t *incoming_to_codec_bytes_;
-	intmax_t *codec_to_incoming_bytes_;
-
-	WANProxyCodec(void)
-	: name_(""),
-	  codec_(NULL),
-	  compressor_(false),
-	  compressor_level_(0),
-	  track_statistics_(false),
-	  outgoing_to_codec_bytes_(NULL),
-	  codec_to_outgoing_bytes_(NULL),
-	  incoming_to_codec_bytes_(NULL),
-	  codec_to_incoming_bytes_(NULL)
-	{ }
-};
-
-#endif /* !PROGRAMS_WANPROXY_WANPROXY_CODEC_H */
+#endif /* !CONFIG_CONFIG_TYPE_boolean_H */

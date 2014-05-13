@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,35 +23,15 @@
  * SUCH DAMAGE.
  */
 
-#ifndef	PROGRAMS_WANPROXY_WANPROXY_CODEC_H
-#define	PROGRAMS_WANPROXY_WANPROXY_CODEC_H
+#include <config/config_type_boolean.h>
 
-class XCodec;
-
-struct WANProxyCodec {
-	std::string name_;
-	XCodec *codec_;
-	bool compressor_;
-	unsigned compressor_level_;
-
-	bool track_statistics_;
-
-	intmax_t *outgoing_to_codec_bytes_;
-	intmax_t *codec_to_outgoing_bytes_;
-	intmax_t *incoming_to_codec_bytes_;
-	intmax_t *codec_to_incoming_bytes_;
-
-	WANProxyCodec(void)
-	: name_(""),
-	  codec_(NULL),
-	  compressor_(false),
-	  compressor_level_(0),
-	  track_statistics_(false),
-	  outgoing_to_codec_bytes_(NULL),
-	  codec_to_outgoing_bytes_(NULL),
-	  incoming_to_codec_bytes_(NULL),
-	  codec_to_incoming_bytes_(NULL)
-	{ }
+static struct ConfigTypeBoolean::Mapping config_type_boolean_map[] = {
+	{ "true",	true },
+	{ "yes",	true },
+	{ "false",	false },
+	{ "no",		false },
+	{ NULL,		false }
 };
 
-#endif /* !PROGRAMS_WANPROXY_WANPROXY_CODEC_H */
+ConfigTypeBoolean
+	config_type_boolean("boolean", config_type_boolean_map);

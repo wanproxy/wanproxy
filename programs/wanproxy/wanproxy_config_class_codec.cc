@@ -91,5 +91,7 @@ WANProxyConfigClassCodec::Instance::activate(const ConfigObject *co)
 		return (false);
 	}
 
+	codec_.track_statistics_ = track_statistics_;
+
 	return (true);
 }
