@@ -71,6 +71,22 @@ endif
 #CFLAGS+=-pedantic
 CXXFLAGS+=-Wno-deprecated
 CFLAGS+=-W -Wall
+ifdef WEVERYTHING
+CFLAGS+=-Weverything
+CFLAGS+=-Wno-c++11-extensions
+CFLAGS+=-Wno-switch-enum
+CFLAGS+=-Wno-sign-conversion
+CFLAGS+=-Wno-padded
+CFLAGS+=-Wno-shorten-64-to-32
+CFLAGS+=-Wno-unreachable-code
+CFLAGS+=-Wno-weak-vtables
+CFLAGS+=-Wno-exit-time-destructors
+CFLAGS+=-Wno-conversion
+CFLAGS+=-Wno-missing-noreturn
+CFLAGS+=-Wno-global-constructors
+CFLAGS+=-Wno-vla
+CFLAGS+=-Wno-vla-extension
+endif
 ifndef NO_WERROR
 CFLAGS+=-Werror
 endif
