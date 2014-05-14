@@ -88,30 +88,30 @@
 
 /*
  * Usage:
- * 	<OP_LEARN> data[uint8_t x XCODEC_PIPE_SEGMENT_LENGTH]
+ * 	<OP_LEARN> count[uint16_t] data[[uint8_t x XCODEC_PIPE_SEGMENT_LENGTH] x count]
  *
  * Effects:
- * 	The `data' is hashed, the hash is associated with the data if possible.
+ * 	The each `data' is hashed, the hash is associated with the data if possible.
  *
  * Side-effects:
  * 	None.
  */
-#define	XCODEC_PIPE_OP_LEARN	((uint8_t)0xfe)
+#define	XCODEC_PIPE_OP_LEARN	((uint8_t)0xf1)
 
 /*
  * Usage:
- * 	<OP_ASK> hash[uint64_t]
+ * 	<OP_ASK> count[uint16_t] hash[uint64_t x count]
  *
  * Effects:
  * 	An OP_LEARN will be sent in response with the data corresponding to the
- * 	hash.
+ * 	requested hashes.
  *
- * 	If the hash is unknown, error will be indicated.
+ * 	If any hash is unknown, error will be indicated.
  *
  * Side-effects:
  * 	None.
  */
-#define	XCODEC_PIPE_OP_ASK	((uint8_t)0xfd)
+#define	XCODEC_PIPE_OP_ASK	((uint8_t)0xf0)
 
 /*
  * Usage:
@@ -169,6 +169,11 @@
  * Allow up to 1MB of data per encoded frame.
  */
 #define	XCODEC_PIPE_MAX_FRAME	(1024 * 1024)
+
+/*
+ * Allow up to 512 items per ASK/LEARN.
+ */
+#define	XCODEC_PIPE_ASK_MAX	(512)
 
 void
 XCodecPipePair::decoder_consume(Buffer *buf)
@@ -318,51 +323,63 @@ XCodecPipePair::decoder_decode(void)
 				ERROR(log_) << "Got <ASK> before sending <HELLO>.";
 				return (false);
 			} else {
+				uint16_t becount;
+				if (decoder_buffer_.length() < sizeof op + sizeof becount)
+					return (true);
+				decoder_buffer_.extract(&becount, sizeof op);
+
+				uint16_t count = BigEndian::decode(becount);
+				if (count == 0 || count > XCODEC_PIPE_ASK_MAX) {
+					ERROR(log_) << "Got invalid count for <ASK>: " << count;
+					return (false);
+				}
+
 				uint64_t hash;
-				if (decoder_buffer_.length() < sizeof op + sizeof hash)
+				if (decoder_buffer_.length() < sizeof op + sizeof count + (sizeof hash * count))
 					return (true);
 
-				decoder_buffer_.skip(sizeof op);
+				decoder_buffer_.skip(sizeof op + sizeof count);
 
-				decoder_buffer_.moveout(&hash);
-				hash = BigEndian::decode(hash);
+				Buffer learn;
+				learn.append(XCODEC_PIPE_OP_LEARN);
+				learn.append(&becount);
+				while (count-- != 0) {
+					decoder_buffer_.moveout(&hash);
+					hash = BigEndian::decode(hash);
 
-				if (encoder_reference_frames_.empty()) {
-					ERROR(log_) << "Got <ASK> when all encoded frames have been processed.";
-					return (false);
+					if (encoder_reference_frames_.empty()) {
+						ERROR(log_) << "Got <ASK> when all encoded frames have been processed.";
+						return (false);
+					}
+
+					/*
+					 * XXX
+					 * It seems like we should only get an <ASK> for
+					 * the topmost frame, because <ADVANCE> is sent
+					 * out ahead of <ASK> when processing multiple
+					 * frames.  Mind, we process one frame at a time
+					 * these days.
+					 */
+					std::list<std::map<uint64_t, BufferSegment *> *>::const_iterator rmit;
+					for (rmit = encoder_reference_frames_.begin();
+					     rmit != encoder_reference_frames_.end(); ++rmit) {
+						std::map<uint64_t, BufferSegment *> *refmap = *rmit;
+
+						std::map<uint64_t, BufferSegment *>::const_iterator it;
+						it = refmap->find(hash);
+						if (it == refmap->end())
+							continue;
+
+						learn.append(it->second);
+						break;
+					}
+					if (rmit == encoder_reference_frames_.end()) {
+						ERROR(log_) << "Hash in <ASK> could not be found in any reference frame: "<< hash;
+						return (false);
+					}
 				}
-
-				/*
-				 * XXX
-				 * It seems like we should only get an <ASK> for
-				 * the topmost frame, because <ADVANCE> is sent
-				 * out ahead of <ASK> when processing multiple
-				 * frames.  Mind, we process one frame at a time
-				 * these days.
-				 */
-				std::list<std::map<uint64_t, BufferSegment *> *>::const_iterator rmit;
-				for (rmit = encoder_reference_frames_.begin();
-				     rmit != encoder_reference_frames_.end(); ++rmit) {
-					std::map<uint64_t, BufferSegment *> *refmap = *rmit;
-
-					std::map<uint64_t, BufferSegment *>::const_iterator it;
-					it = refmap->find(hash);
-					if (it == refmap->end())
-						continue;
-
-					DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
-
-					Buffer learn;
-					learn.append(XCODEC_PIPE_OP_LEARN);
-					learn.append(it->second);
-
-					encoder_produce(&learn);
-					break;
-				}
-				if (rmit == encoder_reference_frames_.end()) {
-					ERROR(log_) << "Hash in <ASK> could not be found in any reference frame: "<< hash;
-					return (false);
-				}
+				DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
+				encoder_produce(&learn);
 			}
 			break;
 		case XCODEC_PIPE_OP_LEARN:
@@ -370,37 +387,55 @@ XCodecPipePair::decoder_decode(void)
 				ERROR(log_) << "Got <LEARN> before <HELLO>.";
 				return (false);
 			} else {
-				if (decoder_buffer_.length() < sizeof op + XCODEC_SEGMENT_LENGTH)
+				uint16_t count;
+				if (decoder_buffer_.length() < sizeof op + sizeof count)
+					return (true);
+				decoder_buffer_.extract(&count, sizeof op);
+
+				count = BigEndian::decode(count);
+				if (count == 0 || count > XCODEC_PIPE_ASK_MAX) {
+					ERROR(log_) << "Got invalid count for <LEARN>: " << count;
+					return (false);
+				}
+
+				if (decoder_buffer_.length() < sizeof op + sizeof count + (XCODEC_SEGMENT_LENGTH * count))
 					return (true);
 
-				decoder_buffer_.skip(sizeof op);
+				decoder_buffer_.skip(sizeof op + sizeof count);
 
-				BufferSegment *seg;
-				decoder_buffer_.copyout(&seg, XCODEC_SEGMENT_LENGTH);
-				decoder_buffer_.skip(XCODEC_SEGMENT_LENGTH);
+				while (count-- != 0) {
+					BufferSegment *seg;
+					decoder_buffer_.copyout(&seg, XCODEC_SEGMENT_LENGTH);
+					decoder_buffer_.skip(XCODEC_SEGMENT_LENGTH);
 
-				uint64_t hash = XCodecHash::hash(seg->data());
-				if (decoder_unknown_hashes_.find(hash) == decoder_unknown_hashes_.end()) {
-					INFO(log_) << "Gratuitous <LEARN> without <ASK>.";
-				} else {
-					decoder_unknown_hashes_.erase(hash);
-				}
-
-				BufferSegment *oseg = decoder_cache_->lookup(hash);
-				if (oseg != NULL) {
-					if (!oseg->equal(seg)) {
-						oseg->unref();
-						ERROR(log_) << "Collision in <LEARN>.";
-						seg->unref();
+					uint64_t hash = XCodecHash::hash(seg->data());
+					if (decoder_unknown_hashes_.find(hash) == decoder_unknown_hashes_.end()) {
+						/*
+						 * XXX
+						 * This can happen if we send a duplicate <ASK>.
+						 * Have we weeded all such cases out?
+						 */
+						ERROR(log_) << "Gratuitous <LEARN> without <ASK>.";
 						return (false);
 					}
-					oseg->unref();
-					DEBUG(log_) << "Redundant <LEARN>.";
-				} else {
-					DEBUG(log_) << "Successful <LEARN>.";
-					decoder_cache_->enter(hash, seg);
+					decoder_unknown_hashes_.erase(hash);
+
+					BufferSegment *oseg = decoder_cache_->lookup(hash);
+					if (oseg != NULL) {
+						if (!oseg->equal(seg)) {
+							oseg->unref();
+							ERROR(log_) << "Collision in <LEARN>.";
+							seg->unref();
+							return (false);
+						}
+						oseg->unref();
+						DEBUG(log_) << "Redundant <LEARN>.";
+					} else {
+						DEBUG(log_) << "Successful <LEARN>.";
+						decoder_cache_->enter(hash, seg);
+					}
+					seg->unref();
 				}
-				seg->unref();
 			}
 			break;
 		case XCODEC_PIPE_OP_EOS:
@@ -560,18 +595,47 @@ XCodecPipePair::decoder_decode_data(void)
 		ASSERT(log_, !decoder_frame_buffer_.empty() || !decoder_unknown_hashes_.empty());
 	}
 
+	/*
+	 * Send <ASK>s in groups of XCODEC_PIPE_ASK_MAX.
+	 */
 	Buffer ask;
 	std::set<uint64_t>::const_iterator it;
+	unsigned hashcnt = decoder_unknown_hashes_.size();
+	unsigned nhash = 0;
 	for (it = decoder_unknown_hashes_.begin(); it != decoder_unknown_hashes_.end(); ++it) {
 		uint64_t hash = *it;
 		hash = BigEndian::encode(hash);
 
-		ask.append(XCODEC_PIPE_OP_ASK);
+		if (nhash == 0) {
+			if (!ask.empty()) {
+				DEBUG(log_) << "Sending <ASK>s.";
+				encoder_produce(&ask);
+			}
+			uint16_t count;
+			if (hashcnt > XCODEC_PIPE_ASK_MAX) {
+				count = XCODEC_PIPE_ASK_MAX;
+				hashcnt -= XCODEC_PIPE_ASK_MAX;
+			} else {
+				count = hashcnt;
+				hashcnt = 0;
+			}
+			count = BigEndian::encode(count);
+
+			ASSERT(log_, ask.empty());
+			ask.append(XCODEC_PIPE_OP_ASK);
+			ask.append(&count);
+		}
+		ASSERT(log_, !ask.empty());
 		ask.append(&hash);
+		if (++nhash == XCODEC_PIPE_ASK_MAX)
+			nhash = 0;
 	}
 	if (!ask.empty()) {
+		ASSERT(log_, nhash != 0);
 		DEBUG(log_) << "Sending <ASK>s.";
 		encoder_produce(&ask);
+	} else {
+		ASSERT(log_, nhash == 0);
 	}
 
 	return (true);
