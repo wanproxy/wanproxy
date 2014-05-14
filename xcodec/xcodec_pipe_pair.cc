@@ -431,11 +431,11 @@ XCodecPipePair::decoder_decode(void)
 						oseg->unref();
 						DEBUG(log_) << "Redundant <LEARN>.";
 					} else {
-						DEBUG(log_) << "Successful <LEARN>.";
 						decoder_cache_->enter(hash, seg);
 					}
 					seg->unref();
 				}
+				DEBUG(log_) << "Successful <LEARN>.";
 			}
 			break;
 		case XCODEC_PIPE_OP_EOS:
@@ -607,10 +607,6 @@ XCodecPipePair::decoder_decode_data(void)
 		hash = BigEndian::encode(hash);
 
 		if (nhash == 0) {
-			if (!ask.empty()) {
-				DEBUG(log_) << "Sending <ASK>s.";
-				encoder_produce(&ask);
-			}
 			uint16_t count;
 			if (hashcnt > XCODEC_PIPE_ASK_MAX) {
 				count = XCODEC_PIPE_ASK_MAX;
@@ -627,8 +623,11 @@ XCodecPipePair::decoder_decode_data(void)
 		}
 		ASSERT(log_, !ask.empty());
 		ask.append(&hash);
-		if (++nhash == XCODEC_PIPE_ASK_MAX)
+		if (++nhash == XCODEC_PIPE_ASK_MAX) {
 			nhash = 0;
+			DEBUG(log_) << "Sending <ASK>s.";
+			encoder_produce(&ask);
+		}
 	}
 	if (!ask.empty()) {
 		ASSERT(log_, nhash != 0);
