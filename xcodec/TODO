@@ -1,5 +1,3 @@
-o) Go back to a lookahead decoder so we don't have to do an ASK/LEARN at a time,
-   that will be really painful on long, slow links.
 o) Use a 16-bit window counter rather than an 8-bit one so we have an 8MB window
    rather than a 32KB one.
    XXX Preliminary tests show this to be a big throughput hit.  Need to check
