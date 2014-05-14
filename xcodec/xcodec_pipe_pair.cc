@@ -212,12 +212,14 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 
 	/*
 	 * Decode any frames we extracted and process the data stream
-	 * state.
+	 * state, unless we're still waiting for a <LEARN>.
 	 */
-	if (!decoder_decode_data()) {
-		decoder_error();
-		encoder_pipe_->uncork();
-		return;
+	if (decoder_unknown_hashes_.empty()) {
+		if (!decoder_decode_data()) {
+			decoder_error();
+			encoder_pipe_->uncork();
+			return;
+		}
 	}
 
 	/*
@@ -523,6 +525,8 @@ XCodecPipePair::decoder_decode(void)
 bool
 XCodecPipePair::decoder_decode_data(void)
 {
+	ASSERT(log_, decoder_unknown_hashes_.empty());
+
 	if (decoder_frame_buffer_.empty()) {
 		if (decoder_received_eos_ && !encoder_sent_eos_ack_) {
 			DEBUG(log_) << "Decoder finished, got <EOS>, sending <EOS_ACK>.";
