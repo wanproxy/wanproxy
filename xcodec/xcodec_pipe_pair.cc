@@ -540,11 +540,6 @@ XCodecPipePair::decoder_decode_data(void)
 		return (true);
 	}
 
-	if (!decoder_unknown_hashes_.empty()) {
-		DEBUG(log_) << "Waiting for unknown hashes to continue processing data.";
-		return (true);
-	}
-
 	size_t frame_buffer_consumed = decoder_frame_buffer_.length();
 	Buffer output;
 	if (!decoder_->decode(&output, &decoder_frame_buffer_, decoder_unknown_hashes_)) {
@@ -598,6 +593,12 @@ XCodecPipePair::decoder_decode_data(void)
 		 */
 		ASSERT(log_, !decoder_frame_buffer_.empty() || !decoder_unknown_hashes_.empty());
 	}
+
+	/*
+	 * We've processed the data and are done.
+	 */
+	if (decoder_unknown_hashes_.empty())
+		return (true);
 
 	/*
 	 * Send <ASK>s in groups of XCODEC_PIPE_ASK_MAX.
