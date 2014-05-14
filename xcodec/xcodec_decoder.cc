@@ -133,13 +133,8 @@ XCodecDecoder::decode(Buffer *output, Buffer *input, std::set<uint64_t>& unknown
 
 				BufferSegment *oseg = cache_->lookup(hash);
 				if (oseg == NULL) {
-					if (unknown_hashes.find(hash) == unknown_hashes.end()) {
-						DEBUG(log_) << "Sending <ASK>, waiting for <LEARN>.";
-						unknown_hashes.insert(hash);
-					} else {
-						DEBUG(log_) << "Already sent <ASK>, waiting for <LEARN>.";
-					}
-
+					decode_skim(input, unknown_hashes);
+					DEBUG(log_) << "Sending <ASK>, waiting for <LEARN>.";
 					return (true);
 				}
 
@@ -173,4 +168,88 @@ XCodecDecoder::decode(Buffer *output, Buffer *input, std::set<uint64_t>& unknown
 		}
 	}
 done:	return (true);
+}
+
+/*
+ * We have encountered an unknown hash; skim through the rest of the
+ * stream and identify any other unresolvable references, so that we
+ * can properly interrogate the peer for as many as possible at once
+ * rather than having to go one-by-one and slowly.
+ */
+void
+XCodecDecoder::decode_skim(const Buffer *resid, std::set<uint64_t>& unknown_hashes)
+{
+	std::set<uint64_t> defined_hashes;
+
+	Buffer input;
+	input.append(resid);
+	while (!input.empty()) {
+		unsigned off;
+		if (!input.find(XCODEC_MAGIC, &off))
+			break;
+
+		if (off != 0)
+			input.skip(off);
+		ASSERT(log_, !input.empty());
+
+		/*
+		 * Need the following byte at least.
+		 */
+		if (input.length() == 1)
+			break;
+
+		uint8_t op;
+		input.extract(&op, sizeof XCODEC_MAGIC);
+
+		switch (op) {
+		case XCODEC_OP_ESCAPE:
+			input.skip(sizeof XCODEC_MAGIC + sizeof op);
+			break;
+		case XCODEC_OP_EXTRACT:
+			if (input.length() < sizeof XCODEC_MAGIC + sizeof op + XCODEC_SEGMENT_LENGTH)
+				return;
+			else {
+				input.skip(sizeof XCODEC_MAGIC + sizeof op);
+
+				BufferSegment *seg;
+				input.copyout(&seg, XCODEC_SEGMENT_LENGTH);
+				input.skip(XCODEC_SEGMENT_LENGTH);
+
+				uint64_t hash = XCodecHash::hash(seg->data());
+				if (defined_hashes.find(hash) == defined_hashes.end())
+					defined_hashes.insert(hash);
+				seg->unref();
+			}
+			break;
+		case XCODEC_OP_REF:
+			if (input.length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint64_t))
+				return;
+			else {
+				uint64_t behash;
+				input.extract(&behash, sizeof XCODEC_MAGIC + sizeof op);
+				uint64_t hash = BigEndian::decode(behash);
+
+				BufferSegment *oseg = cache_->lookup(hash);
+				if (oseg == NULL) {
+					if (defined_hashes.find(hash) == defined_hashes.end() &&
+					    unknown_hashes.find(hash) == unknown_hashes.end())
+						unknown_hashes.insert(hash);
+				} else {
+					oseg->unref();
+				}
+
+				input.skip(sizeof XCODEC_MAGIC + sizeof op + sizeof behash);
+			}
+			break;
+		case XCODEC_OP_BACKREF:
+			if (input.length() < sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t))
+				return;
+			else
+				input.skip(sizeof XCODEC_MAGIC + sizeof op + sizeof (uint8_t));
+			break;
+		default:
+			ERROR(log_) << "Unsupported XCodec opcode when skimming " << (unsigned)op << ".";
+			return;
+		}
+	}
 }

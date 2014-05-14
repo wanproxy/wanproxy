@@ -42,6 +42,7 @@ public:
 	~XCodecDecoder();
 
 	bool decode(Buffer *, Buffer *, std::set<uint64_t>&);
+	void decode_skim(const Buffer *, std::set<uint64_t>&);
 };
 
 #endif /* !XCODEC_XCODEC_DECODER_H */

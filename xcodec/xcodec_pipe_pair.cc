@@ -340,22 +340,29 @@ XCodecPipePair::decoder_decode(void)
 				 * frames.  Mind, we process one frame at a time
 				 * these days.
 				 */
-				std::map<uint64_t, BufferSegment *> *refmap =
-					encoder_reference_frames_.front();
-				std::map<uint64_t, BufferSegment *>::const_iterator it;
-				it = refmap->find(hash);
-				if (it == refmap->end()) {
-					ERROR(log_) << "Hash in <ASK> not in top frame: " << hash;
+				std::list<std::map<uint64_t, BufferSegment *> *>::const_iterator rmit;
+				for (rmit = encoder_reference_frames_.begin();
+				     rmit != encoder_reference_frames_.end(); ++rmit) {
+					std::map<uint64_t, BufferSegment *> *refmap = *rmit;
+
+					std::map<uint64_t, BufferSegment *>::const_iterator it;
+					it = refmap->find(hash);
+					if (it == refmap->end())
+						continue;
+
+					DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
+
+					Buffer learn;
+					learn.append(XCODEC_PIPE_OP_LEARN);
+					learn.append(it->second);
+
+					encoder_produce(&learn);
+					break;
+				}
+				if (rmit == encoder_reference_frames_.end()) {
+					ERROR(log_) << "Hash in <ASK> could not be found in any reference frame: "<< hash;
 					return (false);
 				}
-
-				DEBUG(log_) << "Responding to <ASK> with <LEARN>.";
-
-				Buffer learn;
-				learn.append(XCODEC_PIPE_OP_LEARN);
-				learn.append(it->second);
-
-				encoder_produce(&learn);
 			}
 			break;
 		case XCODEC_PIPE_OP_LEARN:
