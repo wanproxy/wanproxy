@@ -98,6 +98,49 @@ public:
 	}
 };
 
+class TextConfigExporter : public ConfigExporter {
+	std::string select_;
+public:
+	std::ostringstream os_;
+
+	TextConfigExporter(const std::string& select)
+	: select_(select),
+	  os_()
+	{ }
+
+	~TextConfigExporter()
+	{ }
+
+	void config(const Config *c)
+	{
+		if (select_ == "")
+			os_ << "config:\r\n";
+		else
+			os_ << "config " + select_ + ":\r\n";
+		c->marshall(this);
+	}
+
+	void field(const ConfigClassInstance *inst, const ConfigClassMember *m, const std::string& name)
+	{
+		ConfigType *ct = m->type();
+		os_ << "  field: " << name << "; type: " << ct->name() << ";\r\n";
+		m->marshall(this, inst);
+	}
+
+	void object(const ConfigObject *co, const std::string& name)
+	{
+		if (select_ != "" && select_ != name)
+			return;
+		os_ << " object: " << name << "; class: " << co->class_->name() << ";\r\n";
+		co->marshall(this);
+	}
+
+	void value(const ConfigType *, const std::string& val)
+	{
+		os_ << "   value: " << val << ";\r\n";
+	}
+};
+
 
 void
 MonitorClient::handle_request(const std::string& method, const std::string& uri, HTTPProtocol::Request)
@@ -113,6 +156,13 @@ MonitorClient::handle_request(const std::string& method, const std::string& uri,
 	}
 
 	std::vector<Buffer> path_components = Buffer(uri).split('/', false);
+
+	bool text = false;
+	if (!path_components.empty() && path_components[0].equal(":text")) {
+		text = true;
+		path_components.erase(path_components.begin());
+	}
+
 	std::string select;
 	if (!path_components.empty()) {
 		switch (path_components.size()) {
@@ -129,6 +179,12 @@ MonitorClient::handle_request(const std::string& method, const std::string& uri,
 		}
 	}
 
+	if (text) {
+		TextConfigExporter exporter(select);
+		exporter.config(config_);
+		pipe_->send_response(HTTPProtocol::OK, exporter.os_.str());
+		return;
+	}
 	HTMLConfigExporter exporter(select);
 	exporter.config(config_);
 	pipe_->send_response(HTTPProtocol::OK, "<html><head><title>WANProxy Monitor</title><style type=\"text/css\">body { font-family: sans-serif; } td, th { vertical-align: text-top; text-align: left; }</style></head><body>" + exporter.os_.str() + "</body></html>", "text/html");
