@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2009-2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +27,7 @@
 #define	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_PROXY_H
 
 #include <config/config_type_pointer.h>
+#include <config/config_type_string.h>
 
 #include "wanproxy_config_type_proxy_type.h"
 
@@ -39,13 +40,15 @@ class WANProxyConfigClassProxy : public ConfigClass {
 		ConfigObject *interface_codec_;
 		ConfigObject *peer_;
 		ConfigObject *peer_codec_;
+		std::string server_host_key_;
 
 		Instance(void)
 		: type_(WANProxyConfigProxyTypeTCPTCP),
 		  interface_(NULL),
 		  interface_codec_(NULL),
 		  peer_(NULL),
-		  peer_codec_(NULL)
+		  peer_codec_(NULL),
+		  server_host_key_("")
 		{ }
 
 		bool activate(const ConfigObject *);
@@ -59,6 +62,7 @@ public:
 		add_member("interface_codec", &config_type_pointer, &Instance::interface_codec_);
 		add_member("peer", &config_type_pointer, &Instance::peer_);
 		add_member("peer_codec", &config_type_pointer, &Instance::peer_codec_);
+		add_member("server_host_key", &config_type_string, &Instance::server_host_key_);
 	}
 
 	/* XXX So wrong.  */

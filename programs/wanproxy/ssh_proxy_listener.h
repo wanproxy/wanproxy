@@ -28,21 +28,24 @@
 
 #include <io/socket/simple_server.h>
 
+struct SSHProxyConfig;
 class Socket;
 class TCPServer;
 struct WANProxyCodec;
 
 class SSHProxyListener : public SimpleServer<TCPServer> {
 	std::string name_;
+	const SSHProxyConfig *ssh_config_;
 	WANProxyCodec *interface_codec_;
 	WANProxyCodec *remote_codec_;
 	SocketImpl remote_impl_;
 	SocketAddressFamily remote_family_;
 	std::string remote_name_;
 public:
-	SSHProxyListener(const std::string&, WANProxyCodec *, WANProxyCodec *, SocketImpl, SocketAddressFamily,
-			 const std::string&, SocketImpl, SocketAddressFamily,
-			 const std::string&);
+	SSHProxyListener(const std::string&, const SSHProxyConfig *,
+			 WANProxyCodec *, WANProxyCodec *,
+			 SocketImpl, SocketAddressFamily, const std::string&,
+			 SocketImpl, SocketAddressFamily, const std::string&);
 	~SSHProxyListener();
 
 private:

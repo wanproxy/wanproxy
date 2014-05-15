@@ -105,7 +105,7 @@ public:
 	{
 		session_.algorithm_negotiation_ = new SSH::AlgorithmNegotiation(&session_);
 		if (session_.role_ == SSH::ServerRole) {
-			SSH::ServerHostKey *server_host_key = SSH::ServerHostKey::server(&session_, "ssh-server1.pem");
+			SSH::ServerHostKey *server_host_key = SSH::ServerHostKey::server(session_.role_, "ssh-server1.pem");
 			session_.algorithm_negotiation_->add_algorithm(server_host_key);
 		}
 		session_.algorithm_negotiation_->add_algorithms();

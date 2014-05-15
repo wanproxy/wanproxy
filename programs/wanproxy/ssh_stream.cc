@@ -33,9 +33,9 @@
 #include <io/pipe/splice.h>
 
 #include <ssh/ssh_algorithm_negotiation.h>
-#include <ssh/ssh_server_host_key.h>
 #include <ssh/ssh_transport_pipe.h>
 
+#include "ssh_proxy_config.h"
 #include "ssh_stream.h"
 
 #include "wanproxy_codec.h"
@@ -44,8 +44,9 @@ namespace {
 	static const uint8_t SSHStreamPacket = 0xff;
 }
 
-SSHStream::SSHStream(const LogHandle& log, SSH::Role role, WANProxyCodec *incoming_codec, WANProxyCodec *outgoing_codec)
+SSHStream::SSHStream(const LogHandle& log, const SSHProxyConfig *ssh_config, SSH::Role role, WANProxyCodec *incoming_codec, WANProxyCodec *outgoing_codec)
 : log_(log + "/ssh/stream/" + (role == SSH::ClientRole ? "client" : "server")),
+  ssh_config_(ssh_config),
   socket_(NULL),
   session_(role),
   incoming_codec_(incoming_codec),
@@ -67,8 +68,8 @@ SSHStream::SSHStream(const LogHandle& log, SSH::Role role, WANProxyCodec *incomi
 
 	session_.algorithm_negotiation_ = new SSH::AlgorithmNegotiation(&session_);
 	if (session_.role_ == SSH::ServerRole) {
-		SSH::ServerHostKey *server_host_key = SSH::ServerHostKey::server(&session_, "ssh-server1.pem");
-		session_.algorithm_negotiation_->add_algorithm(server_host_key);
+		ASSERT(log_, ssh_config_->server_host_key_ != NULL);
+		session_.algorithm_negotiation_->add_algorithm(ssh_config_->server_host_key_);
 	}
 	session_.algorithm_negotiation_->add_algorithms();
 

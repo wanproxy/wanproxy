@@ -33,10 +33,12 @@
 class Socket;
 class Splice;
 namespace SSH { class TransportPipe; }
+struct SSHProxyConfig;
 struct WANProxyCodec;
 
 class SSHStream : public StreamChannel {
 	LogHandle log_;
+	const SSHProxyConfig *ssh_config_;
 	Socket *socket_;
 	SSH::Session session_;
 	WANProxyCodec *incoming_codec_;
@@ -54,7 +56,7 @@ class SSHStream : public StreamChannel {
 	EventCallback *write_callback_;
 	Action *write_action_;
 public:
-	SSHStream(const LogHandle&, SSH::Role, WANProxyCodec *, WANProxyCodec *);
+	SSHStream(const LogHandle&, const SSHProxyConfig *, SSH::Role, WANProxyCodec *, WANProxyCodec *);
 	~SSHStream();
 
 	Action *start(Socket *socket, SimpleCallback *);

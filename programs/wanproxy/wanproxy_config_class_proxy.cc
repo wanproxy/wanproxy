@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2009-2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,7 +33,10 @@
 
 #include <io/socket/socket_types.h>
 
+#include <ssh/ssh_session.h>
+
 #include "proxy_listener.h"
+#include "ssh_proxy_config.h"
 #include "ssh_proxy_listener.h"
 #include "wanproxy_config_class_codec.h"
 #include "wanproxy_config_class_interface.h"
@@ -83,13 +86,34 @@ WANProxyConfigClassProxy::Instance::activate(const ConfigObject *co)
 		peer_codec = NULL;
 	}
 
+	SSHProxyConfig *ssh_config = NULL;
+	/*
+	 * XXX
+	 * For historical reasons, look for the server host key
+	 * at this path by default.  The parameter really needs
+	 * to be required, but right now people are testing
+	 * this on the basis of the documented configuration.
+	 */
+	if (type_ == WANProxyConfigProxyTypeSSHSSH && server_host_key_ == "")
+		server_host_key_ = "ssh-server1.pem";
+	if (server_host_key_ != "") {
+		if (type_ != WANProxyConfigProxyTypeSSHSSH)
+			return (false);
+		SSH::ServerHostKey *server_host_key;
+		server_host_key = SSH::ServerHostKey::server(SSH::ServerRole, server_host_key_);
+		if (server_host_key == NULL)
+			return (false);
+		ssh_config = new SSHProxyConfig;
+		ssh_config->server_host_key_ = server_host_key;
+	}
+
 	std::string interface_address = '[' + interface->host_ + ']' + ':' + interface->port_;
 	std::string peer_address = '[' + peer->host_ + ']' + ':' + peer->port_;
 
 	if (type_ == WANProxyConfigProxyTypeTCPTCP) {
 		new ProxyListener(co->name_, interface_codec, peer_codec, SocketImplOS, interface->family_, interface_address, SocketImplOS, peer->family_, peer_address);
 	} else {
-		new SSHProxyListener(co->name_, interface_codec, peer_codec, SocketImplOS, interface->family_, interface_address, SocketImplOS, peer->family_, peer_address);
+		new SSHProxyListener(co->name_, ssh_config, interface_codec, peer_codec, SocketImplOS, interface->family_, interface_address, SocketImplOS, peer->family_, peer_address);
 	}
 
 	return (true);

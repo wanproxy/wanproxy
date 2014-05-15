@@ -38,17 +38,17 @@
 namespace {
 	class RSAServerHostKey : public SSH::ServerHostKey {
 		LogHandle log_;
-		SSH::Session *session_; 
+		SSH::Role role_;
 		RSA *rsa_;
 
 	public:
-		RSAServerHostKey(SSH::Session *session, RSA *rsa)
+		RSAServerHostKey(SSH::Role role, RSA *rsa)
 		: SSH::ServerHostKey("ssh-rsa"),
 		  log_("/ssh/serverhostkey/rsa"),
-		  session_(session),
+		  role_(role),
 		  rsa_(rsa)
 		{
-			ASSERT(log_, rsa != NULL || session->role_ == SSH::ClientRole);
+			ASSERT(log_, rsa != NULL || role_ == SSH::ClientRole);
 		}
 
 		~RSAServerHostKey()
@@ -61,19 +61,19 @@ namespace {
 
 		SSH::ServerHostKey *clone(void) const
 		{
-			if (session_->role_ == SSH::ClientRole) {
+			if (role_ == SSH::ClientRole) {
 				if (rsa_ != NULL)
-					return (new RSAServerHostKey(session_, RSAPublicKey_dup(rsa_)));
+					return (new RSAServerHostKey(role_, RSAPublicKey_dup(rsa_)));
 				else
-					return (new RSAServerHostKey(session_, NULL));
+					return (new RSAServerHostKey(role_, NULL));
 			} else {
-				return (new RSAServerHostKey(session_, RSAPrivateKey_dup(rsa_)));
+				return (new RSAServerHostKey(role_, RSAPrivateKey_dup(rsa_)));
 			}
 		}
 
 		bool decode_public_key(Buffer *in)
 		{
-			ASSERT(log_, session_->role_ == SSH::ClientRole);
+			ASSERT(log_, role_ == SSH::ClientRole);
 			ASSERT(log_, rsa_ == NULL);
 			Buffer tag;
 			if (!SSH::String::decode(&tag, in))
@@ -99,7 +99,7 @@ namespace {
 
 		bool sign(Buffer *out, const Buffer *in) const
 		{
-			ASSERT(log_, session_->role_ == SSH::ServerRole);
+			ASSERT(log_, role_ == SSH::ServerRole);
 
 			Buffer hash;
 			if (!CryptoHash::hash(CryptoHash::SHA1, &hash, in))
@@ -119,7 +119,7 @@ namespace {
 
 		bool verify(const Buffer *signature, const Buffer *message) const
 		{
-			ASSERT(log_, session_->role_ == SSH::ClientRole);
+			ASSERT(log_, role_ == SSH::ClientRole);
 
 			Buffer hash;
 			if (!CryptoHash::hash(CryptoHash::SHA1, &hash, message))
@@ -146,17 +146,17 @@ namespace {
 			return (true);
 		}
 
-		static RSAServerHostKey *open(SSH::Session *session, FILE *file)
+		static RSAServerHostKey *open(SSH::Role role, FILE *file)
 		{
 			RSA *rsa;
 
-			ASSERT("/ssh/serverhostkey/rsa/open", session->role_ == SSH::ServerRole);
+			ASSERT("/ssh/serverhostkey/rsa/open", role == SSH::ServerRole);
 
 			rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, NULL);
 			if (rsa == NULL)
 				return (NULL);
 
-			return (new RSAServerHostKey(session, rsa));
+			return (new RSAServerHostKey(role, rsa));
 		}
 	};
 }
@@ -165,22 +165,22 @@ void
 SSH::ServerHostKey::add_client_algorithms(SSH::Session *session)
 {
 	ASSERT("/ssh/serverhostkey/client", session->role_ == SSH::ClientRole);
-	session->algorithm_negotiation_->add_algorithm(new RSAServerHostKey(session, NULL));
+	session->algorithm_negotiation_->add_algorithm(new RSAServerHostKey(session->role_, NULL));
 }
 
 SSH::ServerHostKey *
-SSH::ServerHostKey::server(SSH::Session *session, const std::string& keyfile)
+SSH::ServerHostKey::server(SSH::Role role, const std::string& keyfile)
 {
 	SSH::ServerHostKey *key;
 	FILE *file;
 
-	ASSERT("/ssh/serverhostkey/server", session->role_ == SSH::ServerRole);
+	ASSERT("/ssh/serverhostkey/server", role == SSH::ServerRole);
 
 	file = fopen(keyfile.c_str(), "r");
 	if (file == NULL)
 		return (NULL);
 	
-	key = RSAServerHostKey::open(session, file);
+	key = RSAServerHostKey::open(role, file);
 	if (key == NULL) {
 		fclose(file);
 		return (NULL);

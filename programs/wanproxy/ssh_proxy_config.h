@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,41 +23,25 @@
  * SUCH DAMAGE.
  */
 
-#ifndef	SSH_SSH_SERVER_HOST_KEY_H
-#define	SSH_SSH_SERVER_HOST_KEY_H
+#ifndef	PROGRAMS_WANPROXY_SSH_PROXY_CONFIG_H
+#define	PROGRAMS_WANPROXY_SSH_PROXY_CONFIG_H
 
-#include <ssh/ssh_session.h>
+#include <ssh/ssh_server_host_key.h>
 
-class Buffer;
+struct SSHProxyConfig {
+	SSH::ServerHostKey *server_host_key_;
 
-namespace SSH {
-	class ServerHostKey {
-		std::string name_;
-	protected:
-		ServerHostKey(const std::string& xname)
-		: name_(xname)
-		{ }
+	SSHProxyConfig(void)
+	: server_host_key_(NULL)
+	{ }
 
-	public:
-		virtual ~ServerHostKey()
-		{ }
-
-		std::string name(void) const
-		{
-			return (name_);
+	~SSHProxyConfig()
+	{
+		if (server_host_key_ != NULL) {
+			delete server_host_key_;
+			server_host_key_ = NULL;
 		}
+	}
+};
 
-		virtual ServerHostKey *clone(void) const = 0;
-
-		virtual bool decode_public_key(Buffer *) = 0;
-		virtual void encode_public_key(Buffer *) const = 0;
-
-		virtual bool sign(Buffer *, const Buffer *) const = 0;
-		virtual bool verify(const Buffer *, const Buffer *) const = 0;
-
-		static void add_client_algorithms(Session *);
-		static ServerHostKey *server(Role, const std::string&);
-	};
-}
-
-#endif /* !SSH_SSH_SERVER_HOST_KEY_H */
+#endif /* !PROGRAMS_WANPROXY_SSH_PROXY_CONFIG_H */
