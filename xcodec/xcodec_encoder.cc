@@ -225,41 +225,16 @@ XCodecEncoder::encode(Buffer *output, Buffer *input, std::map<uint64_t, BufferSe
 			 * Now attempt to encode this hash as a reference if it
 			 * has been defined before.
 			 */
-			BufferSegment *oseg = cache_->lookup(hash);
-			if (oseg != NULL) {
-				/*
-				 * This segment already exists.  If it's
-				 * identical to this chunk of data, then that's
-				 * positively fantastic.
-				 */
-				if (encode_reference(output, &outq, start, hash, oseg, refmap)) {
-					oseg->unref();
-
-					o = 0;
-					xcodec_hash.reset();
-
-					/*
-					 * We have output any data before this hash
-					 * in escaped form, so any candidate hash
-					 * before it is invalid now.
-					 */
-					candidate.set_ = false;
-					continue;
-				}
+			if (find_reference(output, &outq, start, hash, refmap)) {
+				o = 0;
+				xcodec_hash.reset();
 
 				/*
-				 * This hash isn't usable because it collides
-				 * with another, so keep looking for something
-				 * viable.
-				 *
-				 * XXX
-				 * If this is the first hash (i.e.
-				 * !candidate.set_) then we can adjust the
-				 * start of the current window and escape the
-				 * first byte right away.  Does that help?
+				 * We have output any data before this hash
+				 * in escaped form, so any candidate hash
+				 * before it is invalid now.
 				 */
-				oseg->unref();
-				DEBUG(log_) << "Collision in first pass.";
+				candidate.set_ = false;
 				continue;
 			}
 
@@ -436,4 +411,38 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 	}
 
 	return (true);
+}
+
+bool
+XCodecEncoder::find_reference(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, std::map<uint64_t, BufferSegment *> *refmap)
+{
+	BufferSegment *oseg = cache_->lookup(hash);
+	if (oseg != NULL) {
+		/*
+		 * This segment already exists.  If it's
+		 * identical to this chunk of data, then that's
+		 * positively fantastic.
+		 */
+		if (encode_reference(output, input, offset, hash, oseg, refmap)) {
+			oseg->unref();
+			return (true);
+		}
+
+		/*
+		 * This hash isn't usable because it collides
+		 * with another, so keep looking for something
+		 * viable.
+		 *
+		 * XXX
+		 * If this is the first hash (i.e.
+		 * !candidate.set_) then we can adjust the
+		 * start of the current window and escape the
+		 * first byte right away.  Does that help?
+		 */
+		oseg->unref();
+		DEBUG(log_) << "Collision in first pass.";
+		return (false);
+	}
+
+	return (false);
 }

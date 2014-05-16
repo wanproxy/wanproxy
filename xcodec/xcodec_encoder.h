@@ -45,6 +45,7 @@ private:
 	void encode_declaration(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment **, std::map<uint64_t, BufferSegment *> *);
 	void encode_escape(Buffer *, Buffer *, unsigned);
 	bool encode_reference(Buffer *, Buffer *, unsigned, uint64_t, BufferSegment *, std::map<uint64_t, BufferSegment *> *);
+	bool find_reference(Buffer *, Buffer *, unsigned, uint64_t, std::map<uint64_t, BufferSegment *> *);
 };
 
 #endif /* !XCODEC_XCODEC_ENCODER_H */
