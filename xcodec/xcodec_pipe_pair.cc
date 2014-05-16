@@ -352,6 +352,15 @@ XCodecPipePair::decoder_decode(void)
 				if (decoder_buffer_.length() < sizeof op + sizeof len + len)
 					return (true);
 
+				/*
+				 * XXX
+				 * If we don't merge frames for decode, we can simplify
+				 * the logic around decoder_frame_lenghts_ and <ASK>/<LEARN>
+				 * so that we never have to buffer more than a frame at
+				 * a time while waiting for a <LEARN> whereas right now a
+				 * single <LEARN> will delay all production from the
+				 * decoder.
+				 */
 				decoder_buffer_.moveout(&decoder_frame_buffer_, sizeof op + sizeof len, len);
 
 				/*
