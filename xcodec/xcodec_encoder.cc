@@ -399,14 +399,14 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 		output->append(&behash);
 
 		window_.declare(hash, oseg);
-	}
 
-	if (refmap != NULL) {
-		std::map<uint64_t, BufferSegment *>::const_iterator it;
-		it = refmap->find(hash);
-		if (it == refmap->end()) {
-			oseg->ref();
-			refmap->insert(std::map<uint64_t, BufferSegment *>::value_type(hash, oseg));
+		if (refmap != NULL) {
+			std::map<uint64_t, BufferSegment *>::const_iterator it;
+			it = refmap->find(hash);
+			if (it == refmap->end()) {
+				oseg->ref();
+				refmap->insert(std::map<uint64_t, BufferSegment *>::value_type(hash, oseg));
+			}
 		}
 	}
 
