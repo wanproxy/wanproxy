@@ -181,44 +181,12 @@ XCodecEncoder::encode(Buffer *output, Buffer *input, std::map<uint64_t, BufferSe
 			 * covers, declare it now.
 			 */
 			if (candidate.set_ && candidate.offset_ + XCODEC_SEGMENT_LENGTH <= start) {
-				BufferSegment *nseg;
-				encode_declaration(output, &outq, candidate.offset_, candidate.symbol_, &nseg, refmap);
+				encode_declaration(output, &outq, candidate.offset_, candidate.symbol_);
 
 				o -= candidate.offset_ + XCODEC_SEGMENT_LENGTH;
 				start = o - XCODEC_SEGMENT_LENGTH;
 
 				candidate.set_ = false;
-
-				/*
-				 * If, on top of that, the just-declared hash is
-				 * the same as the current hash, consider referencing
-				 * it immediately.
-				 */
-				if (hash == candidate.symbol_) {
-					/*
-					 * If it's a hash collision, though, nevermind.
-					 * Skip trying to use this hash as a reference,
-					 * too, and go on to the next one.
-					 */
-					if (!encode_reference(output, &outq, start, hash, nseg, refmap)) {
-						nseg->unref();
-						DEBUG(log_) << "Collision in adjacent-declare pass.";
-						continue;
-					}
-					nseg->unref();
-
-					/*
-					 * But if there's no collection, then we can move
-					 * on to looking for the *next* hash/data to declare
-					 * or reference.
-					 */
-					o = 0;
-					xcodec_hash.reset();
-
-					DEBUG(log_) << "Hit in adjacent-declare pass.";
-					continue;
-				}
-				nseg->unref();
 			}
 
 			/*
@@ -279,7 +247,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input, std::map<uint64_t, BufferSe
 	 */
 	if (candidate.set_) {
 		ASSERT(log_, !outq.empty());
-		encode_declaration(output, &outq, candidate.offset_, candidate.symbol_, NULL, refmap);
+		encode_declaration(output, &outq, candidate.offset_, candidate.symbol_);
 		candidate.set_ = false;
 	}
 
@@ -297,7 +265,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input, std::map<uint64_t, BufferSe
 }
 
 void
-XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, BufferSegment **segp, std::map<uint64_t, BufferSegment *> *refmap)
+XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset, uint64_t hash)
 {
 	if (offset != 0) {
 		encode_escape(output, input, offset);
@@ -312,12 +280,8 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 		/*
 		 * Declarations occur out-of-band.
 		 */
-		if (!encode_reference(output, input, 0, hash, nseg, refmap)) /* XXX Pass NULL not nseg to skip check?  */
-			NOTREACHED(log_);
-		if (segp == NULL)
-			nseg->unref();
-		else
-			*segp = nseg;
+		encode_reference(output, input, 0, hash, nseg, NULL);
+		nseg->unref();
 		return;
 	}
 
@@ -331,16 +295,12 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 	bool collision = window_.declare(hash, nseg);
 	if (collision)
 		DEBUG(log_) << "Collision in encoder window; cleared old entry.";
-	if (segp == NULL)
-		nseg->unref();
+	nseg->unref();
 
 	/*
 	 * Skip to the end.
 	 */
 	input->skip(XCODEC_SEGMENT_LENGTH);
-
-	if (segp != NULL)
-		*segp = nseg;
 }
 
 void
@@ -370,14 +330,12 @@ XCodecEncoder::encode_escape(Buffer *output, Buffer *input, unsigned length)
 	} while (length != 0);
 }
 
-bool
+void
 XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, BufferSegment *oseg, std::map<uint64_t, BufferSegment *> *refmap)
 {
-	uint8_t data[XCODEC_SEGMENT_LENGTH];
-	input->copyout(data, offset, sizeof data);
-
-	if (!oseg->equal(data, sizeof data))
-		return (false);
+	if (offset != 0) {
+		encode_escape(output, input, offset);
+	}
 
 	/*
 	 * Skip to the end.
@@ -387,35 +345,48 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 	/*
 	 * And output a reference.
 	 */
-	uint8_t b;
-	if (window_.present(hash, oseg, &b)) {
-		output->append(XCODEC_MAGIC);
-		output->append(XCODEC_OP_BACKREF);
-		output->append(b);
-	} else {
-		output->append(XCODEC_MAGIC);
-		output->append(XCODEC_OP_REF);
-		uint64_t behash = BigEndian::encode(hash);
-		output->append(&behash);
+	output->append(XCODEC_MAGIC);
+	output->append(XCODEC_OP_REF);
+	uint64_t behash = BigEndian::encode(hash);
+	output->append(&behash);
 
-		window_.declare(hash, oseg);
+	window_.declare(hash, oseg);
 
-		if (refmap != NULL) {
-			std::map<uint64_t, BufferSegment *>::const_iterator it;
-			it = refmap->find(hash);
-			if (it == refmap->end()) {
-				oseg->ref();
-				refmap->insert(std::map<uint64_t, BufferSegment *>::value_type(hash, oseg));
-			}
+	if (refmap != NULL) {
+		std::map<uint64_t, BufferSegment *>::const_iterator it;
+		it = refmap->find(hash);
+		if (it == refmap->end()) {
+			oseg->ref();
+			refmap->insert(std::map<uint64_t, BufferSegment *>::value_type(hash, oseg));
 		}
 	}
-
-	return (true);
 }
 
 bool
 XCodecEncoder::find_reference(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, std::map<uint64_t, BufferSegment *> *refmap)
 {
+	uint8_t data[XCODEC_SEGMENT_LENGTH];
+	input->copyout(data, offset, sizeof data);
+
+	/*
+	 * First check the backref window.
+	 */
+	uint8_t b;
+	if (window_.present(hash, data, &b)) {
+		if (offset != 0) {
+			encode_escape(output, input, offset);
+		}
+		input->skip(XCODEC_SEGMENT_LENGTH);
+
+		output->append(XCODEC_MAGIC);
+		output->append(XCODEC_OP_BACKREF);
+		output->append(b);
+		return (true);
+	}
+
+	/*
+	 * Now check in the cache proper.
+	 */
 	BufferSegment *oseg = cache_->lookup(hash);
 	if (oseg != NULL) {
 		/*
@@ -423,25 +394,26 @@ XCodecEncoder::find_reference(Buffer *output, Buffer *input, unsigned offset, ui
 		 * identical to this chunk of data, then that's
 		 * positively fantastic.
 		 */
-		if (encode_reference(output, input, offset, hash, oseg, refmap)) {
+		if (!oseg->equal(data, sizeof data)) {
+			/*
+			 * This hash isn't usable because it collides
+			 * with another, so keep looking for something
+			 * viable.
+			 *
+			 * XXX
+			 * If this is the first hash (i.e.
+			 * !candidate.set_) then we can adjust the
+			 * start of the current window and escape the
+			 * first byte right away.  Does that help?
+			 */
 			oseg->unref();
-			return (true);
+			DEBUG(log_) << "Collision in first pass.";
+			return (false);
 		}
 
-		/*
-		 * This hash isn't usable because it collides
-		 * with another, so keep looking for something
-		 * viable.
-		 *
-		 * XXX
-		 * If this is the first hash (i.e.
-		 * !candidate.set_) then we can adjust the
-		 * start of the current window and escape the
-		 * first byte right away.  Does that help?
-		 */
+		encode_reference(output, input, offset, hash, oseg, refmap);
 		oseg->unref();
-		DEBUG(log_) << "Collision in first pass.";
-		return (false);
+		return (true);
 	}
 
 	return (false);

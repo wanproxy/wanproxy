@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2014 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -110,13 +110,13 @@ public:
 		return (seg);
 	}
 
-	bool present(uint64_t hash, const BufferSegment *seg, uint8_t *c) const
+	bool present(uint64_t hash, const uint8_t *data, uint8_t *c) const
 	{
 		std::map<uint64_t, cursor_segment_t>::const_iterator it;
 		it = present_.find(hash);
 		if (it == present_.end())
 			return (false);
-		if (seg != NULL && !it->second.second->equal(seg))
+		if (data != NULL && !it->second.second->equal(data, XCODEC_SEGMENT_LENGTH))
 			return (false);
 		ASSERT("/xcodec/window", window_[it->second.first] == hash);
 		*c = it->second.first;
