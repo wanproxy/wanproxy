@@ -38,20 +38,16 @@
  * Maybe add an explicit use() mechanism?
  */
 class XCodecWindow {
+	typedef	std::pair<unsigned, BufferSegment *> cursor_segment_t;
+
 	uint64_t window_[XCODEC_WINDOW_COUNT];
 	unsigned cursor_;
-	/*
-	 * XXX
-	 * Combine these two maps.  This is wasteful.
-	 */
-	std::map<uint64_t, unsigned> present_;
-	std::map<uint64_t, BufferSegment *> segments_;
+	std::map<uint64_t, cursor_segment_t> present_;
 public:
 	XCodecWindow(void)
 	: window_(),
 	  cursor_(0),
-	  present_(),
-	  segments_()
+	  present_()
 	{
 		unsigned b;
 
@@ -62,68 +58,68 @@ public:
 
 	~XCodecWindow()
 	{
-		std::map<uint64_t, BufferSegment *>::iterator it;
+		std::map<uint64_t, cursor_segment_t>::iterator it;
 
-		for (it = segments_.begin(); it != segments_.end(); ++it)
-			it->second->unref();
-		segments_.clear();
+		for (it = present_.begin(); it != present_.end(); ++it)
+			it->second.second->unref();
+		present_.clear();
 	}
 
-	void declare(uint64_t hash, BufferSegment *seg)
+	bool declare(uint64_t hash, BufferSegment *seg)
 	{
-		if (hash == 0)
-			return;
+		std::map<uint64_t, cursor_segment_t>::iterator it;
+		bool collision;
 
-		if (present_.find(hash) != present_.end())
-			return;
+		ASSERT("/xcodec/window", hash != 0);
+
+		it = present_.find(hash);
+		collision = it != present_.end();
+		if (collision) {
+			it->second.second->unref();
+			window_[it->second.first] = 0;
+			present_.erase(it);
+		}
 
 		uint64_t old = window_[cursor_];
 		if (old != 0) {
-			ASSERT("/xcodec/window", present_[old] == cursor_);
-			present_.erase(old);
-
-			std::map<uint64_t, BufferSegment *>::iterator it;
-			it = segments_.find(old);
-			ASSERT("/xcodec/window", it != segments_.end());
-			BufferSegment *oseg = it->second;
+			it = present_.find(old);
+			ASSERT("/xcodec/window", it != present_.end());
+			ASSERT("/xcodec/window", it->second.first == cursor_);
+			BufferSegment *oseg = it->second.second;
 			oseg->unref();
-			segments_.erase(it);
+			present_.erase(it);
 		}
 
 		window_[cursor_] = hash;
-		present_[hash] = cursor_;
 		seg->ref();
-		segments_[hash] = seg;
+		present_[hash] = cursor_segment_t(cursor_, seg);
 		cursor_ = (cursor_ + 1) % XCODEC_WINDOW_COUNT;
+
+		return (collision);
 	}
 
 	BufferSegment *dereference(unsigned c) const
 	{
 		if (window_[c] == 0)
 			return (NULL);
-		std::map<uint64_t, BufferSegment *>::const_iterator it;
-		it = segments_.find(window_[c]);
-		ASSERT("/xcodec/window", it != segments_.end());
-		BufferSegment *seg = it->second;
+		std::map<uint64_t, cursor_segment_t>::const_iterator it;
+		it = present_.find(window_[c]);
+		ASSERT("/xcodec/window", it != present_.end());
+		BufferSegment *seg = it->second.second;
 		seg->ref();
 		return (seg);
 	}
 
-	/*
-	 * XXX
-	 * We need to pass in the BufferSegment here, too, so that we can
-	 * verify that the copy in the window by hash has the same contents
-	 * as the hash being referred to by the caller.  If we switch to
-	 * generation numbers, that will just need to be used here alongside
-	 * the hash as well.
-	 */
-	bool present(uint64_t hash, uint8_t *c) const
+	bool present(uint64_t hash, const BufferSegment *seg, uint8_t *c) const
 	{
-		std::map<uint64_t, unsigned>::const_iterator it = present_.find(hash);
+		std::map<uint64_t, cursor_segment_t>::const_iterator it;
+		it = present_.find(hash);
 		if (it == present_.end())
 			return (false);
-		ASSERT("/xcodec/window", window_[it->second] == hash);
-		*c = it->second;
+		if (seg != NULL && !it->second.second->equal(seg))
+			return (false);
+		ASSERT("/xcodec/window", window_[it->second.first] == hash);
+		*c = it->second.first;
 		return (true);
 	}
 };

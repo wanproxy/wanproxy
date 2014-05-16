@@ -337,7 +337,9 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 	output->append(XCODEC_OP_EXTRACT);
 	output->append(nseg);
 
-	window_.declare(hash, nseg);
+	bool collision = window_.declare(hash, nseg);
+	if (collision)
+		DEBUG(log_) << "Collision in encoder window; cleared old entry.";
 	if (segp == NULL)
 		nseg->unref();
 
@@ -386,10 +388,6 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 	if (!oseg->equal(data, sizeof data))
 		return (false);
 
-	if (offset != 0) {
-		encode_escape(output, input, offset);
-	}
-
 	/*
 	 * Skip to the end.
 	 */
@@ -399,7 +397,7 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 	 * And output a reference.
 	 */
 	uint8_t b;
-	if (window_.present(hash, &b)) {
+	if (window_.present(hash, oseg, &b)) {
 		output->append(XCODEC_MAGIC);
 		output->append(XCODEC_OP_BACKREF);
 		output->append(b);
