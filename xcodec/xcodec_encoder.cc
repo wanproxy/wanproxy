@@ -370,6 +370,9 @@ XCodecEncoder::find_reference(Buffer *output, Buffer *input, unsigned offset, ui
 
 	/*
 	 * First check the backref window.
+	 *
+	 * XXX This slows the cold path, speeds the hot path;
+	 *     need to collect stats on how useful it is.
 	 */
 	uint8_t b;
 	if (window_.present(hash, data, &b)) {
