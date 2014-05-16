@@ -53,7 +53,23 @@ XCodecEncoder::~XCodecEncoder()
  * escaped.
  *
  * The caller may request to retain a map of hashes and segments referenced by
- * this stream.
+ * this stream, a "refmap".
+ *
+ * Note that although each refmap is local to the frame referencing it, there
+ * is still an issue with how hash reuse within even a single call to this
+ * function could occur.  Consider the case of a memory cache limited to 2-3
+ * segments.  When a colliding chunk of data is discovered, we will collide
+ * within the refmap due to eviction.  The stream's decoding should be
+ * decidable, but it is so only if we track an ordered listing of each
+ * reference in order and the data it corresponds to and have some way of
+ * identifying <ASK>/<LEARN> type requests linearly.  Another solution is
+ * needed here, namely to just fail and fail tremendously when we have such
+ * a malformed stream of data that we can't guarantee its decoding.  Or we
+ * may just want to check the refmap in addition to the backing cache (and
+ * maybe in preference to it) to prevent this problem.  But that shifts part
+ * of the burden for correct decoding to the decoder, which then has to be
+ * more careful about assuming that a <LEARN> covers all of the data it is
+ * trying to decode which requests a hash, rather than just one frame.
  */
 void
 XCodecEncoder::encode(Buffer *output, Buffer *input, std::map<uint64_t, BufferSegment *> *refmap)
