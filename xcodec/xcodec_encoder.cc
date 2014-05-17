@@ -365,33 +365,14 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 bool
 XCodecEncoder::find_reference(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, std::map<uint64_t, BufferSegment *> *refmap)
 {
-	uint8_t data[XCODEC_SEGMENT_LENGTH];
-	input->copyout(data, offset, sizeof data);
-
-	/*
-	 * First check the backref window.
-	 *
-	 * XXX This slows the cold path, speeds the hot path;
-	 *     need to collect stats on how useful it is.
-	 */
-	uint8_t b;
-	if (window_.present(hash, data, &b)) {
-		if (offset != 0) {
-			encode_escape(output, input, offset);
-		}
-		input->skip(XCODEC_SEGMENT_LENGTH);
-
-		output->append(XCODEC_MAGIC);
-		output->append(XCODEC_OP_BACKREF);
-		output->append(b);
-		return (true);
-	}
-
 	/*
 	 * Now check in the cache proper.
 	 */
 	BufferSegment *oseg = cache_->lookup(hash);
 	if (oseg != NULL) {
+		uint8_t data[XCODEC_SEGMENT_LENGTH];
+		input->copyout(data, offset, sizeof data);
+
 		/*
 		 * This segment already exists.  If it's
 		 * identical to this chunk of data, then that's
