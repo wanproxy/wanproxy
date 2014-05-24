@@ -334,11 +334,9 @@ SocketHandle::create(SocketAddressFamily family, SocketType type, const std::str
 	case SocketTypeStream:
 		typenum = SOCK_STREAM;
 		break;
-
 	case SocketTypeDatagram:
 		typenum = SOCK_DGRAM;
 		break;
-
 	default:
 		ERROR("/socket/handle") << "Unsupported socket type.";
 		return (NULL);
@@ -378,11 +376,9 @@ SocketHandle::create(SocketAddressFamily family, SocketType type, const std::str
 			case AF_INET:
 				domainnum = AF_INET;
 				break;
-
 			case AF_INET6:
 				domainnum = AF_INET6;
 				break;
-
 			default:
 				ERROR("/socket/handle") << "Unsupported address family for hint: " << hint;
 				return (NULL);
@@ -394,21 +390,17 @@ SocketHandle::create(SocketAddressFamily family, SocketType type, const std::str
 		domainnum = AF_INET;
 		break;
 #endif
-
 	case SocketAddressFamilyIPv4:
 		domainnum = AF_INET;
 		break;
-
 #if defined(AF_INET6)
 	case SocketAddressFamilyIPv6:
 		domainnum = AF_INET6;
 		break;
 #endif
-
 	case SocketAddressFamilyUnix:
 		domainnum = AF_UNIX;
 		break;
-
 	default:
 		ERROR("/socket/handle") << "Unsupported address family.";
 		return (NULL);

@@ -27,13 +27,11 @@
 #ifndef	IO_SOCKET_SOCKET_HANDLE_H
 #define	IO_SOCKET_SOCKET_HANDLE_H
 
-
 #include <io/stream_handle.h>
 #include <io/socket/socket.h>
 
-
 class SocketHandle : public Socket, public StreamHandle {
-using StreamHandle::close;
+	using StreamHandle::close;
 
 	LogHandle log_;
 	Action *accept_action_;
