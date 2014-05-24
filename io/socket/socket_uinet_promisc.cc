@@ -23,13 +23,11 @@
  * SUCH DAMAGE.
  */
 
-
 #include <event/event_callback.h>
 
 #include <io/socket/socket_uinet_promisc.h>
 
 #include <uinet_api.h>
-
 
 SocketUinetPromisc::SocketUinetPromisc(struct uinet_socket *so, int domain, int socktype, int protocol)
 : SocketUinet(so, domain, socktype, protocol),
@@ -39,19 +37,15 @@ SocketUinetPromisc::SocketUinetPromisc(struct uinet_socket *so, int domain, int 
 {
 }
 
-
 SocketUinetPromisc::~SocketUinetPromisc()
 {
 }
-
-
 
 void
 SocketUinetPromisc::getconninfo(struct uinet_in_conninfo *inc)
 {
 	uinet_sogetconninfo(so_, inc);
 }
-
 
 int
 SocketUinetPromisc::getl2info(struct uinet_in_l2info *l2i)
@@ -60,7 +54,6 @@ SocketUinetPromisc::getl2info(struct uinet_in_l2info *l2i)
 	return (uinet_errno_to_os(error));
 }
 
-
 int
 SocketUinetPromisc::setl2info(struct uinet_in_l2info *l2i)
 {
@@ -68,14 +61,12 @@ SocketUinetPromisc::setl2info(struct uinet_in_l2info *l2i)
 	return (uinet_errno_to_os(error));
 }
 
-
 int
 SocketUinetPromisc::setl2info2(uint8_t *laddr, uint8_t *faddr, uint16_t flags, struct uinet_in_l2tagstack *tagstack)
 {
 	int error = uinet_setl2info2(so_, laddr, faddr, flags, tagstack);
 	return (uinet_errno_to_os(error));
 }
-
 
 int
 SocketUinetPromisc::setsynfilter(SynfilterCallback *cb)
@@ -88,7 +79,6 @@ SocketUinetPromisc::setsynfilter(SynfilterCallback *cb)
 	
 	return (uinet_errno_to_os(error));
 }
-
 
 int
 synfilter_callback(struct uinet_socket *listener, void *arg, uinet_api_synfilter_cookie_t cookie)
@@ -118,13 +108,11 @@ synfilter_callback(struct uinet_socket *listener, void *arg, uinet_api_synfilter
 	return (synfilter_decision);
 }
 
-
 uinet_synf_deferral_t
 SocketUinetPromisc::synfdefer(uinet_api_synfilter_cookie_t cookie)
 {
 	return (uinet_synfilter_deferral_alloc(so_, cookie));
 }
-
 
 int
 SocketUinetPromisc::synfdeferraldeliver(uinet_synf_deferral_t deferral, int decision)
@@ -132,7 +120,6 @@ SocketUinetPromisc::synfdeferraldeliver(uinet_synf_deferral_t deferral, int deci
 	int error = uinet_synfilter_deferral_deliver(so_, deferral, decision);
 	return (uinet_errno_to_os(error));
 }
-
 
 SocketUinetPromisc *
 SocketUinetPromisc::create(SocketAddressFamily family, SocketType type, const std::string& protocol, const std::string& hint, unsigned int cdom)

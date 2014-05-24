@@ -140,7 +140,6 @@ Buffer::hexdump(unsigned start) const
 		dump += "\n";
 	}
 
-
 	return (dump);
 }
 

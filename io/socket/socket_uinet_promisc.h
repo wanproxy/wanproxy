@@ -30,11 +30,9 @@
 
 #include <io/socket/socket_uinet.h>
 
-
 extern "C" {
 	int synfilter_callback(struct uinet_socket *, void *, uinet_api_synfilter_cookie_t);	
 }
-
 
 class SocketUinetPromisc : public SocketUinet {
 public:

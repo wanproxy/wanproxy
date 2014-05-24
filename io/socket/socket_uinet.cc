@@ -23,7 +23,6 @@
  * SUCH DAMAGE.
  */
 
-
 #include <algorithm>
 
 #include <errno.h>
@@ -36,7 +35,6 @@
 #include <io/socket/socket_uinet.h>
 
 #include <uinet_api.h>
-
 
 #define UINET_READ_BUFFER_SIZE (64*1024)
 
@@ -68,7 +66,6 @@ SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int 
 	ASSERT(log_, so_ != NULL);
 }
 
-
 SocketUinet::~SocketUinet()
 {
 	ASSERT(log_, accept_do_ == false);
@@ -90,7 +87,6 @@ SocketUinet::~SocketUinet()
 	ASSERT(log_, write_amount_remaining_ == 0);
 }
 
-
 int
 passive_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 {
@@ -111,7 +107,6 @@ passive_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 	return (UINET_SU_OK);
 }
 
-
 Action *
 SocketUinet::accept(SocketEventCallback *cb)
 {
@@ -129,7 +124,6 @@ SocketUinet::accept(SocketEventCallback *cb)
 
 	return (cancellation(this, &SocketUinet::accept_cancel));
 }
-
 
 void
 SocketUinet::accept_do(void)
@@ -168,7 +162,6 @@ SocketUinet::accept_do(void)
 	}
 }
 
-
 /*
  * Invoked from within uinet_soaccept when the result will be EWOULDBLOCK,
  * before the lock that provides mutual exlcusion with upcalls is released.
@@ -180,7 +173,6 @@ accept_upcall_prep(struct uinet_socket *, void *arg)
 
 	s->accept_do_ = true;
 }
-
 
 void
 SocketUinet::accept_cancel(void)
@@ -215,7 +207,6 @@ SocketUinet::accept_cancel(void)
 	}
 }
 
-
 bool
 SocketUinet::bind(const std::string& name)
 {
@@ -242,7 +233,6 @@ SocketUinet::bind(const std::string& name)
 
 	return (true);
 }
-
 
 int
 connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
@@ -275,7 +265,6 @@ connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 
 	return (UINET_SU_OK);
 }
-
 
 Action *
 SocketUinet::connect(const std::string& name, EventCallback *cb)
@@ -329,7 +318,6 @@ SocketUinet::connect(const std::string& name, EventCallback *cb)
 	return (cancellation(this, &SocketUinet::connect_cancel));
 }
 
-
 void
 SocketUinet::connect_cancel(void)
 {
@@ -353,7 +341,6 @@ SocketUinet::connect_cancel(void)
 	}
 }
 
-
 bool
 SocketUinet::listen(void)
 {
@@ -369,7 +356,6 @@ SocketUinet::listen(void)
 		return (false);
 	return (true);
 }
-
 
 Action *
 SocketUinet::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
@@ -395,7 +381,6 @@ SocketUinet::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 	cb->param(Event::Done);
 	return (cb->schedule());
 }
-
 
 Action *
 SocketUinet::close(SimpleCallback *cb)
@@ -423,7 +408,6 @@ SocketUinet::close(SimpleCallback *cb)
 	return (cb->schedule());
 }
 
-
 int
 active_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 {
@@ -448,7 +432,6 @@ active_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 
 	return (UINET_SU_OK);
 }
-
 
 Action *
 SocketUinet::read(size_t amount, EventCallback *cb)
@@ -486,7 +469,6 @@ SocketUinet::read(size_t amount, EventCallback *cb)
 	return (cancellation(this, &SocketUinet::read_cancel));
 }
 
-
 void
 SocketUinet::read_schedule(void)
 {
@@ -495,7 +477,6 @@ SocketUinet::read_schedule(void)
 	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::read_callback);
 	read_action_ = cb->schedule();
 }
-
 
 void
 SocketUinet::read_callback(void)
@@ -598,7 +579,6 @@ SocketUinet::read_callback(void)
 	}
 }
 
-
 void
 receive_upcall_prep(struct uinet_socket *so, void *arg, int64_t received, int64_t remaining)
 {
@@ -621,7 +601,6 @@ receive_upcall_prep(struct uinet_socket *so, void *arg, int64_t received, int64_
 	}
 
 }
-
 
 void
 SocketUinet::read_cancel(void)
@@ -652,7 +631,6 @@ SocketUinet::read_cancel(void)
 	}
 }
 
-
 int
 active_send_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 {
@@ -678,7 +656,6 @@ active_send_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 	return (UINET_SU_OK);
 }
 
-
 Action *
 SocketUinet::write(Buffer *buffer, EventCallback *cb)
 {
@@ -701,7 +678,6 @@ SocketUinet::write(Buffer *buffer, EventCallback *cb)
 	return (cancellation(this, &SocketUinet::write_cancel));
 }
 
-
 void
 SocketUinet::write_schedule(void)
 {
@@ -710,7 +686,6 @@ SocketUinet::write_schedule(void)
 	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::write_callback);
 	write_action_ = cb->schedule();
 }
-
 
 void
 SocketUinet::write_callback(void)
@@ -786,7 +761,6 @@ SocketUinet::write_callback(void)
 	}
 }
 
-
 void
 send_upcall_prep(struct uinet_socket *so, void *arg, int64_t resid)
 {
@@ -797,7 +771,6 @@ send_upcall_prep(struct uinet_socket *so, void *arg, int64_t resid)
 
 	s->write_do_ = true;
 }
-
 
 void
 SocketUinet::write_cancel(void)
@@ -827,7 +800,6 @@ SocketUinet::write_cancel(void)
 		}
 	}
 }
-
 
 std::string
 SocketUinet::getpeername(void) const
@@ -871,7 +843,6 @@ SocketUinet::getsockname(void) const
 	return ((std::string)sa);
 }
 
-
 int SocketUinet::gettypenum(SocketType type)
 {
 	switch (type) {
@@ -884,7 +855,6 @@ int SocketUinet::gettypenum(SocketType type)
 		return (-1);
 	}
 }
-
 
 int SocketUinet::getprotonum(const std::string& protocol)
 {
@@ -901,7 +871,6 @@ int SocketUinet::getprotonum(const std::string& protocol)
 		}
 	}
 }
-
 
 int SocketUinet::getdomainnum(SocketAddressFamily family, const std::string& hint)
 {
@@ -958,7 +927,6 @@ int SocketUinet::getdomainnum(SocketAddressFamily family, const std::string& hin
 		return (-1);
 	}
 }
-
 
 SocketUinet *
 SocketUinet::create(SocketAddressFamily family, SocketType type, const std::string& protocol, const std::string& hint)

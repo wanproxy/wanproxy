@@ -23,7 +23,6 @@
  * SUCH DAMAGE.
  */
 
-
 #include <event/event_callback.h>
 
 #include <io/socket/socket_handle.h>

@@ -26,7 +26,6 @@
 #ifndef	IO_IO_UINET_H
 #define	IO_IO_UINET_H
 
-
 #include <event/callback_thread.h>
 
 #include <uinet_api.h>

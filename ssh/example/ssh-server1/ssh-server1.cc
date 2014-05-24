@@ -470,7 +470,6 @@ public:
 	}
 };
 
-
 int
 main(void)
 {

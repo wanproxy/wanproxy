@@ -26,7 +26,6 @@
 #ifndef	IO_SOCKET_SOCKET_UINET_H
 #define	IO_SOCKET_SOCKET_UINET_H
 
-
 #include <common/thread/mutex.h>
 
 #include <io/socket/socket.h>
@@ -45,7 +44,6 @@ extern "C" {
 	int active_send_upcall(struct uinet_socket *, void *, int);
 	int connect_upcall(struct uinet_socket *, void *, int);
 }
-
 
 class SocketUinet : public Socket {
 	friend void accept_upcall_prep(struct uinet_socket *, void *);
@@ -128,7 +126,6 @@ private:
 public:
 	static SocketUinet *create(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");
 };
-
 
 template <class S>
 S *

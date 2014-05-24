@@ -164,7 +164,6 @@ public:
 		return (seg);
 	}
 
-
 	/*
 	 * Bump the reference count.
 	 */

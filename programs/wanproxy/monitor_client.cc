@@ -141,7 +141,6 @@ public:
 	}
 };
 
-
 void
 MonitorClient::handle_request(const std::string& method, const std::string& uri, HTTPProtocol::Request)
 {

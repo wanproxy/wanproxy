@@ -163,7 +163,6 @@ public:
 	}
 };
 
-
 int
 main(void)
 {

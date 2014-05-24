@@ -194,7 +194,6 @@ public:
 	}
 };
 
-
 int
 main(void)
 {

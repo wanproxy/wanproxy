@@ -122,7 +122,6 @@ class Listener {
 
 	umns::unordered_map<ConnInfo,SpliceInfo,ConnInfoHasher> connections_;
 
-
 public:
 	Listener(const std::string& where, unsigned int inbound_cdom, unsigned int outbound_cdom)
 	: log_("/listener"),
@@ -203,7 +202,6 @@ public:
 			 * Get deferral context for the SYN filter result.
 			 */
 			si.deferral = listen_socket_->synfdefer(param.cookie);
-
 
 			/*
 			 * Set up outbound connection.
@@ -380,7 +378,6 @@ public:
 		connections_.erase(ci);
 	}
 };
-
 
 int
 main(void)

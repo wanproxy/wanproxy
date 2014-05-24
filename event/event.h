@@ -79,7 +79,6 @@ struct Event {
 	  buffer_()
 	{ }
 
-
 	Event(Type type, const Buffer& buffer)
 	: type_(type),
 	  error_(0),

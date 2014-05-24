@@ -23,7 +23,6 @@
  * SUCH DAMAGE.
  */
 
-
 #include <event/callback_thread.h>
 #include <event/event_callback.h>
 #include <event/event_system.h>
@@ -38,11 +37,9 @@ IOUinet::IOUinet(void)
 {
 }
 
-
 IOUinet::~IOUinet()
 {
 }
-
 
 int
 IOUinet::add_interface(uinet_iftype_t type, const std::string& configstr, const std::string& alias, unsigned int cdom, int cpu)
@@ -53,7 +50,6 @@ IOUinet::add_interface(uinet_iftype_t type, const std::string& configstr, const 
 	return (uinet_errno_to_os(error));
 }
 
-
 int
 IOUinet::remove_interface(const std::string& name)
 {
@@ -63,7 +59,6 @@ IOUinet::remove_interface(const std::string& name)
 	return (uinet_errno_to_os(error));
 }
 
-
 int
 IOUinet::interface_up(const std::string& name, bool ispromisc, bool ispromiscinet)
 {
@@ -72,7 +67,6 @@ IOUinet::interface_up(const std::string& name, bool ispromisc, bool ispromiscine
 	error = uinet_interface_up(name.c_str(), ispromisc, ispromiscinet);
 	return (uinet_errno_to_os(error));
 }
-
 
 void
 IOUinet::start(bool enable_lo0)

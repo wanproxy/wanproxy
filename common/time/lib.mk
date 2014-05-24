@@ -5,5 +5,4 @@ ifeq "${OSNAME}" "Linux"
 LDADD+=         -lrt
 endif
 
-
 SRCS+=	time.cc

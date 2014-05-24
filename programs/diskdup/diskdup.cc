@@ -165,7 +165,6 @@ private:
 			target_action_ = NULL;
 		}
 
-
 		SimpleCallback *scb = callback(this, &DiskDup::close_complete, false);
 		source_action_ = source_->close(scb);
 
