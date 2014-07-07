@@ -33,8 +33,6 @@
 #include <event/event_callback.h>
 #include <event/event_poll.h>
 
-#define	SIGNAL_IDENT	(0x5c0276ef) /* A random number. */
-
 #define	EPOLL_EVENT_COUNT	128
 
 struct EventPollState {
