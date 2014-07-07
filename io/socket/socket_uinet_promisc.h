@@ -61,8 +61,8 @@ public:
 
 	void getconninfo(struct uinet_in_conninfo *inc);
 	int getl2info(struct uinet_in_l2info *);
-	int setl2info(struct uinet_in_l2info *);
-	int setl2info2(uint8_t *laddr, uint8_t *faddr, uint16_t flags, struct uinet_in_l2tagstack *tagstack);
+	int setl2info(const struct uinet_in_l2info *);
+	int setl2info2(const uint8_t *laddr, const uint8_t *faddr, uint16_t flags, const struct uinet_in_l2tagstack *tagstack);
 	int setsynfilter(SynfilterCallback *);
 	
 	uinet_synf_deferral_t synfdefer(uinet_api_synfilter_cookie_t);

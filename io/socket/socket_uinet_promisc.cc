@@ -55,14 +55,14 @@ SocketUinetPromisc::getl2info(struct uinet_in_l2info *l2i)
 }
 
 int
-SocketUinetPromisc::setl2info(struct uinet_in_l2info *l2i)
+SocketUinetPromisc::setl2info(const struct uinet_in_l2info *l2i)
 {
 	int error = uinet_setl2info(so_, l2i);
 	return (uinet_errno_to_os(error));
 }
 
 int
-SocketUinetPromisc::setl2info2(uint8_t *laddr, uint8_t *faddr, uint16_t flags, struct uinet_in_l2tagstack *tagstack)
+SocketUinetPromisc::setl2info2(const uint8_t *laddr, const uint8_t *faddr, uint16_t flags, const struct uinet_in_l2tagstack *tagstack)
 {
 	int error = uinet_setl2info2(so_, laddr, faddr, flags, tagstack);
 	return (uinet_errno_to_os(error));
