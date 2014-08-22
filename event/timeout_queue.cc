@@ -34,10 +34,10 @@ Action *
 TimeoutQueue::append(uintmax_t ms, SimpleCallback *cb)
 {
 	ScopedLock _(&mtx_);
-	NanoTime deadline = NanoTime::current_time();
-
-	deadline.seconds_ += ms / 1000;
-	deadline.nanoseconds_ += (ms % 1000) * 1000000;
+	NanoTime deadline;
+	deadline.seconds_ = ms / 1000;
+	deadline.nanoseconds_ = (ms % 1000) * 1000000;
+	deadline += NanoTime::current_time();
 
 	CallbackQueue *queue = timeout_queue_[deadline];
 	if (queue == NULL) {
