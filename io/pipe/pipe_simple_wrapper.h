@@ -52,7 +52,8 @@ public:
 			produce_error();
 			return;
 		}
-		produce(&out);
+		if (!out.empty())
+			produce(&out);
 	}
 };
 
