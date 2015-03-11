@@ -35,9 +35,9 @@ struct ThreadState {
 
 		td->state_->td_ = self;
 
-		int rv = pthread_setspecific(key, td);
-		if (rv == -1) {
-			ERROR("/thread/state/start") << "Could not set thread-local Thread pointer.";
+		int error = pthread_setspecific(key, td);
+		if (error != 0) {
+			ERROR("/thread/state/start") << "Could not set thread-local Thread pointer; error: " << error;
 			return;
 		}
 

@@ -76,8 +76,8 @@ void
 Thread::join(void)
 {
 	void *val;
-	int rv = pthread_join(state_->td_, &val);
-	if (rv == -1) {
+	int error = pthread_join(state_->td_, &val);
+	if (error != 0) {
 		ERROR("/thread/posix") << "Thread join failed.";
 		return;
 	}
@@ -101,8 +101,8 @@ Thread::start(void)
 	thread_start_mutex.lock();
 
 	pthread_t td;
-	int rv = pthread_create(&td, NULL, thread_posix_start, this);
-	if (rv == -1) {
+	int error = pthread_create(&td, NULL, thread_posix_start, this);
+	if (error != 0) {
 		ERROR("/thread/posix") << "Unable to start thread.";
 		return;
 	}
@@ -184,8 +184,8 @@ namespace {
 		signal(SIGINT, ThreadState::signal_stop);
 		signal(SIGUSR1, thread_posix_signal_ignore);
 
-		int rv = pthread_key_create(&thread_posix_key, NULL);
-		if (rv == -1) {
+		int error = pthread_key_create(&thread_posix_key, NULL);
+		if (error != 0) {
 			ERROR("/thread/posix/init") << "Could not initialize thread-local Thread pointer key.";
 			return;
 		}
