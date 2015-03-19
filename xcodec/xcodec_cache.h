@@ -109,13 +109,7 @@ private:
 	static std::map<UUID, XCodecCache *> cache_map;
 };
 
-/*
- * XXX
- * Would be easy enough to rename this something like BackendMemoryCache
- * and have the front-end handle sharing the backend on connect(), with
- * just a little additional key space.
- */
-class XCodecMemoryCache : public XCodecCache {
+class XCodecCacheLRU {
 	/*
 	 * XXX
 	 * We use a 64-bit counter/tag/timestamp for the LRU.  This ought
@@ -134,6 +128,61 @@ class XCodecMemoryCache : public XCodecCache {
 	 * track of the lowest counter in the LRU pretty easily.  The
 	 * lookups would be quicker and the counter overhead minimal.
 	 */
+
+	typedef	std::map<uint64_t, uint64_t> segment_lru_map_t;
+
+	LogHandle log_;
+	segment_lru_map_t segment_lru_map_;
+	uint64_t segment_lru_counter_;
+public:
+	XCodecCacheLRU(void)
+	: log_("/xcodec/cache/lru"),
+	  segment_lru_map_(),
+	  segment_lru_counter_(0)
+	{ }
+
+	~XCodecCacheLRU()
+	{ }
+
+	uint64_t enter(uint64_t hash)
+	{
+		uint64_t counter = ++segment_lru_counter_;
+		segment_lru_map_[counter] = hash;
+		return (counter);
+	}
+
+	uint64_t evict(void)
+	{
+		segment_lru_map_t::iterator lit = segment_lru_map_.begin();
+		ASSERT(log_, lit != segment_lru_map_.end());
+		uint64_t ohash = lit->second;
+		segment_lru_map_.erase(lit);
+		return (ohash);
+	}
+
+	uint64_t use(uint64_t hash, uint64_t counter)
+	{
+		if (counter == segment_lru_counter_)
+			return (counter);
+
+		segment_lru_map_t::iterator lit = segment_lru_map_.find(counter);
+		ASSERT(log_, lit != segment_lru_map_.end());
+		ASSERT(log_, lit->second == hash);
+		segment_lru_map_.erase(lit);
+
+		counter = ++segment_lru_counter_;
+		segment_lru_map_[counter] = hash;
+		return (counter);
+	}
+};
+
+/*
+ * XXX
+ * Would be easy enough to rename this something like BackendMemoryCache
+ * and have the front-end handle sharing the backend on connect(), with
+ * just a little additional key space.
+ */
+class XCodecMemoryCache : public XCodecCache {
 	struct CacheEntry {
 		BufferSegment *seg_;
 		uint64_t counter_;
@@ -160,20 +209,17 @@ class XCodecMemoryCache : public XCodecCache {
 	};
 
 	typedef __gnu_cxx::hash_map<Tag64, CacheEntry> segment_hash_map_t;
-	typedef	std::map<uint64_t, uint64_t> segment_lru_map_t;
 
 	LogHandle log_;
 	segment_hash_map_t segment_hash_map_;
-	segment_lru_map_t segment_lru_map_;
-	uint64_t segment_lru_counter_;
+	XCodecCacheLRU segment_lru_;
 	size_t memory_cache_limit_;
 public:
 	XCodecMemoryCache(const UUID& uuid)
 	: XCodecCache(uuid),
 	  log_("/xcodec/cache/memory"),
 	  segment_hash_map_(),
-	  segment_lru_map_(),
-	  segment_lru_counter_(0),
+	  segment_lru_(),
 	  memory_cache_limit_(0)
 	{ }
 
@@ -181,8 +227,7 @@ public:
 	: XCodecCache(uuid),
 	  log_("/xcodec/cache/memory"),
 	  segment_hash_map_(),
-	  segment_lru_map_(),
-	  segment_lru_counter_(0),
+	  segment_lru_(),
 	  memory_cache_limit_(memory_cache_limit_bytes / XCODEC_SEGMENT_LENGTH)
 	{
 		if (memory_cache_limit_bytes < XCODEC_SEGMENT_LENGTH)
@@ -211,10 +256,7 @@ public:
 			/*
 			 * Find the oldest hash.
 			 */
-			segment_lru_map_t::iterator lit = segment_lru_map_.begin();
-			ASSERT(log_, lit != segment_lru_map_.end());
-			uint64_t ohash = lit->second;
-			segment_lru_map_.erase(lit);
+			uint64_t ohash = segment_lru_.evict();
 
 			/*
 			 * Remove the oldest hash.
@@ -226,10 +268,8 @@ public:
 		ASSERT(log_, seg->length() == XCODEC_SEGMENT_LENGTH);
 		ASSERT(log_, segment_hash_map_.find(hash) == segment_hash_map_.end());
 		CacheEntry entry(seg);
-		if (memory_cache_limit_ != 0) {
-			entry.counter_ = ++segment_lru_counter_;
-			segment_lru_map_[entry.counter_] = hash;
-		}
+		if (memory_cache_limit_ != 0)
+			entry.counter_ = segment_lru_.enter(hash);
 		segment_hash_map_.insert(segment_hash_map_t::value_type(hash, entry));
 	}
 
@@ -254,16 +294,8 @@ public:
 		 * If we have a limit and if we aren't also the last hash to
 		 * be used, update our position in the LRU.
 		 */
-		if (memory_cache_limit_ != 0 && entry.counter_ != segment_lru_counter_) {
-			segment_lru_map_t::iterator lit = segment_lru_map_.find(entry.counter_);
-			ASSERT(log_, lit != segment_lru_map_.end());
-			ASSERT(log_, lit->second == hash);
-			segment_lru_map_.erase(lit);
-
-			entry.counter_ = ++segment_lru_counter_;
-			segment_lru_map_[entry.counter_] = hash;
-		}
-
+		if (memory_cache_limit_ != 0)
+			entry.counter_ = segment_lru_.use(hash, entry.counter_);
 		entry.seg_->ref();
 		return (entry.seg_);
 	}
