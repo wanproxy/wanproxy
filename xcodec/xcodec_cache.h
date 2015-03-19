@@ -220,22 +220,15 @@ class XCodecMemoryCache : public XCodecCache {
 	XCodecCacheLRU segment_lru_;
 	size_t memory_cache_limit_;
 public:
-	XCodecMemoryCache(const UUID& uuid)
-	: XCodecCache(uuid),
-	  log_("/xcodec/cache/memory"),
-	  segment_hash_map_(),
-	  segment_lru_(),
-	  memory_cache_limit_(0)
-	{ }
-
-	XCodecMemoryCache(const UUID& uuid, size_t memory_cache_limit_bytes)
+	XCodecMemoryCache(const UUID& uuid, size_t memory_cache_limit_bytes = 0)
 	: XCodecCache(uuid),
 	  log_("/xcodec/cache/memory"),
 	  segment_hash_map_(),
 	  segment_lru_(),
 	  memory_cache_limit_(memory_cache_limit_bytes / XCODEC_SEGMENT_LENGTH)
 	{
-		if (memory_cache_limit_bytes < XCODEC_SEGMENT_LENGTH)
+		if (memory_cache_limit_bytes != 0 &&
+		    memory_cache_limit_bytes < XCODEC_SEGMENT_LENGTH)
 			memory_cache_limit_ = 1;
 	}
 
@@ -248,9 +241,7 @@ public:
 	 */
 	XCodecCache *connect(const UUID& uuid)
 	{
-		XCodecMemoryCache *cache = new XCodecMemoryCache(uuid);
-		if (memory_cache_limit_ != 0)
-			cache->memory_cache_limit_ = memory_cache_limit_;
+		XCodecMemoryCache *cache = new XCodecMemoryCache(uuid, memory_cache_limit_ * XCODEC_SEGMENT_LENGTH);
 		return (cache);
 	}
 
