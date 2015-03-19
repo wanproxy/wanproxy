@@ -109,6 +109,12 @@ private:
 	static std::map<UUID, XCodecCache *> cache_map;
 };
 
+/*
+ * XXX
+ * Would be easy enough to rename this something like BackendMemoryCache
+ * and have the front-end handle sharing the backend on connect(), with
+ * just a little additional key space.
+ */
 class XCodecMemoryCache : public XCodecCache {
 	/*
 	 * XXX
