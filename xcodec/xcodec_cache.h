@@ -78,6 +78,7 @@ public:
 	virtual ~XCodecCache()
 	{ }
 
+	virtual XCodecCache *connect(const UUID&) = 0;
 	virtual void enter(const uint64_t&, BufferSegment *) = 0;
 	virtual BufferSegment *lookup(const uint64_t&) = 0;
 	virtual bool out_of_band(void) const = 0;
@@ -184,6 +185,18 @@ public:
 
 	~XCodecMemoryCache()
 	{ }
+
+	/*
+	 * Just assume that we can spin up another memory cache of the same size
+	 * for any connecting UUID.
+	 */
+	XCodecCache *connect(const UUID& uuid)
+	{
+		XCodecMemoryCache *cache = new XCodecMemoryCache(uuid);
+		if (memory_cache_limit_ != 0)
+			cache->memory_cache_limit_ = memory_cache_limit_;
+		return (cache);
+	}
 
 	void enter(const uint64_t& hash, BufferSegment *seg)
 	{

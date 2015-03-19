@@ -184,7 +184,7 @@ XCodecPipePair::decoder_decode(void)
 
 				decoder_cache_ = XCodecCache::lookup(uuid);
 				if (decoder_cache_ == NULL) {
-					decoder_cache_ = new XCodecMemoryCache(uuid);
+					decoder_cache_ = codec_->cache()->connect(uuid);
 					XCodecCache::enter(uuid, decoder_cache_);
 				}
 

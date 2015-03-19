@@ -83,6 +83,11 @@ public:
 	void enter(const uint64_t&, BufferSegment *)
 	{ }
 
+	XCodecCache *connect(const UUID&)
+	{
+		NOTREACHED("/tack/null/cache");
+	}
+
 	bool out_of_band(void) const
 	{
 		return (true);
@@ -135,6 +140,11 @@ public:
 	{
 		cache_->enter(hash, seg);
 		new_data_.append(seg);
+	}
+
+	XCodecCache *connect(const UUID&)
+	{
+		NOTREACHED("/tack/persistent/cache");
 	}
 
 	bool out_of_band(void) const
