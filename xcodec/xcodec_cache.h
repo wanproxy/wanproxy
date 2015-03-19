@@ -181,6 +181,67 @@ public:
 	}
 };
 
+class XCodecCachePair : public XCodecCache {
+	XCodecCache *primary_;
+	XCodecCache *secondary_;
+public:
+	XCodecCachePair(const UUID& uuid, XCodecCache *primary, XCodecCache *secondary)
+	: XCodecCache(uuid),
+	  primary_(primary),
+	  secondary_(secondary)
+	{ }
+
+	~XCodecCachePair()
+	{ }
+
+	XCodecCache *connect(const UUID& uuid)
+	{
+		return (new XCodecCachePair(uuid, primary_->connect(uuid), secondary_->connect(uuid)));
+	}
+
+	void enter(const uint64_t& hash, BufferSegment *seg)
+	{
+		/*
+		 * XXX
+		 * We could also allow the caller to define policy here:
+		 * do we want to spill evicted hashes from primary to
+		 * secondary storage, or enter them into both?  For now,
+		 * entering into both provides the most desirable
+		 * behaviour for the cases we care about.
+		 *
+		 * Other policies here might be interesting, particularly
+		 * if we ever have want of a more complex cache architecture,
+		 * such as a unique per-pipe memory cache, then a cache
+		 * per-peer, then a cache shared across multiple peers.  For
+		 * now, that is not how we operate.
+		 *
+		 * Would be wise to split the UUID out of the cache at some
+		 * point, too, and associate that with the name instead of
+		 * the cache per se.
+		 */
+		primary_->enter(hash, seg);
+		secondary_->enter(hash, seg);
+	}
+
+	bool out_of_band(void) const
+	{
+		if (primary_->out_of_band()) {
+			ASSERT("/xcodec/cache/pair", secondary_->out_of_band());
+			return (true);
+		}
+		ASSERT("/xcodec/cache/pair", !secondary_->out_of_band());
+		return (false);
+	}
+
+	BufferSegment *lookup(const uint64_t& hash)
+	{
+		BufferSegment *seg = primary_->lookup(hash);
+		if (seg == NULL)
+			seg = secondary_->lookup(hash);
+		return (seg);
+	}
+};
+
 /*
  * XXX
  * Would be easy enough to rename this something like BackendMemoryCache
@@ -260,6 +321,8 @@ public:
 			segment_hash_map_t::iterator oit = segment_hash_map_.find(ohash);
 			ASSERT(log_, oit != segment_hash_map_.end());
 			segment_hash_map_.erase(oit);
+
+			evicted(ohash);
 		}
 		ASSERT(log_, seg->length() == XCODEC_SEGMENT_LENGTH);
 		ASSERT(log_, segment_hash_map_.find(hash) == segment_hash_map_.end());
@@ -294,6 +357,11 @@ public:
 			entry.counter_ = segment_lru_.use(hash, entry.counter_);
 		entry.seg_->ref();
 		return (entry.seg_);
+	}
+
+protected:
+	virtual void evicted(uint64_t)
+	{
 	}
 };
 
