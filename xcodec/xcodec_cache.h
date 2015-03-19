@@ -144,6 +144,11 @@ public:
 	~XCodecCacheLRU()
 	{ }
 
+	size_t active(void) const
+	{
+		return (segment_lru_map_.size());
+	}
+
 	uint64_t enter(uint64_t hash)
 	{
 		uint64_t counter = ++segment_lru_counter_;
@@ -252,7 +257,7 @@ public:
 	void enter(const uint64_t& hash, BufferSegment *seg)
 	{
 		if (memory_cache_limit_ != 0 &&
-		    segment_hash_map_.size() == memory_cache_limit_) {
+		    segment_lru_.active() == memory_cache_limit_) {
 			/*
 			 * Find the oldest hash.
 			 */
