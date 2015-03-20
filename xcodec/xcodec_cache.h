@@ -324,8 +324,6 @@ public:
 			segment_hash_map_t::iterator oit = segment_hash_map_.find(ohash);
 			ASSERT(log_, oit != segment_hash_map_.end());
 			segment_hash_map_.erase(oit);
-
-			evicted(ohash);
 		}
 		ASSERT(log_, seg->length() == XCODEC_SEGMENT_LENGTH);
 		ASSERT(log_, segment_hash_map_.find(hash) == segment_hash_map_.end());
@@ -360,11 +358,6 @@ public:
 			entry.counter_ = segment_lru_.use(hash, entry.counter_);
 		entry.seg_->ref();
 		return (entry.seg_);
-	}
-
-protected:
-	virtual void evicted(uint64_t)
-	{
 	}
 };
 
