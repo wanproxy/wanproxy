@@ -236,8 +236,11 @@ public:
 	BufferSegment *lookup(const uint64_t& hash)
 	{
 		BufferSegment *seg = primary_->lookup(hash);
-		if (seg == NULL)
+		if (seg == NULL) {
 			seg = secondary_->lookup(hash);
+			if (seg != NULL)
+				primary_->enter(hash, seg);
+		}
 		return (seg);
 	}
 };
