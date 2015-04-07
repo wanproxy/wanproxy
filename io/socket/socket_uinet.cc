@@ -26,7 +26,6 @@
 #include <algorithm>
 
 #include <errno.h>
-#include <limits.h>
 
 #include <event/event_callback.h>
 
@@ -60,7 +59,10 @@ SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int 
   write_callback_(NULL),
   write_amount_remaining_(0),
   write_buffer_(),
-  write_mtx_("SocketUinet:write"),
+  write_mtx_("SocketUinet::write"),
+  upcall_mtx_("SocketUinet::upcall"),
+  upcall_action_(NULL),
+  upcall_pending_(),
   so_(so)
 {
 	ASSERT(log_, so_ != NULL);
@@ -85,24 +87,16 @@ SocketUinet::~SocketUinet()
 	ASSERT(log_, write_action_ == NULL);
 	ASSERT(log_, write_callback_ == NULL);
 	ASSERT(log_, write_amount_remaining_ == 0);
+
+	ASSERT(log_, upcall_action_ == NULL);
 }
 
 int
-passive_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+SocketUinet::passive_receive_upcall(struct uinet_socket *, void *arg, int)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 	
-	(void)so;
-	(void)wait_flag;
-
-	if (s->accept_do_) {
-		/*
-		 * NB: accept_do_ needs to be cleared before calling
-		 * accept_do() as accept_do() may need to set it again.
-		 */
-		s->accept_do_ = false;
-		s->accept_do();
-	}
+	s->upcall_schedule(SOCKET_UINET_UPCALL_PASSIVE_RECEIVE);
 
 	return (UINET_SU_OK);
 }
@@ -119,16 +113,32 @@ SocketUinet::accept(SocketEventCallback *cb)
 	ASSERT(log_, accept_action_ == NULL);
 	ASSERT(log_, accept_callback_ == NULL);
 
-	accept_callback_ = cb;
-	accept_do();
+	{
+		ScopedLock _(&accept_connect_mtx_);
+
+		accept_callback_ = cb;
+		accept_schedule();
+	}
 
 	return (cancellation(this, &SocketUinet::accept_cancel));
 }
 
 void
-SocketUinet::accept_do(void)
+SocketUinet::accept_schedule(void)
+{
+	ASSERT(log_, accept_action_ == NULL);
+
+	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::accept_callback);
+	accept_action_ = cb->schedule();
+}
+
+void
+SocketUinet::accept_callback(void)
 {
 	ScopedLock _(&accept_connect_mtx_);
+	ASSERT(log_, accept_action_ != NULL);
+	accept_action_->cancel();
+	accept_action_ = NULL;
 
 	uinet_socket *aso;
 	int error = uinet_soaccept(so_, NULL, &aso);
@@ -167,7 +177,7 @@ SocketUinet::accept_do(void)
  * before the lock that provides mutual exlcusion with upcalls is released.
  */
 void
-accept_upcall_prep(struct uinet_socket *, void *arg)
+SocketUinet::accept_upcall_prep(struct uinet_socket *, void *arg)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 
@@ -177,13 +187,11 @@ accept_upcall_prep(struct uinet_socket *, void *arg)
 void
 SocketUinet::accept_cancel(void)
 {
+	ScopedLock _(&accept_connect_mtx_);
 
-	uinet_soupcall_lock(so_, UINET_SO_RCV);
 	/* If waiting for upcall to complete the work, disable that. */
-	if (accept_do_) {
+	if (accept_do_)
 		accept_do_ = false;
-	}
-	uinet_soupcall_unlock(so_, UINET_SO_RCV);
 
 	/*
 	 * Because accept_do_ is guaranteed to be false at all times between
@@ -191,26 +199,20 @@ SocketUinet::accept_cancel(void)
 	 * chance that accept_action_ and accept_callback_ will be modified
 	 * by the upcall while the code below executes.
 	 */
+	if (accept_action_ != NULL) {
+		accept_action_->cancel();
+		accept_action_ = NULL;
+	}
 
-	{
-		ScopedLock _(&accept_connect_mtx_);
-
-		if (accept_action_ != NULL) {
-			accept_action_->cancel();
-			accept_action_ = NULL;
-		}
-
-		if (accept_callback_ != NULL) {
-			delete accept_callback_;
-			accept_callback_ = NULL;
-		}
+	if (accept_callback_ != NULL) {
+		delete accept_callback_;
+		accept_callback_ = NULL;
 	}
 }
 
 bool
 SocketUinet::bind(const std::string& name)
 {
-
 	socket_address addr;
 
 	if (!addr(domain_, socktype_, protocol_, name)) {
@@ -235,33 +237,11 @@ SocketUinet::bind(const std::string& name)
 }
 
 int
-connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+SocketUinet::connect_upcall(struct uinet_socket *, void *arg, int)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
-	int state;
 	
-	(void)wait_flag;
-
-	if (s->connect_do_) {
-		state = uinet_sogetstate(s->so_);
-	
-		if (state & UINET_SS_ISCONNECTED) {
-			s->connect_callback_->param(Event::Done);
-			s->connect_action_ = s->connect_callback_->schedule();
-			s->connect_callback_ = NULL;
-			s->connect_do_ = false;
-
-			uinet_soupcall_set_locked(so, UINET_SO_RCV, active_receive_upcall, s);
-			uinet_soupcall_set_locked(so, UINET_SO_SND, active_send_upcall, s);
-		} else if (state & UINET_SS_ISDISCONNECTED) {
-			int error = uinet_sogeterror(s->so_);
-
-			s->connect_callback_->param(Event(Event::Error, uinet_errno_to_os(error)));
-			s->connect_action_ = s->connect_callback_->schedule();
-			s->connect_callback_ = NULL;
-			s->connect_do_ = false;
-		}
-	}
+	s->upcall_schedule(SOCKET_UINET_UPCALL_CONNECT);
 
 	return (UINET_SU_OK);
 }
@@ -269,6 +249,8 @@ connect_upcall(struct uinet_socket *so, void *arg, int wait_flag)
 Action *
 SocketUinet::connect(const std::string& name, EventCallback *cb)
 {
+	ScopedLock _(&accept_connect_mtx_);
+
 	ASSERT(log_, connect_do_ == false);
 	ASSERT(log_, connect_callback_ == NULL);
 	ASSERT(log_, connect_action_ == NULL);
@@ -287,8 +269,6 @@ SocketUinet::connect(const std::string& name, EventCallback *cb)
 			      send_upcall_prep, this);
 
 	uinet_soupcall_set(so_, UINET_SO_SND, connect_upcall, this);
-
-	connect_callback_ = cb;
 	connect_do_ = true;
 
 	/* XXX assuming that OS sockaddr internals are laid out the same as UINET sockaddr internals */
@@ -307,37 +287,65 @@ SocketUinet::connect(const std::string& name, EventCallback *cb)
 		/* Error - there will be no upcall */
 		connect_do_ = false;
 		cb->param(Event(Event::Error, uinet_errno_to_os(error)));
-		{
-			ScopedLock _(&accept_connect_mtx_);
-
-			connect_action_ = cb->schedule();
-			connect_callback_ = NULL;
-		}
+		connect_callback_ = NULL;
+		return (cb->schedule());
 	}
 
+	connect_callback_ = cb;
 	return (cancellation(this, &SocketUinet::connect_cancel));
+}
+
+void
+SocketUinet::connect_schedule(void)
+{
+	ASSERT(log_, connect_action_ == NULL);
+
+	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::connect_callback);
+	connect_action_ = cb->schedule();
+}
+
+void
+SocketUinet::connect_callback(void)
+{
+	ScopedLock _(&accept_connect_mtx_);
+	ASSERT(log_, connect_action_ != NULL);
+	connect_action_->cancel();
+	connect_action_ = NULL;
+
+	int state = uinet_sogetstate(so_);
+	if (state & UINET_SS_ISCONNECTED) {
+		connect_callback_->param(Event::Done);
+		connect_action_ = connect_callback_->schedule();
+		connect_callback_ = NULL;
+
+		uinet_soupcall_set(so_, UINET_SO_RCV, active_receive_upcall, this);
+		uinet_soupcall_set(so_, UINET_SO_SND, active_send_upcall, this);
+	} else if (state & UINET_SS_ISDISCONNECTED) {
+		int error = uinet_sogeterror(so_);
+
+		connect_callback_->param(Event(Event::Error, uinet_errno_to_os(error)));
+		connect_action_ = connect_callback_->schedule();
+		connect_callback_ = NULL;
+	} else {
+		ERROR(log_) << "Spurious state for connect upcall.";
+	}
 }
 
 void
 SocketUinet::connect_cancel(void)
 {
-	uinet_soupcall_lock(so_, UINET_SO_SND);
+	ScopedLock _(&accept_connect_mtx_);
 	if (connect_do_)
 		connect_do_ = false;
-	uinet_soupcall_unlock(so_, UINET_SO_SND);
 
-	{
-		ScopedLock _(&accept_connect_mtx_);
+	if (connect_action_ != NULL) {
+		connect_action_->cancel();
+		connect_action_ = NULL;
+	}
 
-		if (connect_action_ != NULL) {
-			connect_action_->cancel();
-			connect_action_ = NULL;
-		}
-
-		if (connect_callback_ != NULL) {
-			delete connect_callback_;
-			connect_callback_ = NULL;
-		}
+	if (connect_callback_ != NULL) {
+		delete connect_callback_;
+		connect_callback_ = NULL;
 	}
 }
 
@@ -387,8 +395,30 @@ SocketUinet::close(SimpleCallback *cb)
 {
 	ASSERT(log_, so_ != NULL);
 
+	uinet_sosetupcallprep(so_, NULL, NULL, NULL, NULL, NULL, NULL);
+
+	/*
+	 * Now that we've cancelled upcall prep, we can clear these fields,
+	 * before moving on to clearing the upcalls themselves.
+	 *
+	 * XXX We should probably lock the upcall lock here?
+	 */
+	read_do_ = false;
+	write_do_ = false;
+
 	uinet_soupcall_clear(so_, UINET_SO_RCV);
 	uinet_soupcall_clear(so_, UINET_SO_SND);
+
+	/*
+	 * The upcalls have been disabled, cancel any upcall callbacks.
+	 */
+	{
+		ScopedLock _(&upcall_mtx_);
+		if (upcall_action_ != NULL) {
+			upcall_action_->cancel();
+			upcall_action_ = NULL;
+		}
+	}
 
 	int error = uinet_soclose(so_);
 	if (error != 0) {
@@ -409,26 +439,11 @@ SocketUinet::close(SimpleCallback *cb)
 }
 
 int
-active_receive_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+SocketUinet::active_receive_upcall(struct uinet_socket *, void *arg, int)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
 	
-	(void)so;
-	(void)wait_flag;
-
-	if (s->read_do_) {
-		/*
-		 * NB: read_do_ needs to be cleared before calling read_do()
-		 * as the callback scheduled by read_schedule() may need to
-		 * set it again, and that callback will execute
-		 * asynchronously to this context.
-		 */
-		s->read_do_ = false;
-		{
-			ScopedLock _(&s->read_mtx_);
-			s->read_schedule();
-		}
-	}
+	s->upcall_schedule(SOCKET_UINET_UPCALL_ACTIVE_RECEIVE);
 
 	return (UINET_SU_OK);
 }
@@ -483,6 +498,22 @@ SocketUinet::read_callback(void)
 {
 	ScopedLock _(&read_mtx_);
 
+	/*
+	 * XXX
+	 * This is a major gross awful hack.
+	 * Basically we only get here because of a race,
+	 * because there aren't locks mandatorily-associated with every
+	 * callback, per the big comment in CallbackThread.  It can be mitigated
+	 * by returning here, but it's still a lousy situation, and probably will
+	 * impact other things beyond this callback.  If we just go ahead and
+	 * associate a lock with each scheduler for its callbacks, which can be
+	 * overridden, then we'd have a much easier path forward.  Or we can
+	 * change all ~200 callbacks and their objects to have explicit internal
+	 * synchronization rather than relying on single-threadedness for most
+	 * things.
+	 */
+	if (read_action_ == NULL)
+		return;
 	ASSERT(log_, read_action_ != NULL);
 
 	read_action_->cancel();
@@ -580,12 +611,9 @@ SocketUinet::read_callback(void)
 }
 
 void
-receive_upcall_prep(struct uinet_socket *so, void *arg, int64_t received, int64_t remaining)
+SocketUinet::receive_upcall_prep(struct uinet_socket *, void *arg, int64_t received, int64_t remaining)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
-
-	(void)so;
-	(void)remaining;
 
 	ASSERT(s->log_, remaining > 0);
 
@@ -605,53 +633,33 @@ receive_upcall_prep(struct uinet_socket *so, void *arg, int64_t received, int64_
 void
 SocketUinet::read_cancel(void)
 {
-	uinet_soupcall_lock(so_, UINET_SO_RCV);
+	ScopedLock _(&read_mtx_);
 	if (read_do_)
 		read_do_ = false;
-	uinet_soupcall_unlock(so_, UINET_SO_RCV);
 
-	{
-		ScopedLock _(&read_mtx_);
+	/*
+	 * Because read_do_ is guaranteed to be false at all times between
+	 * the above lock release and the end of this routine, there is no
+	 * chance that read_action_ will be modified by the upcall while the
+	 * code below executes.
+	 */
+	if (read_action_ != NULL) {
+		read_action_->cancel();
+		read_action_ = NULL;
+	}
 
-		/*
-		 * Because read_do_ is guaranteed to be false at all times between
-		 * the above lock release and the end of this routine, there is no
-		 * chance that read_action_ will be modified by the upcall while the
-		 * code below executes.
-		 */
-		if (read_action_ != NULL) {
-			read_action_->cancel();
-			read_action_ = NULL;
-		}
-
-		if (read_callback_ != NULL) {
-			delete read_callback_;
-			read_callback_ = NULL;
-		}
+	if (read_callback_ != NULL) {
+		delete read_callback_;
+		read_callback_ = NULL;
 	}
 }
 
 int
-active_send_upcall(struct uinet_socket *so, void *arg, int wait_flag)
+SocketUinet::active_send_upcall(struct uinet_socket *, void *arg, int)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
-	
-	(void)so;
-	(void)wait_flag;
 
-	if (s->write_do_) {
-		/*
-		 * NB: write_do_ needs to be cleared before calling write_do()
-		 * as the callback scheduled by write_schedule() may need to
-		 * set it again, and that callback will execute
-		 * asynchronously to this context.
-		 */
-		s->write_do_ = false;
-		{
-			ScopedLock _(&s->write_mtx_);
-			s->write_schedule();
-		}
-	}
+	s->upcall_schedule(SOCKET_UINET_UPCALL_ACTIVE_SEND);
 
 	return (UINET_SU_OK);
 }
@@ -762,12 +770,9 @@ SocketUinet::write_callback(void)
 }
 
 void
-send_upcall_prep(struct uinet_socket *so, void *arg, int64_t resid)
+SocketUinet::send_upcall_prep(struct uinet_socket *, void *arg, int64_t)
 {
 	SocketUinet *s = static_cast<SocketUinet *>(arg);
-
-	(void)so;
-	(void)resid;
 
 	s->write_do_ = true;
 }
@@ -775,30 +780,182 @@ send_upcall_prep(struct uinet_socket *so, void *arg, int64_t resid)
 void
 SocketUinet::write_cancel(void)
 {
-	uinet_soupcall_lock(so_, UINET_SO_SND);
+	ScopedLock _(&write_mtx_);
 	if (write_do_)
 		write_do_ = false;
-	uinet_soupcall_unlock(so_, UINET_SO_SND);
 
-	{
-		ScopedLock _(&write_mtx_);
-
-		/*
-		 * Because write_do_ is guaranteed to be false at all times between
-		 * the above lock release and the end of this routine, there is no
-		 * chance that write_action_ will be modified by the upcall while the
-		 * code below executes.
-		 */
-		if (write_action_ != NULL) {
-			write_action_->cancel();
-			write_action_ = NULL;
-		}
-
-		if (write_callback_ != NULL) {
-			delete write_callback_;
-			write_callback_ = NULL;
-		}
+	/*
+	 * Because write_do_ is guaranteed to be false at all times between
+	 * the above lock release and the end of this routine, there is no
+	 * chance that write_action_ will be modified by the upcall while the
+	 * code below executes.
+	 */
+	if (write_action_ != NULL) {
+		write_action_->cancel();
+		write_action_ = NULL;
 	}
+
+	if (write_callback_ != NULL) {
+		delete write_callback_;
+		write_callback_ = NULL;
+	}
+}
+
+void
+SocketUinet::upcall_schedule(unsigned kind)
+{
+	ScopedLock _(&upcall_mtx_);
+	if (kind >= SOCKET_UINET_UPCALLS)
+		HALT(log_) << "Scheduling invalid upcall.";
+	if (upcall_pending_[kind]) {
+		ASSERT(log_, upcall_action_ != NULL);
+		return;
+	}
+	upcall_pending_[kind] = true;
+
+	/*
+	 * See if we can handle this upcall now,
+	 * and any others already pending.
+	 */
+	bool need_recall = upcall_do();
+
+	if (upcall_action_ != NULL) {
+		/*
+		 * If we don't need recall, then we can
+		 * cancel the pending callback, because
+		 * we managed to handle the extant
+		 * upcalls as well as our own.
+		 *
+		 * If we do need to recall, we can wait
+		 * for the pending callback.
+		 */
+		if (!need_recall) {
+			upcall_action_->cancel();
+			upcall_action_ = NULL;
+
+			DEBUG(log_) << "Piggybacked pending upcalls; cancelled callback.";
+		}
+		return;
+	}
+
+	/*
+	 * We need recall and there is no pending upcall callback.
+	 */
+	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::upcall_callback);
+	upcall_action_ = cb->schedule();
+}
+
+void
+SocketUinet::upcall_callback(void)
+{
+	ScopedLock _(&upcall_mtx_);
+	if (upcall_action_ == NULL) {
+		/*
+		 * This can happen if a thread coming from libuinet
+		 * calls upcall_schedule and then this callback is
+		 * dispatched, since the callback scheduler right
+		 * now does not itself interlock with our mutexes,
+		 * which is the eventual goal.  As a result, that
+		 * thread from libuinet can decide to perform
+		 * upcall_do() itself, discover that no work is
+		 * needed, and then cancel the callback, but the
+		 * callback is already being executed here, so we
+		 * finish acquiring the lock, and then find that
+		 * our action has been cancelled.
+		 */
+		DEBUG(log_) << "Deferred upcall callback no longer needed.";
+		return;
+	}
+	upcall_action_->cancel();
+	upcall_action_ = NULL;
+
+	bool need_recall = upcall_do();
+	if (!need_recall)
+		return;
+
+	DEBUG(log_) << "Recalling upcalls to avoid deadlock.";
+
+	/*
+	 * We could not process every pending upcall, because
+	 * we could not acquire the locks using try_lock.  We
+	 * must try again, because if we blocked here it could
+	 * cause a lock order reversal.
+	 */
+	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::upcall_callback);
+	upcall_action_ = cb->schedule();
+
+}
+
+bool
+SocketUinet::upcall_do(void)
+{
+	bool need_recall = false;
+	unsigned i;
+	for (i = 0; i < SOCKET_UINET_UPCALLS; i++) {
+		if (!upcall_pending_[i])
+			continue;
+
+		switch (i) {
+		case SOCKET_UINET_UPCALL_PASSIVE_RECEIVE:
+			if (!accept_connect_mtx_.try_lock()) {
+				need_recall = true;
+				continue;
+			}
+			if (accept_do_) {
+				accept_do_ = false;
+				accept_schedule();
+			} else {
+				DEBUG(log_) << "Spurious passive receive upcall.";
+			}
+			accept_connect_mtx_.unlock();
+			break;
+		case SOCKET_UINET_UPCALL_ACTIVE_RECEIVE:
+			if (!read_mtx_.try_lock()) {
+				need_recall = true;
+				continue;
+			}
+			if (read_do_) {
+				read_do_ = false;
+				read_schedule();
+			} else {
+				DEBUG(log_) << "Spurious active receive upcall.";
+			}
+			read_mtx_.unlock();
+			break;
+		case SOCKET_UINET_UPCALL_ACTIVE_SEND:
+			if (!write_mtx_.try_lock()) {
+				need_recall = true;
+				continue;
+			}
+			if (write_do_) {
+				write_do_ = false;
+				write_schedule();
+			} else {
+				DEBUG(log_) << "Spurious active send upcall.";
+			}
+			write_mtx_.unlock();
+			break;
+		case SOCKET_UINET_UPCALL_CONNECT:
+			if (!accept_connect_mtx_.try_lock()) {
+				need_recall = true;
+				continue;
+			}
+			if (connect_do_) {
+				connect_do_ = false;
+				connect_schedule();
+			} else {
+				DEBUG(log_) << "Spurious connect upcall.";
+			}
+			accept_connect_mtx_.unlock();
+			break;
+		default:
+			NOTREACHED(log_);
+		}
+
+		upcall_pending_[i] = false;
+	}
+
+	return (need_recall);
 }
 
 std::string

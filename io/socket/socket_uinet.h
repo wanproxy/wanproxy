@@ -34,26 +34,13 @@
 
 class CallbackScheduler;
 
-extern "C" {
-	void accept_upcall_prep(struct uinet_socket *, void *);
-	void receive_upcall_prep(struct uinet_socket *, void *, int64_t, int64_t);
-	void send_upcall_prep(struct uinet_socket *, void *, int64_t);
-
-	int passive_receive_upcall(struct uinet_socket *, void *, int);
-	int active_receive_upcall(struct uinet_socket *, void *, int);
-	int active_send_upcall(struct uinet_socket *, void *, int);
-	int connect_upcall(struct uinet_socket *, void *, int);
-}
+#define	SOCKET_UINET_UPCALL_PASSIVE_RECEIVE	(0)
+#define	SOCKET_UINET_UPCALL_ACTIVE_RECEIVE	(1)
+#define	SOCKET_UINET_UPCALL_ACTIVE_SEND		(2)
+#define	SOCKET_UINET_UPCALL_CONNECT		(3)
+#define	SOCKET_UINET_UPCALLS			(4)
 
 class SocketUinet : public Socket {
-	friend void accept_upcall_prep(struct uinet_socket *, void *);
-	friend void receive_upcall_prep(struct uinet_socket *, void *, int64_t, int64_t);
-	friend void send_upcall_prep(struct uinet_socket *, void *, int64_t);
-	friend int passive_receive_upcall(struct uinet_socket *, void *, int);
-	friend int active_receive_upcall(struct uinet_socket *, void *, int);
-	friend int active_send_upcall(struct uinet_socket *, void *, int);
-	friend int connect_upcall(struct uinet_socket *, void *, int);
-
 	LogHandle log_;
 	CallbackScheduler *scheduler_;
 
@@ -79,6 +66,10 @@ class SocketUinet : public Socket {
 	uint64_t write_amount_remaining_;
 	Buffer write_buffer_;
 	Mutex write_mtx_;
+
+	Mutex upcall_mtx_;
+	Action *upcall_action_;
+	bool upcall_pending_[SOCKET_UINET_UPCALLS];
 
 protected:
 	SocketUinet(struct uinet_socket *, int, int, int);
@@ -110,9 +101,12 @@ protected:
 	static S *create_basic(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");
 
 private:
-	void accept_do(void);
+	void accept_schedule(void);
+	void accept_callback(void);
 	void accept_cancel(void);
 
+	void connect_schedule(void);
+	void connect_callback(void);
 	void connect_cancel(void);
 
 	void read_schedule(void);
@@ -122,6 +116,19 @@ private:
 	void write_schedule(void);
 	void write_callback(void);
 	void write_cancel(void);
+
+	void upcall_schedule(unsigned);
+	void upcall_callback(void);
+	bool upcall_do(void);
+
+	static void accept_upcall_prep(struct uinet_socket *, void *);
+	static void receive_upcall_prep(struct uinet_socket *, void *, int64_t, int64_t);
+	static void send_upcall_prep(struct uinet_socket *, void *, int64_t);
+
+	static int passive_receive_upcall(struct uinet_socket *, void *, int);
+	static int active_receive_upcall(struct uinet_socket *, void *, int);
+	static int active_send_upcall(struct uinet_socket *, void *, int);
+	static int connect_upcall(struct uinet_socket *, void *, int);
 
 public:
 	static SocketUinet *create(SocketAddressFamily, SocketType, const std::string& = "", const std::string& = "");
