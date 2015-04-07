@@ -35,12 +35,18 @@
 #include <list>
 #include <sstream>
 
+/* Collapse repeating log messages for up to 2 seconds.  */
+#define	LOG_REPEAT_COLLAPSE_SECONDS	(2)
+
 struct LogMask {
 	regex_t regex_;
 	enum Log::Priority priority_;
 };
 
 static std::list<LogMask> log_masks;
+static std::pair<std::string, std::string> last_log;
+static unsigned last_log_count;
+static struct timeval last_log_start;
 
 #ifdef	USE_SYSLOG
 static int syslog_priority(const Log::Priority&);
@@ -97,6 +103,22 @@ done:
 	rv = gettimeofday(&now, NULL);
 	if (rv == -1)
 		memset(&now, 0, sizeof now);
+
+	if (last_log.first == handle_string && last_log.second == message &&
+	    now.tv_sec - last_log_start.tv_sec <= LOG_REPEAT_COLLAPSE_SECONDS) {
+		last_log_count++;
+		return;
+	} else {
+		if (last_log_count != 0) {
+			std::cerr << now << " [" << last_log.first << "] " <<
+				"last message repeated " << last_log_count <<
+				" times." << std::endl;
+			last_log_count = 0;
+		}
+		last_log.first = handle_string;
+		last_log.second = message;
+		last_log_start = now;
+	}
 
 	std::cerr << now << " [" << handle_string << "] " <<
 		priority << ": " <<
