@@ -88,6 +88,18 @@ public:
 		return (uuid_.encode(buf));
 	}
 
+	static XCodecCache *connect(const UUID& uuid, XCodecCache *parent)
+	{
+		XCodecCache *cache = lookup(uuid);
+		if (cache != NULL)
+			return (cache);
+		cache = parent->connect(uuid);
+		if (cache == NULL)
+			return (NULL);
+		enter(uuid, cache);
+		return (cache);
+	}
+
 	static void enter(const UUID& uuid, XCodecCache *cache)
 	{
 		ASSERT("/xcodec/cache", cache_map.find(uuid) == cache_map.end());

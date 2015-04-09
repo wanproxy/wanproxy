@@ -182,12 +182,7 @@ XCodecPipePair::decoder_decode(void)
 					return (false);
 				}
 
-				decoder_cache_ = XCodecCache::lookup(uuid);
-				if (decoder_cache_ == NULL) {
-					decoder_cache_ = codec_->cache()->connect(uuid);
-					XCodecCache::enter(uuid, decoder_cache_);
-				}
-
+				decoder_cache_ = XCodecCache::connect(uuid, codec_->cache());
 				ASSERT(log_, decoder_ == NULL);
 				decoder_ = new XCodecDecoder(decoder_cache_);
 
