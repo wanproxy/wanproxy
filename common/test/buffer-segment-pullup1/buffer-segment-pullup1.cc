@@ -170,4 +170,84 @@ main(void)
 		}
 		seg->unref();
 	}
+
+	{
+		TestGroup g("/test/buffer/pullup3", "BufferSegment::pullup #3");
+		uint8_t data[BUFFER_SEGMENT_SIZE / 2];
+		unsigned i;
+
+		for (i = 0; i < sizeof data; i++)
+			data[i] = random() & 0xff;
+
+		BufferSegment *seg = BufferSegment::create();
+		while (seg->avail() > 0) {
+			BufferSegment *seg2 = seg->append("A");
+			Test _(g, "Byte append");
+			if (seg2 == seg)
+				_.pass();
+		}
+
+		BufferSegment *nseg = seg;
+		{
+			Test _(g, "Share metadata.");
+			nseg->ref();
+			if (nseg == seg)
+				_.pass();
+		}
+		{
+			Test _(g, "Share data, not metadata.");
+			nseg = nseg->skip(sizeof data);
+			if (nseg != seg)
+				_.pass();
+		}
+		BufferSegment *mseg = nseg;
+		{
+			Test _(g, "Share metadata and shared data.");
+			mseg->ref();
+			if (mseg == nseg && mseg != seg)
+				_.pass();
+		}
+		{
+			Test _(g, "Append to shared data.");
+			mseg = mseg->append(data, sizeof data);
+			if (mseg != nseg && mseg != seg)
+				_.pass();
+		}
+		{
+			uint8_t check[BUFFER_SEGMENT_SIZE];
+
+			for (i = 0; i < sizeof data; i++)
+				check[i] = 'A';
+			for (i = 0; i < sizeof data; i++)
+				check[i + sizeof data] = data[i];
+
+			Test _(g, "Check data contents (mseg)");
+			if (mseg->equal(check, sizeof check))
+				_.pass();
+		}
+		mseg->unref();
+		mseg = NULL;
+		{
+			Test _(g, "Append to unshared data.");
+			seg->unref();
+			seg = NULL;
+			seg = nseg->append(data, sizeof data);
+			if (seg == nseg)
+				_.pass();
+			nseg = NULL;
+		}
+		{
+			uint8_t check[BUFFER_SEGMENT_SIZE];
+
+			for (i = 0; i < sizeof data; i++)
+				check[i] = 'A';
+			for (i = 0; i < sizeof data; i++)
+				check[i + sizeof data] = data[i];
+
+			Test _(g, "Check data contents (seg)");
+			if (seg->equal(check, sizeof check))
+				_.pass();
+		}
+		seg->unref();
+	}
 }

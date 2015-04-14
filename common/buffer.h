@@ -49,38 +49,7 @@
 
 struct iovec;
 
-/*
- * XXX
- * At one point I had code to add a further layer of indirection, BufferData
- * or something like that, which sat below a BufferSegment as it is today
- * and held the data buffer.  Then skip() and trim() and friends would
- * adjust offset and length members in the BufferSegment, but not need to
- * copy the data.  Then we don't even need to reference count BufferSegments,
- * just BufferData.  If we did this, then a lot of things would be cleaner
- * and there would be much less overhead in most cases, and the performance
- * loss could be minimal.
- *
- * It might even make sense to just move the offset/length of the view of
- * each BufferSegment into the Buffer, or up into some container class and
- * leave BufferSegment much as it is today.
- *
- * At the very least, it would be nice to allocate big slabs of data to point
- * BufferSegments at, so that perhaps we could opportunistically use smaller
- * BufferSegments and not be so unfriendly as to constantly span page
- * boundaries, making swapping and all kinds of everything worse.
- *
- * Also at the very least, Buffers could contain their own offset field (and
- * likewise use their length field) to allow non-destructive skip and trim
- * within the first and last (respectively) BufferSegments.  Making this work
- * at the start of the Buffer is perhaps most useful as skip() is much more
- * likely than trim().
- */
 #define	BUFFER_SEGMENT_SIZE		(2048)
-#if 0 /* XXX MT should be thread-local.  */
-#define	BUFFER_SEGMENT_CACHE_LIMIT	((1024 * 1024) / BUFFER_SEGMENT_SIZE)
-#else
-#define	BUFFER_SEGMENT_CACHE_LIMIT	(0)
-#endif
 
 typedef	unsigned buffer_segment_size_t;
 
@@ -95,12 +64,22 @@ typedef	unsigned buffer_segment_size_t;
  * thread.  One normally does not use BufferSegments directly unless one is
  * importing or exporting data in a performance-critical path.  Normal usage
  * uses a Buffer.
+ *
+ * A BufferSegment may also refer to an external chunk of data, either data
+ * in another BufferSegment, or in some other data structure.  This allows
+ * BufferSegment and Buffer users to avoid copies in many cases, both where
+ * there is data coming from an external source, and where metadata is being
+ * manipulated, but data is constant and shared.
  */
 class BufferSegment {
+	typedef	void data_free_t(void *, uint8_t *, buffer_segment_size_t, buffer_segment_size_t);
+
 	uint8_t *data_;
 	buffer_segment_size_t offset_;
 	buffer_segment_size_t length_;
 	RefCount ref_;
+	data_free_t *data_free_;
+	void *data_free_arg_;
 
 	/*
 	 * Creates a new, empty BufferSegment with a single reference.
@@ -109,10 +88,32 @@ class BufferSegment {
 	: data_(NULL),
 	  offset_(0),
 	  length_(0),
-	  ref_()
+	  ref_(),
+	  data_free_(NULL),
+	  data_free_arg_(NULL)
 	{
 		/* XXX Built-in slab allocator?  */
 		data_ = (uint8_t *)malloc(BUFFER_SEGMENT_SIZE);
+	}
+
+	/*
+	 * Creates a new BufferSegment with independent metadata and
+	 * external/shared data.
+	 */
+	BufferSegment(uint8_t *xdata, buffer_segment_size_t offset, buffer_segment_size_t xlength, data_free_t *data_free, void *data_free_arg)
+	: data_(xdata),
+	  offset_(offset),
+	  length_(xlength),
+	  ref_(),
+	  data_free_(data_free),
+	  data_free_arg_(data_free_arg)
+	{
+		ASSERT("/buffer/segment", data_ != NULL);
+		ASSERT("/buffer/segment", offset_ <= BUFFER_SEGMENT_SIZE);
+		ASSERT("/buffer/segment", length_ <= BUFFER_SEGMENT_SIZE);
+		ASSERT("/buffer/segment", offset_ + length_ <= BUFFER_SEGMENT_SIZE);
+		ASSERT("/buffer/segment", length_ > 0);
+		ASSERT("/buffer/segment", data_free_ != NULL);
 	}
 
 	/*
@@ -121,7 +122,10 @@ class BufferSegment {
 	~BufferSegment()
 	{
 		if (data_ != NULL) {
-			free(data_);
+			if (data_free_ == NULL)
+				free(data_);
+			else
+				data_free_(data_free_arg_, data_, offset_, length_);
 			data_ = NULL;
 		}
 	}
@@ -132,19 +136,6 @@ public:
 	 */
 	static BufferSegment *create(void)
 	{
-#if BUFFER_SEGMENT_CACHE_LIMIT > 0
-		if (!segment_cache.empty()) {
-			BufferSegment *seg = segment_cache.front();
-			ASSERT("/buffer/segment", !seg->ref_.inuse());
-			segment_cache.pop_front();
-			seg->ref_.hold();
-
-			seg->offset_ = 0;
-			seg->length_ = 0;
-
-			return (seg);
-		}
-#endif
 		return (new BufferSegment());
 	}
 
@@ -178,22 +169,22 @@ public:
 	 */
 	void unref(void)
 	{
-		if (ref_.drop()) {
-#if BUFFER_SEGMENT_CACHE_LIMIT > 0
-			if (segment_cache.size() == BUFFER_SEGMENT_CACHE_LIMIT)
-#endif
-				delete this;
-#if BUFFER_SEGMENT_CACHE_LIMIT > 0
-			else
-				segment_cache.push_back(this);
-#endif
-		}
+		if (ref_.drop())
+			delete this;
 	}
 
 	/*
-	 * Returns true if the BufferSegment is held exclusively.
+	 * Returns true if the BufferSegment's data is held exclusively.
 	 */
-	bool exclusive(void) const
+	bool data_exclusive(void) const
+	{
+		return (ref_.exclusive() && data_free_ == NULL);
+	}
+
+	/*
+	 * Returns true if the BufferSegment's metadata is held exclusively.
+	 */
+	bool metadata_exclusive(void) const
 	{
 		return (ref_.exclusive());
 	}
@@ -203,7 +194,7 @@ public:
 	 */
 	uint8_t *head(void)
 	{
-		ASSERT("/buffer/segment", ref_.exclusive());
+		ASSERT("/buffer/segment", data_exclusive());
 		return (&data_[offset_]);
 	}
 
@@ -213,7 +204,7 @@ public:
 	 */
 	uint8_t *tail(void)
 	{
-		ASSERT("/buffer/segment", ref_.exclusive());
+		ASSERT("/buffer/segment", data_exclusive());
 		return (&data_[offset_ + length_]);
 	}
 
@@ -225,13 +216,14 @@ public:
 		ASSERT("/buffer/segment", buf != NULL);
 		ASSERT("/buffer/segment", len != 0);
 		ASSERT("/buffer/segment", len <= avail());
-		if (!ref_.exclusive()) {
+		if (!data_exclusive()) {
 			BufferSegment *seg;
 
-			seg = this->copy();
-			this->unref();
-			seg = seg->append(buf, len);
-			return (seg);
+			seg = this->unshare();
+			if (seg != this) {
+				seg = seg->append(buf, len);
+				return (seg);
+			}
 		}
 		if (avail() - offset_ < len)
 			pullup();
@@ -274,6 +266,72 @@ public:
 		ASSERT("/buffer/segment", length_ != 0);
 		BufferSegment *seg = BufferSegment::create(data(), length_);
 		return (seg);
+	}
+
+	/*
+	 * Clone a BufferSegment, but share its data.
+	 * Passes the caller's reference to the clone.
+	 */
+	BufferSegment *metacopy(void)
+	{
+		ASSERT("/buffer/segment", length_ != 0);
+		return (new BufferSegment(data_, offset_, length_, &BufferSegment::free_meta, this));
+	}
+
+	/*
+	 * We want an unshared copy of this BufferSegment.
+	 *
+	 * Consumes the caller's reference to this and returns with a
+	 * reference to the new BufferSegment.  The new BufferSegment
+	 * may be the same as this BufferSegment if we have exclusive
+	 * metadata already and just need our own copy of data.
+	 */
+	BufferSegment *unshare(void)
+	{
+		if (!metadata_exclusive()) {
+			BufferSegment *seg;
+
+			seg = this->copy();
+			this->unref();
+			return (seg);
+		}
+
+		/*
+		 * Drop our interest in the external data.
+		 *
+		 * We may also get here without external
+		 * data in the case of a race.  The caller
+		 * checks whether it has exclusive
+		 * ownership of data, which is never true
+		 * for external buffers.  We then check if
+		 * we have exclusive ownership of the
+		 * metadata.  If another thread dropped its
+		 * claim to the metadata between the first
+		 * check and the second, then we would
+		 * expect to end up here, with exclusive
+		 * metadata, and actually with exclusive
+		 * data as well.
+		 */
+		if (data_free_ != NULL) {
+			uint8_t *data;
+
+			data = (uint8_t *)malloc(BUFFER_SEGMENT_SIZE);
+			copyout(data, 0, length_);
+
+			ASSERT("/buffer/segment", data_free_ != NULL);
+			data_free_(data_free_arg_, data_, offset_, length_);
+			data_free_ = NULL;
+
+			data_ = data;
+			offset_ = 0;
+		} else {
+			/*
+			 * Nothing do do; we have won a race in our
+			 * favour, and now have an unshared copy of
+			 * the data.
+			 */
+		}
+		return (this);
 	}
 
 	/*
@@ -326,7 +384,7 @@ public:
 	void pullup(void)
 	{
 		ASSERT("/buffer/segment", length_ != 0);
-		ASSERT("/buffer/segment", ref_.exclusive());
+		ASSERT("/buffer/segment", data_exclusive());
 		if (offset_ == 0)
 			return;
 		memmove(data_, data(), length());
@@ -339,7 +397,7 @@ public:
 	 */
 	void set_length(size_t len)
 	{
-		ASSERT("/buffer/segment", ref_.exclusive());
+		ASSERT("/buffer/segment", data_exclusive());
 		ASSERT("/buffer/segment", offset_ == 0);
 		ASSERT("/buffer/segment", len <= BUFFER_SEGMENT_SIZE);
 		length_ = len;
@@ -354,13 +412,8 @@ public:
 		ASSERT("/buffer/segment", bytes != 0);
 		ASSERT("/buffer/segment", bytes < length());
 
-		if (!ref_.exclusive()) {
-			BufferSegment *seg;
-
-			seg = BufferSegment::create(this->data() + bytes, this->length() - bytes);
-			this->unref();
-			return (seg);
-		}
+		if (!metadata_exclusive())
+			return (this->metacopy()->skip(bytes));
 		offset_ += bytes;
 		length_ -= bytes;
 
@@ -377,13 +430,8 @@ public:
 		ASSERT("/buffer/segment", bytes != 0);
 		ASSERT("/buffer/segment", bytes < length());
 
-		if (!ref_.exclusive()) {
-			BufferSegment *seg;
-
-			seg = BufferSegment::create(this->data(), this->length() - bytes);
-			this->unref();
-			return (seg);
-		}
+		if (!metadata_exclusive())
+			return (this->metacopy()->trim(bytes));
 		length_ -= bytes;
 
 		return (this);
@@ -404,7 +452,7 @@ public:
 		if (offset + bytes == length())
 			return (this->trim(bytes));
 
-		if (!ref_.exclusive()) {
+		if (!data_exclusive()) {
 			BufferSegment *seg;
 
 			seg = BufferSegment::create(this->data(), offset);
@@ -463,10 +511,11 @@ public:
 		return (equal(seg->data(), seg->length()));
 	}
 
-#if BUFFER_SEGMENT_CACHE_LIMIT > 0
-private:
-	static std::deque<BufferSegment *> segment_cache;
-#endif
+	static void free_meta(void *arg, uint8_t *, buffer_segment_size_t, buffer_segment_size_t)
+	{
+		BufferSegment *seg = (BufferSegment *)arg;
+		seg->unref();
+	}
 };
 
 /*
@@ -711,7 +760,7 @@ public:
 		if (len < BUFFER_SEGMENT_SIZE && !data_.empty()) {
 			segment_list_t::reverse_iterator it = data_.rbegin();
 			seg = *it;
-			if (seg->exclusive() && seg->avail() >= len) {
+			if (seg->data_exclusive() && seg->avail() >= len) {
 				seg = seg->append(buf, len);
 				*it = seg;
 				length_ += len;
