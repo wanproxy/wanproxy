@@ -44,23 +44,19 @@ class SocketUinet : public Socket {
 	LogHandle log_;
 	CallbackScheduler *scheduler_;
 
-	bool accept_do_;
 	Action *accept_action_;
 	SocketEventCallback *accept_callback_;
 	Mutex accept_connect_mtx_;
 
-	bool connect_do_;
 	Action *connect_action_;
 	EventCallback *connect_callback_;
 
-	bool read_do_;
 	Action *read_action_;
 	EventCallback *read_callback_;
 	uint64_t read_amount_remaining_;
 	Buffer read_buffer_;
 	Mutex read_mtx_;
 
-	bool write_do_;
 	Action *write_action_;
 	EventCallback *write_callback_;
 	uint64_t write_amount_remaining_;
@@ -120,10 +116,6 @@ private:
 	void upcall_schedule(unsigned);
 	void upcall_callback(void);
 	bool upcall_do(void);
-
-	static void accept_upcall_prep(struct uinet_socket *, void *);
-	static void receive_upcall_prep(struct uinet_socket *, void *, int64_t, int64_t);
-	static void send_upcall_prep(struct uinet_socket *, void *, int64_t);
 
 	static int passive_receive_upcall(struct uinet_socket *, void *, int);
 	static int active_receive_upcall(struct uinet_socket *, void *, int);
