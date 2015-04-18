@@ -57,12 +57,14 @@ public:
 	: lock_(lock)
 	{
 		ASSERT("/scoped/lock", lock_ != NULL);
+		ASSERT_LOCK_NOT_OWNED("/scoped/lock", lock_);
 		lock_->lock();
 	}
 
 	~ScopedLock()
 	{
 		if (lock_ != NULL) {
+			ASSERT_LOCK_OWNED("/scoped/lock", lock_);
 			lock_->unlock();
 			lock_ = NULL;
 		}
@@ -72,12 +74,14 @@ public:
 	{
 		ASSERT("/scoped/lock", lock_ == NULL);
 		lock_ = lock;
+		ASSERT_LOCK_NOT_OWNED("/scoped/lock", lock_);
 		lock_->lock();
 	}
 
 	void drop(void)
 	{
 		ASSERT("/scoped/lock", lock_ != NULL);
+		ASSERT_LOCK_OWNED("/scoped/lock", lock_);
 		lock_->unlock();
 		lock_ = NULL;
 	}

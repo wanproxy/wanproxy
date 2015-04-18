@@ -25,6 +25,8 @@
 
 #include <pthread.h>
 
+#include <deque>
+
 #include <common/thread/mutex.h>
 #include <common/thread/thread.h>
 
@@ -87,7 +89,8 @@ Mutex::lock(void)
 bool
 Mutex::try_lock(void)
 {
-	state_->lock();
+	if (!state_->try_lock())
+		return (false);
 	bool success = state_->lock_acquire_try();
 	state_->unlock();
 	return (success);

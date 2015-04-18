@@ -25,6 +25,8 @@
 
 #include <pthread.h>
 
+#include <deque>
+
 #include <common/thread/mutex.h>
 #include <common/thread/sleep_queue.h>
 #include <common/thread/thread.h>

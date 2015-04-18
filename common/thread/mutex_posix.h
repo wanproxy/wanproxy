@@ -31,14 +31,14 @@ struct MutexState {
 	pthread_mutexattr_t mutex_attr_;
 	pthread_cond_t cond_;
 	Thread::ID owner_;
-	unsigned waiters_;
+	std::deque<Thread::ID> waiters_;
 
 	MutexState(void)
 	: mutex_(),
 	  mutex_attr_(),
 	  cond_(),
 	  owner_(NULL),
-	  waiters_(0)
+	  waiters_()
 	{
 		int error;
 
@@ -86,18 +86,41 @@ struct MutexState {
 	}
 
 	/*
+	 * Acquire the underlying lock without blocking.
+	 */
+	bool try_lock(void)
+	{
+		int error;
+
+		error = pthread_mutex_trylock(&mutex_);
+		if (error == 0)
+			return (true);
+		ASSERT("/mutex/posix/state", error == EBUSY);
+		return (false);
+	}
+
+	/*
 	 * Acquire ownership of this mutex.
 	 */
 	void lock_acquire(void)
 	{
+		int error;
+
 		Thread::ID self = Thread::selfID();
 		ASSERT("/mutex/posix/state", self != NULL);
 
 		if (owner_ != NULL) {
-			waiters_++;
-			while (owner_ != NULL)
-				pthread_cond_wait(&cond_, &mutex_);
-			waiters_--;
+			waiters_.push_back(self);
+			for (;;) {
+				error = pthread_cond_wait(&cond_, &mutex_);
+				ASSERT("/mutex/posix/state", error == 0);
+				if (owner_ != NULL)
+					continue;
+				if (waiters_.front() != self)
+					continue;
+				waiters_.pop_front();
+				break;
+			}
 		}
 		owner_ = self;
 	}
@@ -132,6 +155,8 @@ struct MutexState {
 	 */
 	void lock_release(void)
 	{
+		int error;
+
 		Thread::ID self = Thread::selfID();
 		ASSERT("/mutex/posix/state", self != NULL);
 
@@ -142,8 +167,11 @@ struct MutexState {
 		ASSERT("/mutex/posix/state", owner_ == self);
 		owner_ = NULL;
 
-		if (waiters_ != 0)
-			pthread_cond_signal(&cond_);
+		if (waiters_.empty())
+			return;
+
+		error = pthread_cond_broadcast(&cond_);
+		ASSERT("/mutex/posix/state", error == 0);
 	}
 };
 
