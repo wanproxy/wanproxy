@@ -24,6 +24,7 @@
  */
 
 #include <event/event_callback.h>
+#include <event/event_system.h>
 
 #include <io/socket/socket.h>
 
@@ -31,6 +32,7 @@
 
 TCPClient::TCPClient(SocketImpl impl, SocketAddressFamily family)
 : log_("/tcp/client"),
+  mtx_("TCPClient"),
   impl_(impl),
   family_(family),
   socket_(NULL),
@@ -54,6 +56,7 @@ TCPClient::~TCPClient()
 Action *
 TCPClient::connect(const std::string& iface, const std::string& name, SocketEventCallback *ccb)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, connect_action_ == NULL);
 	ASSERT(log_, connect_callback_ == NULL);
 	ASSERT(log_, socket_ == NULL);
@@ -93,7 +96,7 @@ TCPClient::connect(const std::string& iface, const std::string& name, SocketEven
 		return (a);
 	}
 
-	EventCallback *cb = callback(this, &TCPClient::connect_complete);
+	EventCallback *cb = callback(&mtx_, this, &TCPClient::connect_complete);
 	connect_action_ = socket_->connect(name, cb);
 	connect_callback_ = ccb;
 
@@ -103,6 +106,7 @@ TCPClient::connect(const std::string& iface, const std::string& name, SocketEven
 void
 TCPClient::connect_cancel(void)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, close_action_ == NULL);
 	ASSERT(log_, connect_action_ != NULL);
 
@@ -117,18 +121,19 @@ TCPClient::connect_cancel(void)
 		/* Caller consumed Socket.  */
 		socket_ = NULL;
 
-		delete this;
+		EventSystem::instance()->destroy(&mtx_, this);
 		return;
 	}
 
 	ASSERT(log_, socket_ != NULL);
-	SimpleCallback *cb = callback(this, &TCPClient::close_complete);
+	SimpleCallback *cb = callback(&mtx_, this, &TCPClient::close_complete);
 	close_action_ = socket_->close(cb);
 }
 
 void
 TCPClient::connect_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	connect_action_->cancel();
 	connect_action_ = NULL;
 
@@ -140,6 +145,7 @@ TCPClient::connect_complete(Event e)
 void
 TCPClient::close_complete(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	close_action_->cancel();
 	close_action_ = NULL;
 

@@ -24,6 +24,7 @@
  */
 
 #include <common/test.h>
+#include <common/thread/mutex.h>
 
 #include <event/event_callback.h>
 #include <event/event_main.h>
@@ -35,20 +36,25 @@ static uint8_t data[65536];
 
 class Producer {
 	LogHandle log_;
+	Mutex mtx_;
 	TestGroup group_;
 	Pipe *pipe_;
 	Action *action_;
 public:
 	Producer(Pipe *pipe)
 	: log_("/producer"),
+	  mtx_("Producer"),
 	  group_("/test/io/pipe/null/producer", "Producer"),
 	  pipe_(pipe),
 	  action_(NULL)
 	{
 		Buffer buf(data, sizeof data);
 
-		EventCallback *cb = callback(this, &Producer::input_complete);
-		action_ = pipe_->input(&buf, cb);
+		{
+			ScopedLock _(&mtx_);
+			EventCallback *cb = callback(&mtx_, this, &Producer::input_complete);
+			action_ = pipe_->input(&buf, cb);
+		}
 
 		{
 			Test _(group_, "Input method consumed Buffer");
@@ -72,6 +78,7 @@ public:
 
 	void input_complete(Event e)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		{
 			Test _(group_, "Non-NULL Action");
 			if (action_ != NULL) {
@@ -92,6 +99,7 @@ public:
 
 class Consumer {
 	LogHandle log_;
+	Mutex mtx_;
 	TestGroup group_;
 	Pipe *pipe_;
 	Action *action_;
@@ -99,12 +107,14 @@ class Consumer {
 public:
 	Consumer(Pipe *pipe)
 	: log_("/consumer"),
+	  mtx_("Consumer"),
 	  group_("/test/io/pipe/null/consumer", "Consumer"),
 	  pipe_(pipe),
 	  action_(NULL),
 	  buffer_()
 	{
-		EventCallback *cb = callback(this, &Consumer::output_complete);
+		ScopedLock _(&mtx_);
+		EventCallback *cb = callback(&mtx_, this, &Consumer::output_complete);
 		action_ = pipe_->output(cb);
 	}
 
@@ -129,6 +139,7 @@ public:
 
 	void output_complete(Event e)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		{
 			Test _(group_, "Non-NULL Action");
 			if (action_ != NULL) {

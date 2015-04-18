@@ -23,60 +23,102 @@
  * SUCH DAMAGE.
  */
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
 #include <event/event_main.h>
 #include <event/event_system.h>
 
 #define	CALLBACK_NUMBER	1000
 #define	TIMER_MS	1000
+#define	NTHREADS	8
+#define	NMUTEXES	23
+
+namespace {
+	static EventThread *event_threads[NTHREADS];
+}
 
 class CallbackManySpeed {
+	LogHandle log_;
+	Mutex mtx_;
 	uintmax_t callback_count_;
+	Mutex *callback_mutex_[NMUTEXES];
 	Action *callback_action_[CALLBACK_NUMBER];
 	Action *timeout_action_;
 public:
 	CallbackManySpeed(void)
-	: callback_count_(0),
+	: log_("/example/callback/manyspeed1"),
+	  mtx_("CallbackManySpeed"),
+	  callback_count_(0),
 	  callback_action_(),
 	  timeout_action_(NULL)
 	{
+		ScopedLock _(&mtx_);
 		unsigned i;
-		for (i = 0; i < CALLBACK_NUMBER; i++)
-			callback_action_[i] = callback(this, &CallbackManySpeed::callback_complete, i)->schedule();
+		for (i = 0; i < NMUTEXES; i++) {
+			callback_mutex_[i] = new Mutex("CallbackManySpeed::callback");
+			callback_mutex_[i]->lock();
+		}
+		SimpleCallback *callbacks[CALLBACK_NUMBER];
+		for (i = 0; i < CALLBACK_NUMBER; i++) {
+			CallbackScheduler *scheduler = event_threads[i % NTHREADS];
+			Mutex *mtx = callback_mutex_[i % NMUTEXES];
+			SimpleCallback *cb = callback(scheduler, mtx, this, &CallbackManySpeed::callback_complete, i);
+			callbacks[i] = cb;
+		}
+		for (i = 0; i < NMUTEXES; i++)
+			callback_mutex_[i]->unlock();
+		for (i = 0; i < CALLBACK_NUMBER; i++) {
+			Mutex *mtx = callback_mutex_[i % NMUTEXES];
+			mtx->lock();
+			callback_action_[i] = callbacks[i]->schedule();
+			mtx->unlock();
+		}
 
-		INFO("/example/callback/manyspeed1") << "Arming timer.";
-		timeout_action_ = EventSystem::instance()->timeout(TIMER_MS, callback(this, &CallbackManySpeed::timer));
+		INFO(log_) << "Arming timer.";
+		timeout_action_ = EventSystem::instance()->timeout(TIMER_MS, callback(&mtx_, this, &CallbackManySpeed::timer));
 	}
 
 	~CallbackManySpeed()
 	{
-		ASSERT("/example/callback/manyspeed1", timeout_action_ == NULL);
+		ASSERT(log_, timeout_action_ == NULL);
+		unsigned i;
+		for (i = 0; i < NMUTEXES; i++) {
+			delete callback_mutex_[i];
+			callback_mutex_[i] = NULL;
+		}
 	}
 
 private:
 	void callback_complete(unsigned i)
 	{
+		ASSERT_LOCK_OWNED(log_, callback_mutex_[i % NMUTEXES]);
 		callback_action_[i]->cancel();
 		callback_action_[i] = NULL;
 
 		callback_count_++;
 
-		callback_action_[i] = callback(this, &CallbackManySpeed::callback_complete, i)->schedule();
+		CallbackScheduler *scheduler = event_threads[i % NTHREADS];
+		Mutex *mtx = callback_mutex_[i % NMUTEXES];
+		SimpleCallback *cb = callback(scheduler, mtx, this, &CallbackManySpeed::callback_complete, i);
+		callback_action_[i] = cb->schedule();
 	}
 
 	void timer(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		timeout_action_->cancel();
 		timeout_action_ = NULL;
 
 		unsigned i;
 		for (i = 0; i < CALLBACK_NUMBER; i++) {
-			ASSERT("/example/callback/manyspeed1", callback_action_[i] != NULL);
+			ScopedLock _(callback_mutex_[i % NMUTEXES]);
+			ASSERT(log_, callback_action_[i] != NULL);
 			callback_action_[i]->cancel();
 			callback_action_[i] = NULL;
 		}
 
-		INFO("/example/callback/manyspeed1") << "Timer expired; " << callback_count_ << " callbacks.";
+		INFO(log_) << "Timer expired; " << callback_count_ << " callbacks.";
 
 		EventSystem::instance()->stop();
 	}
@@ -86,6 +128,14 @@ int
 main(void)
 {
 	INFO("/example/callback/manyspeed1") << "Timer delay: " << TIMER_MS << "ms";
+
+	unsigned i;
+	for (i = 0; i < NTHREADS; i++) {
+		EventThread *td = new EventThread();
+		td->start();
+		EventSystem::instance()->thread_wait(td);
+		event_threads[i] = td;
+	}
 
 	CallbackManySpeed *cs = new CallbackManySpeed();
 

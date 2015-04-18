@@ -39,6 +39,7 @@
 
 HTTPServerHandler::HTTPServerHandler(Socket *client)
 : log_("/http/server/handler/" + client->getpeername()),
+  mtx_("HTTPServerHandler"),
   client_(client),
   pipe_(NULL),
   splice_(NULL),
@@ -46,12 +47,13 @@ HTTPServerHandler::HTTPServerHandler(Socket *client)
   close_action_(NULL),
   request_action_(NULL)
 {
+	ScopedLock _(&mtx_);
 	pipe_ = new HTTPServerPipe(log_ + "/pipe");
-	HTTPRequestEventCallback *hcb = callback(this, &HTTPServerHandler::request);
+	HTTPRequestEventCallback *hcb = callback(&mtx_, this, &HTTPServerHandler::request);
 	request_action_ = pipe_->request(hcb);
 
 	splice_ = new Splice(log_, client_, pipe_, client_);
-	EventCallback *scb = callback(this, &HTTPServerHandler::splice_complete);
+	EventCallback *scb = callback(&mtx_, this, &HTTPServerHandler::splice_complete);
 	splice_action_ = splice_->start(scb);
 }
 
@@ -67,6 +69,7 @@ HTTPServerHandler::~HTTPServerHandler()
 void
 HTTPServerHandler::close_complete(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	close_action_->cancel();
 	close_action_ = NULL;
 
@@ -74,12 +77,13 @@ HTTPServerHandler::close_complete(void)
 	delete client_;
 	client_ = NULL;
 
-	delete this;
+	EventSystem::instance()->destroy(&mtx_, this);
 }
 
 void
 HTTPServerHandler::request(Event e, HTTPProtocol::Request req)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	request_action_->cancel();
 	request_action_ = NULL;
 
@@ -128,6 +132,7 @@ HTTPServerHandler::request(Event e, HTTPProtocol::Request req)
 void
 HTTPServerHandler::splice_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	splice_action_->cancel();
 	splice_action_ = NULL;
 
@@ -158,6 +163,6 @@ HTTPServerHandler::splice_complete(Event e)
 	pipe_ = NULL;
 
 	ASSERT(log_, close_action_ == NULL);
-	SimpleCallback *cb = callback(this, &HTTPServerHandler::close_complete);
+	SimpleCallback *cb = callback(&mtx_, this, &HTTPServerHandler::close_complete);
 	close_action_ = client_->close(cb);
 }

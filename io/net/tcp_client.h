@@ -26,10 +26,15 @@
 #ifndef	IO_NET_TCP_CLIENT_H
 #define	IO_NET_TCP_CLIENT_H
 
+#include <common/thread/mutex.h>
+
 #include <io/socket/socket.h>
 
 class TCPClient {
+	friend class DestroyThread;
+
 	LogHandle log_;
+	Mutex mtx_;
 	SocketImpl impl_;
 	SocketAddressFamily family_;
 	Socket *socket_;

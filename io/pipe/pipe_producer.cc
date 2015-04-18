@@ -29,11 +29,17 @@
 #include <io/pipe/pipe_producer.h>
 
 /*
- * PipeProducer is a pipe with a producer-consume API.
+ * PipeProducer is a pipe with a producer-consumer API.
  */
 
-PipeProducer::PipeProducer(const LogHandle& log)
+/*
+ * XXX
+ * Should we have the subclass provide the mutex?
+ */
+
+PipeProducer::PipeProducer(const LogHandle& log, Lock *lock)
 : log_(log),
+  lock_(lock),
   output_buffer_(),
   output_action_(NULL),
   output_callback_(NULL),
@@ -52,6 +58,7 @@ PipeProducer::~PipeProducer()
 Action *
 PipeProducer::input(Buffer *buf, EventCallback *cb)
 {
+	ScopedLock _(lock_);
 	if (!error_) {
 		/*
 		 * XXX
@@ -78,6 +85,7 @@ PipeProducer::input(Buffer *buf, EventCallback *cb)
 Action *
 PipeProducer::output(EventCallback *cb)
 {
+	ScopedLock _(lock_);
 	ASSERT(log_, output_action_ == NULL);
 	ASSERT(log_, output_callback_ == NULL);
 
@@ -95,6 +103,7 @@ PipeProducer::output(EventCallback *cb)
 void
 PipeProducer::output_cancel(void)
 {
+	ScopedLock _(lock_);
 	if (output_action_ != NULL) {
 		ASSERT(log_, output_callback_ == NULL);
 
@@ -111,6 +120,7 @@ PipeProducer::output_cancel(void)
 Action *
 PipeProducer::output_do(EventCallback *cb)
 {
+	ASSERT_LOCK_OWNED(log_, lock_);
 	ASSERT(log_, output_cork_ == 0);
 
 	if (error_) {
@@ -137,6 +147,7 @@ PipeProducer::output_do(EventCallback *cb)
 void
 PipeProducer::output_produced(void)
 {
+	ASSERT_LOCK_OWNED(log_, lock_);
 	if (output_cork_ != 0)
 		return;
 
@@ -154,6 +165,7 @@ PipeProducer::output_produced(void)
 void
 PipeProducer::produce(Buffer *buf)
 {
+	ASSERT_LOCK_OWNED(log_, lock_);
 	ASSERT(log_, !error_);
 	ASSERT(log_, !output_eos_);
 
@@ -170,6 +182,7 @@ PipeProducer::produce(Buffer *buf)
 void
 PipeProducer::produce_eos(Buffer *buf)
 {
+	ASSERT_LOCK_OWNED(log_, lock_);
 	ASSERT(log_, !error_);
 	ASSERT(log_, !output_eos_);
 
@@ -184,6 +197,7 @@ PipeProducer::produce_eos(Buffer *buf)
 void
 PipeProducer::produce_error(void)
 {
+	ASSERT_LOCK_OWNED(log_, lock_);
 	ASSERT(log_, !error_);
 
 	if (output_eos_) {
@@ -201,12 +215,14 @@ PipeProducer::produce_error(void)
 void
 PipeProducer::cork(void)
 {
+	ASSERT_LOCK_OWNED(log_, lock_);
 	output_cork_++;
 }
 
 void
 PipeProducer::uncork(void)
 {
+	ASSERT_LOCK_OWNED(log_, lock_);
 	ASSERT(log_, output_cork_ != 0);
 
 	output_cork_--;

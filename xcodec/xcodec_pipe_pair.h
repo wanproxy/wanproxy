@@ -28,6 +28,8 @@
 
 #include <list>
 
+#include <common/thread/mutex.h>
+
 #include <io/pipe/pipe_producer.h>
 #include <io/pipe/pipe_producer_wrapper.h>
 
@@ -40,6 +42,7 @@ enum XCodecPipePairType {
 
 class XCodecPipePair : public PipePair {
 	LogHandle log_;
+	Mutex mtx_;
 	XCodec *codec_;
 	XCodecPipePairType type_;
 
@@ -68,6 +71,7 @@ class XCodecPipePair : public PipePair {
 public:
 	XCodecPipePair(const LogHandle& log, XCodec *codec, XCodecPipePairType type)
 	: log_(log + "/xcodec"),
+	  mtx_("XCodecPipePair"),
 	  codec_(codec),
 	  type_(type),
 	  decoder_(NULL),
@@ -87,12 +91,13 @@ public:
 	  encoder_reference_frames_(),
 	  encoder_pipe_(NULL)
 	{
-		decoder_pipe_ = new PipeProducerWrapper<XCodecPipePair>(log_ + "/decoder", this, &XCodecPipePair::decoder_consume);
-		encoder_pipe_ = new PipeProducerWrapper<XCodecPipePair>(log_ + "/encoder", this, &XCodecPipePair::encoder_consume);
+		decoder_pipe_ = new PipeProducerWrapper<XCodecPipePair>(log_ + "/decoder", &mtx_, this, &XCodecPipePair::decoder_consume);
+		encoder_pipe_ = new PipeProducerWrapper<XCodecPipePair>(log_ + "/encoder", &mtx_, this, &XCodecPipePair::encoder_consume);
 	}
 
 	~XCodecPipePair()
 	{
+		ScopedLock _(&mtx_);
 		while (!encoder_reference_frames_.empty())
 			encoder_reference_frame_advance();
 
@@ -124,18 +129,21 @@ private:
 
 	void decoder_error(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		ERROR(log_) << "Unrecoverable error in decoder.";
 		decoder_pipe_->produce_error();
 	}
 
 	void decoder_produce(Buffer *buf)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		ASSERT(log_, !buf->empty());
 		decoder_pipe_->produce(buf);
 	}
 
 	void decoder_produce_eos(Buffer *buf = NULL)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		decoder_pipe_->produce_eos(buf);
 	}
 
@@ -143,23 +151,27 @@ private:
 
 	void encoder_error(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		ERROR(log_) << "Unrecoverable error in encoder.";
 		encoder_pipe_->produce_error();
 	}
 
 	void encoder_produce(Buffer *buf)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		ASSERT(log_, !buf->empty());
 		encoder_pipe_->produce(buf);
 	}
 
 	void encoder_produce_eos(Buffer *buf = NULL)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		encoder_pipe_->produce_eos(buf);
 	}
 
 	void encoder_reference_frame_advance(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		ASSERT(log_, !encoder_reference_frames_.empty());
 		std::map<uint64_t, BufferSegment *> *refmap = encoder_reference_frames_.front();
 		encoder_reference_frames_.pop_front();

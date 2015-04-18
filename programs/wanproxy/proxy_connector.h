@@ -35,7 +35,11 @@ class Splice;
 class SplicePair;
 
 class ProxyConnector {
+	friend class DestroyThread;
+
 	LogHandle log_;
+
+	Mutex mtx_;
 
 	Action *stop_action_;
 

@@ -36,8 +36,8 @@ class PipeSimpleWrapper : public PipeProducer {
 	process_method_t process_method_;
 public:
 	template<typename Tp>
-	PipeSimpleWrapper(T *obj, Tp process_method)
-	: PipeProducer("/pipe/simple/wrapper"),
+	PipeSimpleWrapper(Lock *lock, T *obj, Tp process_method)
+	: PipeProducer("/pipe/simple/wrapper", lock),
 	  obj_(obj),
 	  process_method_(process_method)
 	{ }

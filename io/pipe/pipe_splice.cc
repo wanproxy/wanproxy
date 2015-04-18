@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
 
 #include <io/pipe/pipe.h>
@@ -34,6 +36,7 @@
 
 PipeSplice::PipeSplice(Pipe *source, Pipe *sink)
 : log_("/io/pipe/splice"),
+  mtx_("PipeSplice"),
   source_(source),
   sink_(sink),
   source_eos_(false),
@@ -43,6 +46,7 @@ PipeSplice::PipeSplice(Pipe *source, Pipe *sink)
 
 PipeSplice::~PipeSplice()
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, action_ == NULL);
 	ASSERT(log_, callback_ == NULL);
 }
@@ -50,10 +54,11 @@ PipeSplice::~PipeSplice()
 Action *
 PipeSplice::start(EventCallback *scb)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, action_ == NULL);
 	ASSERT(log_, callback_ == NULL);
 
-	EventCallback *cb = callback(this, &PipeSplice::output_complete);
+	EventCallback *cb = callback(&mtx_, this, &PipeSplice::output_complete);
 	action_ = source_->output(cb);
 
 	callback_ = scb;
@@ -64,6 +69,7 @@ PipeSplice::start(EventCallback *scb)
 void
 PipeSplice::cancel(void)
 {
+	ScopedLock _(&mtx_);
 	if (action_ != NULL) {
 		action_->cancel();
 		action_ = NULL;
@@ -78,6 +84,7 @@ PipeSplice::cancel(void)
 void
 PipeSplice::output_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	action_->cancel();
 	action_ = NULL;
 
@@ -108,13 +115,14 @@ PipeSplice::output_complete(Event e)
 		ASSERT(log_, !e.buffer_.empty());
 	}
 
-	EventCallback *cb = callback(this, &PipeSplice::input_complete);
+	EventCallback *cb = callback(&mtx_, this, &PipeSplice::input_complete);
 	action_ = sink_->input(&e.buffer_, cb);
 }
 
 void
 PipeSplice::input_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	action_->cancel();
 	action_ = NULL;
 
@@ -143,6 +151,6 @@ PipeSplice::input_complete(Event e)
 		return;
 	}
 
-	EventCallback *cb = callback(this, &PipeSplice::output_complete);
+	EventCallback *cb = callback(&mtx_, this, &PipeSplice::output_complete);
 	action_ = source_->output(cb);
 }

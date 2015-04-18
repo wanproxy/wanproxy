@@ -45,6 +45,7 @@ class HTTPServerPipe : public PipeProducer {
 		Error
 	};
 
+	Mutex mtx_;
 	State state_;
 	Buffer buffer_;
 
@@ -64,6 +65,10 @@ public:
 	void send_response(HTTPProtocol::Status, const std::string&, const std::string& = "text/plain");
 
 private:
+	/* XXX Use HTTPProtocol::Response type and add nice constructors for it?  */
+	void send_response_locked(HTTPProtocol::Status, Buffer *, Buffer *);
+	void send_response_locked(HTTPProtocol::Status, const std::string&, const std::string& = "text/plain");
+
 	void cancel(void);
 
 	Action *schedule_callback(HTTPRequestEventCallback *);

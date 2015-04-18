@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
 
 #include <io/socket/socket_handle.h>

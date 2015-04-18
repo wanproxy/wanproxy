@@ -23,7 +23,10 @@
  * SUCH DAMAGE.
  */
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
+#include <event/event_system.h>
 
 #include <io/socket/socket.h>
 
@@ -31,6 +34,7 @@
 
 UDPClient::UDPClient(SocketImpl impl, SocketAddressFamily family)
 : log_("/udp/client"),
+  mtx_("UDPClient"),
   impl_(impl),
   family_(family),
   socket_(NULL),
@@ -54,6 +58,7 @@ UDPClient::~UDPClient()
 Action *
 UDPClient::connect(const std::string& iface, const std::string& name, SocketEventCallback *ccb)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, connect_action_ == NULL);
 	ASSERT(log_, connect_callback_ == NULL);
 	ASSERT(log_, socket_ == NULL);
@@ -85,7 +90,7 @@ UDPClient::connect(const std::string& iface, const std::string& name, SocketEven
 		return (a);
 	}
 
-	EventCallback *cb = callback(this, &UDPClient::connect_complete);
+	EventCallback *cb = callback(&mtx_, this, &UDPClient::connect_complete);
 	connect_action_ = socket_->connect(name, cb);
 	connect_callback_ = ccb;
 
@@ -95,6 +100,7 @@ UDPClient::connect(const std::string& iface, const std::string& name, SocketEven
 void
 UDPClient::connect_cancel(void)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, close_action_ == NULL);
 	ASSERT(log_, connect_action_ != NULL);
 
@@ -109,18 +115,19 @@ UDPClient::connect_cancel(void)
 		/* Caller consumed Socket.  */
 		socket_ = NULL;
 
-		delete this;
+		EventSystem::instance()->destroy(&mtx_, this);
 		return;
 	}
 
 	ASSERT(log_, socket_ != NULL);
-	SimpleCallback *cb = callback(this, &UDPClient::close_complete);
+	SimpleCallback *cb = callback(&mtx_, this, &UDPClient::close_complete);
 	close_action_ = socket_->close(cb);
 }
 
 void
 UDPClient::connect_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	connect_action_->cancel();
 	connect_action_ = NULL;
 
@@ -132,6 +139,7 @@ UDPClient::connect_complete(Event e)
 void
 UDPClient::close_complete(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	close_action_->cancel();
 	close_action_ = NULL;
 

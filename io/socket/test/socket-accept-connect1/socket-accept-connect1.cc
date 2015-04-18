@@ -25,6 +25,7 @@
 
 #include <common/buffer.h>
 #include <common/test.h>
+#include <common/thread/mutex.h>
 
 #include <event/event_callback.h>
 #include <event/event_main.h>
@@ -38,6 +39,7 @@ static uint8_t data[65536];
 
 class Connector {
 	LogHandle log_;
+	Mutex mtx_;
 	TestGroup group_;
 	Socket *socket_;
 	Action *action_;
@@ -45,6 +47,7 @@ class Connector {
 public:
 	Connector(const std::string& remote)
 	: log_("/connector"),
+	  mtx_("Connector"),
 	  group_("/test/io/socket/connector", "Socket connector"),
 	  socket_(NULL),
 	  action_(NULL)
@@ -56,9 +59,10 @@ public:
 				return;
 			_.pass();
 		}
+		ScopedLock _(&mtx_);
 		test_ = new Test(group_, "Socket::connect");
 		EventCallback *cb =
-			callback(this, &Connector::connect_complete);
+			callback(&mtx_, this, &Connector::connect_complete);
 		action_ = socket_->connect(remote, cb);
 	}
 
@@ -95,6 +99,7 @@ public:
 
 	void close_complete(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 
@@ -105,6 +110,7 @@ public:
 
 	void connect_complete(Event e)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 
@@ -119,13 +125,14 @@ public:
 		delete test_;
 		test_ = NULL;
 
-		EventCallback *cb = callback(this, &Connector::write_complete);
+		EventCallback *cb = callback(&mtx_, this, &Connector::write_complete);
 		Buffer buf(data, sizeof data);
 		action_ = socket_->write(&buf, cb);
 	}
 
 	void write_complete(Event e)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 
@@ -137,13 +144,14 @@ public:
 			return;
 		}
 
-		SimpleCallback *cb = callback(this, &Connector::close_complete);
+		SimpleCallback *cb = callback(&mtx_, this, &Connector::close_complete);
 		action_ = socket_->close(cb);
 	}
 };
 
 class Listener {
 	LogHandle log_;
+	Mutex mtx_;
 	TestGroup group_;
 	Socket *socket_;
 	Action *action_;
@@ -153,6 +161,7 @@ class Listener {
 public:
 	Listener(void)
 	: log_("/listener"),
+	  mtx_("Listener"),
 	  group_("/test/io/socket/listener", "Socket listener"),
 	  action_(NULL),
 	  connector_(NULL),
@@ -180,7 +189,8 @@ public:
 
 		connector_ = new Connector(socket_->getsockname());
 
-		SocketEventCallback *cb = callback(this, &Listener::accept_complete);
+		ScopedLock _(&mtx_);
+		SocketEventCallback *cb = callback(&mtx_, this, &Listener::accept_complete);
 		action_ = socket_->accept(cb);
 	}
 
@@ -217,6 +227,7 @@ public:
 
 	void accept_complete(Event e, Socket *socket)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 
@@ -235,12 +246,13 @@ public:
 				_.pass();
 		}
 
-		SimpleCallback *cb = callback(this, &Listener::close_complete);
+		SimpleCallback *cb = callback(&mtx_, this, &Listener::close_complete);
 		action_ = socket_->close(cb);
 	}
 
 	void close_complete(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 
@@ -248,12 +260,13 @@ public:
 		delete socket_;
 		socket_ = NULL;
 
-		EventCallback *cb = callback(this, &Listener::client_read);
+		EventCallback *cb = callback(&mtx_, this, &Listener::client_read);
 		action_ = client_->read(0, cb);
 	}
 
 	void client_read(Event e)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 
@@ -264,7 +277,7 @@ public:
 				read_buffer_.append(e.buffer_);
 				_.pass();
 				EventCallback *cb =
-					callback(this, &Listener::client_read);
+					callback(&mtx_, this, &Listener::client_read);
 				action_ = client_->read(0, cb);
 				return;
 			}
@@ -287,12 +300,13 @@ public:
 			if (read_buffer_.equal(data, sizeof data))
 				_.pass();
 		}
-		SimpleCallback *cb = callback(this, &Listener::client_close);
+		SimpleCallback *cb = callback(&mtx_, this, &Listener::client_close);
 		action_ = client_->close(cb);
 	}
 
 	void client_close(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 

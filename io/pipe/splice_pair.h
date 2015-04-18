@@ -31,6 +31,8 @@ class Splice;
 class SplicePair {
 	LogHandle log_;
 
+	Mutex mtx_;
+
 	Splice *left_;
 	Splice *right_;
 

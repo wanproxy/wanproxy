@@ -38,6 +38,7 @@ struct WANProxyCodec;
 
 class SSHStream : public StreamChannel {
 	LogHandle log_;
+	Mutex mtx_;
 	const SSHProxyConfig *ssh_config_;
 	Socket *socket_;
 	SSH::Session session_;

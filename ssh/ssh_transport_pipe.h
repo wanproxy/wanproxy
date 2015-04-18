@@ -45,6 +45,8 @@ namespace SSH {
 			GetPacket
 		};
 
+		Mutex mtx_;
+
 		Session *session_;
 
 		State state_;

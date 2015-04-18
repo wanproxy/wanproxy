@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
 
 #include <io/pipe/splice.h>
@@ -34,6 +36,7 @@
 
 SplicePair::SplicePair(Splice *left, Splice *right)
 : log_("/splice/pair"),
+  mtx_("SplicePair"),
   left_(left),
   right_(right),
   callback_(NULL),
@@ -56,13 +59,14 @@ SplicePair::~SplicePair()
 Action *
 SplicePair::start(EventCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, callback_ == NULL && callback_action_ == NULL);
 	callback_ = cb;
 
-	EventCallback *lcb = callback(this, &SplicePair::splice_complete, left_);
+	EventCallback *lcb = callback(&mtx_, this, &SplicePair::splice_complete, left_);
 	left_action_ = left_->start(lcb);
 
-	EventCallback *rcb = callback(this, &SplicePair::splice_complete, right_);
+	EventCallback *rcb = callback(&mtx_, this, &SplicePair::splice_complete, right_);
 	right_action_ = right_->start(rcb);
 
 	return (cancellation(this, &SplicePair::cancel));
@@ -71,6 +75,7 @@ SplicePair::start(EventCallback *cb)
 void
 SplicePair::cancel(void)
 {
+	ScopedLock _(&mtx_);
 	if (callback_ != NULL) {
 		delete callback_;
 		callback_ = NULL;
@@ -96,6 +101,7 @@ SplicePair::cancel(void)
 void
 SplicePair::splice_complete(Event e, Splice *splice)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, callback_ != NULL && callback_action_ == NULL);
 
 	if (splice == left_) {

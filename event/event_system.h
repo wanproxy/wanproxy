@@ -26,6 +26,7 @@
 #ifndef	EVENT_EVENT_SYSTEM_H
 #define	EVENT_EVENT_SYSTEM_H
 
+#include <event/destroy_thread.h>
 #include <event/event_poll.h>
 #include <event/event_thread.h>
 #include <event/timeout_thread.h>
@@ -40,6 +41,7 @@ class EventSystem {
 	EventThread td_;
 	EventPoll poll_;
 	TimeoutThread timeout_;
+	DestroyThread destroy_;
 	std::deque<Thread *> threads_;
 private:
 	EventSystem(void)
@@ -52,6 +54,12 @@ private:
 	{ }
 
 public:
+	template<class C>
+	void destroy(Lock *lock, C *obj)
+	{
+		destroy_.destroy(lock, obj);
+	}
+
 	Action *poll(const EventPoll::Type& type, int fd, EventCallback *cb)
 	{
 		return (poll_.poll(type, fd, cb));
@@ -87,6 +95,9 @@ public:
 
 		timeout_.start();
 		thread_wait(&timeout_);
+
+		destroy_.start();
+		thread_wait(&destroy_);
 	}
 
 	void join(void)

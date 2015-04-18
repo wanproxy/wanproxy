@@ -29,6 +29,7 @@
 #include <event/action.h>
 
 class CallbackBase;
+class Lock;
 
 class CallbackScheduler {
 protected:
@@ -44,9 +45,11 @@ public:
 
 class CallbackBase {
 	CallbackScheduler *scheduler_;
+	Lock *lock_;
 protected:
-	CallbackBase(CallbackScheduler *scheduler)
-	: scheduler_(scheduler)
+	CallbackBase(CallbackScheduler *scheduler, Lock *xlock)
+	: scheduler_(scheduler),
+	  lock_(xlock)
 	{ }
 
 public:
@@ -57,12 +60,17 @@ public:
 	virtual void execute(void) = 0;
 
 	Action *schedule(void);
+
+	Lock *lock(void) const
+	{
+		return (lock_);
+	}
 };
 
 class SimpleCallback : public CallbackBase {
 protected:
-	SimpleCallback(CallbackScheduler *scheduler)
-	: CallbackBase(scheduler)
+	SimpleCallback(CallbackScheduler *scheduler, Lock *xlock)
+	: CallbackBase(scheduler, xlock)
 	{ }
 
 public:

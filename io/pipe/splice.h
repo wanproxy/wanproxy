@@ -31,6 +31,7 @@ class Pipe;
 
 class Splice {
 	LogHandle log_;
+	Mutex mtx_;
 	StreamChannel *source_;
 	Pipe *pipe_;
 	StreamChannel *sink_;

@@ -34,6 +34,7 @@ class SocketHandle : public Socket, public StreamHandle {
 	using StreamHandle::close;
 
 	LogHandle log_;
+	Mutex mtx_;
 	Action *accept_action_;
 	SocketEventCallback *accept_callback_;
 	EventCallback *connect_callback_;

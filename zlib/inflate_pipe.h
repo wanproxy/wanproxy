@@ -31,6 +31,7 @@
 #include <zlib.h>
 
 class InflatePipe : public PipeProducer {
+	Mutex mtx_;
 	z_stream stream_;
 public:
 	InflatePipe(void);

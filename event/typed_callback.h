@@ -26,6 +26,8 @@
 #ifndef	EVENT_TYPED_CALLBACK_H
 #define	EVENT_TYPED_CALLBACK_H
 
+#include <common/thread/lock.h>
+
 #include <event/callback.h>
 
 template<typename T>
@@ -33,8 +35,8 @@ class TypedCallback : public CallbackBase {
 	bool have_param_;
 	T param_;
 protected:
-	TypedCallback(CallbackScheduler *scheduler)
-	: CallbackBase(scheduler),
+	TypedCallback(CallbackScheduler *scheduler, Lock *xlock)
+	: CallbackBase(scheduler, xlock),
 	  have_param_(false),
 	  param_()
 	{ }
@@ -76,8 +78,8 @@ private:
 	method_t method_;
 public:
 	template<typename Tm>
-	ObjectTypedCallback(CallbackScheduler *scheduler, C *obj, Tm method)
-	: TypedCallback<T>(scheduler),
+	ObjectTypedCallback(CallbackScheduler *scheduler, Lock *xlock, C *obj, Tm method)
+	: TypedCallback<T>(scheduler, xlock),
 	  obj_(obj),
 	  method_(method)
 	{ }
@@ -103,8 +105,8 @@ private:
 	A arg_;
 public:
 	template<typename Tm>
-	ObjectTypedArgCallback(CallbackScheduler *scheduler, C *obj, Tm method, A arg)
-	: TypedCallback<T>(scheduler),
+	ObjectTypedArgCallback(CallbackScheduler *scheduler, Lock *xlock, C *obj, Tm method, A arg)
+	: TypedCallback<T>(scheduler, xlock),
 	  obj_(obj),
 	  method_(method),
 	  arg_(arg)
@@ -121,30 +123,34 @@ private:
 };
 
 template<typename T, class C>
-TypedCallback<T> *callback(C *obj, void (C::*const method)(T))
+TypedCallback<T> *callback(Lock *lock, C *obj, void (C::*const method)(T))
 {
-	TypedCallback<T> *cb = new ObjectTypedCallback<T, C>(NULL, obj, method);
+	ASSERT_LOCK_OWNED("/callback/typed", lock);
+	TypedCallback<T> *cb = new ObjectTypedCallback<T, C>(NULL, lock, obj, method);
 	return (cb);
 }
 
 template<typename T, class C, typename A>
-TypedCallback<T> *callback(C *obj, void (C::*const method)(T, A), A arg)
+TypedCallback<T> *callback(Lock *lock, C *obj, void (C::*const method)(T, A), A arg)
 {
-	TypedCallback<T> *cb = new ObjectTypedArgCallback<T, C, A>(NULL, obj, method, arg);
+	ASSERT_LOCK_OWNED("/callback/typed", lock);
+	TypedCallback<T> *cb = new ObjectTypedArgCallback<T, C, A>(NULL, lock, obj, method, arg);
 	return (cb);
 }
 
 template<typename T, class C>
-TypedCallback<T> *callback(CallbackScheduler *scheduler, C *obj, void (C::*const method)(T))
+TypedCallback<T> *callback(CallbackScheduler *scheduler, Lock *lock, C *obj, void (C::*const method)(T))
 {
-	TypedCallback<T> *cb = new ObjectTypedCallback<T, C>(scheduler, obj, method);
+	ASSERT_LOCK_OWNED("/callback/typed", lock);
+	TypedCallback<T> *cb = new ObjectTypedCallback<T, C>(scheduler, lock, obj, method);
 	return (cb);
 }
 
 template<typename T, class C, typename A>
-TypedCallback<T> *callback(CallbackScheduler *scheduler, C *obj, void (C::*const method)(T, A), A arg)
+TypedCallback<T> *callback(CallbackScheduler *scheduler, Lock *lock, C *obj, void (C::*const method)(T, A), A arg)
 {
-	TypedCallback<T> *cb = new ObjectTypedArgCallback<T, C, A>(scheduler, obj, method, arg);
+	ASSERT_LOCK_OWNED("/callback/typed", lock);
+	TypedCallback<T> *cb = new ObjectTypedArgCallback<T, C, A>(scheduler, lock, obj, method, arg);
 	return (cb);
 }
 

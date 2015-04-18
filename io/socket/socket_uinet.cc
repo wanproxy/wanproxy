@@ -116,14 +116,14 @@ SocketUinet::accept_schedule(void)
 	if (accept_action_ != NULL)
 		return;
 
-	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::accept_callback);
+	SimpleCallback *cb = callback(scheduler_, &accept_connect_mtx_, this, &SocketUinet::accept_callback);
 	accept_action_ = cb->schedule();
 }
 
 void
 SocketUinet::accept_callback(void)
 {
-	ScopedLock _(&accept_connect_mtx_);
+	ASSERT_LOCK_OWNED(log_, &accept_connect_mtx_);
 	ASSERT(log_, accept_action_ != NULL);
 	accept_action_->cancel();
 	accept_action_ = NULL;
@@ -251,14 +251,14 @@ SocketUinet::connect_schedule(void)
 	if (connect_action_ != NULL)
 		return;
 
-	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::connect_callback);
+	SimpleCallback *cb = callback(scheduler_, &accept_connect_mtx_, this, &SocketUinet::connect_callback);
 	connect_action_ = cb->schedule();
 }
 
 void
 SocketUinet::connect_callback(void)
 {
-	ScopedLock _(&accept_connect_mtx_);
+	ASSERT_LOCK_OWNED(log_, &accept_connect_mtx_);
 
 	ASSERT(log_, connect_action_ != NULL);
 	connect_action_->cancel();
@@ -418,14 +418,14 @@ SocketUinet::read_schedule(void)
 	if (read_action_ != NULL)
 		return;
 
-	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::read_callback);
+	SimpleCallback *cb = callback(scheduler_, &read_mtx_, this, &SocketUinet::read_callback);
 	read_action_ = cb->schedule();
 }
 
 void
 SocketUinet::read_callback(void)
 {
-	ScopedLock _(&read_mtx_);
+	ASSERT_LOCK_OWNED(log_, &read_mtx_);
 	/*
 	 * We have already been cancelled, but lost the race.
 	 */
@@ -557,7 +557,7 @@ SocketUinet::active_send_upcall(struct uinet_socket *, void *arg, int)
 Action *
 SocketUinet::write(Buffer *buffer, EventCallback *cb)
 {
-	ScopedLock _(&write_mtx_);
+	ASSERT_LOCK_OWNED(log_, &write_mtx_);
 
 	ASSERT(log_, write_callback_ == NULL);
 	ASSERT(log_, write_action_ == NULL);
@@ -579,7 +579,7 @@ SocketUinet::write_schedule(void)
 	if (write_action_ != NULL)
 		return;
 
-	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::write_callback);
+	SimpleCallback *cb = callback(scheduler_, &write_mtx_, this, &SocketUinet::write_callback);
 	write_action_ = cb->schedule();
 }
 
@@ -716,7 +716,7 @@ SocketUinet::upcall_schedule(unsigned kind)
 	/*
 	 * We need recall and there is no pending upcall callback.
 	 */
-	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::upcall_callback);
+	SimpleCallback *cb = callback(scheduler_, &upcall_mtx_, this, &SocketUinet::upcall_callback);
 	upcall_action_ = cb->schedule();
 }
 
@@ -756,7 +756,7 @@ SocketUinet::upcall_callback(void)
 	 * must try again, because if we blocked here it could
 	 * cause a lock order reversal.
 	 */
-	SimpleCallback *cb = callback(scheduler_, this, &SocketUinet::upcall_callback);
+	SimpleCallback *cb = callback(scheduler_, &upcall_mtx_, this, &SocketUinet::upcall_callback);
 	upcall_action_ = cb->schedule();
 }
 

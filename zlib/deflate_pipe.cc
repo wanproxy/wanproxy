@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
 
 #include <io/pipe/pipe.h>
@@ -32,7 +34,8 @@
 #define	DEFLATE_CHUNK_SIZE	65536
 
 DeflatePipe::DeflatePipe(int level)
-: PipeProducer("/zlib/deflate_pipe"),
+: PipeProducer("/zlib/deflate_pipe", &mtx_),
+  mtx_("DeflatePipe"),
   stream_()
 {
 	stream_.zalloc = Z_NULL;

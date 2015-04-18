@@ -26,6 +26,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
 #include <event/event_main.h>
 #include <event/event_system.h>
@@ -38,6 +40,7 @@ static uint8_t data_buffer[BW_BSIZE];
 class BlockWriter {
 	LogHandle log_;
 
+	Mutex mtx_;
 	BlockHandle dev_;
 	uint64_t block_number_;
 	uint64_t block_count_;
@@ -47,14 +50,16 @@ class BlockWriter {
 public:
 	BlockWriter(int fd, uint64_t block_count)
 	: log_("/blockwriter"),
+	  mtx_("BlockWriter"),
 	  dev_(fd, BW_BSIZE),
 	  block_number_(0),
 	  block_count_(block_count),
 	  write_action_(NULL),
 	  close_action_(NULL)
 	{
+		ScopedLock _(&mtx_);
 		Buffer buf(data_buffer, sizeof data_buffer);
-		EventCallback *cb = callback(this, &BlockWriter::write_complete);
+		EventCallback *cb = callback(&mtx_, this, &BlockWriter::write_complete);
 		write_action_ = dev_.write(block_number_, &buf, cb);
 	}
 
@@ -66,6 +71,7 @@ public:
 
 	void write_complete(Event e)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		write_action_->cancel();
 		write_action_ = NULL;
 
@@ -80,18 +86,19 @@ public:
 		DEBUG(log_) << "Finished block #" << block_number_ << "/" << block_count_;
 
 		if (++block_number_ == block_count_) {
-			SimpleCallback *cb = callback(this, &BlockWriter::close_complete);
+			SimpleCallback *cb = callback(&mtx_, this, &BlockWriter::close_complete);
 			close_action_ = dev_.close(cb);
 			return;
 		}
 
 		Buffer buf(data_buffer, sizeof data_buffer);
-		EventCallback *cb = callback(this, &BlockWriter::write_complete);
+		EventCallback *cb = callback(&mtx_, this, &BlockWriter::write_complete);
 		write_action_ = dev_.write(block_number_, &buf, cb);
 	}
 
 	void close_complete(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		close_action_->cancel();
 		close_action_ = NULL;
 

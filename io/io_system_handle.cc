@@ -95,7 +95,7 @@ IOSystem::Handle::close_do(SimpleCallback *cb)
 void
 IOSystem::Handle::read_callback(Event e)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	read_action_->cancel();
 	read_action_ = NULL;
 
@@ -267,7 +267,7 @@ IOSystem::Handle::read_schedule(void)
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, read_action_ == NULL);
 
-	EventCallback *cb = callback(scheduler_, this, &IOSystem::Handle::read_callback);
+	EventCallback *cb = callback(scheduler_, &mtx_, this, &IOSystem::Handle::read_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Readable, fd_, cb);
 	return (a);
 }
@@ -275,7 +275,7 @@ IOSystem::Handle::read_schedule(void)
 void
 IOSystem::Handle::write_callback(Event e)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	write_action_->cancel();
 	write_action_ = NULL;
 
@@ -419,7 +419,7 @@ IOSystem::Handle::write_schedule(void)
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, write_action_ == NULL);
 
-	EventCallback *cb = callback(scheduler_, this, &IOSystem::Handle::write_callback);
+	EventCallback *cb = callback(scheduler_, &mtx_, this, &IOSystem::Handle::write_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Writable, fd_, cb);
 	return (a);
 }

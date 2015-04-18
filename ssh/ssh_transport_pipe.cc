@@ -24,6 +24,7 @@
  */
 
 #include <common/endian.h>
+#include <common/thread/mutex.h>
 
 #include <event/event_callback.h>
 
@@ -46,7 +47,8 @@ namespace {
 }
 
 SSH::TransportPipe::TransportPipe(Session *session)
-: PipeProducer("/ssh/transport/pipe"),
+: PipeProducer("/ssh/transport/pipe", &mtx_),
+  mtx_("SSH::TransportPipe"),
   session_(session),
   state_(GetIdentificationString),
   input_buffer_(),

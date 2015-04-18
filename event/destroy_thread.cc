@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 Juli Malett. All rights reserved.
+ * Copyright (c) 2015 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,67 +23,60 @@
  * SUCH DAMAGE.
  */
 
-#include <common/test.h>
+#include <sched.h>
 
-#include <event/event_callback.h>
-#include <event/event_condition.h>
-#include <event/event_handler.h>
-#include <event/event_main.h>
-#include <event/event_system.h>
+#include <event/destroy_thread.h>
 
-namespace {
-	static unsigned outstanding;
+DestroyThread::DestroyThread(void)
+: Thread("DestroyThread"),
+  log_("/destroy/thread"),
+  mtx_("DestroyThread"),
+  sleepq_("DestroyThread", &mtx_),
+  idle_(false),
+  queue_()
+{ }
+
+void
+DestroyThread::append(DestroyBase *db)
+{
+	mtx_.lock();
+	bool need_wakeup = queue_.empty();
+	queue_.push_back(db);
+	if (need_wakeup && idle_)
+		sleepq_.signal();
+	mtx_.unlock();
 }
 
-struct HandlerTest {
-	unsigned key_;
-	TestGroup& group_;
-	Test test_;
-	EventConditionVariable cv_;
-	EventHandler handler_;
-
-	HandlerTest(unsigned key, TestGroup& group)
-	: key_(key),
-	  group_(group),
-	  test_(group_, "Handler is triggered."),
-	  cv_(),
-	  handler_()
-	{
-		handler_.handler(Event::Done, this, &HandlerTest::condition_signalled);
-		handler_.wait(cv_.wait(handler_.callback()));
-		cv_.signal(Event::Done);
-	}
-
-	~HandlerTest()
-	{ }
-
-	void condition_signalled(Event e)
-	{
-		test_.pass();
-		{
-			Test _(group_, "Correct event type.");
-			if (e.type_ == Event::Done)
-				_.pass();
+void
+DestroyThread::main(void)
+{
+	mtx_.lock();
+	for (;;) {
+		if (queue_.empty()) {
+			idle_ = true;
+			for (;;) {
+				if (stop_) {
+					mtx_.unlock();
+					return;
+				}
+				sleepq_.wait();
+				if (queue_.empty())
+					continue;
+				idle_ = false;
+				break;
+			}
 		}
 
-		if (outstanding-- == 1)
-			EventSystem::instance()->stop();
+		while (!queue_.empty()) {
+			DestroyBase *db = queue_.front();
+			queue_.pop_front();
 
-		delete this;
+			DEBUG(log_) << "Destroy object " << db->obj() << " with lock " << db->lock_->name() << ".";
+
+			mtx_.unlock();
+			db->lock_->lock();
+			delete db;
+			mtx_.lock();
+		}
 	}
-};
-
-int
-main(void)
-{
-	TestGroup g("/test/event/handler1", "EventHandler #1");
-
-	outstanding = 100;
-
-	unsigned i;
-	for (i = 0; i < 100; i++) {
-		new HandlerTest(i, g);
-	}
-
-	event_main();
 }

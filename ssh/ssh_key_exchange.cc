@@ -27,6 +27,7 @@
 #include <openssl/dh.h>
 
 #include <common/buffer.h>
+#include <common/thread/mutex.h>
 
 #include <crypto/crypto_hash.h>
 

@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
 
 #include <io/channel.h>
@@ -35,6 +37,7 @@
 
 Splice::Splice(const LogHandle& log, StreamChannel *source, Pipe *pipe, StreamChannel *sink)
 : log_(""),
+  mtx_("Splice"),
   source_(source),
   pipe_(pipe),
   sink_(sink),
@@ -56,6 +59,7 @@ Splice::Splice(const LogHandle& log, StreamChannel *source, Pipe *pipe, StreamCh
 
 Splice::~Splice()
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, callback_ == NULL);
 	ASSERT(log_, callback_action_ == NULL);
 	ASSERT(log_, read_action_ == NULL);
@@ -68,14 +72,15 @@ Splice::~Splice()
 Action *
 Splice::start(EventCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, callback_ == NULL && callback_action_ == NULL);
 	callback_ = cb;
 
-	EventCallback *scb = callback(this, &Splice::read_complete);
+	EventCallback *scb = callback(&mtx_, this, &Splice::read_complete);
 	read_action_ = source_->read(0, scb);
 
 	if (pipe_ != NULL) {
-		EventCallback *pcb = callback(this, &Splice::output_complete);
+		EventCallback *pcb = callback(&mtx_, this, &Splice::output_complete);
 		output_action_ = pipe_->output(pcb);
 	}
 
@@ -85,6 +90,7 @@ Splice::start(EventCallback *cb)
 void
 Splice::cancel(void)
 {
+	ScopedLock _(&mtx_);
 	if (callback_ != NULL) {
 		delete callback_;
 		callback_ = NULL;
@@ -125,6 +131,7 @@ Splice::cancel(void)
 void
 Splice::complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, callback_ != NULL);
 	ASSERT(log_, callback_action_ == NULL);
 
@@ -161,6 +168,7 @@ Splice::complete(Event e)
 void
 Splice::read_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	read_action_->cancel();
 	read_action_ = NULL;
 
@@ -184,17 +192,17 @@ Splice::read_complete(Event e)
 
 	if (pipe_ != NULL) {
 		ASSERT(log_, input_action_ == NULL);
-		EventCallback *cb = callback(this, &Splice::input_complete);
+		EventCallback *cb = callback(&mtx_, this, &Splice::input_complete);
 		input_action_ = pipe_->input(&e.buffer_, cb);
 	} else {
 		if (e.type_ == Event::EOS && e.buffer_.empty()) {
-			EventCallback *cb = callback(this, &Splice::shutdown_complete);
+			EventCallback *cb = callback(&mtx_, this, &Splice::shutdown_complete);
 			shutdown_action_ = sink_->shutdown(false, true, cb);
 			return;
 		}
 
 		ASSERT(log_, write_action_ == NULL);
-		EventCallback *cb = callback(this, &Splice::write_complete);
+		EventCallback *cb = callback(&mtx_, this, &Splice::write_complete);
 		write_action_ = sink_->write(&e.buffer_, cb);
 	}
 }
@@ -202,6 +210,7 @@ Splice::read_complete(Event e)
 void
 Splice::input_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	input_action_->cancel();
 	input_action_ = NULL;
 
@@ -216,7 +225,7 @@ Splice::input_complete(Event e)
 
 	ASSERT(log_, read_action_ == NULL);
 	if (!read_eos_) {
-		EventCallback *cb = callback(this, &Splice::read_complete);
+		EventCallback *cb = callback(&mtx_, this, &Splice::read_complete);
 		read_action_ = source_->read(0, cb);
 	} else if (output_eos_) {
 		complete(Event::EOS);
@@ -226,6 +235,7 @@ Splice::input_complete(Event e)
 void
 Splice::output_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	output_action_->cancel();
 	output_action_ = NULL;
 
@@ -240,19 +250,20 @@ Splice::output_complete(Event e)
 	}
 
 	if (e.type_ == Event::EOS && e.buffer_.empty()) {
-		EventCallback *cb = callback(this, &Splice::shutdown_complete);
+		EventCallback *cb = callback(&mtx_, this, &Splice::shutdown_complete);
 		shutdown_action_ = sink_->shutdown(false, true, cb);
 		return;
 	}
 
 	ASSERT(log_, write_action_ == NULL);
-	EventCallback *cb = callback(this, &Splice::write_complete);
+	EventCallback *cb = callback(&mtx_, this, &Splice::write_complete);
 	write_action_ = sink_->write(&e.buffer_, cb);
 }
 
 void
 Splice::write_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	write_action_->cancel();
 	write_action_ = NULL;
 
@@ -267,17 +278,17 @@ Splice::write_complete(Event e)
 
 	if (pipe_ != NULL) {
 		ASSERT(log_, output_action_ == NULL);
-		EventCallback *cb = callback(this, &Splice::output_complete);
+		EventCallback *cb = callback(&mtx_, this, &Splice::output_complete);
 		output_action_ = pipe_->output(cb);
 	} else {
 		if (read_eos_) {
 			if (shutdown_action_ == NULL) {
-				EventCallback *cb = callback(this, &Splice::shutdown_complete);
+				EventCallback *cb = callback(&mtx_, this, &Splice::shutdown_complete);
 				shutdown_action_ = sink_->shutdown(false, true, cb);
 				return;
 			}
 		} else {
-			EventCallback *cb = callback(this, &Splice::read_complete);
+			EventCallback *cb = callback(&mtx_, this, &Splice::read_complete);
 			read_action_ = source_->read(0, cb);
 		}
 	}
@@ -286,6 +297,7 @@ Splice::write_complete(Event e)
 void
 Splice::shutdown_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	shutdown_action_->cancel();
 	shutdown_action_ = NULL;
 

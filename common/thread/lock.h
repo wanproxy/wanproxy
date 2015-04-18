@@ -41,6 +41,11 @@ public:
 	virtual bool try_lock(void) = 0;
 	virtual void unlock(void) = 0;
 
+	std::string name(void) const
+	{
+		return (name_);
+	}
+
 private:
 	Lock(const Lock&); /* XXX Disable copy.  */
 };
@@ -49,6 +54,30 @@ private:
 	((lock)->assert_owned(true, log, __FILE__, __LINE__, __PRETTY_FUNCTION__))
 #define	ASSERT_LOCK_NOT_OWNED(log, lock)				\
 	((lock)->assert_owned(false, log, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+
+class ConditionLock {
+	Lock *lock_;
+public:
+	ConditionLock(Lock *lock, bool condition)
+	: lock_(lock)
+	{
+		ASSERT("/condition/lock", lock_ != NULL);
+		ASSERT_LOCK_NOT_OWNED("/condition/lock", lock_);
+		if (condition)
+			lock_->lock();
+		else
+			lock_ = NULL;
+	}
+
+	~ConditionLock()
+	{
+		if (lock_ != NULL) {
+			ASSERT_LOCK_OWNED("/condition/lock", lock_);
+			lock_->unlock();
+			lock_ = NULL;
+		}
+	}
+};
 
 class ScopedLock {
 	Lock *lock_;

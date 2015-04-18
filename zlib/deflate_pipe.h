@@ -31,6 +31,7 @@
 #include <zlib.h>
 
 class DeflatePipe : public PipeProducer {
+	Mutex mtx_;
 	z_stream stream_;
 public:
 	DeflatePipe(int = 0);

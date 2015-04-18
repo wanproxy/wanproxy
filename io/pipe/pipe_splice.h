@@ -28,6 +28,7 @@
 
 class PipeSplice {
 	LogHandle log_;
+	Mutex mtx_;
 	Pipe *source_;
 	Pipe *sink_;
 	bool source_eos_;

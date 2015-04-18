@@ -24,6 +24,7 @@
  */
 
 #include <common/endian.h>
+#include <common/thread/mutex.h>
 
 #include <event/event_callback.h>
 #include <event/event_system.h>
@@ -45,6 +46,7 @@ ProxyConnector::ProxyConnector(const std::string& name,
 			 SocketAddressFamily family,
 			 const std::string& remote_name)
 : log_("/wanproxy/proxy/" + name + "/connector"),
+  mtx_("ProxyConnector::" + name),
   stop_action_(NULL),
   local_action_(NULL),
   local_socket_(local_socket),
@@ -63,10 +65,11 @@ ProxyConnector::ProxyConnector(const std::string& name,
 		outgoing_pipe_ = pipe_pair_->get_outgoing();
 	}
 
-	SocketEventCallback *cb = callback(this, &ProxyConnector::connect_complete);
+	ScopedLock _(&mtx_);
+	SocketEventCallback *cb = callback(&mtx_, this, &ProxyConnector::connect_complete);
 	remote_action_ = TCPClient::connect(impl, family, remote_name, cb);
 
-	SimpleCallback *scb = callback(this, &ProxyConnector::stop);
+	SimpleCallback *scb = callback(&mtx_, this, &ProxyConnector::stop);
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
 
@@ -104,6 +107,7 @@ ProxyConnector::~ProxyConnector()
 void
 ProxyConnector::close_complete(Socket *socket)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (socket == local_socket_) {
 		local_action_->cancel();
 		local_action_ = NULL;
@@ -127,13 +131,14 @@ ProxyConnector::close_complete(Socket *socket)
 	}
 
 	if (local_socket_ == NULL && remote_socket_ == NULL) {
-		delete this;
+		EventSystem::instance()->destroy(&mtx_, this);
 	}
 }
 
 void
 ProxyConnector::connect_complete(Event e, Socket *socket)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	remote_action_->cancel();
 	remote_action_ = NULL;
 
@@ -158,13 +163,14 @@ ProxyConnector::connect_complete(Event e, Socket *socket)
 
 	splice_pair_ = new SplicePair(outgoing_splice_, incoming_splice_);
 
-	EventCallback *cb = callback(this, &ProxyConnector::splice_complete);
+	EventCallback *cb = callback(&mtx_, this, &ProxyConnector::splice_complete);
 	splice_action_ = splice_pair_->start(cb);
 }
 
 void
 ProxyConnector::splice_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	splice_action_->cancel();
 	splice_action_ = NULL;
 
@@ -191,6 +197,7 @@ ProxyConnector::splice_complete(Event e)
 void
 ProxyConnector::stop(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	stop_action_->cancel();
 	stop_action_ = NULL;
 
@@ -220,6 +227,7 @@ ProxyConnector::stop(void)
 void
 ProxyConnector::schedule_close(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (stop_action_ != NULL) {
 		stop_action_->cancel();
 		stop_action_ = NULL;
@@ -246,13 +254,13 @@ ProxyConnector::schedule_close(void)
 
 	ASSERT(log_, local_action_ == NULL);
 	ASSERT(log_, local_socket_ != NULL);
-	SimpleCallback *lcb = callback(this, &ProxyConnector::close_complete,
+	SimpleCallback *lcb = callback(&mtx_, this, &ProxyConnector::close_complete,
 				       local_socket_);
 	local_action_ = local_socket_->close(lcb);
 
 	ASSERT(log_, remote_action_ == NULL);
 	if (remote_socket_ != NULL) {
-		SimpleCallback *rcb = callback(this, &ProxyConnector::close_complete,
+		SimpleCallback *rcb = callback(&mtx_, this, &ProxyConnector::close_complete,
 					       remote_socket_);
 		remote_action_ = remote_socket_->close(rcb);
 	}

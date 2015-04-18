@@ -27,6 +27,8 @@
 #define	PROGRAMS_WANPROXY_PROXY_SOCKS_CONNECTION_H
 
 class ProxySocksConnection {
+	friend class DestroyThread;
+
 	enum State {
 		GetSOCKSVersion,
 
@@ -48,6 +50,7 @@ class ProxySocksConnection {
 	};
 
 	LogHandle log_;
+	Mutex mtx_;
 	std::string name_;
 	Socket *client_;
 	Action *action_;

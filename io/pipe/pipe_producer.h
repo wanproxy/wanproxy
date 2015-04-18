@@ -33,6 +33,7 @@ protected:
 	LogHandle log_;
 
 private:
+	Lock *lock_;
 	Buffer output_buffer_;
 	Action *output_action_;
 	EventCallback *output_callback_;
@@ -41,7 +42,7 @@ private:
 
 	bool error_;
 protected:
-	PipeProducer(const LogHandle&);
+	PipeProducer(const LogHandle&, Lock *);
 	~PipeProducer();
 
 	Action *input(Buffer *, EventCallback *);

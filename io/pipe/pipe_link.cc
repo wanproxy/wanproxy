@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
 
 #include <io/pipe/pipe.h>
@@ -35,19 +37,22 @@
 
 PipeLink::PipeLink(Pipe *incoming_pipe, Pipe *outgoing_pipe)
 : log_("/pipe/link"),
+  mtx_("PipeLink"),
   incoming_pipe_(incoming_pipe),
   outgoing_pipe_(outgoing_pipe),
   pipe_splice_(NULL),
   pipe_splice_action_(NULL),
   pipe_splice_error_(false)
 {
+	ScopedLock _(&mtx_);
 	pipe_splice_ = new PipeSplice(incoming_pipe_, outgoing_pipe_);
-	EventCallback *cb = callback(this, &PipeLink::pipe_splice_complete);
+	EventCallback *cb = callback(&mtx_, this, &PipeLink::pipe_splice_complete);
 	pipe_splice_action_ = pipe_splice_->start(cb);
 }
 
 PipeLink::~PipeLink()
 {
+	ScopedLock _(&mtx_);
 	if (pipe_splice_ != NULL) {
 		ASSERT(log_, pipe_splice_action_ != NULL);
 		pipe_splice_action_->cancel();
@@ -63,6 +68,7 @@ PipeLink::~PipeLink()
 Action *
 PipeLink::input(Buffer *buf, EventCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	if (pipe_splice_error_) {
 		buf->clear();
 		cb->param(Event::Error);
@@ -74,6 +80,7 @@ PipeLink::input(Buffer *buf, EventCallback *cb)
 Action *
 PipeLink::output(EventCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	if (pipe_splice_error_) {
 		cb->param(Event::Error);
 		return (cb->schedule());
@@ -84,6 +91,7 @@ PipeLink::output(EventCallback *cb)
 void
 PipeLink::pipe_splice_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	pipe_splice_action_->cancel();
 	pipe_splice_action_ = NULL;
 

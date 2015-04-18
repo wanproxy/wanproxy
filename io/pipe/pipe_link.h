@@ -31,6 +31,7 @@ class PipeSplice;
 class PipeLink : public Pipe {
 	LogHandle log_;
 
+	Mutex mtx_;
 	Pipe *incoming_pipe_;
 	Pipe *outgoing_pipe_;
 	PipeSplice *pipe_splice_;

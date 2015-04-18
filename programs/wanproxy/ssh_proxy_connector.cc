@@ -24,6 +24,7 @@
  */
 
 #include <common/endian.h>
+#include <common/thread/mutex.h>
 
 #include <event/event_callback.h>
 #include <event/event_system.h>
@@ -48,6 +49,7 @@ SSHProxyConnector::SSHProxyConnector(const std::string& name,
 				     WANProxyCodec *incoming_codec,
 				     WANProxyCodec *outgoing_codec)
 : log_("/wanproxy/proxy/" + name + "/connector"),
+  mtx_("SSHProxyConnector::" + name),
   stop_action_(NULL),
   local_action_(NULL),
   local_socket_(local_socket),
@@ -68,10 +70,11 @@ SSHProxyConnector::SSHProxyConnector(const std::string& name,
 		outgoing_pipe_ = pipe_pair_->get_outgoing();
 	}
 
-	SocketEventCallback *cb = callback(this, &SSHProxyConnector::connect_complete);
+	ScopedLock _(&mtx_);
+	SocketEventCallback *cb = callback(&mtx_, this, &SSHProxyConnector::connect_complete);
 	remote_action_ = TCPClient::connect(impl, family, remote_name, cb);
 
-	SimpleCallback *scb = callback(this, &SSHProxyConnector::stop);
+	SimpleCallback *scb = callback(&mtx_, this, &SSHProxyConnector::stop);
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 }
 
@@ -109,6 +112,7 @@ SSHProxyConnector::~SSHProxyConnector()
 void
 SSHProxyConnector::close_complete(Socket *socket)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (socket == local_socket_) {
 		local_action_->cancel();
 		local_action_ = NULL;
@@ -132,13 +136,14 @@ SSHProxyConnector::close_complete(Socket *socket)
 	}
 
 	if (local_socket_ == NULL && remote_socket_ == NULL) {
-		delete this;
+		EventSystem::instance()->destroy(&mtx_, this);
 	}
 }
 
 void
 SSHProxyConnector::connect_complete(Event e, Socket *socket)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	remote_action_->cancel();
 	remote_action_ = NULL;
 
@@ -158,10 +163,10 @@ SSHProxyConnector::connect_complete(Event e, Socket *socket)
 	remote_socket_ = socket;
 	ASSERT(log_, remote_socket_ != NULL);
 
-	SimpleCallback *iscb = callback(this, &SSHProxyConnector::ssh_stream_complete, &incoming_stream_);
+	SimpleCallback *iscb = callback(&mtx_, this, &SSHProxyConnector::ssh_stream_complete, &incoming_stream_);
 	incoming_stream_action_ = incoming_stream_.start(local_socket_, iscb);
 
-	SimpleCallback *oscb = callback(this, &SSHProxyConnector::ssh_stream_complete, &outgoing_stream_);
+	SimpleCallback *oscb = callback(&mtx_, this, &SSHProxyConnector::ssh_stream_complete, &outgoing_stream_);
 	outgoing_stream_action_ = outgoing_stream_.start(remote_socket_, oscb);
 
 	incoming_splice_ = new Splice(log_ + "/incoming", &incoming_stream_, incoming_pipe_, &outgoing_stream_);
@@ -169,13 +174,14 @@ SSHProxyConnector::connect_complete(Event e, Socket *socket)
 
 	splice_pair_ = new SplicePair(outgoing_splice_, incoming_splice_);
 
-	EventCallback *cb = callback(this, &SSHProxyConnector::splice_complete);
+	EventCallback *cb = callback(&mtx_, this, &SSHProxyConnector::splice_complete);
 	splice_action_ = splice_pair_->start(cb);
 }
 
 void
 SSHProxyConnector::splice_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	splice_action_->cancel();
 	splice_action_ = NULL;
 
@@ -202,6 +208,7 @@ SSHProxyConnector::splice_complete(Event e)
 void
 SSHProxyConnector::stop(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	stop_action_->cancel();
 	stop_action_ = NULL;
 
@@ -231,6 +238,7 @@ SSHProxyConnector::stop(void)
 void
 SSHProxyConnector::schedule_close(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (stop_action_ != NULL) {
 		stop_action_->cancel();
 		stop_action_ = NULL;
@@ -257,13 +265,13 @@ SSHProxyConnector::schedule_close(void)
 
 	ASSERT(log_, local_action_ == NULL);
 	ASSERT(log_, local_socket_ != NULL);
-	SimpleCallback *lcb = callback(this, &SSHProxyConnector::close_complete,
+	SimpleCallback *lcb = callback(&mtx_, this, &SSHProxyConnector::close_complete,
 				       local_socket_);
 	local_action_ = local_socket_->close(lcb);
 
 	ASSERT(log_, remote_action_ == NULL);
 	if (remote_socket_ != NULL) {
-		SimpleCallback *rcb = callback(this, &SSHProxyConnector::close_complete,
+		SimpleCallback *rcb = callback(&mtx_, this, &SSHProxyConnector::close_complete,
 					       remote_socket_);
 		remote_action_ = remote_socket_->close(rcb);
 	}
@@ -272,6 +280,7 @@ SSHProxyConnector::schedule_close(void)
 void
 SSHProxyConnector::ssh_stream_complete(SSHStream *stream)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (stream == &incoming_stream_) {
 		incoming_stream_action_->cancel();
 		incoming_stream_action_ = NULL;

@@ -29,9 +29,11 @@
 #include <io/pipe/pipe_producer.h>
 
 class PipeNull : public PipeProducer {
+	Mutex mtx_;
 public:
 	PipeNull(void)
-	: PipeProducer("/io/pipe_null")
+	: PipeProducer("/io/pipe_null", &mtx_),
+	  mtx_("PipeNull")
 	{ }
 
 	~PipeNull()
@@ -40,6 +42,7 @@ public:
 private:
 	void consume(Buffer *buf)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		produce(buf);
 	}
 };

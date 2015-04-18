@@ -42,7 +42,8 @@
 #include <io/socket/simple_server.h>
 
 HTTPServerPipe::HTTPServerPipe(const LogHandle& log)
-: PipeProducer(log),
+: PipeProducer(log, &mtx_),
+  mtx_("HTTPServerPipe"),
   state_(GetStart),
   buffer_(),
   request_(),
@@ -73,6 +74,7 @@ HTTPServerPipe::request(HTTPRequestEventCallback *cb)
 void
 HTTPServerPipe::send_response(HTTPProtocol::Status status, Buffer *body, Buffer *headers)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (state_ == GotRequest || state_ == Error) {
 		ASSERT(log_, buffer_.empty());
 	} else {
@@ -143,12 +145,20 @@ HTTPServerPipe::send_response(HTTPProtocol::Status status, Buffer *body, Buffer 
 }
 
 void
-HTTPServerPipe::send_response(HTTPProtocol::Status status, const std::string& body, const std::string& content_type)
+HTTPServerPipe::send_response_locked(HTTPProtocol::Status status, const std::string& body, const std::string& content_type)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	Buffer tmp(body);
 	Buffer header("Content-type: " + content_type + "\r\n");
 	send_response(status, &tmp, &header);
 	ASSERT(log_, tmp.empty());
+}
+
+void
+HTTPServerPipe::send_response(HTTPProtocol::Status status, const std::string& body, const std::string& content_type)
+{
+	ScopedLock _(&mtx_);
+	send_response_locked(status, body, content_type);
 }
 
 void
@@ -213,7 +223,7 @@ HTTPServerPipe::consume(Buffer *in)
 	}
 
 	if (in->empty()) {
-		send_response(HTTPProtocol::BadRequest, "Premature end of request.");
+		send_response_locked(HTTPProtocol::BadRequest, "Premature end of request.");
 		return;
 	}
 
@@ -230,7 +240,7 @@ HTTPServerPipe::consume(Buffer *in)
 			DEBUG(log_) << "Could not completely parse input, waiting for more.";
 			return;
 		case HTTPProtocol::ParseFailure:
-			send_response(HTTPProtocol::BadRequest, "Could not parse input line.");
+			send_response_locked(HTTPProtocol::BadRequest, "Could not parse input line.");
 			return;
 		}
 
@@ -238,7 +248,7 @@ HTTPServerPipe::consume(Buffer *in)
 			ASSERT(log_, request_.start_line_.empty());
 			if (line.empty()) {
 				ERROR(log_) << "Premature end of headers.";
-				send_response(HTTPProtocol::BadRequest, "Empty start line.");
+				send_response_locked(HTTPProtocol::BadRequest, "Empty start line.");
 				return;
 			}
 			request_.start_line_ = line;
@@ -252,7 +262,7 @@ HTTPServerPipe::consume(Buffer *in)
 			 */
 			std::vector<Buffer> words = line.split(' ', false);
 			if (words.empty()) {
-				send_response(HTTPProtocol::BadRequest, "Empty start line.");
+				send_response_locked(HTTPProtocol::BadRequest, "Empty start line.");
 				return;
 			}
 
@@ -271,7 +281,7 @@ HTTPServerPipe::consume(Buffer *in)
 				/*
 				 * Not HTTP/0.9.
 				 */
-				send_response(HTTPProtocol::BadRequest, "Too many request parameters.");
+				send_response_locked(HTTPProtocol::BadRequest, "Too many request parameters.");
 				return;
 			}
 
@@ -279,7 +289,7 @@ HTTPServerPipe::consume(Buffer *in)
 			 * HTTP/0.9.  This is all we should get from the client.
 			 */
 			if (!buffer_.empty()) {
-				send_response(HTTPProtocol::BadRequest, "Garbage after HTTP/0.9-style request.");
+				send_response_locked(HTTPProtocol::BadRequest, "Garbage after HTTP/0.9-style request.");
 				return;
 			}
 
@@ -306,7 +316,7 @@ HTTPServerPipe::consume(Buffer *in)
 		if (line.empty()) {
 			if (!buffer_.empty()) {
 				ERROR(log_) << "Client sent garbage after message.";
-				send_response(HTTPProtocol::BadRequest, "Garbage after message.");
+				send_response_locked(HTTPProtocol::BadRequest, "Garbage after message.");
 				return;
 			}
 
@@ -334,7 +344,7 @@ HTTPServerPipe::consume(Buffer *in)
 			 * XXX Always forget how to handle leading whitespace.
 			 */
 			if (last_header_ == "") {
-				send_response(HTTPProtocol::BadRequest, "Folded header sent before any others.");
+				send_response_locked(HTTPProtocol::BadRequest, "Folded header sent before any others.");
 				return;
 			}
 
@@ -346,7 +356,7 @@ HTTPServerPipe::consume(Buffer *in)
 
 		unsigned pos;
 		if (!line.find(':', &pos)) {
-			send_response(HTTPProtocol::BadRequest, "Empty header name.");
+			send_response_locked(HTTPProtocol::BadRequest, "Empty header name.");
 			return;
 		}
 

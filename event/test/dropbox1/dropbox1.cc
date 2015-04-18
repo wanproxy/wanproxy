@@ -25,6 +25,7 @@
 
 #include <common/buffer.h>
 #include <common/test.h>
+#include <common/thread/mutex.h>
 
 #include <event/action.h>
 #include <event/callback.h>
@@ -34,10 +35,11 @@
 #include <event/event_system.h>
 
 namespace {
-	static unsigned outstanding;
+	static RefCount outstanding;
 }
 
 struct DropboxTest {
+	Mutex mtx_;
 	unsigned key_;
 	TestGroup& group_;
 	Test test_;
@@ -45,13 +47,15 @@ struct DropboxTest {
 	Action *action_;
 
 	DropboxTest(unsigned key, TestGroup& group)
-	: key_(key),
+	: mtx_("DropboxTest"),
+	  key_(key),
 	  group_(group),
 	  test_(group_, "Dropbox is used."),
 	  dropbox_(),
 	  action_(NULL)
 	{
-		TypedCallback<unsigned> *cb = callback(this, &DropboxTest::item_dropped);
+		ScopedLock _(&mtx_);
+		TypedCallback<unsigned> *cb = callback(&mtx_, this, &DropboxTest::item_dropped);
 		if (key_ % 2 == 0) {
 			action_ = dropbox_.get(cb);
 			dropbox_.put(key_);
@@ -88,10 +92,8 @@ struct DropboxTest {
 				_.pass();
 		}
 
-		if (outstanding-- == 1)
+		if (outstanding.drop())
 			EventSystem::instance()->stop();
-
-		delete this;
 	}
 };
 
@@ -100,12 +102,21 @@ main(void)
 {
 	TestGroup g("/test/dropbox1", "Dropbox #1");
 
-	outstanding = 100;
+	DropboxTest *dt[100];
 
 	unsigned i;
+	for (i = 1; i < 100; i++) {
+		outstanding.hold();
+	}
+
 	for (i = 0; i < 100; i++) {
-		new DropboxTest(i, g);
+		dt[i] = new DropboxTest(i, g);
 	}
 
 	event_main();
+
+	for (i = 0; i < 100; i++) {
+		delete dt[i];
+		dt[i] = NULL;
+	}
 }

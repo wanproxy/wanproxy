@@ -52,6 +52,7 @@
 void
 XCodecPipePair::decoder_consume(Buffer *buf)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (buf->empty()) {
 		if (!decoder_buffer_.empty())
 			ERROR(log_) << "Remote encoder closed connection with data outstanding.";
@@ -152,6 +153,7 @@ XCodecPipePair::decoder_consume(Buffer *buf)
 bool
 XCodecPipePair::decoder_decode(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	while (!decoder_buffer_.empty()) {
 		uint8_t op = decoder_buffer_.peek();
 		switch (op) {
@@ -403,6 +405,7 @@ XCodecPipePair::decoder_decode(void)
 bool
 XCodecPipePair::decoder_decode_data(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, decoder_unknown_hashes_.empty());
 
 	if (decoder_frame_buffer_.empty()) {
@@ -526,6 +529,7 @@ XCodecPipePair::decoder_decode_data(void)
 void
 XCodecPipePair::encoder_consume(Buffer *buf)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, !encoder_sent_eos_);
 
 	Buffer output;

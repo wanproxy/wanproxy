@@ -29,7 +29,10 @@
 #include <io/socket/socket.h>
 
 class UDPClient {
+	friend class DestroyThread;
+
 	LogHandle log_;
+	Mutex mtx_;
 	SocketImpl impl_;
 	SocketAddressFamily family_;
 	Socket *socket_;

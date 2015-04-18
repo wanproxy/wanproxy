@@ -25,6 +25,8 @@
 
 #include <unistd.h>
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
 #include <event/event_main.h>
 #include <event/event_system.h>
@@ -39,12 +41,14 @@
 
 class ChargenClient {
 	LogHandle log_;
+	Mutex mtx_;
 	Socket *client_;
 	Action *action_;
 	Buffer data_;
 public:
 	ChargenClient(Socket *client)
 	: log_("/chargen/client"),
+	  mtx_("ChargenClient"),
 	  client_(client),
 	  action_(NULL),
 	  data_()
@@ -66,7 +70,8 @@ public:
 
 		INFO(log_) << "Client connected: " << client_->getpeername();
 
-		EventCallback *cb = callback(this, &ChargenClient::shutdown_complete);
+		ScopedLock _(&mtx_);
+		EventCallback *cb = callback(&mtx_, this, &ChargenClient::shutdown_complete);
 		action_ = client_->shutdown(true, false, cb);
 	}
 
@@ -78,6 +83,7 @@ public:
 
 	void close_complete(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 
@@ -90,6 +96,7 @@ public:
 
 	void shutdown_complete(Event e)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 
@@ -109,6 +116,7 @@ public:
 
 	void write_complete(Event e)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 
@@ -130,20 +138,22 @@ public:
 
 	void schedule_close(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		ASSERT(log_, action_ == NULL);
 		ASSERT(log_, client_ != NULL);
 
-		SimpleCallback *cb = callback(this, &ChargenClient::close_complete);
+		SimpleCallback *cb = callback(&mtx_, this, &ChargenClient::close_complete);
 		action_ = client_->close(cb);
 	}
 
 	void schedule_write(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		ASSERT(log_, action_ == NULL);
 		ASSERT(log_, client_ != NULL);
 
 		Buffer tmp(data_);
-		EventCallback *cb = callback(this, &ChargenClient::write_complete);
+		EventCallback *cb = callback(&mtx_, this, &ChargenClient::write_complete);
 		action_ = client_->write(&tmp, cb);
 	}
 };

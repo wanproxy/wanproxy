@@ -26,6 +26,8 @@
 #ifndef	IO_SOCKET_SIMPLE_SERVER_H
 #define	IO_SOCKET_SIMPLE_SERVER_H
 
+#include <common/thread/mutex.h>
+
 #include <io/socket/socket.h>
 
 /*
@@ -36,6 +38,7 @@
 template<typename L>
 class SimpleServer {
 	LogHandle log_;
+	Mutex mtx_;
 	L *server_;
 	Action *accept_action_;
 	Action *close_action_;
@@ -43,6 +46,7 @@ class SimpleServer {
 public:
 	SimpleServer(LogHandle log, SocketImpl impl, SocketAddressFamily family, const std::string& interface)
 	: log_(log),
+	  mtx_("SimpleServer"),
 	  server_(NULL),
 	  accept_action_(NULL),
 	  close_action_(NULL),
@@ -54,10 +58,11 @@ public:
 
 		INFO(log_) << "Listening on: " << server_->getsockname();
 
-		SocketEventCallback *cb = callback(this, &SimpleServer::accept_complete);
+		ScopedLock _(&mtx_);
+		SocketEventCallback *cb = callback(&mtx_, this, &SimpleServer::accept_complete);
 		accept_action_ = server_->accept(cb);
 
-		SimpleCallback *scb = callback(this, &SimpleServer::stop);
+		SimpleCallback *scb = callback(&mtx_, this, &SimpleServer::stop);
 		stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
 	}
 
@@ -72,6 +77,7 @@ public:
 private:
 	void accept_complete(Event e, Socket *client)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		accept_action_->cancel();
 		accept_action_ = NULL;
 
@@ -91,12 +97,13 @@ private:
 			client_connected(client);
 		}
 
-		SocketEventCallback *cb = callback(this, &SimpleServer::accept_complete);
+		SocketEventCallback *cb = callback(&mtx_, this, &SimpleServer::accept_complete);
 		accept_action_ = server_->accept(cb);
 	}
 
 	void close_complete(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		close_action_->cancel();
 		close_action_ = NULL;
 
@@ -104,11 +111,12 @@ private:
 		delete server_;
 		server_ = NULL;
 
-		delete this;
+		EventSystem::instance()->destroy(&mtx_, this);
 	}
 
 	void stop(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		stop_action_->cancel();
 		stop_action_ = NULL;
 
@@ -117,7 +125,7 @@ private:
 
 		ASSERT(log_, close_action_ == NULL);
 
-		SimpleCallback *cb = callback(this, &SimpleServer::close_complete);
+		SimpleCallback *cb = callback(&mtx_, this, &SimpleServer::close_complete);
 		close_action_ = server_->close(cb);
 	}
 

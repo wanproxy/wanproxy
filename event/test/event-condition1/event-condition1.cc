@@ -24,6 +24,7 @@
  */
 
 #include <common/test.h>
+#include <common/thread/mutex.h>
 
 #include <event/event_callback.h>
 #include <event/event_condition.h>
@@ -35,6 +36,7 @@ namespace {
 }
 
 struct ConditionTest {
+	Mutex mtx_;
 	unsigned key_;
 	TestGroup& group_;
 	Test test_;
@@ -42,13 +44,15 @@ struct ConditionTest {
 	Action *action_;
 
 	ConditionTest(unsigned key, TestGroup& group)
-	: key_(key),
+	: mtx_("ConditionTest"),
+	  key_(key),
 	  group_(group),
 	  test_(group_, "Condition is triggered."),
 	  cv_(),
 	  action_(NULL)
 	{
-		EventCallback *cb = callback(this, &ConditionTest::condition_signalled);
+		ScopedLock _(&mtx_);
+		EventCallback *cb = callback(&mtx_, this, &ConditionTest::condition_signalled);
 		action_ = cv_.wait(cb);
 		cv_.signal(Event::Done);
 	}

@@ -25,6 +25,7 @@
 
 #include <common/buffer.h>
 #include <common/endian.h>
+#include <common/thread/mutex.h>
 
 #include <crypto/crypto_random.h>
 

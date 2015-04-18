@@ -31,6 +31,8 @@
 #include <syslog.h>
 #endif
 
+#include <common/thread/mutex.h>
+
 #include <iostream>
 #include <list>
 #include <sstream>
@@ -38,19 +40,24 @@
 /* Collapse repeating log messages for up to 2 seconds.  */
 #define	LOG_REPEAT_COLLAPSE_SECONDS	(2)
 
-struct LogMask {
-	regex_t regex_;
-	enum Log::Priority priority_;
-};
+namespace {
+	struct LogMask {
+		regex_t regex_;
+		enum Log::Priority priority_;
+	};
 
-static std::list<LogMask> log_masks;
-static std::pair<std::string, std::string> last_log;
-static unsigned last_log_count;
-static struct timeval last_log_start;
+	static Mutex log_mutex("Log");
+
+	static std::list<LogMask> log_masks;
+	static std::pair<std::string, std::string> last_log;
+	static unsigned last_log_count;
+	static struct timeval last_log_start;
 
 #ifdef	USE_SYSLOG
-static int syslog_priority(const Log::Priority&);
+	static int syslog_priority(const Log::Priority&);
 #endif
+}
+
 static std::ostream& operator<< (std::ostream&, const Log::Priority&);
 static std::ostream& operator<< (std::ostream&, const struct timeval&);
 
@@ -60,6 +67,8 @@ Log::log(const Priority& priority, const LogHandle& handle,
 {
 	std::list<LogMask>::const_iterator it;
 	std::string handle_string = (std::string)handle;
+
+	ConditionLock _(&log_mutex, priority != Log::Emergency);
 
 	/*
 	 * XXX

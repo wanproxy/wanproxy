@@ -41,7 +41,11 @@ class SplicePair;
 struct WANProxyCodec;
 
 class SSHProxyConnector {
+	friend class DestroyThread;
+
 	LogHandle log_;
+
+	Mutex mtx_;
 
 	Action *stop_action_;
 

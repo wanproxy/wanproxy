@@ -30,6 +30,7 @@
 #include <netdb.h>
 
 #include <common/endian.h>
+#include <common/thread/mutex.h>
 
 #include <event/event_callback.h>
 #include <event/event_system.h>
@@ -46,6 +47,7 @@ SocketHandle::SocketHandle(int fd, int domain, int socktype, int protocol)
 : Socket(domain, socktype, protocol),
   StreamHandle(fd),
   log_("/socket/handle"),
+  mtx_("SocketHandle"),
   accept_action_(NULL),
   accept_callback_(NULL),
   connect_callback_(NULL),
@@ -65,6 +67,7 @@ SocketHandle::~SocketHandle()
 Action *
 SocketHandle::accept(SocketEventCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, accept_action_ == NULL);
 	ASSERT(log_, accept_callback_ == NULL);
 
@@ -76,6 +79,7 @@ SocketHandle::accept(SocketEventCallback *cb)
 bool
 SocketHandle::bind(const std::string& name)
 {
+	ScopedLock _(&mtx_);
 	socket_address addr;
 
 	if (!addr(domain_, socktype_, protocol_, name)) {
@@ -101,6 +105,7 @@ SocketHandle::bind(const std::string& name)
 Action *
 SocketHandle::connect(const std::string& name, EventCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, connect_callback_ == NULL);
 	ASSERT(log_, connect_action_ == NULL);
 
@@ -156,6 +161,7 @@ SocketHandle::connect(const std::string& name, EventCallback *cb)
 bool
 SocketHandle::listen(void)
 {
+	ScopedLock _(&mtx_);
 	int rv = ::listen(fd_, 128);
 	if (rv == -1)
 		return (false);
@@ -165,6 +171,7 @@ SocketHandle::listen(void)
 Action *
 SocketHandle::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	int how;
 
 	if (shut_read && shut_write)
@@ -190,6 +197,7 @@ SocketHandle::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 std::string
 SocketHandle::getpeername(void) const
 {
+	/* XXX Read-lock?  */
 	socket_address sa;
 	int rv;
 
@@ -206,6 +214,7 @@ SocketHandle::getpeername(void) const
 std::string
 SocketHandle::getsockname(void) const
 {
+	/* XXX Read-lock?  */
 	socket_address sa;
 	int rv;
 
@@ -222,6 +231,7 @@ SocketHandle::getsockname(void) const
 void
 SocketHandle::accept_callback(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	accept_action_->cancel();
 	accept_action_ = NULL;
 
@@ -264,6 +274,7 @@ SocketHandle::accept_callback(Event e)
 void
 SocketHandle::accept_cancel(void)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, accept_action_ != NULL);
 	accept_action_->cancel();
 	accept_action_ = NULL;
@@ -277,7 +288,7 @@ SocketHandle::accept_cancel(void)
 Action *
 SocketHandle::accept_schedule(void)
 {
-	EventCallback *cb = callback(this, &SocketHandle::accept_callback);
+	EventCallback *cb = callback(&mtx_, this, &SocketHandle::accept_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Readable, fd_, cb);
 	return (a);
 }
@@ -285,6 +296,7 @@ SocketHandle::accept_schedule(void)
 void
 SocketHandle::connect_callback(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	connect_action_->cancel();
 	connect_action_ = NULL;
 
@@ -307,6 +319,7 @@ SocketHandle::connect_callback(Event e)
 void
 SocketHandle::connect_cancel(void)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, connect_action_ != NULL);
 	connect_action_->cancel();
 	connect_action_ = NULL;
@@ -320,7 +333,7 @@ SocketHandle::connect_cancel(void)
 Action *
 SocketHandle::connect_schedule(void)
 {
-	EventCallback *cb = callback(this, &SocketHandle::connect_callback);
+	EventCallback *cb = callback(&mtx_, this, &SocketHandle::connect_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Writable, fd_, cb);
 	return (a);
 }

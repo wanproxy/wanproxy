@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
 
 #include <io/pipe/pipe.h>
@@ -32,7 +34,8 @@
 #define	INFLATE_CHUNK_SIZE	65536
 
 InflatePipe::InflatePipe(void)
-: PipeProducer("/zlib/inflate_pipe"),
+: PipeProducer("/zlib/inflate_pipe", &mtx_),
+  mtx_("InflatePipe"),
   stream_()
 {
 	stream_.zalloc = Z_NULL;

@@ -25,6 +25,8 @@
 
 #include <unistd.h>
 
+#include <common/thread/mutex.h>
+
 #include <event/event_callback.h>
 #include <event/event_main.h>
 
@@ -35,16 +37,19 @@ static Buffer zero_buffer;
 class Source {
 	LogHandle log_;
 
+	Mutex mtx_;
 	StreamHandle fd_;
 	Action *action_;
 public:
 	Source(int fd)
 	: log_("/source"),
+	  mtx_("Source"),
 	  fd_(fd),
 	  action_(NULL)
 	{
+		ScopedLock _(&mtx_);
 		Buffer tmp(zero_buffer);
-		EventCallback *cb = callback(this, &Source::write_complete);
+		EventCallback *cb = callback(&mtx_, this, &Source::write_complete);
 		action_ = fd_.write(&tmp, cb);
 	}
 
@@ -55,6 +60,7 @@ public:
 
 	void write_complete(Event e)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 
@@ -68,18 +74,19 @@ public:
 		}
 
 		if (e.type_ == Event::Error) {
-			SimpleCallback *cb = callback(this, &Source::close_complete);
+			SimpleCallback *cb = callback(&mtx_, this, &Source::close_complete);
 			action_ = fd_.close(cb);
 			return;
 		}
 
 		Buffer tmp(zero_buffer);
-		EventCallback *cb = callback(this, &Source::write_complete);
+		EventCallback *cb = callback(&mtx_, this, &Source::write_complete);
 		action_ = fd_.write(&tmp, cb);
 	}
 
 	void close_complete(void)
 	{
+		ASSERT_LOCK_OWNED(log_, &mtx_);
 		action_->cancel();
 		action_ = NULL;
 	}

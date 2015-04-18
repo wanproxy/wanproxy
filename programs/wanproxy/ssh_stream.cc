@@ -25,6 +25,7 @@
 
 #include <common/buffer.h>
 #include <common/endian.h>
+#include <common/thread/mutex.h>
 
 #include <event/event_callback.h>
 
@@ -46,6 +47,7 @@ namespace {
 
 SSHStream::SSHStream(const LogHandle& log, const SSHProxyConfig *ssh_config, SSH::Role role, WANProxyCodec *incoming_codec, WANProxyCodec *outgoing_codec)
 : log_(log + "/ssh/stream/" + (role == SSH::ClientRole ? "client" : "server")),
+  mtx_("SSHStream"),
   ssh_config_(ssh_config),
   socket_(NULL),
   session_(role),
@@ -75,7 +77,8 @@ SSHStream::SSHStream(const LogHandle& log, const SSHProxyConfig *ssh_config, SSH
 
 	pipe_ = new SSH::TransportPipe(&session_);
 
-	SimpleCallback *cb = callback(this, &SSHStream::ready_complete);
+	ScopedLock _(&mtx_);
+	SimpleCallback *cb = callback(&mtx_, this, &SSHStream::ready_complete);
 	ready_action_ = pipe_->ready(cb);
 }
 
@@ -97,11 +100,12 @@ SSHStream::~SSHStream()
 Action *
 SSHStream::start(Socket *socket, SimpleCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	socket_ = socket;
 	start_callback_ = cb;
 
 	splice_ = new Splice(log_ + "/splice", socket_, pipe_, socket_);
-	EventCallback *scb = callback(this, &SSHStream::splice_complete);
+	EventCallback *scb = callback(&mtx_, this, &SSHStream::splice_complete);
 	splice_action_ = splice_->start(scb);
 
 	return (cancellation(this, &SSHStream::start_cancel));
@@ -110,6 +114,7 @@ SSHStream::start(Socket *socket, SimpleCallback *cb)
 Action *
 SSHStream::close(SimpleCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, start_callback_ == NULL);
 	ASSERT(log_, read_action_ == NULL);
 	ASSERT(log_, socket_ != NULL);
@@ -126,6 +131,7 @@ SSHStream::close(SimpleCallback *cb)
 Action *
 SSHStream::read(size_t amt, EventCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, read_action_ == NULL);
 	ASSERT(log_, read_callback_ == NULL);
 
@@ -140,7 +146,7 @@ SSHStream::read(size_t amt, EventCallback *cb)
 	}
 
 	read_callback_ = cb;
-	EventCallback *rcb = callback(this, &SSHStream::receive_complete);
+	EventCallback *rcb = callback(&mtx_, this, &SSHStream::receive_complete);
 	read_action_ = pipe_->receive(rcb);
 
 	return (cancellation(this, &SSHStream::read_cancel));
@@ -149,6 +155,7 @@ SSHStream::read(size_t amt, EventCallback *cb)
 Action *
 SSHStream::write(Buffer *buf, EventCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, write_action_ == NULL);
 	ASSERT(log_, write_callback_ == NULL);
 
@@ -170,6 +177,7 @@ SSHStream::write(Buffer *buf, EventCallback *cb)
 Action *
 SSHStream::shutdown(bool, bool, EventCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	cb->param(Event::Error);
 	return (cb->schedule());
 }
@@ -177,6 +185,7 @@ SSHStream::shutdown(bool, bool, EventCallback *cb)
 void
 SSHStream::start_cancel(void)
 {
+	ScopedLock _(&mtx_);
 	if (start_callback_ != NULL) {
 		delete start_callback_;
 		start_callback_ = NULL;
@@ -201,6 +210,7 @@ SSHStream::start_cancel(void)
 void
 SSHStream::read_cancel(void)
 {
+	ScopedLock _(&mtx_);
 	if (read_callback_ != NULL) {
 		delete read_callback_;
 		read_callback_ = NULL;
@@ -215,6 +225,7 @@ SSHStream::read_cancel(void)
 void
 SSHStream::splice_complete(Event)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	splice_action_->cancel();
 	splice_action_ = NULL;
 
@@ -232,6 +243,7 @@ SSHStream::splice_complete(Event)
 void
 SSHStream::ready_complete(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ready_action_->cancel();
 	ready_action_ = NULL;
 
@@ -253,6 +265,7 @@ SSHStream::ready_complete(void)
 void
 SSHStream::receive_complete(Event e)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	read_action_->cancel();
 	read_action_ = NULL;
 
@@ -305,6 +318,7 @@ SSHStream::receive_complete(Event e)
 void
 SSHStream::write_cancel(void)
 {
+	ScopedLock _(&mtx_);
 	if (write_action_ != NULL) {
 		write_action_->cancel();
 		write_action_ = NULL;
@@ -319,6 +333,7 @@ SSHStream::write_cancel(void)
 void
 SSHStream::write_do(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	/*
 	 * If we're writing data that has been encoded, we need to tag it.
 	 */

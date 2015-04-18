@@ -35,9 +35,11 @@
 class Splice;
 
 class HTTPServerHandler {
+	friend class DestroyThread;
 protected:
 	LogHandle log_;
 private:
+	Mutex mtx_;
 	Socket *client_;
 protected:
 	HTTPServerPipe *pipe_;

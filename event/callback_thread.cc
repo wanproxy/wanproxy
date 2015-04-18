@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <sched.h>
+
 #include <event/callback_thread.h>
 
 #include <event/event_callback.h>
@@ -38,12 +40,6 @@ CallbackThread::CallbackThread(const std::string& name)
   inflight_(NULL)
 { }
 
-/*
- * NB:
- * Unless the caller itself is running in the CallbackThread, it needs to
- * acquire a lock in its cancel path as well as around this schedule
- * call to avoid races when dispatching deferred callbacks.
- */
 Action *
 CallbackThread::schedule(CallbackBase *cb)
 {
@@ -57,45 +53,17 @@ CallbackThread::schedule(CallbackBase *cb)
 	return (cancellation(this, &CallbackThread::cancel, cb));
 }
 
-/*
- * XXX
- * Unless a callback can only be cancelled from within the CallbackThread,
- * there is a race on inflight callbacks.
- *
- * 	Thread X			CallbackThread
- * 	lock(Foo)
- * 	cb = callback(Foo, Foo::handle)
- * 	a = schedule(cb)
- * 	unlock(Foo)
- * 					lock(mtx_)
- * 					cb = queue_.front()
- * 					inflight_ = cb
- * 					unlock(mtx_)
- * 	lock(Foo)			cb->execute()
- * 					Foo::handle()
- * 	a->cancel()			lock(Foo) -- blocks
- * 	lock(mtx_)
- * 	inflight_ = NULL
- * 	unlock(mtx_)
- * 	a = NULL
- * 	unlock(Foo)			lock(Foo) -- completes
- * 					a->cancel() -- NULL deref
- *
- * Note that other bad things are possible than the NULL deref.  Foo may no longer exist.
- *
- * If we keep mtx_ locked, then the race is limited to the NULL deref, but performance
- * suffers.  If callbacks had mutexes associated with them and we could interlock, this
- * would be better.
- *
- * Changing how Action works could help, too.  More details on that later.
- */
 void
 CallbackThread::cancel(CallbackBase *cb)
 {
+	Lock *interlock = cb->lock();
+	ASSERT_LOCK_OWNED(log_, interlock);
+
 	mtx_.lock();
 	if (inflight_ == cb) {
 		inflight_ = NULL;
 		mtx_.unlock();
+		delete cb;
 		return;
 	}
 
@@ -135,26 +103,70 @@ CallbackThread::main(void)
 		while (!queue_.empty()) {
 			CallbackBase *cb = queue_.front();
 			queue_.pop_front();
+
+			Lock *interlock = cb->lock();
+			if (!interlock->try_lock()) {
+				queue_.push_back(cb);
+
+				/*
+				 * Zip ahead to the next callback
+				 * which has a different lock to
+				 * prevent spinning on this one
+				 * lock and livelocking.  When we
+				 * get to one, or back to our
+				 * initial callback, we can stop
+				 * looking.  If we get all the
+				 * way through the queue without
+				 * finding a different lock, we
+				 * might livelock and should do
+				 * a yield after dropping our
+				 * mutex.
+				 *
+				 * XXX This is slow and the
+				 * algorithm is awful.  What would
+				 * be better?
+				 *
+				 * At least this algorithm tends to
+				 * avoid yielding gratuitously for
+				 * very busy systems with several
+				 * different targets for callbacks.
+				 * It is pessimal only for really
+				 * quite unlikely cases which are
+				 * themselves already awful.
+				 */
+				CallbackBase *ncb;
+				bool might_livelock = true;
+				while ((ncb = queue_.front()) != cb) {
+					if (ncb->lock() == interlock) {
+						queue_.pop_front();
+						queue_.push_back(ncb);
+						continue;
+					}
+					might_livelock = false;
+					break;
+				}
+				if (!might_livelock)
+					continue;
+
+				mtx_.unlock();
+				sched_yield();
+				mtx_.lock();
+				continue;
+			}
 			inflight_ = cb;
 			mtx_.unlock();
 
-			/*
-			 * XXX
-			 * Could batch these to improve throughput with lots of
-			 * callbacks at once.  Have a set of in-flight callbacks
-			 * as well as the current one, and a second lock for the
-			 * callbacks in-flight, and check that as a last resort
-			 * in the cancel path.
-			 *
-			 * Right now fixated on performance with one callback at
-			 * a time, for which it won't help a lot, so it's worth
-			 * not overthinking.  Moving to lockless append on a
-			 * per-thread basis would be reasonable, and then a
-			 * lockless move of the whole queue out at a time.  That
-			 * would avoid the serious lock overhead involved here.
-			 */
 			cb->execute();
-			delete cb;
+			interlock->unlock();
+
+			/*
+			 * Note:
+			 * We do not acquire our mutex under
+			 * the callback interlock, or we might
+			 * never yield our mutex if we're
+			 * livelocked with a single busy source
+			 * of callbacks.
+			 */
 
 			mtx_.lock();
 			if (inflight_ != NULL)

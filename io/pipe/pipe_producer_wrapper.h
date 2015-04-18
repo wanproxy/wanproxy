@@ -34,8 +34,8 @@ class PipeProducerWrapper : public PipeProducer {
 	consume_method_t consume_method_;
 public:
 	template<typename Tp>
-	PipeProducerWrapper(const LogHandle& log, T *obj, Tp consume_method)
-	: PipeProducer(log),
+	PipeProducerWrapper(const LogHandle& log, Lock *lock, T *obj, Tp consume_method)
+	: PipeProducer(log, lock),
 	  obj_(obj),
 	  consume_method_(consume_method)
 	{ }

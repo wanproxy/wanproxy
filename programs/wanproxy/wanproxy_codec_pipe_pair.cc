@@ -24,6 +24,7 @@
  */
 
 #include <common/endian.h>
+#include <common/thread/mutex.h>
 
 #include <event/event_callback.h>
 
@@ -45,10 +46,12 @@
 
 namespace {
 	class PipeByteCount : public PipeProducer {
+		Mutex mtx_;
 		intmax_t *counterp_;
 	public:
 		PipeByteCount(intmax_t *counterp)
-		: PipeProducer("/wanproxy/codec/byte_count"),
+		: PipeProducer("/wanproxy/codec/byte_count", &mtx_),
+		  mtx_("PipeByteCount"),
 		  counterp_(counterp)
 		{ }
 
@@ -58,6 +61,7 @@ namespace {
 	private:
 		void consume(Buffer *buf)
 		{
+			ASSERT_LOCK_OWNED(log_, &mtx_);
 			if (!buf->empty()) {
 				if (counterp_ != NULL)
 					*counterp_ += buf->length();
