@@ -1,6 +1,3 @@
-o) Audit any and all "delete this"; that work needs to be deferred until out
-   of the callback context.  We could easily support this in a variety of not
-   very awful ways.
 o) Fix the many broken examples and tests.
 o) Persistent callbacks would be nice to minimize our overhead.
 o) Easier assigning of a scheduler to all of the callbacks in a given object,

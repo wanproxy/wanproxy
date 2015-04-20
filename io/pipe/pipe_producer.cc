@@ -32,11 +32,6 @@
  * PipeProducer is a pipe with a producer-consumer API.
  */
 
-/*
- * XXX
- * Should we have the subclass provide the mutex?
- */
-
 PipeProducer::PipeProducer(const LogHandle& log, Lock *lock)
 : log_(log),
   lock_(lock),
@@ -46,8 +41,7 @@ PipeProducer::PipeProducer(const LogHandle& log, Lock *lock)
   output_eos_(false),
   output_cork_(0),
   error_(false)
-{
-}
+{ }
 
 PipeProducer::~PipeProducer()
 {
