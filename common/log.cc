@@ -46,7 +46,9 @@ namespace {
 		enum Log::Priority priority_;
 	};
 
+#ifdef THREADS
 	static Mutex log_mutex("Log");
+#endif
 
 	static std::list<LogMask> log_masks;
 	static std::pair<std::string, std::string> last_log;
@@ -68,7 +70,9 @@ Log::log(const Priority& priority, const LogHandle& handle,
 	std::list<LogMask>::const_iterator it;
 	std::string handle_string = (std::string)handle;
 
+#ifdef THREADS
 	ConditionLock _(&log_mutex, priority != Log::Emergency);
+#endif
 
 	/*
 	 * XXX
