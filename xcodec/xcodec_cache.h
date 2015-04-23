@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2015 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,6 +30,8 @@
 #include <map>
 
 #include <common/uuid/uuid.h>
+
+#include <xcodec/xcodec_lru.h>
 
 /*
  * XXX
@@ -127,78 +129,6 @@ public:
 
 private:
 	static std::map<UUID, XCodecCache *> cache_map;
-};
-
-class XCodecCacheLRU {
-	/*
-	 * XXX
-	 * We use a 64-bit counter/tag/timestamp for the LRU.  This ought
-	 * to be enough for anyone, but hey; we should handle collisions
-	 * more gracefully all the same.  Or use a 32-bit counter and
-	 * handle wraps explicitly.
-	 *
-	 * At 1 billion segments per second, it'd take half a millenium
-	 * for us to need to care about the 64-bit counter wrapping.  So
-	 * we needn't worry about that.  But perhaps it's better to use
-	 * a 32-bit counter and handle wraps all the same?
-	 *
-	 * NB
-	 * For now we're using an ordered map to get the sorted behaviour,
-	 * but we could also use an unordered (i.e. hash) map and keep
-	 * track of the lowest counter in the LRU pretty easily.  The
-	 * lookups would be quicker and the counter overhead minimal.
-	 */
-
-	typedef	std::map<uint64_t, uint64_t> segment_lru_map_t;
-
-	LogHandle log_;
-	segment_lru_map_t segment_lru_map_;
-	uint64_t segment_lru_counter_;
-public:
-	XCodecCacheLRU(void)
-	: log_("/xcodec/cache/lru"),
-	  segment_lru_map_(),
-	  segment_lru_counter_(0)
-	{ }
-
-	~XCodecCacheLRU()
-	{ }
-
-	size_t active(void) const
-	{
-		return (segment_lru_map_.size());
-	}
-
-	uint64_t enter(uint64_t hash)
-	{
-		uint64_t counter = ++segment_lru_counter_;
-		segment_lru_map_[counter] = hash;
-		return (counter);
-	}
-
-	uint64_t evict(void)
-	{
-		segment_lru_map_t::iterator lit = segment_lru_map_.begin();
-		ASSERT(log_, lit != segment_lru_map_.end());
-		uint64_t ohash = lit->second;
-		segment_lru_map_.erase(lit);
-		return (ohash);
-	}
-
-	uint64_t use(uint64_t hash, uint64_t counter)
-	{
-		if (counter == segment_lru_counter_)
-			return (counter);
-
-		segment_lru_map_t::iterator lit = segment_lru_map_.find(counter);
-		ASSERT(log_, lit != segment_lru_map_.end());
-		ASSERT(log_, lit->second == hash);
-		segment_lru_map_.erase(lit);
-
-		counter = ++segment_lru_counter_;
-		segment_lru_map_[counter] = hash;
-		return (counter);
-	}
 };
 
 /*
@@ -342,7 +272,7 @@ class XCodecMemoryCache : public XCodecCache {
 
 	LogHandle log_;
 	segment_hash_map_t segment_hash_map_;
-	XCodecCacheLRU segment_lru_;
+	XCodecLRU<uint64_t> segment_lru_;
 	size_t memory_cache_limit_;
 public:
 	XCodecMemoryCache(const UUID& uuid, size_t memory_cache_limit_bytes = 0)
