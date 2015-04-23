@@ -54,11 +54,11 @@ namespace {
 	static std::pair<std::string, std::string> last_log;
 	static unsigned last_log_count;
 	static struct timeval last_log_start;
+}
 
 #ifdef	USE_SYSLOG
-	static int syslog_priority(const Log::Priority&);
+static int syslog_priority(const Log::Priority&);
 #endif
-}
 
 static std::ostream& operator<< (std::ostream&, const Log::Priority&);
 static std::ostream& operator<< (std::ostream&, const struct timeval&);
