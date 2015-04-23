@@ -31,6 +31,7 @@
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_cache.h>
 
+#include "wanproxy_config_class_cache.h"
 #include "wanproxy_config_class_codec.h"
 
 WANProxyConfigClassCodec wanproxy_config_class_codec;
@@ -42,24 +43,47 @@ WANProxyConfigClassCodec::Instance::activate(const ConfigObject *co)
 
 	switch (codec_type_) {
 	case WANProxyConfigCodecXCodec: {
-		/*
-		 * XXX
-		 * Fetch UUID from permanent storage if there is any.
-		 */
-		UUID uuid;
-		uuid.generate();
+		XCodecCache *xcache;
+		if (cache_ != NULL) {
+			WANProxyConfigClassCache::Instance *cache =
+				dynamic_cast<WANProxyConfigClassCache::Instance *>(cache_->instance_);
+			if (cache == NULL) {
+				ERROR("/wanproxy/config/codec") << "Codec cache not properly specified.";
+				return (false);
+			}
+			if (cache->cache_ == NULL) {
+				ERROR("/wanproxy/config/codec") << "Cache must be activated prior to use in configuration.";
+				return (false);
+			}
+			xcache = cache->cache_;
+		} else {
+			/*
+			 * No cache configured, fall back to old
+			 * behaviour of generating an unlimited
+			 * memory cache.
+			 */
+			UUID uuid;
 
-		XCodecCache *cache = XCodecCache::lookup(uuid);
-		if (cache == NULL) {
-			cache = new XCodecMemoryCache(uuid);
-			XCodecCache::enter(uuid, cache);
+			uuid.generate();
+			xcache = new XCodecMemoryCache(uuid);
 		}
-		XCodec *xcodec = new XCodec(cache);
 
-		codec_.codec_ = xcodec;
+		const UUID& uuid = xcache->get_uuid();
+		XCodecCache *oxcache = XCodecCache::lookup(uuid);
+		if (oxcache != NULL) {
+			if (oxcache != xcache)
+				INFO("/wanproxy/config/codec") << "Codec instance cache has a different UUID to shared cache associated with same UUID.";
+		} else {
+			XCodecCache::enter(uuid, xcache);
+		}
+		codec_.codec_ = new XCodec(xcache);
 		break;
 	}
 	case WANProxyConfigCodecNone:
+		if (cache_ != NULL) {
+			ERROR("/wanproxy/config/codec") << "Cannot configure a cache with a codec other than XCodec.";
+			return (false);
+		}
 		codec_.codec_ = NULL;
 		break;
 	default:

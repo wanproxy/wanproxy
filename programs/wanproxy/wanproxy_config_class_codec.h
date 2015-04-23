@@ -27,7 +27,9 @@
 #define	PROGRAMS_WANPROXY_WANPROXY_CONFIG_CLASS_CODEC_H
 
 #include <config/config_type_boolean.h>
+#include <config/config_type_pointer.h>
 #include <config/config_type_int.h>
+#include <config/config_type_size.h>
 
 #include "wanproxy_codec.h"
 #include "wanproxy_config_type_codec.h"
@@ -41,6 +43,8 @@ public:
 		WANProxyConfigCompressor compressor_;
 		intmax_t compressor_level_;
 
+		ConfigObject *cache_;
+
 		bool track_statistics_;
 
 		intmax_t outgoing_to_codec_bytes_;
@@ -53,6 +57,7 @@ public:
 		  codec_type_(WANProxyConfigCodecNone),
 		  compressor_(WANProxyConfigCompressorNone),
 		  compressor_level_(-1),
+		  cache_(NULL),
 		  track_statistics_(false),
 		  outgoing_to_codec_bytes_(0),
 		  codec_to_outgoing_bytes_(0),
@@ -75,12 +80,14 @@ public:
 		add_member("compressor", &wanproxy_config_type_compressor, &Instance::compressor_);
 		add_member("compressor_level", &config_type_int, &Instance::compressor_level_);
 
+		add_member("cache", &config_type_pointer, &Instance::cache_);
+
 		add_member("track_statistics", &config_type_boolean, &Instance::track_statistics_);
 
-		add_member("outgoing_to_codec_bytes", &config_type_int, &Instance::outgoing_to_codec_bytes_);
-		add_member("codec_to_outgoing_bytes", &config_type_int, &Instance::codec_to_outgoing_bytes_);
-		add_member("incoming_to_codec_bytes", &config_type_int, &Instance::incoming_to_codec_bytes_);
-		add_member("codec_to_incoming_bytes", &config_type_int, &Instance::codec_to_incoming_bytes_);
+		add_member("outgoing_to_codec_bytes", &config_type_size, &Instance::outgoing_to_codec_bytes_);
+		add_member("codec_to_outgoing_bytes", &config_type_size, &Instance::codec_to_outgoing_bytes_);
+		add_member("incoming_to_codec_bytes", &config_type_size, &Instance::incoming_to_codec_bytes_);
+		add_member("codec_to_incoming_bytes", &config_type_size, &Instance::codec_to_incoming_bytes_);
 	}
 
 	~WANProxyConfigClassCodec()

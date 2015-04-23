@@ -3,14 +3,9 @@ o) Use a 16-bit window counter rather than an 8-bit one so we have an 8MB window
    XXX Preliminary tests show this to be a big throughput hit.  Need to check
        whether the gains are worth it.
 o) Don't let a peer claim to have our UUID?
-o) Permanent storage.
-o) Decide whether to keep a std::set (or something fancier) of hashes associated
-   with each UUID (i.e. ones we have sent to them).  We could even make it a
-   set of <UUID,UUID,hash> so that we can distribute updates like routing
-   tables.
 o) Do lookups in the peer's dictionary and ours at the same time.
 o) Put a generation number in the hashes so that if the remote side recycles a
-   hash, we can do something about it.
+   hash, we can do something about it more than we do now.
 o) Actually, just use names instead of hashes, but look up data by hash and then
    use its symbolic name to refer to it.  Names could just be incrementing 64-bit
    integers, or a mix of the hash with a counter, or any number of things.  The

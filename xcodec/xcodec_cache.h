@@ -80,8 +80,16 @@ public:
 
 	virtual XCodecCache *connect(const UUID&) = 0;
 	virtual void enter(const uint64_t&, BufferSegment *) = 0;
+	virtual void replace(const uint64_t&, BufferSegment *) = 0;
 	virtual BufferSegment *lookup(const uint64_t&) = 0;
+	virtual void touch(const uint64_t&, BufferSegment *)
+	{ }
 	virtual bool out_of_band(void) const = 0;
+
+	UUID get_uuid(void) const
+	{
+		return (uuid_);
+	}
 
 	bool uuid_encode(Buffer *buf) const
 	{
@@ -193,12 +201,23 @@ public:
 	}
 };
 
+/*
+ * XXX
+ * It would be nice if we had a thread which would quiesce the cache from
+ * time to time, using touch() to push things to the secondary cache, and
+ * shrinking LRU.
+ */
 class XCodecCachePair : public XCodecCache {
 	XCodecCache *primary_;
 	XCodecCache *secondary_;
 public:
-	XCodecCachePair(const UUID& uuid, XCodecCache *primary, XCodecCache *secondary)
-	: XCodecCache(uuid),
+	/*
+	 * NB:
+	 * The lowest level of cache is the most persistent, and so we
+	 * inherit its UUID.
+	 */
+	XCodecCachePair(XCodecCache *primary, XCodecCache *secondary)
+	: XCodecCache(secondary->get_uuid()),
 	  primary_(primary),
 	  secondary_(secondary)
 	{ }
@@ -208,7 +227,7 @@ public:
 
 	XCodecCache *connect(const UUID& uuid)
 	{
-		return (new XCodecCachePair(uuid, primary_->connect(uuid), secondary_->connect(uuid)));
+		return (new XCodecCachePair(primary_->connect(uuid), secondary_->connect(uuid)));
 	}
 
 	void enter(const uint64_t& hash, BufferSegment *seg)
@@ -235,6 +254,17 @@ public:
 		secondary_->enter(hash, seg);
 	}
 
+	virtual void replace(const uint64_t& hash, BufferSegment *seg)
+	{
+		/*
+		 * It is safe to assume here that we will be replacing
+		 * at each and every level, not entering at some.  We
+		 * would only get here if lookup failed at both levels.
+		 */
+		primary_->replace(hash, seg);
+		secondary_->replace(hash, seg);
+	}
+
 	bool out_of_band(void) const
 	{
 		if (primary_->out_of_band()) {
@@ -247,13 +277,32 @@ public:
 
 	BufferSegment *lookup(const uint64_t& hash)
 	{
+		/*
+		 * If a primary lookup succeeds, would like
+		 * to let the secondary cache know.  Thus
+		 * we can have e.g. usage from the memory
+		 * cache refresh old entries in the disk
+		 * cache which are due to be overwritten.
+		 */
 		BufferSegment *seg = primary_->lookup(hash);
-		if (seg == NULL) {
-			seg = secondary_->lookup(hash);
-			if (seg != NULL)
-				primary_->enter(hash, seg);
+		if (seg != NULL) {
+			secondary_->touch(hash, seg);
+			return (seg);
 		}
-		return (seg);
+
+		seg = secondary_->lookup(hash);
+		if (seg != NULL) {
+			primary_->enter(hash, seg);
+			return (seg);
+		}
+
+		return (NULL);
+	}
+
+	void touch(const uint64_t& hash, BufferSegment *seg)
+	{
+		primary_->touch(hash, seg);
+		secondary_->touch(hash, seg);
 	}
 };
 
@@ -343,6 +392,18 @@ public:
 		if (memory_cache_limit_ != 0)
 			entry.counter_ = segment_lru_.enter(hash);
 		segment_hash_map_.insert(segment_hash_map_t::value_type(hash, entry));
+	}
+
+	virtual void replace(const uint64_t& hash, BufferSegment *seg)
+	{
+		segment_hash_map_t::iterator it;
+		it = segment_hash_map_.find(hash);
+		ASSERT(log_, it != segment_hash_map_.end());
+
+		CacheEntry entry(seg);
+		if (memory_cache_limit_ != 0)
+			entry.counter_ = segment_lru_.use(hash, it->second.counter_);
+		it->second = entry;
 	}
 
 	bool out_of_band(void) const

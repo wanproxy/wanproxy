@@ -1,11 +1,10 @@
+Long-term possible goals:
 o) We should really be looking up hashes both in our cache and in our cache
    of hashes from the peer.  If it's only in the peer's cache, we can add it
    to ours and send it as if it were a new piece of data.  This could either
    be a big speedup or a big slowdown for the encoding process.  It depends
    on how often we see data from the peer then be data we need to send back
    to the peer.
-
-XCodec 0.9.0 goals:
 o) Stop using hashes like names and use actual names.  This abstraction will
    allow us to minimize the cost of collisions, speed lookup, etc.  It also
    means that different systems will be able to use different encode/hash
@@ -17,63 +16,8 @@ o) Exchange not just our UUIDs but a list of all of the UUIDs of other systems
    that we share access to.
 o) Also exchange other parameters, like size of the backref window, using the
    minimum between the two peers.
-
-Past ideas:
-o) Create a new XCodecTag that incorporates a hash and a counter and
-   perhaps other things...
-o) The counter will increment for each collision (or perhaps just be a
-   random number after the first collision and bail out if there's a
-   collision on the random number) and add new variants of extract, etc.,
-   that give a counter to append to the hash to get the Tag.
-o) Allow either powers of two above 128 or multiples of 128 to be usable
-   chunk sizes instead of just 128.  Include any time we define a tag a
-   bitmap of 128-byte blocks (or blocks of each size down to 128) within
-   the chunk that are to be learned, too, so that we still deal well with
-   changes.  Eventually allow defining new e.g. 4K blocks based on old 4K
-   blocks with a single 128-byte block difference?
-o) Add a pass number to the Tag so we can do recursive encoding.  Use a
+o) Add a pass number to the name so we can do recursive encoding.  Use a
    limited number of bits and put this above the opcode so that we can have
    separate back-reference windows, etc., for each pass and so that we can
    avoid escaping for subsequent passes, perhaps?
-o) Deflate after recursive encoding.
-o) A new encoder that can exploit all of those features, possibly keeping
-   the old encoder around for applications that need low latency and high
-   throughput.
-
-To-do:
-
-o) Add a 'count' field to the hash and allow incrementing it to do collision
-   overflow.  For this it'd be nice to have an interface that would return a
-   range of matches in the dictionary.  Put the count at the end to make this
-   possible.  Would need to change the encoding logic to use a different OP
-   for these that took, say, a count or even just the full hash/identifier.
-o) Only have N bytes outstanding at any given time (say 128k?) and add some
-   type of ACK, perhaps?  This is necessary to:
-o) Write a garbage-collector for the dictionary.  LRU?
-
-Possibly-bad future ideas:
-
 o) Incorporate run-length encoding.
-o) Incorporate occasional (figure out frequency) CRCs or such of the next N
-   bytes of decoded data to make it possible to detect any hash mismatches,
-   using a different hash function to any that go into the hash.
-o) If the encoded version of a stream is larger than the source would be
-   escaped, it'd be nice to just transmit it escaped and to have some way to
-   tell the remote side how to pick out chunks to be taken as known to both
-   parties in the future.  One approach would be to send a list of offsets
-   at which hashes were declared.
-
-%%%
-
-Hash-set deduplication:
-
-For a given number of hashes (say 64), put an unordered list (hash?) of each
-64 hashes that are encountered into a database.
-
-When data is encoded, check whether its 64 hashes have appeared previously.  If
-they have, then use a compact encoding to list the order in which they appear
-and the offsets within the list at which escaped or new data is to be inserted.
-
-Eventually extend with one of the Computational Biology algorithms for finding
-sequences missing an element or with one element changed so that we can do work
-with deltas and offset sequences/sets more reliably.

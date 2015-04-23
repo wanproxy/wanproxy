@@ -40,6 +40,22 @@
 #include <xcodec/xcodec_pipe_protocol.h>
 
 /*
+ * XXX
+ * Especially now that we support disk storage of data, we need to better
+ * handle the case of collisions and such.  One easy piece would be to
+ * include a checksum in each frame, and to check the decoded frame.  If it
+ * is inconsistent, then the sender can retry with smaller and smaller
+ * frame sizes until we simply get escaped data.  Easy to implement, and
+ * robust in the face of failure.  Could mean sending quite a lot of data
+ * to make progress, though.  We could raise and lower the window like TCP
+ * does, to improve throughput.
+ *
+ * We also then need to evict old hashes on collision in decode, since we
+ * want to be able to recover long-term, and not have constantly-degraded
+ * performance due to a common hash being renamed.
+ */
+
+/*
  * Allow up to 1MB of data per encoded frame.
  */
 #define	XCODEC_PIPE_MAX_FRAME	(1024 * 1024)
@@ -295,14 +311,18 @@ XCodecPipePair::decoder_decode(void)
 
 					BufferSegment *oseg = decoder_cache_->lookup(hash);
 					if (oseg != NULL) {
-						if (!oseg->equal(seg)) {
+						if (oseg->equal(seg)) {
 							oseg->unref();
-							ERROR(log_) << "Collision in <LEARN>.";
-							seg->unref();
-							return (false);
+							DEBUG(log_) << "Redundant <LEARN>.";
+						} else {
+							/*
+							 * See note about allowing name reuse in
+							 * <EXTRACT> handling in the decoder.
+							 */
+							INFO(log_) << "Name reuse in <LEARN>.";
+							oseg->unref();
+							decoder_cache_->replace(hash, seg);
 						}
-						oseg->unref();
-						DEBUG(log_) << "Redundant <LEARN>.";
 					} else {
 						decoder_cache_->enter(hash, seg);
 					}
@@ -559,6 +579,13 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 		 * We must encode XCODEC_PIPE_MAX_FRAME / 2 bytes at a time,
 		 * since at worst we double the size of data, and that way we
 		 * can ensure that each frame is self-contained!
+		 *
+		 * XXX
+		 * This needs to include a checksum of the decoded data, and
+		 * we need a way to negotiate the resulting ASK/LEARN work, or
+		 * even send the full decoded data in the raw in the case
+		 * where an error is encountered.  That wouldn't be very hard
+		 * to implement.
 		 */
 		for (;;) {
 			uint32_t framelen;

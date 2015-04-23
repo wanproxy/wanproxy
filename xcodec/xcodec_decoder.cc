@@ -110,9 +110,26 @@ XCodecDecoder::decode(Buffer *output, Buffer *input, std::set<uint64_t>& unknown
 						seg->unref();
 						seg = oseg;
 					} else {
-						ERROR(log_) << "Collision in <EXTRACT>.";
-						seg->unref();
-						return (false);
+						/*
+						 * Now that we allow clamping of size,
+						 * we can encounter name reuse.  We should
+						 * in this case simply replace the old
+						 * name with this one.  With out-of-band
+						 * caches, we can't allow name reuse as it
+						 * might corrupt old data, but we do not
+						 * use <EXTRACT> in out-of-band encoders
+						 * for precisely that reason.
+						 *
+						 * Races are possible here, which is why
+						 * it is important that the protocol which
+						 * uses XCodec is able to do some kind of
+						 * framing so that it can verify decoded
+						 * data, and refetch data from the peer if
+						 * the decoded data is incorrect.
+						 */
+						INFO(log_) << "Name reuse in <EXTRACT>.";
+						oseg->unref();
+						cache_->replace(hash, seg);
 					}
 				} else {
 					cache_->enter(hash, seg);

@@ -34,6 +34,7 @@
 #include <event/event_callback.h>
 
 #include "wanproxy_config.h"
+#include "wanproxy_config_class_cache.h"
 #include "wanproxy_config_class_codec.h"
 #include "wanproxy_config_class_interface.h"
 #include "wanproxy_config_class_monitor.h"
@@ -153,6 +154,7 @@ WANProxyConfig::configure(const std::string& name)
 
 	config_ = new Config();
 	config_->import(&config_class_log_mask);
+	config_->import(&wanproxy_config_class_cache);
 	config_->import(&wanproxy_config_class_codec);
 	config_->import(&wanproxy_config_class_interface);
 	config_->import(&wanproxy_config_class_monitor);

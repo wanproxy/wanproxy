@@ -40,6 +40,7 @@
 
 #include <xcodec/xcodec.h>
 #include <xcodec/xcodec_cache.h>
+#include <xcodec/xcodec_cache_disk.h>
 #include <xcodec/xcodec_decoder.h>
 #include <xcodec/xcodec_encoder.h>
 #include <xcodec/xcodec_hash.h>
@@ -82,6 +83,11 @@ public:
 
 	void enter(const uint64_t&, BufferSegment *)
 	{ }
+
+	void replace(const uint64_t&, BufferSegment *)
+	{
+		NOTREACHED("/tack/null/cache");
+	}
 
 	XCodecCache *connect(const UUID&)
 	{
@@ -142,6 +148,11 @@ public:
 		new_data_.append(seg);
 	}
 
+	void replace(const uint64_t&, BufferSegment *)
+	{
+		NOTREACHED("/tack/persistent/cache");
+	}
+
 	XCodecCache *connect(const UUID&)
 	{
 		NOTREACHED("/tack/persistent/cache");
@@ -156,20 +167,21 @@ public:
 int
 main(int argc, char *argv[])
 {
-	const char *persist;
+	const char *fifo, *persist;
 	bool nullcache;
 	bool verbose;
 	FileAction action;
 	unsigned flags;
 	int ch;
 
+	fifo = NULL;
 	persist = NULL;
 	action = None;
 	flags = 0;
 	nullcache = false;
 	verbose = false;
 
-	while ((ch = getopt(argc, argv, "?cdhp:svENQST")) != -1) {
+	while ((ch = getopt(argc, argv, "?cdhp:svEF:NQST")) != -1) {
 		switch (ch) {
 		case 'c':
 			action = Compress;
@@ -191,6 +203,9 @@ main(int argc, char *argv[])
 			break;
 		case 'E':
 			flags |= TACK_FLAG_CODEC_TIMING_EACH;
+			break;
+		case 'F':
+			fifo = optarg;
 			break;
 		case 'N':
 			nullcache = true;
@@ -224,6 +239,8 @@ main(int argc, char *argv[])
 			usage();
 	}
 
+	if (fifo != NULL && (persist != NULL || nullcache))
+		usage();
 	if (persist != NULL && nullcache)
 		usage();
 
@@ -241,12 +258,21 @@ main(int argc, char *argv[])
 	uuid.generate();
 
 	XCodecCache *cache;
-	if (persist == NULL) {
+	if (fifo == NULL && persist == NULL) {
 		if (nullcache)
 			cache = new TackNullCache(uuid);
 		else
 			cache = new XCodecMemoryCache(uuid);
+	} else if (fifo != NULL) {
+		ASSERT("/tack", persist == NULL);
+		ASSERT("/tack", !nullcache);
+		XCodecDisk *disk = XCodecDisk::open(fifo, 0);
+		if (disk == NULL)
+			HALT("/tack") << "Could not open on-disk FIFO cache.";
+		cache = disk->local();
 	} else {
+		ASSERT("/tack", persist != NULL);
+		ASSERT("/tack", !nullcache);
 		int fd;
 		if (action == Compress) {
 			fd = open(persist, O_RDWR | O_CREAT, 0600);
@@ -565,8 +591,8 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: tack [-p cache | -N] [-svQ] [-T [-ES]] -c [file ...]\n"
-"       tack [-p cache | -N] [-svQ] [-T [-ES]] -d [file ...]\n"
+"usage: tack [-p cache | -F fifo-cache | -N] [-svQ] [-T [-ES]] -c [file ...]\n"
+"       tack [-p cache | -F fifo-cache | -N] [-svQ] [-T [-ES]] -d [file ...]\n"
 "       tack [-vQ] [-T [-ES]] -h [file ...]\n");
 	exit(1);
 }
