@@ -23,6 +23,7 @@
  * SUCH DAMAGE.
  */
 
+#include <errno.h>
 #include <pthread.h>
 
 #include <deque>
