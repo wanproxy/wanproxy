@@ -179,7 +179,7 @@ XCodecDisk::XCodecDisk(int fd, uint64_t disk_size)
 		counter_index_map[counter] = o;
 	}
 
-	std::map<uint64_t, uint64_t>::const_iterator it;
+	std::map<uint64_t, uint64_t>::iterator it;
 	if ((it = counter_index_map.begin()) != counter_index_map.end()) {
 		if (it->first == 0) {
 			DEBUG(log_) << "Write head is at first free index block; index block #" << it->second << ".";
@@ -330,7 +330,7 @@ XCodecDisk::index_invalidate_entries(uint64_t index_block)
 		XCodecDiskCache *cache = xcit->second;
 		ASSERT(log_, cache != NULL);
 
-		XCodecDiskCache::hash_cache_t::const_iterator hcit;
+		XCodecDiskCache::hash_cache_t::iterator hcit;
 		hcit = cache->hash_cache_.find(hash);
 		if (hcit == cache->hash_cache_.end()) {
 			DEBUG(log_) << "Skipping invalidate for absent hash.";
@@ -391,7 +391,7 @@ XCodecDisk::index_load_entries(uint64_t index_block, bool check)
 		XCodecDiskCache *cache = xcit->second;
 		ASSERT(log_, cache != NULL);
 
-		XCodecDiskCache::hash_cache_t::const_iterator hcit;
+		XCodecDiskCache::hash_cache_t::iterator hcit;
 		hcit = cache->hash_cache_.find(hash);
 		if (hcit != cache->hash_cache_.end()) {
 			/*
@@ -471,7 +471,7 @@ XCodecDisk::registry_collect(void)
 	uint16_t xuid;
 
 	for (xuid = 0; xuid < XCDFS_XUID_COUNT; xuid++) {
-		std::map<uint16_t, XCodecDiskCache *>::const_iterator xcit;
+		std::map<uint16_t, XCodecDiskCache *>::iterator xcit;
 
 		xcit = xuid_cache_map_.find(xuid);
 		if (xcit == xuid_cache_map_.end())
@@ -704,7 +704,7 @@ XCodecDisk::enter(XCodecDiskCache *cache, uint64_t hash, const BufferSegment *se
 BufferSegment *
 XCodecDisk::lookup(XCodecDiskCache *cache, uint64_t hash)
 {
-	XCodecDiskCache::hash_cache_t::const_iterator it;
+	XCodecDiskCache::hash_cache_t::iterator it;
 	it = cache->hash_cache_.find(hash);
 	if (it == cache->hash_cache_.end())
 		return (NULL);
@@ -735,7 +735,7 @@ XCodecDisk::lookup(XCodecDiskCache *cache, uint64_t hash)
 void
 XCodecDisk::remove(XCodecDiskCache *cache, uint64_t hash)
 {
-	XCodecDiskCache::hash_cache_t::const_iterator hcit;
+	XCodecDiskCache::hash_cache_t::iterator hcit;
 	hcit = cache->hash_cache_.find(hash);
 	if (hcit == cache->hash_cache_.end()) {
 		ERROR(log_) << "Cannot remove absent hash.";
