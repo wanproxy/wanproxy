@@ -86,6 +86,7 @@ CFLAGS+=-Wno-missing-noreturn
 CFLAGS+=-Wno-global-constructors
 CFLAGS+=-Wno-vla
 CFLAGS+=-Wno-vla-extension
+CFLAGS+=-Wno-old-style-cast
 endif
 ifndef NO_WERROR
 CFLAGS+=-Werror
