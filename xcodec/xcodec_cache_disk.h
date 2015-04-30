@@ -56,9 +56,15 @@ class XCodecDisk {
 		ASSERT(log_, xuid_cache_map_.empty());
 	}
 
-	uint64_t data_block_address(uint64_t, unsigned);
+	bool block_read(Buffer *, uint64_t);
+	bool block_write(Buffer *, uint64_t);
 
-	uint64_t index_block_address(uint64_t);
+	bool block_read(BufferSegment **, uint64_t);
+	bool block_write(const BufferSegment *, uint64_t);
+
+	uint64_t data_block_address(uint64_t, unsigned) const;
+
+	uint64_t index_block_address(uint64_t) const;
 	bool index_invalidate_entries(uint64_t);
 	bool index_load_entries(uint64_t, bool);
 	bool index_read_counter(uint64_t, uint64_t *);

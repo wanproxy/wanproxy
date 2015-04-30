@@ -100,36 +100,7 @@
  */
 #define	XCDFS_CHECK_BOUNDARY	(80)
 
-/*
- * XXX
- * Want support for device block size being a multiple or divisor of the logical block size.
- */
 namespace {
-	static bool
-	read_block(int fd, uint8_t block[XCDFS_BLOCK_SIZE], uint64_t blockno)
-	{
-		ssize_t amt = ::pread(fd, block, XCDFS_BLOCK_SIZE, blockno * XCDFS_BLOCK_SIZE);
-		if (amt == -1)
-			return (false);
-		ASSERT("/xcodec/disk", amt == XCDFS_BLOCK_SIZE);
-		return (true);
-	}
-
-	/*
-	 * XXX
-	 * Would be nice to only write the changed device-level block(s), rather
-	 * than the whole XCDFS block.
-	 */
-	static bool
-	write_block(int fd, const uint8_t block[XCDFS_BLOCK_SIZE], uint64_t blockno)
-	{
-		ssize_t amt = ::pwrite(fd, block, XCDFS_BLOCK_SIZE, blockno * XCDFS_BLOCK_SIZE);
-		if (amt == -1)
-			return (false);
-		ASSERT("/xcodec/disk", amt == XCDFS_BLOCK_SIZE);
-		return (true);
-	}
-
 	static uint8_t zero_uuid[UUID_SIZE];
 }
 
@@ -265,8 +236,73 @@ XCodecDisk::XCodecDisk(int fd, uint64_t disk_size)
 	index_block_.append(&index_block_counter_);
 }
 
+/*
+ * XXX
+ * Want support for device block size being a multiple or divisor of the logical block size.
+ */
+bool
+XCodecDisk::block_read(Buffer *buf, uint64_t blockno)
+{
+	ASSERT(log_, blockno < disk_blocks_);
+	uint8_t block[XCDFS_BLOCK_SIZE];
+	ssize_t amt = ::pread(fd_, block, XCDFS_BLOCK_SIZE, blockno * XCDFS_BLOCK_SIZE);
+	if (amt == -1)
+		return (false);
+	ASSERT(log_, amt == XCDFS_BLOCK_SIZE);
+	buf->append(block, sizeof block);
+	return (true);
+}
+
+/*
+ * XXX
+ * Would be nice to only write the changed device-level block(s), rather
+ * than the whole XCDFS block.
+ */
+bool
+XCodecDisk::block_write(Buffer *buf, uint64_t blockno)
+{
+	ASSERT(log_, buf->length() == XCDFS_BLOCK_SIZE);
+	ASSERT(log_, blockno < disk_blocks_);
+	uint8_t block[XCDFS_BLOCK_SIZE];
+	buf->copyout(block, sizeof block);
+	ssize_t amt = ::pwrite(fd_, block, XCDFS_BLOCK_SIZE, blockno * XCDFS_BLOCK_SIZE);
+	if (amt == -1)
+		return (false);
+	buf->clear();
+	ASSERT(log_, amt == XCDFS_BLOCK_SIZE);
+	return (true);
+}
+
+bool
+XCodecDisk::block_read(BufferSegment **segp, uint64_t blockno)
+{
+	ASSERT(log_, blockno < disk_blocks_);
+	BufferSegment *seg = BufferSegment::create();
+	ssize_t amt = ::pread(fd_, seg->head(), XCDFS_BLOCK_SIZE, blockno * XCDFS_BLOCK_SIZE);
+	if (amt == -1) {
+		seg->unref();
+		return (false);
+	}
+	ASSERT(log_, amt == XCDFS_BLOCK_SIZE);
+	seg->set_length(XCDFS_BLOCK_SIZE);
+	*segp = seg;
+	return (true);
+}
+
+bool
+XCodecDisk::block_write(const BufferSegment *seg, uint64_t blockno)
+{
+	ASSERT(log_, seg->length() == XCDFS_BLOCK_SIZE);
+	ASSERT(log_, blockno < disk_blocks_);
+	ssize_t amt = ::pwrite(fd_, seg->data(), XCDFS_BLOCK_SIZE, blockno * XCDFS_BLOCK_SIZE);
+	if (amt == -1)
+		return (false);
+	ASSERT(log_, amt == XCDFS_BLOCK_SIZE);
+	return (true);
+}
+
 uint64_t
-XCodecDisk::data_block_address(uint64_t index_block, unsigned entry)
+XCodecDisk::data_block_address(uint64_t index_block, unsigned entry) const
 {
 	ASSERT(log_, index_block < index_blocks_);
 	ASSERT(log_, entry < XCDFS_ENTRIES_PER_INDEX_BLOCK);
@@ -274,7 +310,7 @@ XCodecDisk::data_block_address(uint64_t index_block, unsigned entry)
 }
 
 uint64_t
-XCodecDisk::index_block_address(uint64_t index_block)
+XCodecDisk::index_block_address(uint64_t index_block) const
 {
 	ASSERT(log_, index_block < index_blocks_);
 	return (XCDFS_REGISTRY_BLOCKS + index_block);
@@ -291,18 +327,16 @@ XCodecDisk::index_block_address(uint64_t index_block)
 bool
 XCodecDisk::index_invalidate_entries(uint64_t index_block)
 {
-	uint8_t block[XCDFS_BLOCK_SIZE];
+	Buffer idx;
 
 	/*
 	 * Read in the index block and invalidate all entries
 	 * that are currently active and primary.
 	 */
-	if (!read_block(fd_, block, index_block_address(index_block))) {
+	if (!block_read(&idx, index_block_address(index_block))) {
 		ERROR(log_) << "Could not read index to be invalidated.";
 		return (false);
 	}
-
-	Buffer idx(block, sizeof block);
 
 	uint64_t counter;
 	idx.moveout(&counter);
@@ -350,14 +384,12 @@ XCodecDisk::index_invalidate_entries(uint64_t index_block)
 bool
 XCodecDisk::index_load_entries(uint64_t index_block, bool check)
 {
-	uint8_t block[XCDFS_BLOCK_SIZE];
+	Buffer idx;
 
-	if (!read_block(fd_, block, index_block_address(index_block))) {
+	if (!block_read(&idx, index_block_address(index_block))) {
 		ERROR(log_) << "Could not read index to be loaded.";
 		return (false);
 	}
-
-	Buffer idx(block, sizeof block);
 
 	uint64_t counter;
 	idx.moveout(&counter);
@@ -413,12 +445,14 @@ XCodecDisk::index_load_entries(uint64_t index_block, bool check)
 		const uint64_t& offset = data_block_address(index_block, i);
 
 		if (check) {
-			if (!read_block(fd_, block, offset)) {
+			BufferSegment *seg;
+			if (!block_read(&seg, offset)) {
 				ERROR(log_) << "Could not read data entry for check.";
 				return (false);
 			}
 
-			uint64_t ohash = XCodecHash::hash(block);
+			uint64_t ohash = XCodecHash::hash(seg->data());
+			seg->unref();
 			if (ohash != hash) {
 				INFO(log_) << "Removing invalid cache entry during check.";
 
@@ -450,14 +484,12 @@ XCodecDisk::index_load_entries(uint64_t index_block, bool check)
 bool
 XCodecDisk::index_read_counter(uint64_t index_block, uint64_t *counterp)
 {
-	uint8_t block[XCDFS_BLOCK_SIZE];
+	Buffer idx;
 
-	if (!read_block(fd_, block, index_block_address(index_block))) {
+	if (!block_read(&idx, index_block_address(index_block))) {
 		ERROR(log_) << "Could not read index to be loaded.";
 		return (false);
 	}
-
-	Buffer idx(block, sizeof block);
 
 	ASSERT(log_, counterp != NULL);
 	idx.moveout(counterp);
@@ -506,16 +538,15 @@ XCodecDisk::registry_collect(void)
 bool
 XCodecDisk::registry_load(void)
 {
-	uint8_t block[XCDFS_BLOCK_SIZE];
 	unsigned i, r;
 
 	for (r = 0; r < XCDFS_REGISTRY_BLOCKS; r++) {
-		if (!read_block(fd_, block, r)) {
+		Buffer reg;
+
+		if (!block_read(&reg, r)) {
 			ERROR(log_) << "Could not read registry block for loading.";
 			return (false);
 		}
-
-		Buffer reg(block, sizeof block);
 
 		for (i = 0; i < XCDFS_REGISTRY_BLOCK_ENTRIES; i++) {
 			uint16_t xuid = r * XCDFS_REGISTRY_BLOCK_ENTRIES + i;
@@ -573,20 +604,27 @@ XCodecDisk::registry_load(void)
 bool
 XCodecDisk::registry_write(uint16_t xuid, const Buffer *uuidbuf)
 {
+	Buffer reg;
+
 	ASSERT(log_, xuid < XCDFS_XUID_COUNT);
 
 	/*
 	 * Read registry so we can update it.
 	 */
-	uint8_t block[XCDFS_BLOCK_SIZE];
-	if (!read_block(fd_, block, xuid / XCDFS_REGISTRY_BLOCK_ENTRIES)) {
+	if (!block_read(&reg, xuid / XCDFS_REGISTRY_BLOCK_ENTRIES)) {
 		ERROR(log_) << "Could not read registry block for update.";
 		return (false);
 	}
 
+	uint8_t block[XCDFS_BLOCK_SIZE];
+	ASSERT(log_, reg.length() == sizeof block);
+	reg.moveout(block, sizeof block);
+
 	uuidbuf->copyout(&block[(xuid % XCDFS_REGISTRY_BLOCK_ENTRIES) * UUID_SIZE], UUID_SIZE);
 
-	if (!write_block(fd_, block, 0)) {
+	reg.append(block, sizeof block);
+
+	if (!block_write(&reg, 0)) {
 		ERROR(log_) << "Failed to write registry update.";
 		return (false);
 	}
@@ -661,7 +699,7 @@ XCodecDisk::enter(XCodecDiskCache *cache, uint64_t hash, const BufferSegment *se
 	index_block_.append(&hash);
 
 	uint64_t offset = data_block_address(current_index_block_, index_block_next_);
-	if (!write_block(fd_, seg->data(), offset)) {
+	if (!block_write(seg, offset)) {
 		ERROR(log_) << "Could not write data segment.";
 		return;
 	}
@@ -677,11 +715,12 @@ XCodecDisk::enter(XCodecDiskCache *cache, uint64_t hash, const BufferSegment *se
 		 *     little consistency and to minimize the number of writes
 		 *     we have to do in total.
 		 */
-		uint8_t block[XCDFS_BLOCK_SIZE];
 		ASSERT(log_, index_block_.length() == XCDFS_BLOCK_SIZE);
-		index_block_.moveout(block, index_block_.length());
-		if (!write_block(fd_, block, index_block_address(current_index_block_)))
+		if (!block_write(&index_block_, index_block_address(current_index_block_))) {
 			ERROR(log_) << "Failed to write index block update; expect inconsistency.";
+			index_block_.clear();
+		}
+		ASSERT(log_, index_block_.empty());
 
 		if (++current_index_block_ == index_blocks_)
 			current_index_block_ = 0;
@@ -712,14 +751,13 @@ XCodecDisk::lookup(XCodecDiskCache *cache, uint64_t hash)
 	const uint64_t& offset = it->second;
 	ASSERT(log_, offset != 0);
 
-	BufferSegment *seg = BufferSegment::create();
-	if (!read_block(fd_, seg->head(), offset)) {
+	BufferSegment *seg;
+	if (!block_read(&seg, offset)) {
 		seg->unref();
 		ERROR(log_) << "Could not read segment from disk; removing index entry.";
 		cache->hash_cache_.erase(it);
 		return (NULL);
 	}
-	seg->set_length(XCODEC_SEGMENT_LENGTH);
 
 	uint64_t ohash = XCodecHash::hash(seg->data());
 	if (ohash != hash) {
