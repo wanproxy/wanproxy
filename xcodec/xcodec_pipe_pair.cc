@@ -580,6 +580,12 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 		 * since at worst we double the size of data, and that way we
 		 * can ensure that each frame is self-contained!
 		 *
+		 * Here we should also be doing protocol-aware framing.  Have
+		 * a protocol subsystem which will taste if this is the first
+		 * few frames, until it works out what framing policy to use.
+		 * It could also decide to rewrite data in safe ways, rather
+		 * than just do framing.
+		 *
 		 * XXX
 		 * This needs to include a checksum of the decoded data, and
 		 * we need a way to negotiate the resulting ASK/LEARN work, or
