@@ -107,6 +107,7 @@ private:
 
 	void read_schedule(void);
 	void read_callback(void);
+	void read_do(void);
 	void read_cancel(void);
 
 	void write_schedule(void);

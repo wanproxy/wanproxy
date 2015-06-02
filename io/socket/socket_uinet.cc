@@ -407,8 +407,16 @@ SocketUinet::read(size_t amount, EventCallback *cb)
 
 	uinet_soupcall_set(so_, UINET_SO_RCV, active_receive_upcall, this);
 
-	read_schedule();
+	read_do();
 
+	if (read_callback_ == NULL) {
+		ASSERT(log_, read_action_ != NULL);
+		Action *a = read_action_;
+		read_action_ = NULL;
+		return (a);
+	}
+
+	/* Need to wait for deferred read to occur.  */
 	return (cancellation(this, &SocketUinet::read_cancel));
 }
 
@@ -434,6 +442,12 @@ SocketUinet::read_callback(void)
 	read_action_->cancel();
 	read_action_ = NULL;
 
+	read_do();
+}
+
+void
+SocketUinet::read_do(void)
+{
 	uint64_t read_amount;
 
 	/*
