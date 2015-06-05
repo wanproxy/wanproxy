@@ -94,13 +94,13 @@ UDPClient::connect(const std::string& iface, const std::string& name, SocketEven
 	connect_action_ = socket_->connect(name, cb);
 	connect_callback_ = ccb;
 
-	return (cancellation(this, &UDPClient::connect_cancel));
+	return (cancellation(&mtx_, this, &UDPClient::connect_cancel));
 }
 
 void
 UDPClient::connect_cancel(void)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, close_action_ == NULL);
 	ASSERT(log_, connect_action_ != NULL);
 

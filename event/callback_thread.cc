@@ -43,26 +43,22 @@ CallbackThread::CallbackThread(const std::string& name)
 Action *
 CallbackThread::schedule(CallbackBase *cb)
 {
-	mtx_.lock();
+	ScopedLock _(&mtx_);
 	bool need_wakeup = queue_.empty();
 	queue_.push_back(cb);
 	if (need_wakeup && idle_)
 		sleepq_.signal();
-	mtx_.unlock();
-
-	return (cancellation(this, &CallbackThread::cancel, cb));
+	return (cancellation(&mtx_, this, &CallbackThread::cancel, cb));
 }
 
 void
 CallbackThread::cancel(CallbackBase *cb)
 {
-	Lock *interlock = cb->lock();
-	ASSERT_LOCK_OWNED(log_, interlock);
+	ASSERT_LOCK_OWNED(log_, cb->lock());
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 
-	mtx_.lock();
 	if (inflight_ == cb) {
 		inflight_ = NULL;
-		mtx_.unlock();
 		delete cb;
 		return;
 	}
@@ -72,7 +68,6 @@ CallbackThread::cancel(CallbackBase *cb)
 		if (*it != cb)
 			continue;
 		queue_.erase(it);
-		mtx_.unlock();
 		delete cb;
 		return;
 	}

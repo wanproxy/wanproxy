@@ -84,13 +84,13 @@ Splice::start(EventCallback *cb)
 		output_action_ = pipe_->output(pcb);
 	}
 
-	return (cancellation(this, &Splice::cancel));
+	return (cancellation(&mtx_, this, &Splice::cancel));
 }
 
 void
 Splice::cancel(void)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (callback_ != NULL) {
 		delete callback_;
 		callback_ = NULL;

@@ -179,7 +179,7 @@ IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, EventCallbac
 		ASSERT(log_, h->read_callback_ != NULL);
 		h->read_action_ = h->read_schedule();
 		ASSERT(log_, h->read_action_ != NULL);
-		return (cancellation(h, &IOSystem::Handle::read_cancel));
+		return (cancellation(&h->mtx_, h, &IOSystem::Handle::read_cancel));
 	}
 	ASSERT(log_, h->read_callback_ == NULL);
 	return (a);
@@ -212,7 +212,7 @@ IOSystem::write(int fd, Channel *owner, off_t offset, Buffer *buffer, EventCallb
 		ASSERT(log_, h->write_callback_ != NULL);
 		h->write_action_ = h->write_schedule();
 		ASSERT(log_, h->write_action_ != NULL);
-		return (cancellation(h, &IOSystem::Handle::write_cancel));
+		return (cancellation(&h->mtx_, h, &IOSystem::Handle::write_cancel));
 	}
 	ASSERT(log_, h->write_callback_ == NULL);
 	return (a);

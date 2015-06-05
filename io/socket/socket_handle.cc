@@ -73,7 +73,7 @@ SocketHandle::accept(SocketEventCallback *cb)
 
 	accept_callback_ = cb;
 	accept_action_ = accept_schedule();
-	return (cancellation(this, &SocketHandle::accept_cancel));
+	return (cancellation(&mtx_, this, &SocketHandle::accept_cancel));
 }
 
 bool
@@ -155,7 +155,7 @@ SocketHandle::connect(const std::string& name, EventCallback *cb)
 	default:
 		HALT(log_) << "Connect returned unexpected value: " << rv;
 	}
-	return (cancellation(this, &SocketHandle::connect_cancel));
+	return (cancellation(&mtx_, this, &SocketHandle::connect_cancel));
 }
 
 bool
@@ -274,7 +274,7 @@ SocketHandle::accept_callback(Event e)
 void
 SocketHandle::accept_cancel(void)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, accept_action_ != NULL);
 	accept_action_->cancel();
 	accept_action_ = NULL;
@@ -319,7 +319,7 @@ SocketHandle::connect_callback(Event e)
 void
 SocketHandle::connect_cancel(void)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, connect_action_ != NULL);
 	connect_action_->cancel();
 	connect_action_ = NULL;

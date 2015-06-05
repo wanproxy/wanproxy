@@ -108,7 +108,7 @@ SSHStream::start(Socket *socket, SimpleCallback *cb)
 	EventCallback *scb = callback(&mtx_, this, &SSHStream::splice_complete);
 	splice_action_ = splice_->start(scb);
 
-	return (cancellation(this, &SSHStream::start_cancel));
+	return (cancellation(&mtx_, this, &SSHStream::start_cancel));
 }
 
 Action *
@@ -149,7 +149,7 @@ SSHStream::read(size_t amt, EventCallback *cb)
 	EventCallback *rcb = callback(&mtx_, this, &SSHStream::receive_complete);
 	read_action_ = pipe_->receive(rcb);
 
-	return (cancellation(this, &SSHStream::read_cancel));
+	return (cancellation(&mtx_, this, &SSHStream::read_cancel));
 }
 
 Action *
@@ -165,7 +165,7 @@ SSHStream::write(Buffer *buf, EventCallback *cb)
 
 	if (!ready_) {
 		write_callback_ = cb;
-		return (cancellation(this, &SSHStream::write_cancel));
+		return (cancellation(&mtx_, this, &SSHStream::write_cancel));
 	}
 
 	write_do();
@@ -185,7 +185,7 @@ SSHStream::shutdown(bool, bool, EventCallback *cb)
 void
 SSHStream::start_cancel(void)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (start_callback_ != NULL) {
 		delete start_callback_;
 		start_callback_ = NULL;
@@ -210,7 +210,7 @@ SSHStream::start_cancel(void)
 void
 SSHStream::read_cancel(void)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (read_callback_ != NULL) {
 		delete read_callback_;
 		read_callback_ = NULL;
@@ -318,7 +318,7 @@ SSHStream::receive_complete(Event e)
 void
 SSHStream::write_cancel(void)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (write_action_ != NULL) {
 		write_action_->cancel();
 		write_action_ = NULL;

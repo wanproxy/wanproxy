@@ -63,13 +63,13 @@ PipeSplice::start(EventCallback *scb)
 
 	callback_ = scb;
 
-	return (cancellation(this, &PipeSplice::cancel));
+	return (cancellation(&mtx_, this, &PipeSplice::cancel));
 }
 
 void
 PipeSplice::cancel(void)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (action_ != NULL) {
 		action_->cancel();
 		action_ = NULL;

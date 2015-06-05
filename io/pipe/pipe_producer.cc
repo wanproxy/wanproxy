@@ -91,13 +91,13 @@ PipeProducer::output(EventCallback *cb)
 
 	output_callback_ = cb;
 
-	return (cancellation(this, &PipeProducer::output_cancel));
+	return (cancellation(lock_, this, &PipeProducer::output_cancel));
 }
 
 void
 PipeProducer::output_cancel(void)
 {
-	ScopedLock _(lock_);
+	ASSERT_LOCK_OWNED(log_, lock_);
 	if (output_action_ != NULL) {
 		ASSERT(log_, output_callback_ == NULL);
 

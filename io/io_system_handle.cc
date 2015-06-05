@@ -124,7 +124,7 @@ IOSystem::Handle::read_callback(Event e)
 void
 IOSystem::Handle::read_cancel(void)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, read_action_ != NULL);
 	read_action_->cancel();
 	read_action_ = NULL;
@@ -303,7 +303,7 @@ IOSystem::Handle::write_callback(Event e)
 void
 IOSystem::Handle::write_cancel(void)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, write_action_ != NULL);
 	write_action_->cancel();
 	write_action_ = NULL;

@@ -69,13 +69,13 @@ SplicePair::start(EventCallback *cb)
 	EventCallback *rcb = callback(&mtx_, this, &SplicePair::splice_complete, right_);
 	right_action_ = right_->start(rcb);
 
-	return (cancellation(this, &SplicePair::cancel));
+	return (cancellation(&mtx_, this, &SplicePair::cancel));
 }
 
 void
 SplicePair::cancel(void)
 {
-	ScopedLock _(&mtx_);
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (callback_ != NULL) {
 		delete callback_;
 		callback_ = NULL;

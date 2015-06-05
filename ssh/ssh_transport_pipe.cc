@@ -95,7 +95,7 @@ SSH::TransportPipe::receive(EventCallback *cb)
 	receive_do();
 
 	if (receive_callback_ != NULL)
-		return (cancellation(this, &SSH::TransportPipe::receive_cancel));
+		return (cancellation(&mtx_, this, &SSH::TransportPipe::receive_cancel));
 
 	ASSERT(log_, receive_action_ != NULL);
 	Action *a = receive_action_;
@@ -181,7 +181,7 @@ SSH::TransportPipe::ready(SimpleCallback *cb)
 
 	ready_callback_ = cb;
 
-	return (cancellation(this, &SSH::TransportPipe::ready_cancel));
+	return (cancellation(&mtx_, this, &SSH::TransportPipe::ready_cancel));
 }
 
 void
@@ -263,6 +263,7 @@ SSH::TransportPipe::consume(Buffer *in)
 void
 SSH::TransportPipe::receive_cancel(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (receive_action_ != NULL) {
 		receive_action_->cancel();
 		receive_action_ = NULL;
@@ -484,6 +485,7 @@ SSH::TransportPipe::receive_do(void)
 void
 SSH::TransportPipe::ready_cancel(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (ready_callback_ != NULL) {
 		ASSERT(log_, !ready_);
 		delete ready_callback_;

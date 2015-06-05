@@ -68,7 +68,7 @@ HTTPServerPipe::request(HTTPRequestEventCallback *cb)
 		return (schedule_callback(cb));
 
 	callback_ = cb;
-	return (cancellation(this, &HTTPServerPipe::cancel));
+	return (cancellation(&mtx_, this, &HTTPServerPipe::cancel));
 }
 
 void
@@ -164,6 +164,7 @@ HTTPServerPipe::send_response(HTTPProtocol::Status status, const std::string& bo
 void
 HTTPServerPipe::cancel(void)
 {
+	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (action_ != NULL) {
 		action_->cancel();
 		action_ = NULL;
