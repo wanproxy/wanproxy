@@ -1080,6 +1080,10 @@ public:
 	 * Finds the first occurance of character ch in this Buffer's data and
 	 * sets offsetp to the offset it was found at.  If a limit is given, at
 	 * most that many characters will be searched.
+	 *
+	 * XXX
+	 * We need to convert the offset here to a size_t, since we might have
+	 * a lot of data in a Buffer these days.
 	 */
 	bool find(uint8_t ch, unsigned *offsetp, size_t limit = 0) const
 	{
