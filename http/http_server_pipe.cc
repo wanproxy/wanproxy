@@ -61,6 +61,7 @@ HTTPServerPipe::~HTTPServerPipe()
 Action *
 HTTPServerPipe::request(HTTPRequestEventCallback *cb)
 {
+	ScopedLock _(&mtx_);
 	ASSERT(log_, action_ == NULL);
 	ASSERT(log_, callback_ == NULL);
 
