@@ -132,7 +132,7 @@ run_tests(TestGroup& g, unsigned i, unsigned j, unsigned k)
 	buf.skip(kn);
 	if (buf.length() != 1)
 		return;
-	unsigned o;
+	size_t o;
 	o = ~0;
 	if (!buf.find(']', &o))
 		return;

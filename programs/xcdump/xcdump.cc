@@ -104,7 +104,7 @@ dump(int ifd, int ofd)
 			if (input.empty())
 				break;
 
-			unsigned off;
+			size_t off;
 			if (!input.find(XCODEC_MAGIC, &off)) {
 				bprintf(&output, "<data");
 				if (dump_verbosity > 1) {

@@ -140,7 +140,7 @@ HTTPProtocol::Message::decode(Buffer *input)
 			continue;
 		}
 
-		unsigned pos;
+		size_t pos;
 		if (!line.find(':', &pos)) {
 			ERROR("/http/protocol/message") << "Empty header name.";
 			return (false);
@@ -172,7 +172,7 @@ HTTPProtocol::DecodeURI(Buffer *encoded, Buffer *decoded)
 		return (true);
 
 	for (;;) {
-		unsigned pos;
+		size_t pos;
 		if (!encoded->find('%', &pos)) {
 			encoded->moveout(decoded);
 			return (true);
@@ -204,7 +204,7 @@ HTTPProtocol::ExtractLine(Buffer *line, Buffer *input, Buffer *line_ending)
 		return (ParseIncomplete);
 	}
 
-	unsigned pos;
+	size_t pos;
 	uint8_t found;
 	if (!input->find_any("\r\n", &pos, &found)) {
 		DEBUG("/http/protocol/extract/line") << "Incomplete line.";

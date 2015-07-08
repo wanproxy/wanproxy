@@ -309,7 +309,7 @@ XCodecEncoder::encode_escape(Buffer *output, Buffer *input, unsigned length)
 	ASSERT(log_, length != 0);
 
 	do {
-		unsigned offset;
+		size_t offset;
 		if (!input->find(XCODEC_MAGIC, &offset, length)) {
 			output->append(input, length);
 			input->skip(length);

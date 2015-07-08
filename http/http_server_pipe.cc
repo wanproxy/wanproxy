@@ -356,7 +356,7 @@ HTTPServerPipe::consume(Buffer *in)
 			continue;
 		}
 
-		unsigned pos;
+		size_t pos;
 		if (!line.find(':', &pos)) {
 			send_response_locked(HTTPProtocol::BadRequest, "Empty header name.");
 			return;

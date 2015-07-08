@@ -844,7 +844,7 @@ public:
 	 * Copy up to dstsize bytes out of this Buffer starting at offset to a
 	 * byte buffer.
 	 */
-	void copyout(uint8_t *dst, unsigned offset, size_t dstsize) const
+	void copyout(uint8_t *dst, size_t offset, size_t dstsize) const
 	{
 		segment_list_t::const_iterator it;
 
@@ -922,7 +922,7 @@ public:
 	 * Extract an 8-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
-	void extract(uint8_t *p, unsigned offset = 0) const
+	void extract(uint8_t *p, size_t offset = 0) const
 	{
 		ASSERT("/buffer", length() >= offset + sizeof *p);
 		copyout(p, offset, sizeof *p);
@@ -932,7 +932,7 @@ public:
 	 * Extract a 16-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
-	void extract(uint16_t *p, unsigned offset = 0) const
+	void extract(uint16_t *p, size_t offset = 0) const
 	{
 		ASSERT("/buffer", length() >= offset + sizeof *p);
 		copyout((uint8_t *)p, offset, sizeof *p);
@@ -942,7 +942,7 @@ public:
 	 * Extract a 32-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
-	void extract(uint32_t *p, unsigned offset = 0) const
+	void extract(uint32_t *p, size_t offset = 0) const
 	{
 		ASSERT("/buffer", length() >= offset + sizeof *p);
 		copyout((uint8_t *)p, offset, sizeof *p);
@@ -952,7 +952,7 @@ public:
 	 * Extract a 64-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
-	void extract(uint64_t *p, unsigned offset = 0) const
+	void extract(uint64_t *p, size_t offset = 0) const
 	{
 		ASSERT("/buffer", length() >= offset + sizeof *p);
 		copyout((uint8_t *)p, offset, sizeof *p);
@@ -977,7 +977,7 @@ public:
 	 * Move a 16-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
-	void moveout(uint16_t *p, unsigned offset = 0)
+	void moveout(uint16_t *p, size_t offset = 0)
 	{
 		ASSERT("/buffer", length() >= offset + sizeof *p);
 		moveout((uint8_t *)p, offset, sizeof *p);
@@ -987,7 +987,7 @@ public:
 	 * Move a 32-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
-	void moveout(uint32_t *p, unsigned offset = 0)
+	void moveout(uint32_t *p, size_t offset = 0)
 	{
 		ASSERT("/buffer", length() >= offset + sizeof *p);
 		moveout((uint8_t *)p, offset, sizeof *p);
@@ -997,7 +997,7 @@ public:
 	 * Move a 64-bit quantity out of this Buffer starting at offset.
 	 * No endianness is assumed.
 	 */
-	void moveout(uint64_t *p, unsigned offset = 0)
+	void moveout(uint64_t *p, size_t offset = 0)
 	{
 		ASSERT("/buffer", length() >= offset + sizeof *p);
 		moveout((uint8_t *)p, offset, sizeof *p);
@@ -1080,15 +1080,11 @@ public:
 	 * Finds the first occurance of character ch in this Buffer's data and
 	 * sets offsetp to the offset it was found at.  If a limit is given, at
 	 * most that many characters will be searched.
-	 *
-	 * XXX
-	 * We need to convert the offset here to a size_t, since we might have
-	 * a lot of data in a Buffer these days.
 	 */
-	bool find(uint8_t ch, unsigned *offsetp, size_t limit = 0) const
+	bool find(uint8_t ch, size_t *offsetp, size_t limit = 0) const
 	{
 		segment_list_t::const_iterator it;
-		unsigned offset;
+		size_t offset;
 
 		offset = 0;
 
@@ -1121,11 +1117,11 @@ public:
 	 * data and sets offsetp to the offset it was found at.  It indicates
 	 * via the foundp parameter which of the set was found.
 	 */
-	bool find_any(const std::string& s, unsigned *offsetp, uint8_t *foundp = NULL) const
+	bool find_any(const std::string& s, size_t *offsetp, uint8_t *foundp = NULL) const
 	{
 		uint8_t set[256];
 		segment_list_t::const_iterator it;
-		unsigned offset;
+		size_t offset;
 		size_t sit;
 
 		memset(set, 0, sizeof set);
@@ -1165,7 +1161,7 @@ public:
 	 * Move up to dstsize bytes out of this Buffer starting at offset and
 	 * into a supplied byte-buffer.
 	 */
-	void moveout(uint8_t *dst, unsigned offset, size_t dstsize)
+	void moveout(uint8_t *dst, size_t offset, size_t dstsize)
 	{
 		ASSERT("/buffer", dstsize != 0);
 		ASSERT("/buffer", length() >= offset + dstsize);
@@ -1186,7 +1182,7 @@ public:
 	 * Move up to dstsize bytes out of this Buffer starting at offset and
 	 * into a supplied Buffer.
 	 */
-	void moveout(Buffer *dst, unsigned offset, size_t dstsize)
+	void moveout(Buffer *dst, size_t offset, size_t dstsize)
 	{
 		ASSERT("/buffer", dstsize != 0);
 		ASSERT("/buffer", length() >= offset + dstsize);
@@ -1406,7 +1402,7 @@ public:
 	void skip(size_t bytes, Buffer *clip = NULL)
 	{
 		segment_list_t::iterator it;
-		unsigned skipped;
+		size_t skipped;
 
 		ASSERT("/buffer", bytes != 0);
 		ASSERT("/buffer", !empty());
@@ -1462,7 +1458,7 @@ public:
 	void trim(size_t bytes, Buffer *clip = NULL)
 	{
 		segment_list_t::iterator it;
-		unsigned trimmed;
+		size_t trimmed;
 
 		ASSERT("/buffer", bytes != 0);
 		ASSERT("/buffer", !empty());
@@ -1518,7 +1514,7 @@ public:
 	 * sense to merge skip and trim and to just pick the iterator based on
 	 * the end it's being done at.
 	 */
-	void cut(unsigned offset, size_t bytes, Buffer *clip = NULL)
+	void cut(size_t offset, size_t bytes, Buffer *clip = NULL)
 	{
 		segment_list_t::iterator it;
 
@@ -1643,7 +1639,7 @@ public:
 		}
 
 		for (;;) {
-			unsigned off;
+			size_t off;
 			if (!find(ch, &off)) {
 				/*
 				 * Separator not found.

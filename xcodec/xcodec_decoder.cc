@@ -67,7 +67,7 @@ bool
 XCodecDecoder::decode(Buffer *output, Buffer *input, std::set<uint64_t>& unknown_hashes)
 {
 	while (!input->empty()) {
-		unsigned off;
+		size_t off;
 		if (!input->find(XCODEC_MAGIC, &off)) {
 			input->moveout(output);
 			break;
@@ -201,7 +201,7 @@ XCodecDecoder::decode_skim(const Buffer *resid, std::set<uint64_t>& unknown_hash
 	Buffer input;
 	input.append(resid);
 	while (!input.empty()) {
-		unsigned off;
+		size_t off;
 		if (!input.find(XCODEC_MAGIC, &off))
 			break;
 
