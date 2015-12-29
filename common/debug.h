@@ -48,6 +48,38 @@
 	} while (0)
 #endif
 
+#if defined(NDEBUG)
+#define	ASSERT_EXPECTED(log, v, e, t, vp, vn, es, f, l, func)		\
+	do {								\
+		if (false)						\
+			(void)(((v) == (e)) != (t));			\
+	} while (0)
+#else
+#define	ASSERT_EXPECTED(log, v, e, t, vp, vn, es, f, l, func)		\
+	do {								\
+		if (((v) == (e)) != (t)) {				\
+			HALT((log)) << "Variable " << vn <<		\
+					" has unexpected value (" <<	\
+					(vp) << "); expected " << es <<	\
+					" at " << f << ':' << l <<	\
+					" in function " << func << '.';	\
+			for (;;)					\
+				abort();				\
+		}							\
+	} while (0)
+#endif
+
+#define	ASSERT_NULL(log, v)						\
+	ASSERT_EXPECTED(log, v, NULL, true, (void *)v, #v, "NULL", __FILE__, __LINE__, __PRETTY_FUNCTION__)
+#define	ASSERT_NON_NULL(log, v)						\
+	ASSERT_EXPECTED(log, v, NULL, false, (void *)v, #v, "non-NULL", __FILE__, __LINE__, __PRETTY_FUNCTION__)
+#define	ASSERT_ZERO(log, v)						\
+	ASSERT_EXPECTED(log, v, 0, true, v, #v, "zero", __FILE__, __LINE__, __PRETTY_FUNCTION__)
+#define	ASSERT_NON_ZERO(log, v)						\
+	ASSERT_EXPECTED(log, v, 0, false, v, #v, "non-zero", __FILE__, __LINE__, __PRETTY_FUNCTION__)
+#define	ASSERT_EQUAL(log, v, e)						\
+	ASSERT_EXPECTED(log, v, e, true, v, #v, #e << "(" << e << ")", __FILE__, __LINE__, __PRETTY_FUNCTION__)
+
 /*
  * XXX
  * Newer GCCs are horribly broken and seem to have become unable to detect
