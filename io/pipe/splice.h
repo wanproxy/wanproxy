@@ -64,8 +64,6 @@ private:
 	void write_complete(Event);
 
 	void shutdown_complete(Event);
-public:
-	static Action *create(Splice **, StreamChannel *, Pipe *, StreamChannel *);
 };
 
 #endif /* !IO_PIPE_SPLICE_H */
