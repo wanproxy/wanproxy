@@ -44,16 +44,16 @@ SplicePair::SplicePair(Splice *left, Splice *right)
   left_action_(NULL),
   right_action_(NULL)
 {
-	ASSERT(log_, left_ != NULL);
-	ASSERT(log_, right_ != NULL);
+	ASSERT_NON_NULL(log_, left_);
+	ASSERT_NON_NULL(log_, right_);
 }
 
 SplicePair::~SplicePair()
 {
-	ASSERT(log_, callback_ == NULL);
-	ASSERT(log_, callback_action_ == NULL);
-	ASSERT(log_, left_action_ == NULL);
-	ASSERT(log_, right_action_ == NULL);
+	ASSERT_NULL(log_, callback_);
+	ASSERT_NULL(log_, callback_action_);
+	ASSERT_NULL(log_, left_action_);
+	ASSERT_NULL(log_, right_action_);
 }
 
 Action *
@@ -80,7 +80,7 @@ SplicePair::cancel(void)
 		delete callback_;
 		callback_ = NULL;
 
-		ASSERT(log_, callback_action_ == NULL);
+		ASSERT_NULL(log_, callback_action_);
 
 		if (left_action_ != NULL) {
 			left_action_->cancel();
@@ -92,7 +92,7 @@ SplicePair::cancel(void)
 			right_action_ = NULL;
 		}
 	} else {
-		ASSERT(log_, callback_action_ != NULL);
+		ASSERT_NON_NULL(log_, callback_action_);
 		callback_action_->cancel();
 		callback_action_ = NULL;
 	}

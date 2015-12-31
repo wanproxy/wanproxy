@@ -43,9 +43,9 @@ TCPClient::TCPClient(SocketImpl impl, SocketAddressFamily family)
 
 TCPClient::~TCPClient()
 {
-	ASSERT(log_, connect_action_ == NULL);
-	ASSERT(log_, connect_callback_ == NULL);
-	ASSERT(log_, close_action_ == NULL);
+	ASSERT_NULL(log_, connect_action_);
+	ASSERT_NULL(log_, connect_callback_);
+	ASSERT_NULL(log_, close_action_);
 
 	if (socket_ != NULL) {
 		delete socket_;
@@ -57,9 +57,9 @@ Action *
 TCPClient::connect(const std::string& iface, const std::string& name, SocketEventCallback *ccb)
 {
 	ScopedLock _(&mtx_);
-	ASSERT(log_, connect_action_ == NULL);
-	ASSERT(log_, connect_callback_ == NULL);
-	ASSERT(log_, socket_ == NULL);
+	ASSERT_NULL(log_, connect_action_);
+	ASSERT_NULL(log_, connect_callback_);
+	ASSERT_NULL(log_, socket_);
 
 	socket_ = Socket::create(impl_, family_, SocketTypeStream, "tcp", name);
 	if (socket_ == NULL) {
@@ -107,8 +107,8 @@ void
 TCPClient::connect_cancel(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	ASSERT(log_, close_action_ == NULL);
-	ASSERT(log_, connect_action_ != NULL);
+	ASSERT_NULL(log_, close_action_);
+	ASSERT_NON_NULL(log_, connect_action_);
 
 	connect_action_->cancel();
 	connect_action_ = NULL;
@@ -125,7 +125,7 @@ TCPClient::connect_cancel(void)
 		return;
 	}
 
-	ASSERT(log_, socket_ != NULL);
+	ASSERT_NON_NULL(log_, socket_);
 	SimpleCallback *cb = callback(&mtx_, this, &TCPClient::close_complete);
 	close_action_ = socket_->close(cb);
 }

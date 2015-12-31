@@ -54,7 +54,7 @@ ProxySocksConnection::ProxySocksConnection(const std::string& name, Socket *clie
 
 ProxySocksConnection::~ProxySocksConnection()
 {
-	ASSERT(log_, action_ == NULL);
+	ASSERT_NULL(log_, action_);
 }
 
 void
@@ -310,7 +310,7 @@ ProxySocksConnection::close_complete(void)
 	action_->cancel();
 	action_ = NULL;
 
-	ASSERT(log_, client_ != NULL);
+	ASSERT_NON_NULL(log_, client_);
 	delete client_;
 	client_ = NULL;
 
@@ -321,9 +321,9 @@ void
 ProxySocksConnection::schedule_read(size_t amount)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	ASSERT(log_, action_ == NULL);
+	ASSERT_NULL(log_, action_);
 
-	ASSERT(log_, client_ != NULL);
+	ASSERT_NON_NULL(log_, client_);
 	EventCallback *cb = callback(&mtx_, this, &ProxySocksConnection::read_complete);
 	action_ = client_->read(amount, cb);
 }
@@ -332,7 +332,7 @@ void
 ProxySocksConnection::schedule_write(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	ASSERT(log_, action_ == NULL);
+	ASSERT_NULL(log_, action_);
 
 	static const uint8_t socks4_connected[] = {
 		0x00,
@@ -382,7 +382,7 @@ ProxySocksConnection::schedule_write(void)
 		NOTREACHED(log_);
 	}
 
-	ASSERT(log_, client_ != NULL);
+	ASSERT_NON_NULL(log_, client_);
 	EventCallback *cb = callback(&mtx_, this, &ProxySocksConnection::write_complete);
 	action_ = client_->write(&response, cb);
 }
@@ -391,9 +391,9 @@ void
 ProxySocksConnection::schedule_close(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	ASSERT(log_, action_ == NULL);
+	ASSERT_NULL(log_, action_);
 
-	ASSERT(log_, client_ != NULL);
+	ASSERT_NON_NULL(log_, client_);
 	SimpleCallback *cb = callback(&mtx_, this, &ProxySocksConnection::close_complete);
 	action_ = client_->close(cb);
 }

@@ -54,7 +54,7 @@ public:
 
 	~Sink()
 	{
-		ASSERT(log_, action_ == NULL);
+		ASSERT_NULL(log_, action_);
 	}
 
 	void read_complete(Event e)

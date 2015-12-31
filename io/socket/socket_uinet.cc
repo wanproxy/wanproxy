@@ -61,26 +61,26 @@ SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int 
   upcall_pending_(),
   so_(so)
 {
-	ASSERT(log_, so_ != NULL);
+	ASSERT_NON_NULL(log_, so_);
 }
 
 SocketUinet::~SocketUinet()
 {
-	ASSERT(log_, accept_action_ == NULL);
-	ASSERT(log_, accept_callback_ == NULL);
+	ASSERT_NULL(log_, accept_action_);
+	ASSERT_NULL(log_, accept_callback_);
 
-	ASSERT(log_, connect_action_ == NULL);
-	ASSERT(log_, connect_callback_ == NULL);
+	ASSERT_NULL(log_, connect_action_);
+	ASSERT_NULL(log_, connect_callback_);
 
-	ASSERT(log_, read_action_ == NULL);
-	ASSERT(log_, read_callback_ == NULL);
+	ASSERT_NULL(log_, read_action_);
+	ASSERT_NULL(log_, read_callback_);
 	ASSERT(log_, read_amount_remaining_ == 0);
 
-	ASSERT(log_, write_action_ == NULL);
-	ASSERT(log_, write_callback_ == NULL);
+	ASSERT_NULL(log_, write_action_);
+	ASSERT_NULL(log_, write_callback_);
 	ASSERT(log_, write_amount_remaining_ == 0);
 
-	ASSERT(log_, upcall_action_ == NULL);
+	ASSERT_NULL(log_, upcall_action_);
 }
 
 int
@@ -98,8 +98,8 @@ SocketUinet::accept(SocketEventCallback *cb)
 {
 	ScopedLock _(&accept_connect_mtx_);
 
-	ASSERT(log_, accept_action_ == NULL);
-	ASSERT(log_, accept_callback_ == NULL);
+	ASSERT_NULL(log_, accept_action_);
+	ASSERT_NULL(log_, accept_callback_);
 
 	accept_callback_ = cb;
 
@@ -124,7 +124,7 @@ void
 SocketUinet::accept_callback(void)
 {
 	ASSERT_LOCK_OWNED(log_, &accept_connect_mtx_);
-	ASSERT(log_, accept_action_ != NULL);
+	ASSERT_NON_NULL(log_, accept_action_);
 	accept_action_->cancel();
 	accept_action_ = NULL;
 
@@ -208,8 +208,8 @@ SocketUinet::connect(const std::string& name, EventCallback *cb)
 {
 	ScopedLock _(&accept_connect_mtx_);
 
-	ASSERT(log_, connect_callback_ == NULL);
-	ASSERT(log_, connect_action_ == NULL);
+	ASSERT_NULL(log_, connect_callback_);
+	ASSERT_NULL(log_, connect_action_);
 
 	socket_address addr;
 
@@ -260,7 +260,7 @@ SocketUinet::connect_callback(void)
 {
 	ASSERT_LOCK_OWNED(log_, &accept_connect_mtx_);
 
-	ASSERT(log_, connect_action_ != NULL);
+	ASSERT_NON_NULL(log_, connect_action_);
 	connect_action_->cancel();
 	connect_action_ = NULL;
 
@@ -336,16 +336,16 @@ SocketUinet::shutdown(bool shut_read, bool shut_write, EventCallback *cb)
 Action *
 SocketUinet::close(SimpleCallback *cb)
 {
-	ASSERT(log_, so_ != NULL);
+	ASSERT_NON_NULL(log_, so_);
 
-	ASSERT(log_, accept_action_ == NULL);
-	ASSERT(log_, accept_callback_ == NULL);
-	ASSERT(log_, connect_action_ == NULL);
-	ASSERT(log_, connect_callback_ == NULL);
-	ASSERT(log_, read_action_ == NULL);
-	ASSERT(log_, read_callback_ == NULL);
-	ASSERT(log_, write_action_ == NULL);
-	ASSERT(log_, write_callback_ == NULL);
+	ASSERT_NULL(log_, accept_action_);
+	ASSERT_NULL(log_, accept_callback_);
+	ASSERT_NULL(log_, connect_action_);
+	ASSERT_NULL(log_, connect_callback_);
+	ASSERT_NULL(log_, read_action_);
+	ASSERT_NULL(log_, read_callback_);
+	ASSERT_NULL(log_, write_action_);
+	ASSERT_NULL(log_, write_callback_);
 
 	/*
 	 * These ought to be unnecessary, but can
@@ -398,8 +398,8 @@ SocketUinet::read(size_t amount, EventCallback *cb)
 {
 	ScopedLock _(&read_mtx_);
 
-	ASSERT(log_, read_callback_ == NULL);
-	ASSERT(log_, read_action_ == NULL);
+	ASSERT_NULL(log_, read_callback_);
+	ASSERT_NULL(log_, read_action_);
 	ASSERT(log_, read_amount_remaining_ == 0);
 
 	read_amount_remaining_ = amount;
@@ -410,7 +410,7 @@ SocketUinet::read(size_t amount, EventCallback *cb)
 	read_do();
 
 	if (read_callback_ == NULL) {
-		ASSERT(log_, read_action_ != NULL);
+		ASSERT_NON_NULL(log_, read_action_);
 		Action *a = read_action_;
 		read_action_ = NULL;
 		return (a);
@@ -509,7 +509,7 @@ SocketUinet::read_do(void)
 			 * This individual read was completely fulfilled,
 			 * but we have more to read to get to the total.
 			 */
-			ASSERT(log_, read_action_ == NULL);
+			ASSERT_NULL(log_, read_action_);
 			read_schedule();
 		}
 		/*
@@ -573,8 +573,8 @@ SocketUinet::write(Buffer *buffer, EventCallback *cb)
 {
 	ASSERT_LOCK_OWNED(log_, &write_mtx_);
 
-	ASSERT(log_, write_callback_ == NULL);
-	ASSERT(log_, write_action_ == NULL);
+	ASSERT_NULL(log_, write_callback_);
+	ASSERT_NULL(log_, write_action_);
 	ASSERT(log_, write_buffer_.empty());
 
 	buffer->moveout(&write_buffer_);
@@ -602,7 +602,7 @@ SocketUinet::write_callback(void)
 {
 	ScopedLock _(&write_mtx_);
 
-	ASSERT(log_, write_action_ != NULL);
+	ASSERT_NON_NULL(log_, write_action_);
 
 	write_action_->cancel();
 	write_action_ = NULL;
@@ -643,7 +643,7 @@ SocketUinet::write_callback(void)
 			 * This individual write was completely performed,
 			 * but we have more to write.
 			 */
-			ASSERT(log_, write_action_ == NULL);
+			ASSERT_NULL(log_, write_action_);
 			write_schedule();
 		}
 		/*
@@ -697,7 +697,7 @@ SocketUinet::upcall_schedule(unsigned kind)
 	if (kind >= SOCKET_UINET_UPCALLS)
 		HALT(log_) << "Scheduling invalid upcall.";
 	if (upcall_pending_[kind]) {
-		ASSERT(log_, upcall_action_ != NULL);
+		ASSERT_NON_NULL(log_, upcall_action_);
 		return;
 	}
 	upcall_pending_[kind] = true;

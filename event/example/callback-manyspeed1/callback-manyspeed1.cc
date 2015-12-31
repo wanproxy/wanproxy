@@ -81,7 +81,7 @@ public:
 
 	~CallbackManySpeed()
 	{
-		ASSERT(log_, timeout_action_ == NULL);
+		ASSERT_NULL(log_, timeout_action_);
 		unsigned i;
 		for (i = 0; i < NMUTEXES; i++) {
 			delete callback_mutex_[i];

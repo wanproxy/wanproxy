@@ -70,7 +70,7 @@ SSHStream::SSHStream(const LogHandle& log, const SSHProxyConfig *ssh_config, SSH
 
 	session_.algorithm_negotiation_ = new SSH::AlgorithmNegotiation(&session_);
 	if (session_.role_ == SSH::ServerRole) {
-		ASSERT(log_, ssh_config_->server_host_key_ != NULL);
+		ASSERT_NON_NULL(log_, ssh_config_->server_host_key_);
 		session_.algorithm_negotiation_->add_algorithm(ssh_config_->server_host_key_);
 	}
 	session_.algorithm_negotiation_->add_algorithms();
@@ -89,12 +89,12 @@ SSHStream::~SSHStream()
 		pipe_ = NULL;
 	}
 
-	ASSERT(log_, socket_ == NULL);
-	ASSERT(log_, splice_ == NULL);
-	ASSERT(log_, splice_action_ == NULL);
-	ASSERT(log_, start_callback_ == NULL);
-	ASSERT(log_, read_callback_ == NULL);
-	ASSERT(log_, read_action_ == NULL);
+	ASSERT_NULL(log_, socket_);
+	ASSERT_NULL(log_, splice_);
+	ASSERT_NULL(log_, splice_action_);
+	ASSERT_NULL(log_, start_callback_);
+	ASSERT_NULL(log_, read_callback_);
+	ASSERT_NULL(log_, read_action_);
 }
 
 Action *
@@ -115,15 +115,15 @@ Action *
 SSHStream::close(SimpleCallback *cb)
 {
 	ScopedLock _(&mtx_);
-	ASSERT(log_, start_callback_ == NULL);
-	ASSERT(log_, read_action_ == NULL);
-	ASSERT(log_, socket_ != NULL);
+	ASSERT_NULL(log_, start_callback_);
+	ASSERT_NULL(log_, read_action_);
+	ASSERT_NON_NULL(log_, socket_);
 
 	/* Let our parent be responsible for closing the socket.  */
 	socket_ = NULL;
 
-	ASSERT(log_, start_action_ == NULL);
-	ASSERT(log_, start_callback_ == NULL);
+	ASSERT_NULL(log_, start_action_);
+	ASSERT_NULL(log_, start_callback_);
 
 	return (cb->schedule());
 }
@@ -132,8 +132,8 @@ Action *
 SSHStream::read(size_t amt, EventCallback *cb)
 {
 	ScopedLock _(&mtx_);
-	ASSERT(log_, read_action_ == NULL);
-	ASSERT(log_, read_callback_ == NULL);
+	ASSERT_NULL(log_, read_action_);
+	ASSERT_NULL(log_, read_callback_);
 
 	if (pipe_ == NULL) {
 		cb->param(Event::EOS);
@@ -156,8 +156,8 @@ Action *
 SSHStream::write(Buffer *buf, EventCallback *cb)
 {
 	ScopedLock _(&mtx_);
-	ASSERT(log_, write_action_ == NULL);
-	ASSERT(log_, write_callback_ == NULL);
+	ASSERT_NULL(log_, write_action_);
+	ASSERT_NULL(log_, write_callback_);
 
 	ASSERT(log_, ready_ || input_buffer_.empty());
 
@@ -203,8 +203,8 @@ SSHStream::start_cancel(void)
 		delete splice_;
 		splice_ = NULL;
 	}
-	ASSERT(log_, splice_action_ == NULL);
-	ASSERT(log_, splice_ == NULL);
+	ASSERT_NULL(log_, splice_action_);
+	ASSERT_NULL(log_, splice_);
 }
 
 void
@@ -234,8 +234,8 @@ SSHStream::splice_complete(Event)
 		splice_ = NULL;
 	}
 
-	ASSERT(log_, start_callback_ != NULL);
-	ASSERT(log_, start_action_ == NULL);
+	ASSERT_NON_NULL(log_, start_callback_);
+	ASSERT_NULL(log_, start_action_);
 	start_action_ = start_callback_->schedule();
 	start_callback_ = NULL;
 }
@@ -251,7 +251,7 @@ SSHStream::ready_complete(void)
 	ready_ = true;
 
 	if (write_callback_ != NULL) {
-		ASSERT(log_, write_action_ == NULL);
+		ASSERT_NULL(log_, write_action_);
 		ASSERT(log_, !input_buffer_.empty());
 
 		write_do();

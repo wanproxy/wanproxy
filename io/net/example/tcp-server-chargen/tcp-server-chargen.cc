@@ -77,8 +77,8 @@ public:
 
 	~ChargenClient()
 	{
-		ASSERT(log_, client_ == NULL);
-		ASSERT(log_, action_ == NULL);
+		ASSERT_NULL(log_, client_);
+		ASSERT_NULL(log_, action_);
 	}
 
 	void close_complete(void)
@@ -87,7 +87,7 @@ public:
 		action_->cancel();
 		action_ = NULL;
 
-		ASSERT(log_, client_ != NULL);
+		ASSERT_NON_NULL(log_, client_);
 		delete client_;
 		client_ = NULL;
 
@@ -139,8 +139,8 @@ public:
 	void schedule_close(void)
 	{
 		ASSERT_LOCK_OWNED(log_, &mtx_);
-		ASSERT(log_, action_ == NULL);
-		ASSERT(log_, client_ != NULL);
+		ASSERT_NULL(log_, action_);
+		ASSERT_NON_NULL(log_, client_);
 
 		SimpleCallback *cb = callback(&mtx_, this, &ChargenClient::close_complete);
 		action_ = client_->close(cb);
@@ -149,8 +149,8 @@ public:
 	void schedule_write(void)
 	{
 		ASSERT_LOCK_OWNED(log_, &mtx_);
-		ASSERT(log_, action_ == NULL);
-		ASSERT(log_, client_ != NULL);
+		ASSERT_NULL(log_, action_);
+		ASSERT_NON_NULL(log_, client_);
 
 		Buffer tmp(data_);
 		EventCallback *cb = callback(&mtx_, this, &ChargenClient::write_complete);

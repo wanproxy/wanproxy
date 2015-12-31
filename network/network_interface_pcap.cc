@@ -47,25 +47,25 @@ NetworkInterfacePCAP::~NetworkInterfacePCAP()
 		pcap_ = NULL;
 	}
 
-	ASSERT(log_, receive_callback_ == NULL);
-	ASSERT(log_, receive_action_ == NULL);
+	ASSERT_NULL(log_, receive_callback_);
+	ASSERT_NULL(log_, receive_action_);
 }
 
 Action *
 NetworkInterfacePCAP::receive(EventCallback *cb)
 {
-	ASSERT(log_, receive_action_ == NULL);
-	ASSERT(log_, receive_callback_ == NULL);
+	ASSERT_NULL(log_, receive_action_);
+	ASSERT_NULL(log_, receive_callback_);
 
 	receive_callback_ = cb;
 	Action *a = receive_do();
 	if (a == NULL) {
-		ASSERT(log_, receive_callback_ != NULL);
+		ASSERT_NON_NULL(log_, receive_callback_);
 		receive_action_ = receive_schedule();
-		ASSERT(log_, receive_action_ != NULL);
+		ASSERT_NON_NULL(log_, receive_action_);
 		return (cancellation(this, &NetworkInterfacePCAP::receive_cancel));
 	}
-	ASSERT(log_, receive_callback_ == NULL);
+	ASSERT_NULL(log_, receive_callback_);
 	return (a);
 }
 
@@ -104,7 +104,7 @@ NetworkInterfacePCAP::receive_callback(Event e)
 	receive_action_ = receive_do();
 	if (receive_action_ == NULL)
 		receive_action_ = receive_schedule();
-	ASSERT(log_, receive_action_ != NULL);
+	ASSERT_NON_NULL(log_, receive_action_);
 }
 
 void
@@ -114,7 +114,7 @@ NetworkInterfacePCAP::receive_cancel(void)
 		delete receive_callback_;
 		receive_callback_ = NULL;
 
-		ASSERT(log_, receive_action_ != NULL);
+		ASSERT_NON_NULL(log_, receive_action_);
 	}
 
 	if (receive_action_ != NULL) {
@@ -150,7 +150,7 @@ NetworkInterfacePCAP::receive_do(void)
 Action *
 NetworkInterfacePCAP::receive_schedule(void)
 {
-	ASSERT(log_, receive_action_ == NULL);
+	ASSERT_NULL(log_, receive_action_);
 
 	EventCallback *cb = callback(this, &NetworkInterfacePCAP::receive_callback);
 	Action *a = EventSystem::instance()->poll(EventPoll::Readable, pcap_get_selectable_fd(pcap_), cb);

@@ -61,7 +61,7 @@ public:
 	ConditionLock(Lock *lock, bool condition)
 	: lock_(lock)
 	{
-		ASSERT("/condition/lock", lock_ != NULL);
+		ASSERT_NON_NULL("/condition/lock", lock_);
 		ASSERT_LOCK_NOT_OWNED("/condition/lock", lock_);
 		if (condition)
 			lock_->lock();
@@ -85,7 +85,7 @@ public:
 	ScopedLock(Lock *lock)
 	: lock_(lock)
 	{
-		ASSERT("/scoped/lock", lock_ != NULL);
+		ASSERT_NON_NULL("/scoped/lock", lock_);
 		ASSERT_LOCK_NOT_OWNED("/scoped/lock", lock_);
 		lock_->lock();
 	}
@@ -101,7 +101,7 @@ public:
 
 	void acquire(Lock *lock)
 	{
-		ASSERT("/scoped/lock", lock_ == NULL);
+		ASSERT_NULL("/scoped/lock", lock_);
 		lock_ = lock;
 		ASSERT_LOCK_NOT_OWNED("/scoped/lock", lock_);
 		lock_->lock();
@@ -109,7 +109,7 @@ public:
 
 	void drop(void)
 	{
-		ASSERT("/scoped/lock", lock_ != NULL);
+		ASSERT_NON_NULL("/scoped/lock", lock_);
 		ASSERT_LOCK_OWNED("/scoped/lock", lock_);
 		lock_->unlock();
 		lock_ = NULL;

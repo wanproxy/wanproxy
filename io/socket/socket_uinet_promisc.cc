@@ -71,7 +71,7 @@ SocketUinetPromisc::setl2info2(const uint8_t *laddr, const uint8_t *faddr, uint1
 int
 SocketUinetPromisc::setsynfilter(SynfilterCallback *cb)
 {
-	ASSERT(log_, synfilter_callback_ == NULL);
+	ASSERT_NULL(log_, synfilter_callback_);
 
 	synfilter_callback_ = cb;
 
@@ -90,7 +90,7 @@ synfilter_callback(struct uinet_socket *listener, void *arg, uinet_api_synfilter
 
 	(void)listener;
 
-	ASSERT(s->log_, s->synfilter_callback_ != NULL);
+	ASSERT_NON_NULL(s->log_, s->synfilter_callback_);
 
 	uinet_synfilter_getconninfo(cookie, &inc);
 	uinet_synfilter_getl2info(cookie, &l2i);

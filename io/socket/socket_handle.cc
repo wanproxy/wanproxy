@@ -58,18 +58,18 @@ SocketHandle::SocketHandle(int fd, int domain, int socktype, int protocol)
 
 SocketHandle::~SocketHandle()
 {
-	ASSERT(log_, accept_action_ == NULL);
-	ASSERT(log_, accept_callback_ == NULL);
-	ASSERT(log_, connect_callback_ == NULL);
-	ASSERT(log_, connect_action_ == NULL);
+	ASSERT_NULL(log_, accept_action_);
+	ASSERT_NULL(log_, accept_callback_);
+	ASSERT_NULL(log_, connect_callback_);
+	ASSERT_NULL(log_, connect_action_);
 }
 
 Action *
 SocketHandle::accept(SocketEventCallback *cb)
 {
 	ScopedLock _(&mtx_);
-	ASSERT(log_, accept_action_ == NULL);
-	ASSERT(log_, accept_callback_ == NULL);
+	ASSERT_NULL(log_, accept_action_);
+	ASSERT_NULL(log_, accept_callback_);
 
 	accept_callback_ = cb;
 	accept_action_ = accept_schedule();
@@ -106,8 +106,8 @@ Action *
 SocketHandle::connect(const std::string& name, EventCallback *cb)
 {
 	ScopedLock _(&mtx_);
-	ASSERT(log_, connect_callback_ == NULL);
-	ASSERT(log_, connect_action_ == NULL);
+	ASSERT_NULL(log_, connect_callback_);
+	ASSERT_NULL(log_, connect_action_);
 
 	socket_address addr;
 
@@ -275,7 +275,7 @@ void
 SocketHandle::accept_cancel(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	ASSERT(log_, accept_action_ != NULL);
+	ASSERT_NON_NULL(log_, accept_action_);
 	accept_action_->cancel();
 	accept_action_ = NULL;
 
@@ -320,7 +320,7 @@ void
 SocketHandle::connect_cancel(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	ASSERT(log_, connect_action_ != NULL);
+	ASSERT_NON_NULL(log_, connect_action_);
 	connect_action_->cancel();
 	connect_action_ = NULL;
 

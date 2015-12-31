@@ -80,7 +80,7 @@ private:
 		stop_action_->cancel();
 		stop_action_ = NULL;
 
-		ASSERT("/packet/dumper", receive_action_ != NULL);
+		ASSERT_NON_NULL("/packet/dumper", receive_action_);
 		receive_action_->cancel();
 		receive_action_ = NULL;
 	}

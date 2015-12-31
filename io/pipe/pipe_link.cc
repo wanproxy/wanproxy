@@ -54,14 +54,14 @@ PipeLink::~PipeLink()
 {
 	ScopedLock _(&mtx_);
 	if (pipe_splice_ != NULL) {
-		ASSERT(log_, pipe_splice_action_ != NULL);
+		ASSERT_NON_NULL(log_, pipe_splice_action_);
 		pipe_splice_action_->cancel();
 		pipe_splice_action_ = NULL;
 
 		delete pipe_splice_;
 		pipe_splice_ = NULL;
 	} else {
-		ASSERT(log_, pipe_splice_action_ == NULL);
+		ASSERT_NULL(log_, pipe_splice_action_);
 	}
 }
 

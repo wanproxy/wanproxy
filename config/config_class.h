@@ -95,14 +95,14 @@ protected:
 			void marshall(ConfigExporter *exp, const ConfigClassInstance *instance) const
 			{
 				const Ti *inst = dynamic_cast<const Ti *>(instance);
-				ASSERT("/config/class/field", inst != NULL);
+				ASSERT_NON_NULL("/config/class/field", inst);
 				config_type_->marshall(exp, &(inst->*config_field_));
 			}
 
 			bool set(ConfigObject *co, const std::string& vstr) const
 			{
 				Ti *inst = dynamic_cast<Ti *>(co->instance_);
-				ASSERT("/config/class/field", inst != NULL);
+				ASSERT_NON_NULL("/config/class/field", inst);
 				return (config_type_->set(co, vstr, &(inst->*config_field_)));
 			}
 

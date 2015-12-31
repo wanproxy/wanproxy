@@ -59,11 +59,11 @@ HTTPServerHandler::HTTPServerHandler(Socket *client)
 
 HTTPServerHandler::~HTTPServerHandler()
 {
-	ASSERT(log_, pipe_ == NULL);
-	ASSERT(log_, splice_ == NULL);
-	ASSERT(log_, splice_action_ == NULL);
-	ASSERT(log_, close_action_ == NULL);
-	ASSERT(log_, request_action_ == NULL);
+	ASSERT_NULL(log_, pipe_);
+	ASSERT_NULL(log_, splice_);
+	ASSERT_NULL(log_, splice_action_);
+	ASSERT_NULL(log_, close_action_);
+	ASSERT_NULL(log_, request_action_);
 }
 
 void
@@ -73,7 +73,7 @@ HTTPServerHandler::close_complete(void)
 	close_action_->cancel();
 	close_action_ = NULL;
 
-	ASSERT(log_, client_ != NULL);
+	ASSERT_NON_NULL(log_, client_);
 	delete client_;
 	client_ = NULL;
 
@@ -148,7 +148,7 @@ HTTPServerHandler::splice_complete(Event e)
 		break;
 	}
 
-	ASSERT(log_, splice_ != NULL);
+	ASSERT_NON_NULL(log_, splice_);
 	delete splice_;
 	splice_ = NULL;
 
@@ -158,11 +158,11 @@ HTTPServerHandler::splice_complete(Event e)
 		request_action_ = NULL;
 	}
 
-	ASSERT(log_, pipe_ != NULL);
+	ASSERT_NON_NULL(log_, pipe_);
 	delete pipe_;
 	pipe_ = NULL;
 
-	ASSERT(log_, close_action_ == NULL);
+	ASSERT_NULL(log_, close_action_);
 	SimpleCallback *cb = callback(&mtx_, this, &HTTPServerHandler::close_complete);
 	close_action_ = client_->close(cb);
 }

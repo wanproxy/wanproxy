@@ -108,7 +108,7 @@ IOSystem::detach(int fd, Channel *owner)
 	ASSERT(log_, it != handle_map_.end());
 
 	h = it->second;
-	ASSERT(log_, h != NULL);
+	ASSERT_NON_NULL(log_, h);
 
 	ASSERT(log_, h->owner_ == owner);
 
@@ -124,16 +124,16 @@ IOSystem::close(int fd, Channel *owner, SimpleCallback *cb)
 
 	mtx_.lock();
 	h = handle_map_[handle_key_t(fd, owner)];
-	ASSERT(log_, h != NULL);
+	ASSERT_NON_NULL(log_, h);
 	
 	ScopedLock _(&h->mtx_);
 	mtx_.unlock();
 
-	ASSERT(log_, h->read_callback_ == NULL);
-	ASSERT(log_, h->read_action_ == NULL);
+	ASSERT_NULL(log_, h->read_callback_);
+	ASSERT_NULL(log_, h->read_action_);
 
-	ASSERT(log_, h->write_callback_ == NULL);
-	ASSERT(log_, h->write_action_ == NULL);
+	ASSERT_NULL(log_, h->write_callback_);
+	ASSERT_NULL(log_, h->write_action_);
 
 	ASSERT(log_, h->fd_ != -1);
 
@@ -147,13 +147,13 @@ IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, EventCallbac
 
 	mtx_.lock();
 	h = handle_map_[handle_key_t(fd, owner)];
-	ASSERT(log_, h != NULL);
+	ASSERT_NON_NULL(log_, h);
 
 	ScopedLock _(&h->mtx_);
 	mtx_.unlock();
 
-	ASSERT(log_, h->read_callback_ == NULL);
-	ASSERT(log_, h->read_action_ == NULL);
+	ASSERT_NULL(log_, h->read_callback_);
+	ASSERT_NULL(log_, h->read_action_);
 
 	/*
 	 * Reads without an offset may be 0 length, but reads with
@@ -174,14 +174,14 @@ IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, EventCallbac
 	h->read_amount_ = amount;
 	h->read_callback_ = cb;
 	Action *a = h->read_do();
-	ASSERT(log_, h->read_action_ == NULL);
+	ASSERT_NULL(log_, h->read_action_);
 	if (a == NULL) {
-		ASSERT(log_, h->read_callback_ != NULL);
+		ASSERT_NON_NULL(log_, h->read_callback_);
 		h->read_action_ = h->read_schedule();
-		ASSERT(log_, h->read_action_ != NULL);
+		ASSERT_NON_NULL(log_, h->read_action_);
 		return (cancellation(&h->mtx_, h, &IOSystem::Handle::read_cancel));
 	}
-	ASSERT(log_, h->read_callback_ == NULL);
+	ASSERT_NULL(log_, h->read_callback_);
 	return (a);
 }
 
@@ -192,13 +192,13 @@ IOSystem::write(int fd, Channel *owner, off_t offset, Buffer *buffer, EventCallb
 
 	mtx_.lock();
 	h = handle_map_[handle_key_t(fd, owner)];
-	ASSERT(log_, h != NULL);
+	ASSERT_NON_NULL(log_, h);
 
 	ScopedLock _(&h->mtx_);
 	mtx_.unlock();
 
-	ASSERT(log_, h->write_callback_ == NULL);
-	ASSERT(log_, h->write_action_ == NULL);
+	ASSERT_NULL(log_, h->write_callback_);
+	ASSERT_NULL(log_, h->write_action_);
 	ASSERT(log_, h->write_buffer_.empty());
 
 	ASSERT(log_, !buffer->empty());
@@ -207,13 +207,13 @@ IOSystem::write(int fd, Channel *owner, off_t offset, Buffer *buffer, EventCallb
 	h->write_offset_ = offset;
 	h->write_callback_ = cb;
 	Action *a = h->write_do();
-	ASSERT(log_, h->write_action_ == NULL);
+	ASSERT_NULL(log_, h->write_action_);
 	if (a == NULL) {
-		ASSERT(log_, h->write_callback_ != NULL);
+		ASSERT_NON_NULL(log_, h->write_callback_);
 		h->write_action_ = h->write_schedule();
-		ASSERT(log_, h->write_action_ != NULL);
+		ASSERT_NON_NULL(log_, h->write_action_);
 		return (cancellation(&h->mtx_, h, &IOSystem::Handle::write_cancel));
 	}
-	ASSERT(log_, h->write_callback_ == NULL);
+	ASSERT_NULL(log_, h->write_callback_);
 	return (a);
 }

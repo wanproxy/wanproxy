@@ -74,8 +74,8 @@ private:
 
 		~PollHandler()
 		{
-			ASSERT("/event/poll/handler", callback_ == NULL);
-			ASSERT("/event/poll/handler", action_ == NULL);
+			ASSERT_NULL("/event/poll/handler", callback_);
+			ASSERT_NULL("/event/poll/handler", action_);
 		}
 
 		void callback(Event);

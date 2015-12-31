@@ -53,20 +53,20 @@ Splice::Splice(const LogHandle& log, StreamChannel *source, Pipe *pipe, StreamCh
 {
 	log_ = log + "/splice";
 
-	ASSERT(log_, source_ != NULL);
-	ASSERT(log_, sink_ != NULL);
+	ASSERT_NON_NULL(log_, source_);
+	ASSERT_NON_NULL(log_, sink_);
 }
 
 Splice::~Splice()
 {
 	ScopedLock _(&mtx_);
-	ASSERT(log_, callback_ == NULL);
-	ASSERT(log_, callback_action_ == NULL);
-	ASSERT(log_, read_action_ == NULL);
-	ASSERT(log_, input_action_ == NULL);
-	ASSERT(log_, output_action_ == NULL);
-	ASSERT(log_, write_action_ == NULL);
-	ASSERT(log_, shutdown_action_ == NULL);
+	ASSERT_NULL(log_, callback_);
+	ASSERT_NULL(log_, callback_action_);
+	ASSERT_NULL(log_, read_action_);
+	ASSERT_NULL(log_, input_action_);
+	ASSERT_NULL(log_, output_action_);
+	ASSERT_NULL(log_, write_action_);
+	ASSERT_NULL(log_, shutdown_action_);
 }
 
 Action *
@@ -95,7 +95,7 @@ Splice::cancel(void)
 		delete callback_;
 		callback_ = NULL;
 
-		ASSERT(log_, callback_action_ == NULL);
+		ASSERT_NULL(log_, callback_action_);
 
 		if (read_action_ != NULL) {
 			read_action_->cancel();
@@ -122,7 +122,7 @@ Splice::cancel(void)
 			shutdown_action_ = NULL;
 		}
 	} else {
-		ASSERT(log_, callback_action_ != NULL);
+		ASSERT_NON_NULL(log_, callback_action_);
 		callback_action_->cancel();
 		callback_action_ = NULL;
 	}
@@ -132,8 +132,8 @@ void
 Splice::complete(Event e)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	ASSERT(log_, callback_ != NULL);
-	ASSERT(log_, callback_action_ == NULL);
+	ASSERT_NON_NULL(log_, callback_);
+	ASSERT_NULL(log_, callback_action_);
 
 	if (read_action_ != NULL) {
 		read_action_->cancel();
@@ -191,7 +191,7 @@ Splice::read_complete(Event e)
 	}
 
 	if (pipe_ != NULL) {
-		ASSERT(log_, input_action_ == NULL);
+		ASSERT_NULL(log_, input_action_);
 		EventCallback *cb = callback(&mtx_, this, &Splice::input_complete);
 		input_action_ = pipe_->input(&e.buffer_, cb);
 	} else {
@@ -201,7 +201,7 @@ Splice::read_complete(Event e)
 			return;
 		}
 
-		ASSERT(log_, write_action_ == NULL);
+		ASSERT_NULL(log_, write_action_);
 		EventCallback *cb = callback(&mtx_, this, &Splice::write_complete);
 		write_action_ = sink_->write(&e.buffer_, cb);
 	}
@@ -223,7 +223,7 @@ Splice::input_complete(Event e)
 		return;
 	}
 
-	ASSERT(log_, read_action_ == NULL);
+	ASSERT_NULL(log_, read_action_);
 	if (!read_eos_) {
 		EventCallback *cb = callback(&mtx_, this, &Splice::read_complete);
 		read_action_ = source_->read(0, cb);
@@ -255,7 +255,7 @@ Splice::output_complete(Event e)
 		return;
 	}
 
-	ASSERT(log_, write_action_ == NULL);
+	ASSERT_NULL(log_, write_action_);
 	EventCallback *cb = callback(&mtx_, this, &Splice::write_complete);
 	write_action_ = sink_->write(&e.buffer_, cb);
 }
@@ -277,7 +277,7 @@ Splice::write_complete(Event e)
 	}
 
 	if (pipe_ != NULL) {
-		ASSERT(log_, output_action_ == NULL);
+		ASSERT_NULL(log_, output_action_);
 		EventCallback *cb = callback(&mtx_, this, &Splice::output_complete);
 		output_action_ = pipe_->output(cb);
 	} else {

@@ -47,16 +47,16 @@ PipeSplice::PipeSplice(Pipe *source, Pipe *sink)
 PipeSplice::~PipeSplice()
 {
 	ScopedLock _(&mtx_);
-	ASSERT(log_, action_ == NULL);
-	ASSERT(log_, callback_ == NULL);
+	ASSERT_NULL(log_, action_);
+	ASSERT_NULL(log_, callback_);
 }
 
 Action *
 PipeSplice::start(EventCallback *scb)
 {
 	ScopedLock _(&mtx_);
-	ASSERT(log_, action_ == NULL);
-	ASSERT(log_, callback_ == NULL);
+	ASSERT_NULL(log_, action_);
+	ASSERT_NULL(log_, callback_);
 
 	EventCallback *cb = callback(&mtx_, this, &PipeSplice::output_complete);
 	action_ = source_->output(cb);

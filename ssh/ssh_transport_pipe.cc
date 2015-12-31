@@ -67,18 +67,18 @@ SSH::TransportPipe::TransportPipe(Session *session)
 
 SSH::TransportPipe::~TransportPipe()
 {
-	ASSERT(log_, receive_callback_ == NULL);
-	ASSERT(log_, receive_action_ == NULL);
+	ASSERT_NULL(log_, receive_callback_);
+	ASSERT_NULL(log_, receive_action_);
 
-	ASSERT(log_, ready_callback_ == NULL);
-	ASSERT(log_, ready_action_ == NULL);
+	ASSERT_NULL(log_, ready_callback_);
+	ASSERT_NULL(log_, ready_action_);
 }
 
 Action *
 SSH::TransportPipe::receive(EventCallback *cb)
 {
-	ASSERT(log_, receive_callback_ == NULL);
-	ASSERT(log_, receive_action_ == NULL);
+	ASSERT_NULL(log_, receive_callback_);
+	ASSERT_NULL(log_, receive_action_);
 
 	/*
 	 * XXX
@@ -97,7 +97,7 @@ SSH::TransportPipe::receive(EventCallback *cb)
 	if (receive_callback_ != NULL)
 		return (cancellation(&mtx_, this, &SSH::TransportPipe::receive_cancel));
 
-	ASSERT(log_, receive_action_ != NULL);
+	ASSERT_NON_NULL(log_, receive_action_);
 	Action *a = receive_action_;
 	receive_action_ = NULL;
 	return (a);
@@ -173,8 +173,8 @@ SSH::TransportPipe::send(Buffer *payload)
 Action *
 SSH::TransportPipe::ready(SimpleCallback *cb)
 {
-	ASSERT(log_, ready_callback_ == NULL);
-	ASSERT(log_, ready_action_ == NULL);
+	ASSERT_NULL(log_, ready_callback_);
+	ASSERT_NULL(log_, ready_action_);
 
 	if (ready_)
 		return (cb->schedule());
@@ -191,12 +191,12 @@ SSH::TransportPipe::key_exchange_complete(void)
 		ready_ = true;
 
 		if (ready_callback_ != NULL) {
-			ASSERT(log_, ready_action_ == NULL);
+			ASSERT_NULL(log_, ready_action_);
 			ready_action_ = ready_callback_->schedule();
 			ready_callback_ = NULL;
 		}
 	} else {
-		ASSERT(log_, ready_callback_ == NULL);
+		ASSERT_NULL(log_, ready_callback_);
 	}
 }
 
@@ -278,8 +278,8 @@ SSH::TransportPipe::receive_cancel(void)
 void
 SSH::TransportPipe::receive_do(void)
 {
-	ASSERT(log_, receive_action_ == NULL);
-	ASSERT(log_, receive_callback_ != NULL);
+	ASSERT_NULL(log_, receive_action_);
+	ASSERT_NON_NULL(log_, receive_callback_);
 
 	if (state_ != GetPacket)
 		return;

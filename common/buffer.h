@@ -108,12 +108,12 @@ class BufferSegment {
 	  data_free_(data_free),
 	  data_free_arg_(data_free_arg)
 	{
-		ASSERT("/buffer/segment", data_ != NULL);
+		ASSERT_NON_NULL("/buffer/segment", data_);
 		ASSERT("/buffer/segment", offset_ <= BUFFER_SEGMENT_SIZE);
 		ASSERT("/buffer/segment", length_ <= BUFFER_SEGMENT_SIZE);
 		ASSERT("/buffer/segment", offset_ + length_ <= BUFFER_SEGMENT_SIZE);
 		ASSERT("/buffer/segment", length_ > 0);
-		ASSERT("/buffer/segment", data_free_ != NULL);
+		ASSERT_NON_NULL("/buffer/segment", data_free_);
 	}
 
 	/*
@@ -144,7 +144,7 @@ public:
 	 */
 	static BufferSegment *create(const uint8_t *buf, size_t len)
 	{
-		ASSERT("/buffer/segment", buf != NULL);
+		ASSERT_NON_NULL("/buffer/segment", buf);
 		ASSERT("/buffer/segment", len != 0);
 		ASSERT("/buffer/segment", len <= BUFFER_SEGMENT_SIZE);
 
@@ -213,7 +213,7 @@ public:
 	 */
 	BufferSegment *append(const uint8_t *buf, size_t len)
 	{
-		ASSERT("/buffer/segment", buf != NULL);
+		ASSERT_NON_NULL("/buffer/segment", buf);
 		ASSERT("/buffer/segment", len != 0);
 		ASSERT("/buffer/segment", len <= avail());
 		if (!data_exclusive()) {
@@ -318,7 +318,7 @@ public:
 			data = (uint8_t *)malloc(BUFFER_SEGMENT_SIZE);
 			copyout(data, 0, length_);
 
-			ASSERT("/buffer/segment", data_free_ != NULL);
+			ASSERT_NON_NULL("/buffer/segment", data_free_);
 			data_free_(data_free_arg_, data_, offset_, length_);
 			data_free_ = NULL;
 
@@ -340,7 +340,7 @@ public:
 	 */
 	void copyout(uint8_t *dst, unsigned offset, size_t dstsize) const
 	{
-		ASSERT("/buffer/segment", dst != NULL);
+		ASSERT_NON_NULL("/buffer/segment", dst);
 		ASSERT("/buffer/segment", dstsize != 0);
 		ASSERT("/buffer/segment", length() >= offset + dstsize);
 
@@ -599,7 +599,7 @@ public:
 	: length_(0),
 	  data_()
 	{
-		ASSERT("/buffer", buf != NULL);
+		ASSERT_NON_NULL("/buffer", buf);
 		ASSERT("/buffer", len != 0);
 		append(buf, len);
 	}

@@ -54,16 +54,16 @@ HTTPServerPipe::HTTPServerPipe(const LogHandle& log)
 
 HTTPServerPipe::~HTTPServerPipe()
 {
-	ASSERT(log_, action_ == NULL);
-	ASSERT(log_, callback_ == NULL);
+	ASSERT_NULL(log_, action_);
+	ASSERT_NULL(log_, callback_);
 }
 
 Action *
 HTTPServerPipe::request(HTTPRequestEventCallback *cb)
 {
 	ScopedLock _(&mtx_);
-	ASSERT(log_, action_ == NULL);
-	ASSERT(log_, callback_ == NULL);
+	ASSERT_NULL(log_, action_);
+	ASSERT_NULL(log_, callback_);
 
 	if (state_ == GotRequest || state_ == Error)
 		return (schedule_callback(cb));
@@ -91,7 +91,7 @@ HTTPServerPipe::send_response(HTTPProtocol::Status status, Buffer *body, Buffer 
 		 * For state change to Error, we must schedule a
 		 * callback.
 		 */
-		ASSERT(log_, action_ == NULL);
+		ASSERT_NULL(log_, action_);
 		if (callback_ != NULL) {
 			action_ = schedule_callback(callback_);
 			callback_ = NULL;
@@ -170,9 +170,9 @@ HTTPServerPipe::cancel(void)
 		action_->cancel();
 		action_ = NULL;
 
-		ASSERT(log_, callback_ == NULL);
+		ASSERT_NULL(log_, callback_);
 	} else {
-		ASSERT(log_, callback_ != NULL);
+		ASSERT_NON_NULL(log_, callback_);
 		delete callback_;
 		callback_ = NULL;
 	}
@@ -301,7 +301,7 @@ HTTPServerPipe::consume(Buffer *in)
 			 */
 			state_ = GotRequest;
 
-			ASSERT(log_, action_ == NULL);
+			ASSERT_NULL(log_, action_);
 			if (callback_ != NULL) {
 				action_ = schedule_callback(callback_);
 				callback_ = NULL;
@@ -328,7 +328,7 @@ HTTPServerPipe::consume(Buffer *in)
 			 */
 			state_ = GotRequest;
 
-			ASSERT(log_, action_ == NULL);
+			ASSERT_NULL(log_, action_);
 			if (callback_ != NULL) {
 				action_ = schedule_callback(callback_);
 				callback_ = NULL;

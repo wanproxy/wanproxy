@@ -65,8 +65,8 @@ public:
 
 	~BlockWriter()
 	{
-		ASSERT(log_, write_action_ == NULL);
-		ASSERT(log_, close_action_ == NULL);
+		ASSERT_NULL(log_, write_action_);
+		ASSERT_NULL(log_, close_action_);
 	}
 
 	void write_complete(Event e)

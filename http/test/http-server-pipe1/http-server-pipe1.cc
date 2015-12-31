@@ -165,8 +165,8 @@ public:
 
 	virtual ~HTTPServerPipeTest()
 	{
-		ASSERT(log_, splice_ == NULL);
-		ASSERT(log_, splice_action_ == NULL);
+		ASSERT_NULL(log_, splice_);
+		ASSERT_NULL(log_, splice_action_);
 
 		if (request_action_ != NULL) {
 			DEBUG(log_) << "Test exited without receiving a request.";
@@ -232,7 +232,7 @@ public:
 private:
 	void request(Event e, HTTPProtocol::Request msg)
 	{
-		ASSERT(log_, request_action_ != NULL);
+		ASSERT_NON_NULL(log_, request_action_);
 		request_action_->cancel();
 		request_action_ = NULL;
 

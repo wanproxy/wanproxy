@@ -264,14 +264,14 @@ main(int argc, char *argv[])
 		else
 			cache = new XCodecMemoryCache(uuid);
 	} else if (fifo != NULL) {
-		ASSERT("/tack", persist == NULL);
+		ASSERT_NULL("/tack", persist);
 		ASSERT("/tack", !nullcache);
 		XCodecDisk *disk = XCodecDisk::open(fifo, 0);
 		if (disk == NULL)
 			HALT("/tack") << "Could not open on-disk FIFO cache.";
 		cache = disk->local();
 	} else {
-		ASSERT("/tack", persist != NULL);
+		ASSERT_NON_NULL("/tack", persist);
 		ASSERT("/tack", !nullcache);
 		int fd;
 		if (action == Compress) {
@@ -468,7 +468,7 @@ static void
 process_file(const std::string& name, int ifd, int ofd, FileAction action, XCodec *codec, unsigned flags, Timer *timer)
 {
 	if ((flags & TACK_FLAG_CODEC_TIMING_EACH) != 0) {
-		ASSERT("/process/file", timer == NULL);
+		ASSERT_NULL("/process/file", timer);
 
 		timer = new Timer();
 	}
@@ -546,7 +546,7 @@ process_files(int argc, char *argv[], FileAction action, XCodec *codec, unsigned
 	if (opened) {
 		if ((flags & TACK_FLAG_CODEC_TIMING) != 0 &&
 		    (flags & TACK_FLAG_CODEC_TIMING_EACH) == 0) {
-			ASSERT("/process/files", timer != NULL);
+			ASSERT_NON_NULL("/process/files", timer);
 			if ((flags & TACK_FLAG_CODEC_TIMING_SAMPLES) != 0)
 				time_samples("", timer);
 			else

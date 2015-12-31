@@ -39,7 +39,7 @@ NetworkInterface::open(const std::string& ifname)
 		return (interface);
 #endif
 
-	ASSERT("/network/interface", interface == NULL);
+	ASSERT_NULL("/network/interface", interface);
 	ERROR("/network/interface") << "Unsupported network interface: " << ifname;
 	return (NULL);
 }

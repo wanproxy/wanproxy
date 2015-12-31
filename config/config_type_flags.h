@@ -45,7 +45,7 @@ public:
 	: ConfigType(xname),
 	  flag_map_()
 	{
-		ASSERT("/config/type/flags", mappings != NULL);
+		ASSERT_NON_NULL("/config/type/flags", mappings);
 		while (mappings->string_ != NULL) {
 			flag_map_[mappings->string_] = mappings->flag_;
 			mappings++;

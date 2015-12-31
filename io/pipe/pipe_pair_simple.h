@@ -57,14 +57,14 @@ protected:
 public:
 	Pipe *get_incoming(void)
 	{
-		ASSERT("/pipe/pair/simple", incoming_pipe_ == NULL);
+		ASSERT_NULL("/pipe/pair/simple", incoming_pipe_);
 		incoming_pipe_ = new PipeSimpleWrapper<PipePairSimple>(this, &PipePairSimple::incoming_process);
 		return (incoming_pipe_);
 	}
 
 	Pipe *get_outgoing(void)
 	{
-		ASSERT("/pipe/pair/simple", outgoing_pipe_ == NULL);
+		ASSERT_NULL("/pipe/pair/simple", outgoing_pipe_);
 		outgoing_pipe_ = new PipeSimpleWrapper<PipePairSimple>(this, &PipePairSimple::outgoing_process);
 		return (outgoing_pipe_);
 	}

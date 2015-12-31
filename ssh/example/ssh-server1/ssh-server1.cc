@@ -121,12 +121,12 @@ public:
 
 	~SSHConnection()
 	{
-		ASSERT(log_, close_action_ == NULL);
-		ASSERT(log_, splice_action_ == NULL);
-		ASSERT(log_, splice_ == NULL);
-		ASSERT(log_, receive_action_ == NULL);
-		ASSERT(log_, pipe_ == NULL);
-		ASSERT(log_, peer_ == NULL);
+		ASSERT_NULL(log_, close_action_);
+		ASSERT_NULL(log_, splice_action_);
+		ASSERT_NULL(log_, splice_);
+		ASSERT_NULL(log_, receive_action_);
+		ASSERT_NULL(log_, pipe_);
+		ASSERT_NULL(log_, peer_);
 	}
 
 private:
@@ -391,7 +391,7 @@ private:
 		close_action_->cancel();
 		close_action_ = NULL;
 
-		ASSERT(log_, peer_ != NULL);
+		ASSERT_NON_NULL(log_, peer_);
 		delete peer_;
 		peer_ = NULL;
 
@@ -415,7 +415,7 @@ private:
 			break;
 		}
 
-	        ASSERT(log_, splice_ != NULL);
+	        ASSERT_NON_NULL(log_, splice_);
 		delete splice_;
 		splice_ = NULL;
 
@@ -426,11 +426,11 @@ private:
 			receive_action_ = NULL;
 		}
 
-		ASSERT(log_, pipe_ != NULL);
+		ASSERT_NON_NULL(log_, pipe_);
 		delete pipe_;
 		pipe_ = NULL;
 
-		ASSERT(log_, close_action_ == NULL);
+		ASSERT_NULL(log_, close_action_);
 		SimpleCallback *cb = callback(this, &SSHConnection::close_complete);
 		close_action_ = peer_->close(cb);
 	}

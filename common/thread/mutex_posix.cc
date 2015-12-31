@@ -50,7 +50,7 @@ void
 Mutex::assert_owned(bool owned, const LogHandle& log, const std::string& file, unsigned line, const std::string& function)
 {
 	Thread::ID self = Thread::selfID();
-	ASSERT("/mutex/posix", self != NULL);
+	ASSERT_NON_NULL("/mutex/posix", self);
 
 	state_->lock();
 	if (state_->owner_ == NULL) {

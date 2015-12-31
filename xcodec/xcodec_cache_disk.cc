@@ -362,7 +362,7 @@ XCodecDisk::index_invalidate_entries(uint64_t index_block)
 		if (xcit == xuid_cache_map_.end())
 			continue;
 		XCodecDiskCache *cache = xcit->second;
-		ASSERT(log_, cache != NULL);
+		ASSERT_NON_NULL(log_, cache);
 
 		XCodecDiskCache::hash_cache_t::iterator hcit;
 		hcit = cache->hash_cache_.find(hash);
@@ -421,7 +421,7 @@ XCodecDisk::index_load_entries(uint64_t index_block, bool check)
 			continue;
 		}
 		XCodecDiskCache *cache = xcit->second;
-		ASSERT(log_, cache != NULL);
+		ASSERT_NON_NULL(log_, cache);
 
 		XCodecDiskCache::hash_cache_t::iterator hcit;
 		hcit = cache->hash_cache_.find(hash);
@@ -491,7 +491,7 @@ XCodecDisk::index_read_counter(uint64_t index_block, uint64_t *counterp)
 		return (false);
 	}
 
-	ASSERT(log_, counterp != NULL);
+	ASSERT_NON_NULL(log_, counterp);
 	idx.moveout(counterp);
 
 	return (true);
@@ -509,7 +509,7 @@ XCodecDisk::registry_collect(void)
 		if (xcit == xuid_cache_map_.end())
 			continue;
 		XCodecDiskCache *cache = xcit->second;
-		ASSERT(log_, cache != NULL);
+		ASSERT_NON_NULL(log_, cache);
 		if (!cache->hash_cache_.empty()) {
 			DEBUG(log_) << "Found " << cache->hash_cache_.size() << " entries in XUID #" << xuid << ".";
 			continue;
@@ -636,7 +636,7 @@ XCodecDiskCache *
 XCodecDisk::local(void)
 {
 	XCodecDiskCache *cache = xuid_cache_map_[XCDFS_XUID_LOCAL];
-	ASSERT(log_, cache != NULL);
+	ASSERT_NON_NULL(log_, cache);
 	return (cache);
 }
 
@@ -647,7 +647,7 @@ XCodecDisk::connect(const UUID& uuid)
 	it = uuid_xuid_map_.find(uuid);
 	if (it != uuid_xuid_map_.end()) {
 		XCodecDiskCache *cache = xuid_cache_map_[it->second];
-		ASSERT(log_, cache != NULL);
+		ASSERT_NON_NULL(log_, cache);
 		return (cache);
 	}
 

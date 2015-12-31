@@ -45,8 +45,8 @@ PipeProducer::PipeProducer(const LogHandle& log, Lock *lock)
 
 PipeProducer::~PipeProducer()
 {
-	ASSERT(log_, output_action_ == NULL);
-	ASSERT(log_, output_callback_ == NULL);
+	ASSERT_NULL(log_, output_action_);
+	ASSERT_NULL(log_, output_callback_);
 }
 
 Action *
@@ -80,8 +80,8 @@ Action *
 PipeProducer::output(EventCallback *cb)
 {
 	ScopedLock _(lock_);
-	ASSERT(log_, output_action_ == NULL);
-	ASSERT(log_, output_callback_ == NULL);
+	ASSERT_NULL(log_, output_action_);
+	ASSERT_NULL(log_, output_callback_);
 
 	if (output_cork_ == 0) {
 		Action *a = output_do(cb);
@@ -99,7 +99,7 @@ PipeProducer::output_cancel(void)
 {
 	ASSERT_LOCK_OWNED(log_, lock_);
 	if (output_action_ != NULL) {
-		ASSERT(log_, output_callback_ == NULL);
+		ASSERT_NULL(log_, output_callback_);
 
 		output_action_->cancel();
 		output_action_ = NULL;
@@ -146,7 +146,7 @@ PipeProducer::output_produced(void)
 		return;
 
 	if (output_callback_ != NULL) {
-		ASSERT(log_, output_action_ == NULL);
+		ASSERT_NULL(log_, output_action_);
 
 		Action *a = output_do(output_callback_);
 		if (a != NULL) {
@@ -195,7 +195,7 @@ PipeProducer::produce_error(void)
 	ASSERT(log_, !error_);
 
 	if (output_eos_) {
-		ASSERT(log_, output_callback_ == NULL);
+		ASSERT_NULL(log_, output_callback_);
 		ERROR(log_) << "Produced error after EOS; consumer will not receive error.";
 		return;
 	}

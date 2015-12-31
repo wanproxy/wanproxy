@@ -201,7 +201,7 @@ XCodecPipePair::decoder_decode(void)
 				}
 
 				decoder_cache_ = XCodecCache::connect(uuid, codec_->cache());
-				ASSERT(log_, decoder_ == NULL);
+				ASSERT_NULL(log_, decoder_);
 				decoder_ = new XCodecDecoder(decoder_cache_);
 
 				DEBUG(log_) << "Peer connected with UUID: " << uuid.string_;

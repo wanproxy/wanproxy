@@ -59,14 +59,14 @@ private:
 	void close_complete(bool target)
 	{
 		if (target) {
-			ASSERT(log_, target_action_ != NULL);
+			ASSERT_NON_NULL(log_, target_action_);
 			target_action_->cancel();
 			target_action_ = NULL;
 
 			delete target_;
 			target_ = NULL;
 		} else {
-			ASSERT(log_, source_action_ != NULL);
+			ASSERT_NON_NULL(log_, source_action_);
 			source_action_->cancel();
 			source_action_ = NULL;
 
@@ -81,11 +81,11 @@ private:
 	void read_complete(Event e, bool target)
 	{
 		if (target) {
-			ASSERT(log_, target_action_ != NULL);
+			ASSERT_NON_NULL(log_, target_action_);
 			target_action_->cancel();
 			target_action_ = NULL;
 		} else {
-			ASSERT(log_, source_action_ != NULL);
+			ASSERT_NON_NULL(log_, source_action_);
 			source_action_->cancel();
 			source_action_ = NULL;
 		}
@@ -131,11 +131,11 @@ private:
 
 	void write_complete(Event e)
 	{
-		ASSERT(log_, target_action_ != NULL);
+		ASSERT_NON_NULL(log_, target_action_);
 		target_action_->cancel();
 		target_action_ = NULL;
 
-		ASSERT(log_, source_action_ == NULL);
+		ASSERT_NULL(log_, source_action_);
 
 		switch (e.type_) {
 		case Event::Done:
@@ -177,19 +177,19 @@ private:
 		source_buffer_.clear();
 		target_buffer_.clear();
 
-		ASSERT(log_, source_action_ == NULL);
+		ASSERT_NULL(log_, source_action_);
 		EventCallback *scb = callback(this, &DiskDup::read_complete, false);
 		source_action_ = source_->read(block_number_, scb);
 
-		ASSERT(log_, target_action_ == NULL);
+		ASSERT_NULL(log_, target_action_);
 		EventCallback *tcb = callback(this, &DiskDup::read_complete, true);
 		target_action_ = target_->read(block_number_, tcb);
 	}
 
 	void schedule_write(void)
 	{
-		ASSERT(log_, source_action_ == NULL);
-		ASSERT(log_, target_action_ == NULL);
+		ASSERT_NULL(log_, source_action_);
+		ASSERT_NULL(log_, target_action_);
 		EventCallback *cb = callback(this, &DiskDup::write_complete);
 		target_action_ = target_->write(block_number_, &source_buffer_, cb);
 	}

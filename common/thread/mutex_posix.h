@@ -69,7 +69,7 @@ struct MutexState {
 
 #if 0 /* XXX What about extern Mutexes?  */
 		Thread::ID self = Thread::selfID();
-		ASSERT("/mutex/posix/state", self != NULL);
+		ASSERT_NON_NULL("/mutex/posix/state", self);
 		ASSERT("/mutex/posix/state", owner_ == self);
 #endif
 	}
@@ -107,7 +107,7 @@ struct MutexState {
 		int error;
 
 		Thread::ID self = Thread::selfID();
-		ASSERT("/mutex/posix/state", self != NULL);
+		ASSERT_NON_NULL("/mutex/posix/state", self);
 
 		if (owner_ != NULL) {
 			waiters_.push_back(self);
@@ -134,7 +134,7 @@ struct MutexState {
 			return (false);
 
 		Thread::ID self = Thread::selfID();
-		ASSERT("/mutex/posix/state", self != NULL);
+		ASSERT_NON_NULL("/mutex/posix/state", self);
 		owner_ = self;
 		return (true);
 	}
@@ -158,7 +158,7 @@ struct MutexState {
 		int error;
 
 		Thread::ID self = Thread::selfID();
-		ASSERT("/mutex/posix/state", self != NULL);
+		ASSERT_NON_NULL("/mutex/posix/state", self);
 
 		if (owner_ == NULL) {
 			HALT("/mutex/posix/state") << "Attempt to unlock already-unlocked mutex.";

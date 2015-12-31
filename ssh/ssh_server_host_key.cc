@@ -74,7 +74,7 @@ namespace {
 		bool decode_public_key(Buffer *in)
 		{
 			ASSERT(log_, role_ == SSH::ClientRole);
-			ASSERT(log_, rsa_ == NULL);
+			ASSERT_NULL(log_, rsa_);
 			Buffer tag;
 			if (!SSH::String::decode(&tag, in))
 				return (false);

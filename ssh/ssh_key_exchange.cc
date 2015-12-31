@@ -167,7 +167,7 @@ namespace {
 				ASSERT(log_, group.empty());
 #else
 				DEBUG(log_) << "Doing DH_generate_parameters for " << n << " bits.";
-				ASSERT(log_, dh_ == NULL);
+				ASSERT_NULL(log_, dh_);
 				dh_ = DH_generate_parameters(n, 2, NULL, NULL);
 				if (dh_ == NULL) {
 					ERROR(log_) << "DH_generate_parameters failed.";
@@ -343,7 +343,7 @@ namespace {
 			Buffer exchange_hash;
 			Buffer data;
 
-			ASSERT(log_, dh_ != NULL);
+			ASSERT_NON_NULL(log_, dh_);
 
 			uint8_t secret[DH_size(dh_)];
 			int secretlen = DH_compute_key(secret, remote_pubkey, dh_);

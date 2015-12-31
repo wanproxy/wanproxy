@@ -50,23 +50,23 @@ public:
 
 	~ConditionVariable()
 	{
-		ASSERT("/condition/variable", wait_action_ == NULL);
-		ASSERT("/condition/variable", wait_callback_ == NULL);
+		ASSERT_NULL("/condition/variable", wait_action_);
+		ASSERT_NULL("/condition/variable", wait_callback_);
 	}
 
 	void signal(void)
 	{
 		if (wait_callback_ == NULL)
 			return;
-		ASSERT("/condition/variable", wait_action_ == NULL);
+		ASSERT_NULL("/condition/variable", wait_action_);
 		wait_action_ = wait_callback_->schedule();
 		wait_callback_ = NULL;
 	}
 
 	Action *wait(SimpleCallback *cb)
 	{
-		ASSERT("/condition/variable", wait_action_ == NULL);
-		ASSERT("/condition/variable", wait_callback_ == NULL);
+		ASSERT_NULL("/condition/variable", wait_action_);
+		ASSERT_NULL("/condition/variable", wait_callback_);
 
 		wait_callback_ = cb;
 
@@ -77,12 +77,12 @@ private:
 	void wait_cancel(void)
 	{
 		if (wait_callback_ != NULL) {
-			ASSERT("/condition/variable", wait_action_ == NULL);
+			ASSERT_NULL("/condition/variable", wait_action_);
 
 			delete wait_callback_;
 			wait_callback_ = NULL;
 		} else {
-			ASSERT("/condition/variable", wait_action_ != NULL);
+			ASSERT_NON_NULL("/condition/variable", wait_action_);
 
 			wait_action_->cancel();
 			wait_action_ = NULL;

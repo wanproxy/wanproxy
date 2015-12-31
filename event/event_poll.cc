@@ -36,8 +36,8 @@ EventPoll::PollHandler::callback(Event e)
 	 */
 	if (action_ != NULL && callback_ == NULL)
 		return;
-	ASSERT("/event/poll/handler", action_ == NULL);
-	ASSERT("/event/poll/handler", callback_ != NULL);
+	ASSERT_NULL("/event/poll/handler", action_);
+	ASSERT_NON_NULL("/event/poll/handler", callback_);
 	callback_->param(e);
 	Action *a = callback_->schedule();
 	callback_ = NULL;
@@ -50,9 +50,9 @@ EventPoll::PollHandler::cancel(void)
 	if (callback_ != NULL) {
 		delete callback_;
 		callback_ = NULL;
-		ASSERT("/event/poll/handler", action_ == NULL);
+		ASSERT_NULL("/event/poll/handler", action_);
 	} else {
-		ASSERT("/event/poll/handler", action_ != NULL);
+		ASSERT_NON_NULL("/event/poll/handler", action_);
 		action_->cancel();
 		action_ = NULL;
 	}

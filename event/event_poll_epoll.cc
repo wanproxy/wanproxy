@@ -122,7 +122,7 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 	if (rv == -1)
 		HALT(log_) << "Could not add event to epoll.";
 	ASSERT(log_, rv == 0);
-	ASSERT(log_, poll_handler->action_ == NULL);
+	ASSERT_NULL(log_, poll_handler->action_);
 	poll_handler->callback_ = cb;
 	Action *a = new EventPoll::PollAction(this, type, fd);
 	return (a);

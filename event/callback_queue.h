@@ -49,8 +49,8 @@ class CallbackQueue : public CallbackScheduler {
 
 		~CallbackAction()
 		{
-			ASSERT("/callback/queue/action", callback_ == NULL);
-			ASSERT("/callback/queue/action", action_ == NULL);
+			ASSERT_NULL("/callback/queue/action", callback_);
+			ASSERT_NULL("/callback/queue/action", action_);
 		}
 
 		void cancel(void)
@@ -135,9 +135,9 @@ private:
 			if (a->action_ != NULL) {
 				a->action_->cancel();
 				a->action_ = NULL;
-				ASSERT("/callback/queue", a->callback_ == NULL);
+				ASSERT_NULL("/callback/queue", a->callback_);
 			} else {
-				ASSERT("/callback/queue", a->callback_ != NULL);
+				ASSERT_NON_NULL("/callback/queue", a->callback_);
 				delete a->callback_;
 				a->callback_ = NULL;
 			}

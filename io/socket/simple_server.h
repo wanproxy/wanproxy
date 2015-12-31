@@ -68,10 +68,10 @@ public:
 
 	virtual ~SimpleServer()
 	{
-		ASSERT(log_, server_ == NULL);
-		ASSERT(log_, accept_action_ == NULL);
-		ASSERT(log_, close_action_ == NULL);
-		ASSERT(log_, stop_action_ == NULL);
+		ASSERT_NULL(log_, server_);
+		ASSERT_NULL(log_, accept_action_);
+		ASSERT_NULL(log_, close_action_);
+		ASSERT_NULL(log_, stop_action_);
 	}
 
 private:
@@ -107,7 +107,7 @@ private:
 		close_action_->cancel();
 		close_action_ = NULL;
 
-		ASSERT(log_, server_ != NULL);
+		ASSERT_NON_NULL(log_, server_);
 		delete server_;
 		server_ = NULL;
 
@@ -123,7 +123,7 @@ private:
 		accept_action_->cancel();
 		accept_action_ = NULL;
 
-		ASSERT(log_, close_action_ == NULL);
+		ASSERT_NULL(log_, close_action_);
 
 		SimpleCallback *cb = callback(&mtx_, this, &SimpleServer::close_complete);
 		close_action_ = server_->close(cb);

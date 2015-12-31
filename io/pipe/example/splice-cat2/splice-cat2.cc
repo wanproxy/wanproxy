@@ -57,9 +57,9 @@ public:
 
 	~Catenate()
 	{
-		ASSERT(log_, input_action_ == NULL);
-		ASSERT(log_, output_action_ == NULL);
-		ASSERT(log_, splice_action_ == NULL);
+		ASSERT_NULL(log_, input_action_);
+		ASSERT_NULL(log_, output_action_);
+		ASSERT_NULL(log_, splice_action_);
 	}
 
 	void splice_complete(Event e)
