@@ -563,7 +563,7 @@ XCodecPipePair::encoder_consume(Buffer *buf)
 		}
 
 		uint8_t len = extra.length();
-		ASSERT(log_, len == UUID_SIZE);
+		ASSERT_EQUAL(log_, len, UUID_SIZE);
 
 		output.append(XCODEC_PIPE_OP_HELLO);
 		output.append(len);

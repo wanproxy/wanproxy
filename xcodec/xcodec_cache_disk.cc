@@ -248,7 +248,7 @@ XCodecDisk::block_read(Buffer *buf, uint64_t blockno)
 	ssize_t amt = ::pread(fd_, block, XCDFS_BLOCK_SIZE, blockno * XCDFS_BLOCK_SIZE);
 	if (amt == -1)
 		return (false);
-	ASSERT(log_, amt == XCDFS_BLOCK_SIZE);
+	ASSERT_EQUAL(log_, amt, XCDFS_BLOCK_SIZE);
 	buf->append(block, sizeof block);
 	return (true);
 }
@@ -269,7 +269,7 @@ XCodecDisk::block_write(Buffer *buf, uint64_t blockno)
 	if (amt == -1)
 		return (false);
 	buf->clear();
-	ASSERT(log_, amt == XCDFS_BLOCK_SIZE);
+	ASSERT_EQUAL(log_, amt, XCDFS_BLOCK_SIZE);
 	return (true);
 }
 
@@ -283,7 +283,7 @@ XCodecDisk::block_read(BufferSegment **segp, uint64_t blockno)
 		seg->unref();
 		return (false);
 	}
-	ASSERT(log_, amt == XCDFS_BLOCK_SIZE);
+	ASSERT_EQUAL(log_, amt, XCDFS_BLOCK_SIZE);
 	seg->set_length(XCDFS_BLOCK_SIZE);
 	*segp = seg;
 	return (true);
@@ -297,7 +297,7 @@ XCodecDisk::block_write(const BufferSegment *seg, uint64_t blockno)
 	ssize_t amt = ::pwrite(fd_, seg->data(), XCDFS_BLOCK_SIZE, blockno * XCDFS_BLOCK_SIZE);
 	if (amt == -1)
 		return (false);
-	ASSERT(log_, amt == XCDFS_BLOCK_SIZE);
+	ASSERT_EQUAL(log_, amt, XCDFS_BLOCK_SIZE);
 	return (true);
 }
 

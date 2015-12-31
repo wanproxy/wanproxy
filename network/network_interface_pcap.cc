@@ -139,7 +139,7 @@ NetworkInterfacePCAP::receive_do(void)
 		return (NULL);
 	}
 
-	ASSERT(log_, cnt == 1);
+	ASSERT_EQUAL(log_, cnt, 1);
 
 	receive_callback_->param(Event(Event::Done, packet));
 	Action *a = receive_callback_->schedule();

@@ -223,7 +223,7 @@ EventPoll::main(void)
 				break;
 			case EVFILT_USER:
 				/* A user event was triggered to wake us up.  Ignore it.  */
-				ASSERT(log_, ev->ident == SIGNAL_IDENT);
+				ASSERT_EQUAL(log_, ev->ident, SIGNAL_IDENT);
 				continue;
 			default:
 				NOTREACHED(log_);

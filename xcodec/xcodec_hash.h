@@ -125,7 +125,7 @@ public:
 		unsigned word = (unsigned)ch + 1;
 
 #ifndef NDEBUG
-		ASSERT("/xcodec/hash", length_ == XCODEC_SEGMENT_LENGTH);
+		ASSERT_EQUAL("/xcodec/hash", length_, XCODEC_SEGMENT_LENGTH);
 #endif
 
 		bytes_.roll(word, start_);
@@ -155,7 +155,7 @@ public:
 	uint64_t mix(void) const
 	{
 #ifndef NDEBUG
-		ASSERT("/xcodec/hash", length_ == XCODEC_SEGMENT_LENGTH);
+		ASSERT_EQUAL("/xcodec/hash", length_, XCODEC_SEGMENT_LENGTH);
 #endif
 
 		uint64_t bits_hash = (bits_.sum1_ << 16) + bits_.sum2_;

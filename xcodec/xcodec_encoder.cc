@@ -154,7 +154,7 @@ XCodecEncoder::encode(Buffer *output, Buffer *input, std::map<uint64_t, BufferSe
 					 */
 					p++;
 				}
-				ASSERT(log_, o == XCODEC_SEGMENT_LENGTH);
+				ASSERT_EQUAL(log_, o, XCODEC_SEGMENT_LENGTH);
 			} else {
 				/*
 				 * Roll it into the rolling hash.

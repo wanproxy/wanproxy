@@ -95,7 +95,7 @@ struct MutexState {
 		error = pthread_mutex_trylock(&mutex_);
 		if (error == 0)
 			return (true);
-		ASSERT("/mutex/posix/state", error == EBUSY);
+		ASSERT_EQUAL("/mutex/posix/state", error, EBUSY);
 		return (false);
 	}
 
