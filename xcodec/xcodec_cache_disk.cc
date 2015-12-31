@@ -749,7 +749,7 @@ XCodecDisk::lookup(XCodecDiskCache *cache, uint64_t hash)
 		return (NULL);
 
 	const uint64_t& offset = it->second;
-	ASSERT(log_, offset != 0);
+	ASSERT_NON_ZERO(log_, offset);
 
 	BufferSegment *seg;
 	if (!block_read(&seg, offset)) {

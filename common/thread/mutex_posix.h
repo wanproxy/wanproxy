@@ -43,13 +43,13 @@ struct MutexState {
 		int error;
 
 		error = pthread_mutexattr_init(&mutex_attr_);
-		ASSERT("/mutex/posix/state", error == 0);
+		ASSERT_ZERO("/mutex/posix/state", error);
 
 		error = pthread_mutexattr_settype(&mutex_attr_, PTHREAD_MUTEX_RECURSIVE);
-		ASSERT("/mutex/posix/state", error == 0);
+		ASSERT_ZERO("/mutex/posix/state", error);
 
 		error = pthread_mutex_init(&mutex_, &mutex_attr_);
-		ASSERT("/mutex/posix/state", error == 0);
+		ASSERT_ZERO("/mutex/posix/state", error);
 
 		error = pthread_cond_init(&cond_, NULL);
 	}
@@ -59,13 +59,13 @@ struct MutexState {
 		int error;
 
 		error = pthread_mutex_destroy(&mutex_);
-		ASSERT("/mutex/posix/state", error == 0);
+		ASSERT_ZERO("/mutex/posix/state", error);
 
 		error = pthread_mutexattr_destroy(&mutex_attr_);
-		ASSERT("/mutex/posix/state", error == 0);
+		ASSERT_ZERO("/mutex/posix/state", error);
 
 		error = pthread_cond_destroy(&cond_);
-		ASSERT("/mutex/posix/state", error == 0);
+		ASSERT_ZERO("/mutex/posix/state", error);
 
 #if 0 /* XXX What about extern Mutexes?  */
 		Thread::ID self = Thread::selfID();
@@ -82,7 +82,7 @@ struct MutexState {
 		int error;
 
 		error = pthread_mutex_lock(&mutex_);
-		ASSERT("/mutex/posix/state", error == 0);
+		ASSERT_ZERO("/mutex/posix/state", error);
 	}
 
 	/*
@@ -113,7 +113,7 @@ struct MutexState {
 			waiters_.push_back(self);
 			for (;;) {
 				error = pthread_cond_wait(&cond_, &mutex_);
-				ASSERT("/mutex/posix/state", error == 0);
+				ASSERT_ZERO("/mutex/posix/state", error);
 				if (owner_ != NULL)
 					continue;
 				if (waiters_.front() != self)
@@ -147,7 +147,7 @@ struct MutexState {
 		int error;
 
 		error = pthread_mutex_unlock(&mutex_);
-		ASSERT("/mutex/posix/state", error == 0);
+		ASSERT_ZERO("/mutex/posix/state", error);
 	}
 
 	/*
@@ -171,7 +171,7 @@ struct MutexState {
 			return;
 
 		error = pthread_cond_broadcast(&cond_);
-		ASSERT("/mutex/posix/state", error == 0);
+		ASSERT_ZERO("/mutex/posix/state", error);
 	}
 };
 

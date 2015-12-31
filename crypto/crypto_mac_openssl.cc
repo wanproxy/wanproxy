@@ -54,7 +54,7 @@ namespace {
 
 		Instance *clone(void) const
 		{
-			ASSERT(log_, key_length_ == 0);
+			ASSERT_ZERO(log_, key_length_);
 			return (new InstanceEVP(algorithm_));
 		}
 

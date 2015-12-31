@@ -82,11 +82,11 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 		if (rv == -1)
 			HALT(log_) << "Could not dissociate from port.";
 	}
-	ASSERT(log_, events != 0);
+	ASSERT_NON_ZERO(log_, events);
 	int rv = ::port_associate(port_, PORT_SOURCE_FD, fd, events, NULL);
 	if (rv == -1)
 		HALT(log_) << "Could not associate to port.";
-	ASSERT(log_, rv == 0);
+	ASSERT_ZERO(log_, rv);
 	ASSERT_NULL(log_, poll_handler->action_);
 	poll_handler->callback_ = cb;
 	Action *a = new EventPoll::PollAction(this, type, fd);
@@ -127,9 +127,9 @@ EventPoll::cancel(const Type& type, int fd)
 	int rv = ::port_dissociate(port_, PORT_SOURCE_FD, fd);
 	if (rv == -1)
 		HALT(log_) << "Could not disassociate from port.";
-	ASSERT(log_, rv == 0);
+	ASSERT_ZERO(log_, rv);
 	if (associate) {
-		ASSERT(log_, events != 0);
+		ASSERT_NON_ZERO(log_, events);
 		rv = ::port_associate(port_, PORT_SOURCE_FD, fd, events, NULL);
 		if (rv == -1)
 			HALT(log_) << "Could not associate to port.";

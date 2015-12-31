@@ -42,7 +42,7 @@ UUID::decode(Buffer *buf)
 	int rv = uuid_parse(string_.c_str(), uuid);
 	if (rv == -1)
 		return (false);
-	ASSERT("/uuid/libuuid", rv == 0);
+	ASSERT_ZERO("/uuid/libuuid", rv);
 
 	return (true);
 }

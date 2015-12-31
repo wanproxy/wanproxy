@@ -145,7 +145,7 @@ public:
 	static BufferSegment *create(const uint8_t *buf, size_t len)
 	{
 		ASSERT_NON_NULL("/buffer/segment", buf);
-		ASSERT("/buffer/segment", len != 0);
+		ASSERT_NON_ZERO("/buffer/segment", len);
 		ASSERT("/buffer/segment", len <= BUFFER_SEGMENT_SIZE);
 
 		BufferSegment *seg = create();
@@ -214,7 +214,7 @@ public:
 	BufferSegment *append(const uint8_t *buf, size_t len)
 	{
 		ASSERT_NON_NULL("/buffer/segment", buf);
-		ASSERT("/buffer/segment", len != 0);
+		ASSERT_NON_ZERO("/buffer/segment", len);
 		ASSERT("/buffer/segment", len <= avail());
 		if (!data_exclusive()) {
 			BufferSegment *seg;
@@ -263,7 +263,7 @@ public:
 	 */
 	BufferSegment *copy(void) const
 	{
-		ASSERT("/buffer/segment", length_ != 0);
+		ASSERT_NON_ZERO("/buffer/segment", length_);
 		BufferSegment *seg = BufferSegment::create(data(), length_);
 		return (seg);
 	}
@@ -274,7 +274,7 @@ public:
 	 */
 	BufferSegment *metacopy(void)
 	{
-		ASSERT("/buffer/segment", length_ != 0);
+		ASSERT_NON_ZERO("/buffer/segment", length_);
 		return (new BufferSegment(data_, offset_, length_, &BufferSegment::free_meta, this));
 	}
 
@@ -341,7 +341,7 @@ public:
 	void copyout(uint8_t *dst, unsigned offset, size_t dstsize) const
 	{
 		ASSERT_NON_NULL("/buffer/segment", dst);
-		ASSERT("/buffer/segment", dstsize != 0);
+		ASSERT_NON_ZERO("/buffer/segment", dstsize);
 		ASSERT("/buffer/segment", length() >= offset + dstsize);
 
 		memcpy(dst, data() + offset, dstsize);
@@ -352,7 +352,7 @@ public:
 	 */
 	const uint8_t *data(void) const
 	{
-		ASSERT("/buffer/segment", length_ != 0);
+		ASSERT_NON_ZERO("/buffer/segment", length_);
 		return (&data_[offset_]);
 	}
 
@@ -363,7 +363,7 @@ public:
 	 */
 	const uint8_t *end(void) const
 	{
-		ASSERT("/buffer/segment", length_ != 0);
+		ASSERT_NON_ZERO("/buffer/segment", length_);
 		return (&data_[offset_ + length_]);
 	}
 
@@ -383,7 +383,7 @@ public:
 	 */
 	void pullup(void)
 	{
-		ASSERT("/buffer/segment", length_ != 0);
+		ASSERT_NON_ZERO("/buffer/segment", length_);
 		ASSERT("/buffer/segment", data_exclusive());
 		if (offset_ == 0)
 			return;
@@ -398,7 +398,7 @@ public:
 	void set_length(size_t len)
 	{
 		ASSERT("/buffer/segment", data_exclusive());
-		ASSERT("/buffer/segment", offset_ == 0);
+		ASSERT_ZERO("/buffer/segment", offset_);
 		ASSERT("/buffer/segment", len <= BUFFER_SEGMENT_SIZE);
 		length_ = len;
 	}
@@ -409,7 +409,7 @@ public:
 	 */
 	BufferSegment *skip(unsigned bytes)
 	{
-		ASSERT("/buffer/segment", bytes != 0);
+		ASSERT_NON_ZERO("/buffer/segment", bytes);
 		ASSERT("/buffer/segment", bytes < length());
 
 		if (!metadata_exclusive())
@@ -427,7 +427,7 @@ public:
 	 */
 	BufferSegment *trim(unsigned bytes)
 	{
-		ASSERT("/buffer/segment", bytes != 0);
+		ASSERT_NON_ZERO("/buffer/segment", bytes);
 		ASSERT("/buffer/segment", bytes < length());
 
 		if (!metadata_exclusive())
@@ -443,7 +443,7 @@ public:
 	 */
 	BufferSegment *cut(unsigned offset, unsigned bytes)
 	{
-		ASSERT("/buffer/segment", bytes != 0);
+		ASSERT_NON_ZERO("/buffer/segment", bytes);
 		ASSERT("/buffer/segment", offset + bytes < length());
 
 		if (offset == 0)
@@ -486,7 +486,7 @@ public:
 	 */
 	bool equal(const uint8_t *buf, size_t len) const
 	{
-		ASSERT("/buffer/segment", len != 0);
+		ASSERT_NON_ZERO("/buffer/segment", len);
 		if (len != length())
 			return (false);
 		return (memcmp(data(), buf, len) == 0);
@@ -600,7 +600,7 @@ public:
 	  data_()
 	{
 		ASSERT_NON_NULL("/buffer", buf);
-		ASSERT("/buffer", len != 0);
+		ASSERT_NON_ZERO("/buffer", len);
 		append(buf, len);
 	}
 
@@ -692,7 +692,7 @@ public:
 	 */
 	void append(const Buffer& buf, size_t len)
 	{
-		ASSERT("/buffer", len != 0);
+		ASSERT_NON_ZERO("/buffer", len);
 		ASSERT("/buffer", len <= buf.length());
 		append(buf);
 		if (buf.length() != len)
@@ -751,7 +751,7 @@ public:
 		BufferSegment *seg;
 		unsigned o;
 
-		ASSERT("/buffer", len != 0);
+		ASSERT_NON_ZERO("/buffer", len);
 
 		/*
 		 * If we are adding less than a single segment worth of data,
@@ -837,7 +837,7 @@ public:
 			seg->unref();
 		}
 		data_.clear();
-		ASSERT("/buffer", length_ == 0);
+		ASSERT_ZERO("/buffer", length_);
 	}
 
 	/*
@@ -898,7 +898,7 @@ public:
 	 */
 	void copyout(BufferSegment **segp, size_t len) const
 	{
-		ASSERT("/buffer", len != 0);
+		ASSERT_NON_ZERO("/buffer", len);
 		ASSERT("/buffer", len <= BUFFER_SEGMENT_SIZE);
 		ASSERT("/buffer", length() >= len);
 		BufferSegment *src = data_.front();
@@ -1057,7 +1057,7 @@ public:
 	 */
 	bool equal(const uint8_t *buf, size_t len) const
 	{
-		ASSERT("/buffer", len != 0);
+		ASSERT_NON_ZERO("/buffer", len);
 		if (len != length())
 			return (false);
 		return (prefix(buf, len));
@@ -1163,7 +1163,7 @@ public:
 	 */
 	void moveout(uint8_t *dst, size_t offset, size_t dstsize)
 	{
-		ASSERT("/buffer", dstsize != 0);
+		ASSERT_NON_ZERO("/buffer", dstsize);
 		ASSERT("/buffer", length() >= offset + dstsize);
 		copyout(dst, offset, dstsize);
 		skip(offset + dstsize);
@@ -1184,7 +1184,7 @@ public:
 	 */
 	void moveout(Buffer *dst, size_t offset, size_t dstsize)
 	{
-		ASSERT("/buffer", dstsize != 0);
+		ASSERT_NON_ZERO("/buffer", dstsize);
 		ASSERT("/buffer", length() >= offset + dstsize);
 		if (offset != 0)
 			skip(offset);
@@ -1197,7 +1197,7 @@ public:
 	 */
 	void moveout(Buffer *dst, size_t dstsize)
 	{
-		ASSERT("/buffer", dstsize != 0);
+		ASSERT_NON_ZERO("/buffer", dstsize);
 		ASSERT("/buffer", length() >= dstsize);
 		if (dstsize == length()) {
 			moveout(dst);
@@ -1246,7 +1246,7 @@ public:
 	 */
 	uint8_t peek(void) const
 	{
-		ASSERT("/buffer", length_ != 0);
+		ASSERT_NON_ZERO("/buffer", length_);
 
 		const BufferSegment *seg = data_.front();
 		return (seg->data()[0]);
@@ -1257,7 +1257,7 @@ public:
 	 */
 	uint8_t pop(void)
 	{
-		ASSERT("/buffer", length_ != 0);
+		ASSERT_NON_ZERO("/buffer", length_);
 
 		segment_list_t::iterator front = data_.begin();
 		BufferSegment *seg = *front;
@@ -1303,11 +1303,11 @@ public:
 		const uint8_t *qe = bigseg->end();
 		size_t qlen = qe - q;
 
-		ASSERT("/buffer", qlen != 0);
+		ASSERT_NON_ZERO("/buffer", qlen);
 
 		for (;;) {
-			ASSERT("/buffer", plen != 0);
-			ASSERT("/buffer", qlen != 0);
+			ASSERT_NON_ZERO("/buffer", plen);
+			ASSERT_NON_ZERO("/buffer", qlen);
 
 			size_t cmplen = std::min(plen, qlen);
 			if (memcmp(q, p, cmplen) != 0)
@@ -1359,12 +1359,12 @@ public:
 			const uint8_t *pe = pfxseg->end();
 			size_t plen = pe - p;
 
-			ASSERT("/buffer", qlen != 0);
-			ASSERT("/buffer", plen != 0);
+			ASSERT_NON_ZERO("/buffer", qlen);
+			ASSERT_NON_ZERO("/buffer", plen);
 
 			for (;;) {
-				ASSERT("/buffer", plen != 0);
-				ASSERT("/buffer", qlen != 0);
+				ASSERT_NON_ZERO("/buffer", plen);
+				ASSERT_NON_ZERO("/buffer", qlen);
 
 				size_t cmplen = std::min(plen, qlen);
 				if (memcmp(q, p, cmplen) != 0)
@@ -1404,7 +1404,7 @@ public:
 		segment_list_t::iterator it;
 		size_t skipped;
 
-		ASSERT("/buffer", bytes != 0);
+		ASSERT_NON_ZERO("/buffer", bytes);
 		ASSERT("/buffer", !empty());
 
 		if (bytes == length()) {
@@ -1460,7 +1460,7 @@ public:
 		segment_list_t::iterator it;
 		size_t trimmed;
 
-		ASSERT("/buffer", bytes != 0);
+		ASSERT_NON_ZERO("/buffer", bytes);
 		ASSERT("/buffer", !empty());
 
 		if (bytes == length()) {
@@ -1519,7 +1519,7 @@ public:
 		segment_list_t::iterator it;
 
 		ASSERT("/buffer", offset <= length_);
-		ASSERT("/buffer", bytes != 0);
+		ASSERT_NON_ZERO("/buffer", bytes);
 		ASSERT("/buffer", offset + bytes <= length_);
 
 		/* Remove from start.  */
@@ -1541,7 +1541,7 @@ public:
 		while (it != data_.end()) {
 			BufferSegment *seg = *it;
 
-			ASSERT("/buffer", bytes != 0);
+			ASSERT_NON_ZERO("/buffer", bytes);
 
 			if (offset >= seg->length()) {
 				++it;
@@ -1609,8 +1609,8 @@ public:
 			bytes -= bytes;
 			break;
 		}
-		ASSERT("/buffer", offset == 0);
-		ASSERT("/buffer", bytes == 0);
+		ASSERT_ZERO("/buffer", offset);
+		ASSERT_ZERO("/buffer", bytes);
 	}
 
 	/*

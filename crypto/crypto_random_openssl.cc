@@ -48,7 +48,7 @@ public:
 
 	Action *generate(size_t len, EventCallback *cb)
 	{
-		ASSERT(log_, len != 0);
+		ASSERT_NON_ZERO(log_, len);
 
 		/*
 		 * We process a single, large, linear byte buffer here rather

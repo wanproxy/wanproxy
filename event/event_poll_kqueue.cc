@@ -54,7 +54,7 @@ EventPoll::EventPoll(void)
 	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
 	if (evcnt == -1)
 		HALT(log_) << "Could not add self-signal event to kqueue.";
-	ASSERT(log_, evcnt == 0);
+	ASSERT_ZERO(log_, evcnt);
 }
 
 EventPoll::~EventPoll()
@@ -104,7 +104,7 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
 	if (evcnt == -1)
 		HALT(log_) << "Could not add event to kqueue.";
-	ASSERT(log_, evcnt == 0);
+	ASSERT_ZERO(log_, evcnt);
 	ASSERT_NULL(log_, poll_handler->action_);
 	poll_handler->callback_ = cb;
 	Action *a = new EventPoll::PollAction(this, type, fd);
@@ -262,7 +262,7 @@ EventPoll::stop(void)
 	int evcnt = ::kevent(state_->kq_, &kev, 1, NULL, 0, NULL);
 	if (evcnt == -1)
 		HALT(log_) << "Could not trigger self-signal event in kqueue.";
-	ASSERT(log_, evcnt == 0);
+	ASSERT_ZERO(log_, evcnt);
 
 	stop_ = true;
 }

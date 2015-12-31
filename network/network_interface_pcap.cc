@@ -201,7 +201,7 @@ NetworkInterfacePCAP::open(const std::string& ifname)
 	}
 
 	rv = pcap_set_buffer_size(pcap, 65536);
-	ASSERT("/network/pcap", rv == 0);
+	ASSERT_ZERO("/network/pcap", rv);
 
 	rv = pcap_activate(pcap);
 	if (rv != 0) {

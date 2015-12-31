@@ -74,11 +74,11 @@ SocketUinet::~SocketUinet()
 
 	ASSERT_NULL(log_, read_action_);
 	ASSERT_NULL(log_, read_callback_);
-	ASSERT(log_, read_amount_remaining_ == 0);
+	ASSERT_ZERO(log_, read_amount_remaining_);
 
 	ASSERT_NULL(log_, write_action_);
 	ASSERT_NULL(log_, write_callback_);
-	ASSERT(log_, write_amount_remaining_ == 0);
+	ASSERT_ZERO(log_, write_amount_remaining_);
 
 	ASSERT_NULL(log_, upcall_action_);
 }
@@ -400,7 +400,7 @@ SocketUinet::read(size_t amount, EventCallback *cb)
 
 	ASSERT_NULL(log_, read_callback_);
 	ASSERT_NULL(log_, read_action_);
-	ASSERT(log_, read_amount_remaining_ == 0);
+	ASSERT_ZERO(log_, read_amount_remaining_);
 
 	read_amount_remaining_ = amount;
 	read_callback_ = cb;
@@ -609,7 +609,7 @@ SocketUinet::write_callback(void)
 
 	struct iovec buf_iov[IOV_MAX];
 	size_t iovcnt = write_buffer_.fill_iovec(buf_iov, std::min(IOV_MAX, UINET_IOV_MAX));
-	ASSERT(log_, iovcnt != 0);
+	ASSERT_NON_ZERO(log_, iovcnt);
 
 	struct uinet_iovec iov[UINET_IOV_MAX];
 	uint64_t write_amount = 0;

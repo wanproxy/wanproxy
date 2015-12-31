@@ -70,7 +70,7 @@ public:
 		std::map<uint64_t, cursor_segment_t>::iterator it;
 		bool collision;
 
-		ASSERT("/xcodec/window", hash != 0);
+		ASSERT_NON_ZERO("/xcodec/window", hash);
 
 		it = present_.find(hash);
 		collision = it != present_.end();

@@ -45,7 +45,7 @@ public:
 
 	~TestGroup()
 	{
-		ASSERT(log_, tests_ != 0);
+		ASSERT_NON_ZERO(log_, tests_);
 
 		INFO(log_) << "Test results for group: " << description_;
 		if (passes_ == tests_) {

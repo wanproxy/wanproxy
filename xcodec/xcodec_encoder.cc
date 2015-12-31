@@ -306,7 +306,7 @@ XCodecEncoder::encode_declaration(Buffer *output, Buffer *input, unsigned offset
 void
 XCodecEncoder::encode_escape(Buffer *output, Buffer *input, unsigned length)
 {
-	ASSERT(log_, length != 0);
+	ASSERT_NON_ZERO(log_, length);
 
 	do {
 		size_t offset;

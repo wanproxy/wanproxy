@@ -115,7 +115,7 @@ Action *
 PipeProducer::output_do(EventCallback *cb)
 {
 	ASSERT_LOCK_OWNED(log_, lock_);
-	ASSERT(log_, output_cork_ == 0);
+	ASSERT_ZERO(log_, output_cork_);
 
 	if (error_) {
 		ASSERT(log_, output_buffer_.empty());
@@ -217,7 +217,7 @@ void
 PipeProducer::uncork(void)
 {
 	ASSERT_LOCK_OWNED(log_, lock_);
-	ASSERT(log_, output_cork_ != 0);
+	ASSERT_NON_ZERO(log_, output_cork_);
 
 	output_cork_--;
 

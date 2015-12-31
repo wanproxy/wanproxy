@@ -239,7 +239,7 @@ ProxySocksConnection::write_complete(Event e)
 		ASSERT(log_, !socks5_authenticated_);
 		ASSERT(log_, socks5_remote_name_ == "");
 		ASSERT(log_, network_address_.empty());
-		ASSERT(log_, network_port_ == 0);
+		ASSERT_ZERO(log_, network_port_);
 
 		socks5_authenticated_ = true;
 		state_ = GetSOCKSVersion;

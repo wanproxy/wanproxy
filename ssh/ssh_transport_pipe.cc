@@ -470,7 +470,7 @@ SSH::TransportPipe::receive_do(void)
 			/* Because msg is a uint8_t, it will always be <= SSH::Message::LocalExtensionRangeEnd.  */
 			DEBUG(log_) << "Using default handler for local extension message.";
 		} else {
-			ASSERT(log_, msg == 0);
+			ASSERT_ZERO(log_, msg);
 			ERROR(log_) << "Message outside of protocol range received.  Passing to default handler, but not expecting much.";
 		}
 

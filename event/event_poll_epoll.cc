@@ -121,7 +121,7 @@ EventPoll::poll(const Type& type, int fd, EventCallback *cb)
 	int rv = ::epoll_ctl(state_->ep_, unique ? EPOLL_CTL_ADD : EPOLL_CTL_MOD, fd, &eev);
 	if (rv == -1)
 		HALT(log_) << "Could not add event to epoll.";
-	ASSERT(log_, rv == 0);
+	ASSERT_ZERO(log_, rv);
 	ASSERT_NULL(log_, poll_handler->action_);
 	poll_handler->callback_ = cb;
 	Action *a = new EventPoll::PollAction(this, type, fd);
@@ -167,7 +167,7 @@ EventPoll::cancel(const Type& type, int fd)
 	int rv = ::epoll_ctl(state_->ep_, unique ? EPOLL_CTL_DEL : EPOLL_CTL_MOD, fd, &eev);
 	if (rv == -1)
 		HALT(log_) << "Could not delete event from epoll.";
-	ASSERT(log_, rv == 0);
+	ASSERT_ZERO(log_, rv);
 }
 
 void

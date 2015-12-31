@@ -156,7 +156,7 @@ EventPoll::wait(int ms)
 			ASSERT(log_, read_poll_.find(fd) != read_poll_.end());
 			read_poll_[fd].callback(Event::Done);
 
-			ASSERT(log_, fdcnt != 0);
+			ASSERT_NON_ZERO(log_, fdcnt);
 			fdcnt--;
 		}
 
@@ -164,7 +164,7 @@ EventPoll::wait(int ms)
 			ASSERT(log_, write_poll_.find(fd) != write_poll_.end());
 			write_poll_[fd].callback(Event::Done);
 
-			ASSERT(log_, fdcnt != 0);
+			ASSERT_NON_ZERO(log_, fdcnt);
 			fdcnt--;
 		}
 	}

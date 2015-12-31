@@ -332,7 +332,7 @@ IOSystem::Handle::write_do(void)
 	 */
 	struct iovec iov[IOV_MAX];
 	size_t iovcnt = write_buffer_.fill_iovec(iov, IOV_MAX);
-	ASSERT(log_, iovcnt != 0);
+	ASSERT_NON_ZERO(log_, iovcnt);
 
 	ssize_t len;
 	if (write_offset_ == -1) {
@@ -371,7 +371,7 @@ IOSystem::Handle::write_do(void)
 		for (i = 0; i < iovcnt; i++) {
 			struct iovec *iovp = &iov[i];
 
-			ASSERT(log_, iovp->iov_len != 0);
+			ASSERT_NON_ZERO(log_, iovp->iov_len);
 
 			len = ::pwrite(fd_, iovp->iov_base, iovp->iov_len,
 				       write_offset_);

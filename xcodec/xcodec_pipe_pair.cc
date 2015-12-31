@@ -536,11 +536,11 @@ XCodecPipePair::decoder_decode_data(void)
 		}
 	}
 	if (!ask.empty()) {
-		ASSERT(log_, nhash != 0);
+		ASSERT_NON_ZERO(log_, nhash);
 		DEBUG(log_) << "Sending <ASK>s.";
 		encoder_produce(&ask);
 	} else {
-		ASSERT(log_, nhash == 0);
+		ASSERT_ZERO(log_, nhash);
 	}
 
 	return (true);
