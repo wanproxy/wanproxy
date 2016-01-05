@@ -259,7 +259,6 @@ void
 SocketUinet::connect_callback(void)
 {
 	ASSERT_LOCK_OWNED(log_, &accept_connect_mtx_);
-
 	ASSERT_NON_NULL(log_, connect_action_);
 	connect_action_->cancel();
 	connect_action_ = NULL;
@@ -571,7 +570,7 @@ SocketUinet::active_send_upcall(struct uinet_socket *, void *arg, int)
 Action *
 SocketUinet::write(Buffer *buffer, EventCallback *cb)
 {
-	ASSERT_LOCK_OWNED(log_, &write_mtx_);
+	ScopedLock _(&write_mtx_);
 
 	ASSERT_NULL(log_, write_callback_);
 	ASSERT_NULL(log_, write_action_);
@@ -600,10 +599,8 @@ SocketUinet::write_schedule(void)
 void
 SocketUinet::write_callback(void)
 {
-	ScopedLock _(&write_mtx_);
-
+	ASSERT_LOCK_OWNED(log_, &write_mtx_);
 	ASSERT_NON_NULL(log_, write_action_);
-
 	write_action_->cancel();
 	write_action_ = NULL;
 
@@ -737,7 +734,7 @@ SocketUinet::upcall_schedule(unsigned kind)
 void
 SocketUinet::upcall_callback(void)
 {
-	ScopedLock _(&upcall_mtx_);
+	ASSERT_LOCK_OWNED(log_, &upcall_mtx_);
 	if (upcall_action_ == NULL) {
 		/*
 		 * This can happen if a thread coming from libuinet
