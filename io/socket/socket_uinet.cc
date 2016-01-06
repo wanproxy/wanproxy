@@ -107,7 +107,7 @@ SocketUinet::accept(SocketEventCallback *cb)
 
 	accept_schedule();
 
-	return (cancellation(this, &SocketUinet::accept_cancel));
+	return (cancellation(&accept_connect_mtx_, this, &SocketUinet::accept_cancel));
 }
 
 void
@@ -152,7 +152,7 @@ SocketUinet::accept_callback(void)
 void
 SocketUinet::accept_cancel(void)
 {
-	ScopedLock _(&accept_connect_mtx_);
+	ASSERT_LOCK_OWNED(log_, &accept_connect_mtx_);
 
 	if (accept_action_ != NULL) {
 		accept_action_->cancel();
@@ -242,7 +242,7 @@ SocketUinet::connect(const std::string& name, EventCallback *cb)
 
 	connect_schedule();
 
-	return (cancellation(this, &SocketUinet::connect_cancel));
+	return (cancellation(&accept_connect_mtx_, this, &SocketUinet::connect_cancel));
 }
 
 void
@@ -282,7 +282,7 @@ SocketUinet::connect_callback(void)
 void
 SocketUinet::connect_cancel(void)
 {
-	ScopedLock _(&accept_connect_mtx_);
+	ASSERT_LOCK_OWNED(log_, &accept_connect_mtx_);
 
 	if (connect_action_ != NULL) {
 		connect_action_->cancel();
@@ -416,7 +416,7 @@ SocketUinet::read(size_t amount, EventCallback *cb)
 	}
 
 	/* Need to wait for deferred read to occur.  */
-	return (cancellation(this, &SocketUinet::read_cancel));
+	return (cancellation(&read_mtx_, this, &SocketUinet::read_cancel));
 }
 
 void
@@ -542,7 +542,7 @@ SocketUinet::read_do(void)
 void
 SocketUinet::read_cancel(void)
 {
-	ScopedLock _(&read_mtx_);
+	ASSERT_LOCK_OWNED(log_, &read_mtx_);
 
 	if (read_action_ != NULL) {
 		read_action_->cancel();
@@ -583,7 +583,7 @@ SocketUinet::write(Buffer *buffer, EventCallback *cb)
 
 	write_schedule();
 
-	return (cancellation(this, &SocketUinet::write_cancel));
+	return (cancellation(&write_mtx_, this, &SocketUinet::write_cancel));
 }
 
 void
@@ -672,7 +672,7 @@ SocketUinet::write_callback(void)
 void
 SocketUinet::write_cancel(void)
 {
-	ScopedLock _(&write_mtx_);
+	ASSERT_LOCK_OWNED(log_, &write_mtx_);
 
 	if (write_action_ != NULL) {
 		write_action_->cancel();
