@@ -29,13 +29,16 @@
 #include <io/pipe/pipe_simple_wrapper.h>
 
 class PipePairSimple : public PipePair {
+	Lock *lock_;
 	PipeSimpleWrapper<PipePairSimple> *incoming_pipe_;
 	PipeSimpleWrapper<PipePairSimple> *outgoing_pipe_;
 protected:
-	PipePairSimple(void)
-	: incoming_pipe_(NULL),
+	PipePairSimple(Lock *lock)
+	: lock_(lock),
+	  incoming_pipe_(NULL),
 	  outgoing_pipe_(NULL)
 	{ }
+
 public:
 	virtual ~PipePairSimple()
 	{
@@ -57,15 +60,17 @@ protected:
 public:
 	Pipe *get_incoming(void)
 	{
+		ASSERT_LOCK_OWNED("/pipe/pair/simple", lock_);
 		ASSERT_NULL("/pipe/pair/simple", incoming_pipe_);
-		incoming_pipe_ = new PipeSimpleWrapper<PipePairSimple>(this, &PipePairSimple::incoming_process);
+		incoming_pipe_ = new PipeSimpleWrapper<PipePairSimple>(lock_, this, &PipePairSimple::incoming_process);
 		return (incoming_pipe_);
 	}
 
 	Pipe *get_outgoing(void)
 	{
+		ASSERT_LOCK_OWNED("/pipe/pair/simple", lock_);
 		ASSERT_NULL("/pipe/pair/simple", outgoing_pipe_);
-		outgoing_pipe_ = new PipeSimpleWrapper<PipePairSimple>(this, &PipePairSimple::outgoing_process);
+		outgoing_pipe_ = new PipeSimpleWrapper<PipePairSimple>(lock_, this, &PipePairSimple::outgoing_process);
 		return (outgoing_pipe_);
 	}
 };
