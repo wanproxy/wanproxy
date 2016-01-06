@@ -94,7 +94,8 @@ FWDProxyConfig::configure(const std::string& name)
 				break;
 			tokens.push_back(word);
 		}
-		ASSERT(log_, !tokens.empty());
+		if (tokens.empty())
+			continue;
 		if (!parse(tokens)) {
 			ERROR(log_) << "Error in configuration directive: " << line;
 
