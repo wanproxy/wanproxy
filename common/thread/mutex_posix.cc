@@ -49,6 +49,13 @@ Mutex::~Mutex()
 void
 Mutex::assert_owned(bool owned, const LogHandle& log, const std::string& file, unsigned line, const std::string& function)
 {
+#ifdef NDEBUG
+	(void)owned;
+	(void)log;
+	(void)file;
+	(void)line;
+	(void)function;
+#else
 	Thread::ID self = Thread::selfID();
 	ASSERT_NON_NULL("/mutex/posix", self);
 
@@ -77,6 +84,7 @@ Mutex::assert_owned(bool owned, const LogHandle& log, const std::string& file, u
 	}
 	HALT(log) << "Lock at " << file << ":" << line << " is owned by another thread; in function " << function;
 	state_->unlock();
+#endif
 }
 
 void
