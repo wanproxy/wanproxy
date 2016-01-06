@@ -40,11 +40,13 @@ public:
 };
 
 class ConditionVariable : public Condition {
+	Mutex mtx_;
 	Action *wait_action_;
 	SimpleCallback *wait_callback_;
 public:
 	ConditionVariable(void)
-	: wait_action_(NULL),
+	: mtx_("ConditionVariable"),
+	  wait_action_(NULL),
 	  wait_callback_(NULL)
 	{ }
 
@@ -56,6 +58,7 @@ public:
 
 	void signal(void)
 	{
+		ScopedLock _(&mtx_);
 		if (wait_callback_ == NULL)
 			return;
 		ASSERT_NULL("/condition/variable", wait_action_);
@@ -65,17 +68,19 @@ public:
 
 	Action *wait(SimpleCallback *cb)
 	{
+		ScopedLock _(&mtx_);
 		ASSERT_NULL("/condition/variable", wait_action_);
 		ASSERT_NULL("/condition/variable", wait_callback_);
 
 		wait_callback_ = cb;
 
-		return (cancellation(this, &ConditionVariable::wait_cancel));
+		return (cancellation(&mtx_, this, &ConditionVariable::wait_cancel));
 	}
 
 private:
 	void wait_cancel(void)
 	{
+		ASSERT_LOCK_OWNED("/condition/variable", &mtx_);
 		if (wait_callback_ != NULL) {
 			ASSERT_NULL("/condition/variable", wait_action_);
 
