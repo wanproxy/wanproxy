@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,17 +24,33 @@
  */
 
 #include <event/event_callback.h>
-#include <event/event_thread.h>
 #include <event/event_system.h>
 
-EventThread::EventThread(void)
-: CallbackThread("EventThread"),
-  interest_queue_mtx_("EventThread::interest_queue"),
+EventSystem::EventSystem(void)
+: td_("EventThread"),
+  poll_(),
+  timeout_(),
+  destroy_(),
+  threads_(),
+  interest_queue_mtx_("EventSystem::interest_queue"),
   interest_queue_()
 { }
 
+Action *
+EventSystem::register_interest(const EventInterest& interest, SimpleCallback *cb)
+{
+	ScopedLock _(&interest_queue_mtx_);
+	CallbackQueue *cbq = interest_queue_[interest];
+	if (cbq == NULL) {
+		cbq = new CallbackQueue();
+		interest_queue_[interest] = cbq;
+	}
+	Action *a = cbq->schedule(cb);
+	return (a);
+}
+
 void
-EventThread::stop(void)
+EventSystem::stop(void)
 {
 	/*
 	 * If we have been told to stop, fire all shutdown events.
@@ -45,9 +61,16 @@ EventThread::stop(void)
 		interest_queue_.erase(EventInterestStop);
 	interest_queue_mtx_.unlock();
 	if (q != NULL && !q->empty()) {
-		INFO(log_) << "Queueing stop handlers.";
+		INFO("/event/system") << "Queueing stop handlers.";
 		q->drain();
 	}
 
-	CallbackThread::stop();
+	/*
+	 * Pass stop notification on to all threads.
+	 */
+	std::deque<Thread *>::const_iterator it;
+	for (it = threads_.begin(); it != threads_.end(); ++it) {
+		Thread *td = *it;
+		td->stop();
+	}
 }

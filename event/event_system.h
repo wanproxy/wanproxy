@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,9 +26,9 @@
 #ifndef	EVENT_EVENT_SYSTEM_H
 #define	EVENT_EVENT_SYSTEM_H
 
+#include <event/callback_thread.h>
 #include <event/destroy_thread.h>
 #include <event/event_poll.h>
-#include <event/event_thread.h>
 #include <event/timeout_thread.h>
 
 /*
@@ -37,18 +37,20 @@
  * towards something thread-oriented.
  */
 
+enum EventInterest {
+	EventInterestStop
+};
+
 class EventSystem {
-	EventThread td_;
+	CallbackThread td_;
 	EventPoll poll_;
 	TimeoutThread timeout_;
 	DestroyThread destroy_;
 	std::deque<Thread *> threads_;
+	Mutex interest_queue_mtx_;
+	std::map<EventInterest, CallbackQueue *> interest_queue_;
 private:
-	EventSystem(void)
-	: td_(),
-	  poll_(),
-	  timeout_()
-	{ }
+	EventSystem(void);
 
 	~EventSystem()
 	{ }
@@ -65,10 +67,7 @@ public:
 		return (poll_.poll(type, fd, cb));
 	}
 
-	Action *register_interest(const EventInterest& interest, SimpleCallback *cb)
-	{
-		return (td_.register_interest(interest, cb));
-	}
+	Action *register_interest(const EventInterest&, SimpleCallback *);
 
 	Action *schedule(CallbackBase *cb)
 	{
@@ -108,14 +107,7 @@ public:
 		}
 	}
 
-	void stop(void)
-	{
-		std::deque<Thread *>::const_iterator it;
-		for (it = threads_.begin(); it != threads_.end(); ++it) {
-			Thread *td = *it;
-			td->stop();
-		}
-	}
+	void stop(void);
 
 	static EventSystem *instance(void)
 	{
