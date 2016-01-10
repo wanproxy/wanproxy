@@ -56,12 +56,6 @@ public:
 		return (a);
 	}
 
-	static EventThread *self(void)
-	{
-		Thread *td = Thread::self();
-		return (dynamic_cast<EventThread *>(td));
-	}
-
 	void stop(void);
 };
 
