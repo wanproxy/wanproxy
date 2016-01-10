@@ -74,6 +74,24 @@ private:
 
 		~PollHandler()
 		{
+			/*
+			 * XXX
+			 * This can only happen due to our lousy
+			 * shutdown behaviour.  It should be fixed
+			 * at some point, but for now better not to
+			 * trip the assertion.  Dreadful.
+			 *
+			 * We can't delete or cancel here as it may
+			 * simply be too late.
+			 */
+			if (callback_ != NULL) {
+				DEBUG("/event/poll/handler") << "Poll handler deleted with outstanding callback.";
+				callback_ = NULL;
+			}
+			if (action_ != NULL) {
+				DEBUG("/event/poll/handler") << "Poll handler deleted with pending action.";
+				action_ = NULL;
+			}
 			ASSERT_NULL("/event/poll/handler", callback_);
 			ASSERT_NULL("/event/poll/handler", action_);
 		}

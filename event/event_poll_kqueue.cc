@@ -59,8 +59,10 @@ EventPoll::EventPoll(void)
 
 EventPoll::~EventPoll()
 {
-	ASSERT(log_, read_poll_.empty());
-	ASSERT(log_, write_poll_.empty());
+	if (!read_poll_.empty())
+		ERROR(log_) << "Exiting with pending read polls.";
+	if (!write_poll_.empty())
+		ERROR(log_) << "Exiting with pending write polls.";
 
 	if (state_ != NULL) {
 		if (state_->kq_ != -1) {
@@ -265,4 +267,25 @@ EventPoll::stop(void)
 	ASSERT_ZERO(log_, evcnt);
 
 	stop_ = true;
+
+#if 0
+	/*
+	 * Signal all pollers as though they have received an error.
+	 *
+	 * XXX
+	 * This should only happen after some timeout period.  We want
+	 * to give threads a chance to clean up after stop has been
+	 * signalled, but not forever.  This is more aggressive than
+	 * we have ever been in the past.
+	 *
+	 * Until the timeout, we should continue to poll away as normal,
+	 * but then go down this path.  And we need to be sure we get
+	 * woken up by the deadline.
+	 */
+	poll_handler_map_t::iterator it;
+	for (it = read_poll_.begin(); it != read_poll_.end(); ++it)
+		it->second.callback(Event(Event::Error, 0));
+	for (it = write_poll_.begin(); it != write_poll_.end(); ++it)
+		it->second.callback(Event(Event::Error, 0));
+#endif
 }
