@@ -75,6 +75,8 @@ EventSystem::worker(void)
 		CallbackThread *td = new CallbackThread("EventWorker");
 		workers_.push_back(td);
 
+		td->start();
+
 		thread_wait(td);
 
 		return (td);
