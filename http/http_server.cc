@@ -98,9 +98,8 @@ HTTPServerHandler::request(Event e, HTTPProtocol::Request req)
 	ASSERT(log_, !words.empty());
 
 	std::string method;
-	words[0].extract(method);
+	words[0].toupper().extract(method);
 	ASSERT(log_, !method.empty());
-	std::transform(method.begin(), method.end(), method.begin(), ::toupper);
 
 	Buffer uri_encoded(words[1]);
 	ASSERT(log_, !uri_encoded.empty());

@@ -1713,6 +1713,44 @@ public:
 	}
 
 	/*
+	 * Converts a string to uppercase.
+	 *
+	 * NB: Is inefficient.  This is mostly for handling ASCII wire protocols,
+	 * and it slowly tries to avoid copies.  It assumes that most of the time,
+	 * you actually have an uppercase input.
+	 */
+	Buffer toupper(void) const
+	{
+		if (empty())
+			return (*this);
+
+		Buffer in = *this;
+		size_t o = 0;
+		while (!in.empty()) {
+			uint8_t ch = in.peek();
+			in.skip(1);
+
+			if (!islower(ch)) {
+				o++;
+				continue;
+			}
+
+			Buffer out;
+			if (o != 0)
+				out.append(this, o);
+			ch = ::toupper(ch);
+			out.append(ch);
+			if (!in.empty())
+				out.append(in.toupper());
+			return (out);
+		}
+		ASSERT("/buffer", in.empty());
+		ASSERT("/buffer", o == length());
+
+		return (*this);
+	}
+
+	/*
 	 * Output operator for strings.
 	 */
 	Buffer& operator<< (const std::string& str)

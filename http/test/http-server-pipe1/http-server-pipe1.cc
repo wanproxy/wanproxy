@@ -133,6 +133,7 @@ public:
 class HTTPServerPipeTest {
 protected:
 	LogHandle log_;
+	Mutex mtx_;
 	TestGroup& group_;
 	SinkStream sink_;
 	HTTPServerPipe pipe_;
@@ -146,6 +147,7 @@ protected:
 public:
 	HTTPServerPipeTest(const LogHandle& log, TestGroup& group, const Buffer& source)
 	: log_(log),
+	  mtx_("HTTPServerPipeTest"),
 	  group_(group),
 	  sink_(),
 	  pipe_(log_ + "/pipe"),
@@ -155,11 +157,12 @@ public:
 	  splice_success_(group, "Splice success."),
 	  request_action_(NULL)
 	{
-		HTTPRequestEventCallback *rcb = callback(this, &HTTPServerPipeTest::request);
+		ScopedLock _(&mtx_);
+		HTTPRequestEventCallback *rcb = callback(&mtx_, this, &HTTPServerPipeTest::request);
 		request_action_ = pipe_.request(rcb);
 
 		splice_ = new Splice(log_ + "/splice", &source_, &pipe_, &sink_);
-		EventCallback *cb = callback(this, &HTTPServerPipeTest::splice_complete);
+		EventCallback *cb = callback(&mtx_, this, &HTTPServerPipeTest::splice_complete);
 		splice_action_ = splice_->start(cb);
 	}
 
