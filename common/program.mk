@@ -67,6 +67,13 @@ ifeq "${OSNAME}" "Linux"
 NO_WERROR=1
 endif
 
+# XXX
+# FreeBSD ports gmake wrongly assumes CXX should be g++, even in
+# ports/packages built for newer FreeBSD that uses Clang.  Good.
+ifeq "${OSNAME}" "FreeBSD"
+CXX=c++
+endif
+
 #CFLAGS+=--std gnu++0x
 #CFLAGS+=-pedantic
 CXXFLAGS+=-Wno-deprecated
