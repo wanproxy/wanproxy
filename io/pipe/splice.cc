@@ -38,6 +38,7 @@
 Splice::Splice(const LogHandle& log, StreamChannel *source, Pipe *pipe, StreamChannel *sink)
 : log_(""),
   mtx_("Splice"),
+  scheduler_(NULL),
   source_(source),
   pipe_(pipe),
   sink_(sink),
@@ -76,11 +77,11 @@ Splice::start(EventCallback *cb)
 	ASSERT(log_, callback_ == NULL && callback_action_ == NULL);
 	callback_ = cb;
 
-	EventCallback *scb = callback(&mtx_, this, &Splice::read_complete);
+	EventCallback *scb = callback(scheduler_, &mtx_, this, &Splice::read_complete);
 	read_action_ = source_->read(0, scb);
 
 	if (pipe_ != NULL) {
-		EventCallback *pcb = callback(&mtx_, this, &Splice::output_complete);
+		EventCallback *pcb = callback(scheduler_, &mtx_, this, &Splice::output_complete);
 		output_action_ = pipe_->output(pcb);
 	}
 
@@ -192,17 +193,17 @@ Splice::read_complete(Event e)
 
 	if (pipe_ != NULL) {
 		ASSERT_NULL(log_, input_action_);
-		EventCallback *cb = callback(&mtx_, this, &Splice::input_complete);
+		EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::input_complete);
 		input_action_ = pipe_->input(&e.buffer_, cb);
 	} else {
 		if (e.type_ == Event::EOS && e.buffer_.empty()) {
-			EventCallback *cb = callback(&mtx_, this, &Splice::shutdown_complete);
+			EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::shutdown_complete);
 			shutdown_action_ = sink_->shutdown(false, true, cb);
 			return;
 		}
 
 		ASSERT_NULL(log_, write_action_);
-		EventCallback *cb = callback(&mtx_, this, &Splice::write_complete);
+		EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::write_complete);
 		write_action_ = sink_->write(&e.buffer_, cb);
 	}
 }
@@ -225,7 +226,7 @@ Splice::input_complete(Event e)
 
 	ASSERT_NULL(log_, read_action_);
 	if (!read_eos_) {
-		EventCallback *cb = callback(&mtx_, this, &Splice::read_complete);
+		EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::read_complete);
 		read_action_ = source_->read(0, cb);
 	} else if (output_eos_) {
 		complete(Event::EOS);
@@ -250,13 +251,13 @@ Splice::output_complete(Event e)
 	}
 
 	if (e.type_ == Event::EOS && e.buffer_.empty()) {
-		EventCallback *cb = callback(&mtx_, this, &Splice::shutdown_complete);
+		EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::shutdown_complete);
 		shutdown_action_ = sink_->shutdown(false, true, cb);
 		return;
 	}
 
 	ASSERT_NULL(log_, write_action_);
-	EventCallback *cb = callback(&mtx_, this, &Splice::write_complete);
+	EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::write_complete);
 	write_action_ = sink_->write(&e.buffer_, cb);
 }
 
@@ -278,17 +279,17 @@ Splice::write_complete(Event e)
 
 	if (pipe_ != NULL) {
 		ASSERT_NULL(log_, output_action_);
-		EventCallback *cb = callback(&mtx_, this, &Splice::output_complete);
+		EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::output_complete);
 		output_action_ = pipe_->output(cb);
 	} else {
 		if (read_eos_) {
 			if (shutdown_action_ == NULL) {
-				EventCallback *cb = callback(&mtx_, this, &Splice::shutdown_complete);
+				EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::shutdown_complete);
 				shutdown_action_ = sink_->shutdown(false, true, cb);
 				return;
 			}
 		} else {
-			EventCallback *cb = callback(&mtx_, this, &Splice::read_complete);
+			EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::read_complete);
 			read_action_ = source_->read(0, cb);
 		}
 	}

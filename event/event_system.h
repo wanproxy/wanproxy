@@ -49,6 +49,7 @@ class EventSystem {
 	std::deque<Thread *> threads_;
 	Mutex interest_queue_mtx_;
 	std::map<EventInterest, CallbackQueue *> interest_queue_;
+	std::vector<CallbackThread *> workers_;
 private:
 	EventSystem(void);
 
@@ -83,6 +84,8 @@ public:
 	{
 		threads_.push_back(td);
 	}
+
+	CallbackScheduler *worker(void);
 
 	void start(void)
 	{

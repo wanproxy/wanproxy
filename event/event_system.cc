@@ -26,6 +26,8 @@
 #include <event/event_callback.h>
 #include <event/event_system.h>
 
+#define	EVENT_SYSTEM_WORKER_MAX		8
+
 EventSystem::EventSystem(void)
 : td_("EventThread"),
   poll_(),
@@ -33,7 +35,8 @@ EventSystem::EventSystem(void)
   destroy_(),
   threads_(),
   interest_queue_mtx_("EventSystem::interest_queue"),
-  interest_queue_()
+  interest_queue_(),
+  workers_()
 { }
 
 Action *
@@ -47,6 +50,39 @@ EventSystem::register_interest(const EventInterest& interest, SimpleCallback *cb
 	}
 	Action *a = cbq->schedule(cb);
 	return (a);
+}
+
+/*
+ * Request an EventThread to submit work to.
+ *
+ * For now these are primarily for known long-running or demanding tasks,
+ * and normal stff goes through the EventThread instead.  Eventually, we
+ * want something like this to be the norm, and to have categories for
+ * them, so that we can increase locality of reference, or even have a
+ * variety of strategies available so that we could ensure heterogenous
+ * workloads to maximize parallelism.
+ *
+ * XXX All kinds of configuration and seatbelts needed here.
+ *
+ * For now we allow up to EVENT_SYSTEM_WORKER_MAX threads to be created.
+ */
+CallbackScheduler *
+EventSystem::worker(void)
+{
+	static unsigned wcnt;
+
+	if (workers_.size() < EVENT_SYSTEM_WORKER_MAX) {
+		CallbackThread *td = new CallbackThread("EventWorker");
+		workers_.push_back(td);
+
+		thread_wait(td);
+
+		return (td);
+	}
+
+	CallbackThread *td = workers_[wcnt];
+	wcnt = (wcnt + 1) % EVENT_SYSTEM_WORKER_MAX;
+	return (td);
 }
 
 void

@@ -30,6 +30,11 @@
 
 /*
  * PipeProducer is a pipe with a producer-consumer API.
+ *
+ * XXX
+ * We want to make it possible for the caller to request that the work be
+ * done in a particular thread, and then here we can defer consume() to a
+ * callback run in a specified CallbackScheduler.
  */
 
 PipeProducer::PipeProducer(const LogHandle& log, Lock *lock)
