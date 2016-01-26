@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,8 +26,6 @@
 #ifndef	EVENT_ACTION_H
 #define	EVENT_ACTION_H
 
-#include <common/thread/lock.h>
-
 class Action {
 	bool cancelled_;
 protected:
@@ -52,95 +50,5 @@ public:
 		delete this;
 	}
 };
-
-class Cancellable : public Action {
-protected:
-	Cancellable(void)
-	: Action()
-	{ }
-
-	virtual ~Cancellable()
-	{ }
-
-private:
-	void do_cancel(void)
-	{
-		cancel();
-	}
-
-	virtual void cancel(void) = 0;
-};
-
-template<class C>
-class Cancellation : public Cancellable {
-	typedef void (C::*const method_t)(void);
-
-	Lock *lock_;
-	C *const obj_;
-	method_t method_;
-public:
-	template<typename T>
-	Cancellation(Lock *lock, C *obj, T method)
-	: lock_(lock),
-	  obj_(obj),
-	  method_(method)
-	{
-		ASSERT_LOCK_OWNED("/cancellation", lock_);
-	}
-
-	~Cancellation()
-	{ }
-
-private:
-	void cancel(void)
-	{
-		ScopedLock _(lock_);
-		(obj_->*method_)();
-	}
-};
-
-template<class C, typename A>
-class CancellationArg : public Cancellable {
-	typedef void (C::*const method_t)(A);
-
-	Lock *lock_;
-	C *const obj_;
-	method_t method_;
-	A arg_;
-public:
-	template<typename T>
-	CancellationArg(Lock *lock, C *obj, T method, A arg)
-	: lock_(lock),
-	  obj_(obj),
-	  method_(method),
-	  arg_(arg)
-	{
-		ASSERT_LOCK_OWNED("/cancellation", lock_);
-	}
-
-	~CancellationArg()
-	{ }
-
-private:
-	void cancel(void)
-	{
-		ScopedLock _(lock_);
-		(obj_->*method_)(arg_);
-	}
-};
-
-template<class C, typename T>
-Action *cancellation(Lock *lock, C *obj, T method)
-{
-	Action *a = new Cancellation<C>(lock, obj, method);
-	return (a);
-}
-
-template<class C, typename T, typename A>
-Action *cancellation(Lock *lock, C *obj, T method, A arg)
-{
-	Action *a = new CancellationArg<C, A>(lock, obj, method, arg);
-	return (a);
-}
 
 #endif /* !EVENT_ACTION_H */

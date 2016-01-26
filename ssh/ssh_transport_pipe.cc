@@ -26,6 +26,7 @@
 #include <common/endian.h>
 #include <common/thread/mutex.h>
 
+#include <event/cancellation.h>
 #include <event/event_callback.h>
 
 #include <http/http_protocol.h>

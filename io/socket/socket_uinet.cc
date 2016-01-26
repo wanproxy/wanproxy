@@ -27,6 +27,7 @@
 
 #include <errno.h>
 
+#include <event/cancellation.h>
 #include <event/event_callback.h>
 
 #include <io/io_uinet.h>

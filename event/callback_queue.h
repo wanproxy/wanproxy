@@ -32,6 +32,7 @@
 #include <common/thread/sleep_queue.h>
 
 #include <event/callback.h>
+#include <event/cancellation.h>
 
 class CallbackQueue : public CallbackScheduler {
 	class CallbackAction : public Cancellable {

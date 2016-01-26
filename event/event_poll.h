@@ -31,6 +31,8 @@
 #include <common/thread/mutex.h>
 #include <common/thread/thread.h>
 
+#include <event/cancellation.h>
+
 struct EventPollState;
 
 class EventPoll : public Thread {

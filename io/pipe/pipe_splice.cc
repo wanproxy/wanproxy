@@ -25,6 +25,7 @@
 
 #include <common/thread/mutex.h>
 
+#include <event/cancellation.h>
 #include <event/event_callback.h>
 
 #include <io/pipe/pipe.h>
