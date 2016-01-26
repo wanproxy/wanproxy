@@ -34,7 +34,9 @@
 #define	SPEED_TEST_TIMER_MS	1000
 
 class SpeedTest {
+protected:
 	Mutex mtx_;
+public:
 	Action *callback_action_;
 	Action *timeout_action_;
 public:
@@ -43,6 +45,7 @@ public:
 	  callback_action_(NULL),
 	  timeout_action_(NULL)
 	{
+		ScopedLock _(&mtx_);
 		timeout_action_ = EventSystem::instance()->timeout(SPEED_TEST_TIMER_MS, callback(&mtx_, this, &SpeedTest::timer));
 	}
 
@@ -55,6 +58,7 @@ public:
 private:
 	void callback_complete(void)
 	{
+		ASSERT_LOCK_OWNED("/speed/test", &mtx_);
 		callback_action_->cancel();
 		callback_action_ = NULL;
 
@@ -63,6 +67,7 @@ private:
 
 	void timer(void)
 	{
+		ASSERT_LOCK_OWNED("/speed/test", &mtx_);
 		timeout_action_->cancel();
 		timeout_action_ = NULL;
 
@@ -79,6 +84,7 @@ private:
 protected:
 	void schedule(void)
 	{
+		ASSERT_LOCK_OWNED("/speed/test", &mtx_);
 		ASSERT_NULL("/speed/test", callback_action_);
 		callback_action_ = callback(&mtx_, this, &SpeedTest::callback_complete)->schedule();
 	}

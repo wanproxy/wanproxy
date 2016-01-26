@@ -34,6 +34,7 @@ public:
 	CallbackSpeed(void)
 	: callback_count_(0)
 	{
+		ScopedLock _(&mtx_);
 		perform();
 	}
 
