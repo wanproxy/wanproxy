@@ -1,3 +1,0 @@
-o) Do all pcap processing in a separate thread and do pcap_breakloop on stop.
-   This way blocking behavior is OK.  Plus we can use pcap_loop instead of
-   pcap_dispatch.
