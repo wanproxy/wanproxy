@@ -44,7 +44,7 @@ TimeoutQueue::append(uintmax_t ms, SimpleCallback *cb)
 		queue = new CallbackQueue();
 		timeout_queue_[deadline] = queue;
 	}
-	Action *a = queue->schedule(cb);
+	Action *a = queue->append(cb);
 	return (a);
 }
 

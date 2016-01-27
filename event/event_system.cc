@@ -48,7 +48,7 @@ EventSystem::register_interest(const EventInterest& interest, SimpleCallback *cb
 		cbq = new CallbackQueue();
 		interest_queue_[interest] = cbq;
 	}
-	Action *a = cbq->schedule(cb);
+	Action *a = cbq->append(cb);
 	return (a);
 }
 

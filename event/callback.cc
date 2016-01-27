@@ -26,6 +26,17 @@
 #include <event/event_callback.h>
 #include <event/event_system.h>
 
+void
+CallbackBase::cancel(void)
+{
+	ASSERT_LOCK_OWNED("/callback/base", lock_);
+	ASSERT("/callback/base", scheduled_);
+	ASSERT_NON_NULL("/callback/base", scheduler_);
+	scheduler_->cancel(this);
+	scheduled_ = false;
+	delete this;
+}
+
 Action *
 CallbackBase::schedule(void)
 {

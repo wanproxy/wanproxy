@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,16 +40,19 @@ public:
 	virtual ~CallbackScheduler()
 	{ }
 
+	virtual void cancel(CallbackBase *) = 0;
 	virtual Action *schedule(CallbackBase *) = 0;
 };
 
-class CallbackBase {
+class CallbackBase : private Action {
 	CallbackScheduler *scheduler_;
 	Lock *lock_;
+	bool scheduled_;
 protected:
 	CallbackBase(CallbackScheduler *scheduler, Lock *xlock)
 	: scheduler_(scheduler),
-	  lock_(xlock)
+	  lock_(xlock),
+	  scheduled_(false)
 	{ }
 
 public:
@@ -57,14 +60,24 @@ public:
 	{ }
 
 public:
-	void cancel(void)
-	{
-		delete this;
-	}
+	void cancel(void);
 
 	virtual void execute(void) = 0;
 
 	Action *schedule(void);
+
+	Action *scheduled(CallbackScheduler *scheduler)
+	{
+		/* Pin anything not already pinned.  */
+		if (scheduler_ == NULL)
+			scheduler_ = scheduler;
+		/* It must not be pinned elsewhere.  */
+		ASSERT("/callback/base", scheduler_ == scheduler);
+		/* It must not already be scheduled.  */
+		ASSERT("/callback/base", !scheduled_);
+		scheduled_ = true;
+		return (this);
+	}
 
 	Lock *lock(void) const
 	{

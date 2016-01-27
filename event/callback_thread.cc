@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,18 +48,17 @@ CallbackThread::schedule(CallbackBase *cb)
 	queue_.push_back(cb);
 	if (need_wakeup && idle_)
 		sleepq_.signal();
-	return (cancellation(&mtx_, this, &CallbackThread::cancel, cb));
+	return (cb->scheduled(this));
 }
 
 void
 CallbackThread::cancel(CallbackBase *cb)
 {
-	ASSERT_LOCK_OWNED(log_, cb->lock());
-	ASSERT_LOCK_OWNED(log_, &mtx_);
+	ScopedLock _(&mtx_);
 
+	ASSERT_LOCK_OWNED(log_, cb->lock());
 	if (inflight_ == cb) {
 		inflight_ = NULL;
-		cb->cancel();
 		return;
 	}
 
@@ -68,7 +67,6 @@ CallbackThread::cancel(CallbackBase *cb)
 		if (*it != cb)
 			continue;
 		queue_.erase(it);
-		cb->cancel();
 		return;
 	}
 

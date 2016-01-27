@@ -34,7 +34,7 @@
 #include <event/callback.h>
 #include <event/cancellation.h>
 
-class CallbackQueue : public CallbackScheduler {
+class CallbackQueue {
 	class CallbackAction : public Action {
 	public:
 		CallbackQueue *const queue_;
@@ -79,7 +79,7 @@ public:
 		ASSERT("/callback/queue", queue_.empty());
 	}
 
-	Action *schedule(CallbackBase *cb)
+	Action *append(CallbackBase *cb)
 	{
 		CallbackAction *a = new CallbackAction(this, cb);
 
