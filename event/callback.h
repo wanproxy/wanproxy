@@ -57,6 +57,11 @@ public:
 	{ }
 
 public:
+	void cancel(void)
+	{
+		delete this;
+	}
+
 	virtual void execute(void) = 0;
 
 	Action *schedule(void);

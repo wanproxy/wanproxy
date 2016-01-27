@@ -59,7 +59,7 @@ CallbackThread::cancel(CallbackBase *cb)
 
 	if (inflight_ == cb) {
 		inflight_ = NULL;
-		delete cb;
+		cb->cancel();
 		return;
 	}
 
@@ -68,7 +68,7 @@ CallbackThread::cancel(CallbackBase *cb)
 		if (*it != cb)
 			continue;
 		queue_.erase(it);
-		delete cb;
+		cb->cancel();
 		return;
 	}
 
