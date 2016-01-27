@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2011-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,7 +26,6 @@
 #include <common/endian.h>
 #include <common/thread/mutex.h>
 
-#include <event/cancellation.h>
 #include <event/event_callback.h>
 
 #include <http/http_protocol.h>
@@ -54,9 +53,11 @@ SSH::TransportPipe::TransportPipe(Session *session)
   state_(GetIdentificationString),
   input_buffer_(),
   first_block_(),
+  receive_cancel_(&mtx_, this, &TransportPipe::receive_cancel),
   receive_callback_(NULL),
   receive_action_(NULL),
   ready_(false),
+  ready_cancel_(&mtx_, this, &TransportPipe::ready_cancel),
   ready_callback_(NULL),
   ready_action_(NULL)
 {
@@ -96,7 +97,7 @@ SSH::TransportPipe::receive(EventCallback *cb)
 	receive_do();
 
 	if (receive_callback_ != NULL)
-		return (cancellation(&mtx_, this, &SSH::TransportPipe::receive_cancel));
+		return (&receive_cancel_);
 
 	ASSERT_NON_NULL(log_, receive_action_);
 	Action *a = receive_action_;
@@ -182,7 +183,7 @@ SSH::TransportPipe::ready(SimpleCallback *cb)
 
 	ready_callback_ = cb;
 
-	return (cancellation(&mtx_, this, &SSH::TransportPipe::ready_cancel));
+	return (&ready_cancel_);
 }
 
 void

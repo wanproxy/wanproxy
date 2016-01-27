@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,7 +25,6 @@
 
 #include <common/thread/mutex.h>
 
-#include <event/cancellation.h>
 #include <event/event_callback.h>
 
 #include <io/pipe/pipe.h>
@@ -41,6 +40,7 @@ PipeSplice::PipeSplice(Pipe *source, Pipe *sink)
   source_(source),
   sink_(sink),
   source_eos_(false),
+  cancel_(&mtx_, this, &PipeSplice::cancel),
   action_(NULL),
   callback_(NULL)
 { }
@@ -64,7 +64,7 @@ PipeSplice::start(EventCallback *scb)
 
 	callback_ = scb;
 
-	return (cancellation(&mtx_, this, &PipeSplice::cancel));
+	return (&cancel_);
 }
 
 void

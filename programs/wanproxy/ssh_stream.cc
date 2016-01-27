@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2012-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,7 +27,6 @@
 #include <common/endian.h>
 #include <common/thread/mutex.h>
 
-#include <event/cancellation.h>
 #include <event/event_callback.h>
 
 #include <io/pipe/pipe.h>
@@ -57,13 +56,16 @@ SSHStream::SSHStream(const LogHandle& log, const SSHProxyConfig *ssh_config, SSH
   pipe_(NULL),
   splice_(NULL),
   splice_action_(NULL),
+  start_cancel_(&mtx_, this, &SSHStream::start_cancel),
   start_callback_(NULL),
   start_action_(NULL),
+  read_cancel_(&mtx_, this, &SSHStream::read_cancel),
   read_callback_(NULL),
   read_action_(NULL),
   input_buffer_(),
   ready_(false),
   ready_action_(NULL),
+  write_cancel_(&mtx_, this, &SSHStream::write_cancel),
   write_callback_(NULL),
   write_action_(NULL)
 {
@@ -109,7 +111,7 @@ SSHStream::start(Socket *socket, SimpleCallback *cb)
 	EventCallback *scb = callback(&mtx_, this, &SSHStream::splice_complete);
 	splice_action_ = splice_->start(scb);
 
-	return (cancellation(&mtx_, this, &SSHStream::start_cancel));
+	return (&start_cancel_);
 }
 
 Action *
@@ -150,7 +152,7 @@ SSHStream::read(size_t amt, EventCallback *cb)
 	EventCallback *rcb = callback(&mtx_, this, &SSHStream::receive_complete);
 	read_action_ = pipe_->receive(rcb);
 
-	return (cancellation(&mtx_, this, &SSHStream::read_cancel));
+	return (&read_cancel_);
 }
 
 Action *
@@ -166,7 +168,7 @@ SSHStream::write(Buffer *buf, EventCallback *cb)
 
 	if (!ready_) {
 		write_callback_ = cb;
-		return (cancellation(&mtx_, this, &SSHStream::write_cancel));
+		return (&write_cancel_);
 	}
 
 	write_do();

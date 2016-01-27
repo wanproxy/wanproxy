@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,11 +44,13 @@ IOSystem::Handle::Handle(CallbackScheduler *scheduler, int fd, Channel *owner)
   scheduler_(scheduler),
   fd_(fd),
   owner_(owner),
+  read_cancel_(&mtx_, this, &Handle::read_cancel),
   read_offset_(-1),
   read_amount_(0),
   read_buffer_(),
   read_callback_(NULL),
   read_action_(NULL),
+  write_cancel_(&mtx_, this, &Handle::write_cancel),
   write_offset_(-1),
   write_buffer_(),
   write_callback_(NULL),

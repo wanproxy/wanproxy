@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2009-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,7 +25,6 @@
 
 #include <common/thread/mutex.h>
 
-#include <event/cancellation.h>
 #include <event/event_callback.h>
 
 #include <io/channel.h>
@@ -43,6 +42,7 @@ Splice::Splice(const LogHandle& log, StreamChannel *source, Pipe *pipe, StreamCh
   source_(source),
   pipe_(pipe),
   sink_(sink),
+  cancel_(&mtx_, this, &Splice::cancel),
   callback_(NULL),
   callback_action_(NULL),
   read_eos_(false),
@@ -86,7 +86,7 @@ Splice::start(EventCallback *cb)
 		output_action_ = pipe_->output(pcb);
 	}
 
-	return (cancellation(&mtx_, this, &Splice::cancel));
+	return (&cancel_);
 }
 
 void

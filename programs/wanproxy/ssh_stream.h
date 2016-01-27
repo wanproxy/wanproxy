@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2012-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +26,8 @@
 #ifndef	PROGRAMS_WANPROXY_SSH_STREAM_H
 #define	PROGRAMS_WANPROXY_SSH_STREAM_H
 
+#include <event/cancellation.h>
+
 #include <io/channel.h>
 
 #include <ssh/ssh_session.h>
@@ -47,13 +49,20 @@ class SSHStream : public StreamChannel {
 	SSH::TransportPipe *pipe_;
 	Splice *splice_;
 	Action *splice_action_;
+
+	Cancellation<SSHStream> start_cancel_;
 	SimpleCallback *start_callback_;
 	Action *start_action_;
+
+	Cancellation<SSHStream> read_cancel_;
 	EventCallback *read_callback_;
 	Action *read_action_;
 	Buffer input_buffer_;
+
 	bool ready_;
 	Action *ready_action_;
+
+	Cancellation<SSHStream> write_cancel_;
 	EventCallback *write_callback_;
 	Action *write_action_;
 public:

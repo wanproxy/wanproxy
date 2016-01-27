@@ -55,7 +55,6 @@ private:
 	{
 		ScopedLock _(lock_);
 		(obj_->*method_)();
-		delete this;
 	}
 };
 
@@ -89,13 +88,6 @@ private:
 		delete this;
 	}
 };
-
-template<class C, typename T>
-Action *cancellation(Lock *lock, C *obj, T method)
-{
-	Action *a = new Cancellation<C>(lock, obj, method);
-	return (a);
-}
 
 template<class C, typename T, typename A>
 Action *cancellation(Lock *lock, C *obj, T method, A arg)

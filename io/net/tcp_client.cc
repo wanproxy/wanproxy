@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,6 +37,7 @@ TCPClient::TCPClient(SocketImpl impl, SocketAddressFamily family)
   family_(family),
   socket_(NULL),
   close_action_(NULL),
+  connect_cancel_(&mtx_, this, &TCPClient::connect_cancel),
   connect_action_(NULL),
   connect_callback_(NULL)
 { }
@@ -100,7 +101,7 @@ TCPClient::connect(const std::string& iface, const std::string& name, SocketEven
 	connect_action_ = socket_->connect(name, cb);
 	connect_callback_ = ccb;
 
-	return (cancellation(&mtx_, this, &TCPClient::connect_cancel));
+	return (&connect_cancel_);
 }
 
 void

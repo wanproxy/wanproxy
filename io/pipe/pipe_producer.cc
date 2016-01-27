@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,7 +23,6 @@
  * SUCH DAMAGE.
  */
 
-#include <event/cancellation.h>
 #include <event/event_callback.h>
 
 #include <io/pipe/pipe.h>
@@ -41,6 +40,7 @@
 PipeProducer::PipeProducer(const LogHandle& log, Lock *lock)
 : log_(log),
   lock_(lock),
+  output_cancel_(lock_, this, &PipeProducer::output_cancel),
   output_buffer_(),
   output_action_(NULL),
   output_callback_(NULL),
@@ -97,7 +97,7 @@ PipeProducer::output(EventCallback *cb)
 
 	output_callback_ = cb;
 
-	return (cancellation(lock_, this, &PipeProducer::output_cancel));
+	return (&output_cancel_);
 }
 
 void

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2009-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +26,8 @@
 #ifndef	IO_PIPE_SPLICE_PAIR_H
 #define	IO_PIPE_SPLICE_PAIR_H
 
+#include <event/cancellation.h>
+
 class Splice;
 
 class SplicePair {
@@ -36,6 +38,7 @@ class SplicePair {
 	Splice *left_;
 	Splice *right_;
 
+	Cancellation<SplicePair> cancel_;
 	EventCallback *callback_;
 	Action *callback_action_;
 

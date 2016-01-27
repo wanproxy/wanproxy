@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -179,7 +179,7 @@ IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, EventCallbac
 		ASSERT_NON_NULL(log_, h->read_callback_);
 		h->read_action_ = h->read_schedule();
 		ASSERT_NON_NULL(log_, h->read_action_);
-		return (cancellation(&h->mtx_, h, &IOSystem::Handle::read_cancel));
+		return (&h->read_cancel_);
 	}
 	ASSERT_NULL(log_, h->read_callback_);
 	return (a);
@@ -212,7 +212,7 @@ IOSystem::write(int fd, Channel *owner, off_t offset, Buffer *buffer, EventCallb
 		ASSERT_NON_NULL(log_, h->write_callback_);
 		h->write_action_ = h->write_schedule();
 		ASSERT_NON_NULL(log_, h->write_action_);
-		return (cancellation(&h->mtx_, h, &IOSystem::Handle::write_cancel));
+		return (&h->write_cancel_);
 	}
 	ASSERT_NULL(log_, h->write_callback_);
 	return (a);

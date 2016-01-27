@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2011-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,6 +48,7 @@ HTTPServerPipe::HTTPServerPipe(const LogHandle& log)
   buffer_(),
   request_(),
   last_header_(),
+  cancel_(&mtx_, this, &HTTPServerPipe::cancel),
   action_(NULL),
   callback_(NULL)
 { }
@@ -69,7 +70,7 @@ HTTPServerPipe::request(HTTPRequestEventCallback *cb)
 		return (schedule_callback(cb));
 
 	callback_ = cb;
-	return (cancellation(&mtx_, this, &HTTPServerPipe::cancel));
+	return (&cancel_);
 }
 
 void

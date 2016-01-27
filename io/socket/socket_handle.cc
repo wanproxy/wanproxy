@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,8 +48,10 @@ SocketHandle::SocketHandle(int fd, int domain, int socktype, int protocol)
   StreamHandle(fd),
   log_("/socket/handle"),
   mtx_("SocketHandle"),
+  accept_cancel_(&mtx_, this, &SocketHandle::accept_cancel),
   accept_action_(NULL),
   accept_callback_(NULL),
+  connect_cancel_(&mtx_, this, &SocketHandle::connect_cancel),
   connect_callback_(NULL),
   connect_action_(NULL)
 {
@@ -73,7 +75,7 @@ SocketHandle::accept(SocketEventCallback *cb)
 
 	accept_callback_ = cb;
 	accept_action_ = accept_schedule();
-	return (cancellation(&mtx_, this, &SocketHandle::accept_cancel));
+	return (&accept_cancel_);
 }
 
 bool
@@ -155,7 +157,7 @@ SocketHandle::connect(const std::string& name, EventCallback *cb)
 	default:
 		HALT(log_) << "Connect returned unexpected value: " << rv;
 	}
-	return (cancellation(&mtx_, this, &SocketHandle::connect_cancel));
+	return (&connect_cancel_);
 }
 
 bool

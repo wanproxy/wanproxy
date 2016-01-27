@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +26,8 @@
 #ifndef	IO_PIPE_PIPE_PRODUCER_H
 #define	IO_PIPE_PIPE_PRODUCER_H
 
+#include <event/cancellation.h>
+
 class Action;
 
 class PipeProducer : public Pipe {
@@ -34,6 +36,7 @@ protected:
 
 private:
 	Lock *lock_;
+	Cancellation<PipeProducer> output_cancel_;
 	Buffer output_buffer_;
 	Action *output_action_;
 	EventCallback *output_callback_;

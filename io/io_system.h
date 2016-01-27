@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,6 +30,8 @@
 
 #include <common/thread/mutex.h>
 
+#include <event/cancellation.h>
+
 class CallbackScheduler;
 class CallbackThread;
 class Channel;
@@ -44,12 +46,14 @@ class IOSystem {
 		int fd_;
 		Channel *owner_;
 
+		Cancellation<Handle> read_cancel_;
 		off_t read_offset_;
 		size_t read_amount_;
 		Buffer read_buffer_;
 		EventCallback *read_callback_;
 		Action *read_action_;
 
+		Cancellation<Handle> write_cancel_;
 		off_t write_offset_;
 		Buffer write_buffer_;
 		EventCallback *write_callback_;

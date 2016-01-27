@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2009-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,7 +25,6 @@
 
 #include <common/thread/mutex.h>
 
-#include <event/cancellation.h>
 #include <event/event_callback.h>
 
 #include <io/pipe/splice.h>
@@ -40,6 +39,7 @@ SplicePair::SplicePair(Splice *left, Splice *right)
   mtx_("SplicePair"),
   left_(left),
   right_(right),
+  cancel_(&mtx_, this, &SplicePair::cancel),
   callback_(NULL),
   callback_action_(NULL),
   left_action_(NULL),
@@ -70,7 +70,7 @@ SplicePair::start(EventCallback *cb)
 	EventCallback *rcb = callback(&mtx_, this, &SplicePair::right_splice_complete);
 	right_action_ = right_->start(rcb);
 
-	return (cancellation(&mtx_, this, &SplicePair::cancel));
+	return (&cancel_);
 }
 
 void

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  * Copyright (c) 2013 Patrick Kelsey. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,6 +27,8 @@
 #ifndef	IO_SOCKET_SOCKET_HANDLE_H
 #define	IO_SOCKET_SOCKET_HANDLE_H
 
+#include <event/cancellation.h>
+
 #include <io/stream_handle.h>
 #include <io/socket/socket.h>
 
@@ -35,8 +37,10 @@ class SocketHandle : public Socket, public StreamHandle {
 
 	LogHandle log_;
 	Mutex mtx_;
+	Cancellation<SocketHandle> accept_cancel_;
 	Action *accept_action_;
 	SocketEventCallback *accept_callback_;
+	Cancellation<SocketHandle> connect_cancel_;
 	EventCallback *connect_callback_;
 	Action *connect_action_;
 

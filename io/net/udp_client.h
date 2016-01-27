@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +26,8 @@
 #ifndef	IO_NET_UDP_CLIENT_H
 #define	IO_NET_UDP_CLIENT_H
 
+#include <event/cancellation.h>
+
 #include <io/socket/socket.h>
 
 class UDPClient {
@@ -39,6 +41,7 @@ class UDPClient {
 
 	Action *close_action_;
 
+	Cancellation<UDPClient> connect_cancel_;
 	Action *connect_action_;
 	SocketEventCallback *connect_callback_;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2011-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +26,7 @@
 #ifndef	HTTP_HTTP_SERVER_PIPE_H
 #define	HTTP_HTTP_SERVER_PIPE_H
 
+#include <event/cancellation.h>
 #include <event/event.h>
 #include <event/typed_pair_callback.h>
 
@@ -52,6 +53,7 @@ class HTTPServerPipe : public PipeProducer {
 	HTTPProtocol::Request request_;
 	std::string last_header_;
 
+	Cancellation<HTTPServerPipe> cancel_;
 	Action *action_;
 	HTTPRequestEventCallback *callback_;
 public:

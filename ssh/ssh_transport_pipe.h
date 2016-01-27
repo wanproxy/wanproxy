@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2011-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,6 +25,8 @@
 
 #ifndef	SSH_SSH_TRANSPORT_PIPE_H
 #define	SSH_SSH_TRANSPORT_PIPE_H
+
+#include <event/cancellation.h>
 
 #include <io/pipe/pipe.h>
 #include <io/pipe/pipe_producer.h>
@@ -53,10 +55,12 @@ namespace SSH {
 		Buffer input_buffer_;
 		Buffer first_block_;
 
+		Cancellation<TransportPipe> receive_cancel_;
 		EventCallback *receive_callback_;
 		Action *receive_action_;
 
 		bool ready_;
+		Cancellation<TransportPipe> ready_cancel_;
 		SimpleCallback *ready_callback_;
 		Action *ready_action_;
 	public:
