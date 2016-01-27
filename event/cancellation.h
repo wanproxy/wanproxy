@@ -30,6 +30,18 @@
 
 #include <event/action.h>
 
+/*
+ * TODO
+ * It would be nice to have these cancellations track their state,
+ * to help detect programming errors, namely whether they are waiting
+ * to be cancelled, have never been used, or have been used and
+ * cancelled.
+ */
+
+/*
+ * This is a persistent cancellation which invokes a method on an
+ * object with a predetermined lock held.
+ */
 template<class C>
 class Cancellation : public Action {
 	typedef void (C::*const method_t)(void);
@@ -58,6 +70,11 @@ private:
 	}
 };
 
+/*
+ * This is an ephemeral cancellation which is created to be paired
+ * with a specific captured parameter, and which is destroyed once
+ * it has been fired.
+ */
 template<class C, typename A>
 class CancellationArg : public Action {
 	typedef void (C::*const method_t)(A);
