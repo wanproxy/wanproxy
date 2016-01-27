@@ -35,7 +35,7 @@
 #define	NMUTEXES	23
 
 namespace {
-	static EventThread *event_threads[NTHREADS];
+	static CallbackThread *event_threads[NTHREADS];
 }
 
 class CallbackManySpeed {
@@ -131,7 +131,7 @@ main(void)
 
 	unsigned i;
 	for (i = 0; i < NTHREADS; i++) {
-		EventThread *td = new EventThread();
+		CallbackThread *td = new CallbackThread("CallbackThread");
 		td->start();
 		EventSystem::instance()->thread_wait(td);
 		event_threads[i] = td;
