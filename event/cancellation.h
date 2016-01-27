@@ -70,47 +70,4 @@ private:
 	}
 };
 
-/*
- * This is an ephemeral cancellation which is created to be paired
- * with a specific captured parameter, and which is destroyed once
- * it has been fired.
- */
-template<class C, typename A>
-class CancellationArg : public Action {
-	typedef void (C::*const method_t)(A);
-
-	Lock *lock_;
-	C *const obj_;
-	method_t method_;
-	A arg_;
-public:
-	template<typename T>
-	CancellationArg(Lock *lock, C *obj, T method, A arg)
-	: lock_(lock),
-	  obj_(obj),
-	  method_(method),
-	  arg_(arg)
-	{
-		ASSERT_LOCK_OWNED("/cancellation", lock_);
-	}
-
-	~CancellationArg()
-	{ }
-
-private:
-	void cancel(void)
-	{
-		ScopedLock _(lock_);
-		(obj_->*method_)(arg_);
-		delete this;
-	}
-};
-
-template<class C, typename T, typename A>
-Action *cancellation(Lock *lock, C *obj, T method, A arg)
-{
-	Action *a = new CancellationArg<C, A>(lock, obj, method, arg);
-	return (a);
-}
-
 #endif /* !EVENT_CANCELLATION_H */
