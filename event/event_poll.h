@@ -45,7 +45,7 @@ public:
 	};
 
 private:
-	class PollAction : public Cancellable {
+	class PollAction : public Action {
 		EventPoll *poll_;
 		Type type_;
 		int fd_;
@@ -62,6 +62,7 @@ private:
 		void cancel(void)
 		{
 			poll_->cancel(type_, fd_);
+			delete this;
 		}
 	};
 

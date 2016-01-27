@@ -27,28 +27,15 @@
 #define	EVENT_ACTION_H
 
 class Action {
-	bool cancelled_;
 protected:
 	Action(void)
-	: cancelled_(false)
 	{ }
 
 	virtual ~Action()
-	{
-		ASSERT("/action", cancelled_);
-	}
-
-private:
-	virtual void do_cancel(void) = 0;
+	{ }
 
 public:
-	void cancel(void)
-	{
-		ASSERT("/action", !cancelled_);
-		do_cancel();
-		cancelled_ = true;
-		delete this;
-	}
+	virtual void cancel(void) = 0;
 };
 
 #endif /* !EVENT_ACTION_H */

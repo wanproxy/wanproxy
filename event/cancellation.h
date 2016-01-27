@@ -30,26 +30,8 @@
 
 #include <event/action.h>
 
-class Cancellable : public Action {
-protected:
-	Cancellable(void)
-	: Action()
-	{ }
-
-	virtual ~Cancellable()
-	{ }
-
-private:
-	void do_cancel(void)
-	{
-		cancel();
-	}
-
-	virtual void cancel(void) = 0;
-};
-
 template<class C>
-class Cancellation : public Cancellable {
+class Cancellation : public Action {
 	typedef void (C::*const method_t)(void);
 
 	Lock *lock_;
@@ -73,11 +55,12 @@ private:
 	{
 		ScopedLock _(lock_);
 		(obj_->*method_)();
+		delete this;
 	}
 };
 
 template<class C, typename A>
-class CancellationArg : public Cancellable {
+class CancellationArg : public Action {
 	typedef void (C::*const method_t)(A);
 
 	Lock *lock_;
@@ -103,6 +86,7 @@ private:
 	{
 		ScopedLock _(lock_);
 		(obj_->*method_)(arg_);
+		delete this;
 	}
 };
 

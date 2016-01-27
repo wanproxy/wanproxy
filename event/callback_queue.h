@@ -35,15 +35,14 @@
 #include <event/cancellation.h>
 
 class CallbackQueue : public CallbackScheduler {
-	class CallbackAction : public Cancellable {
+	class CallbackAction : public Action {
 	public:
 		CallbackQueue *const queue_;
 		CallbackBase *callback_;
 		Action *action_;
 
 		CallbackAction(CallbackQueue *queue, CallbackBase *callback)
-		: Cancellable(),
-		  queue_(queue),
+		: queue_(queue),
 		  callback_(callback),
 		  action_(NULL)
 		{ }
@@ -57,6 +56,7 @@ class CallbackQueue : public CallbackScheduler {
 		void cancel(void)
 		{
 			queue_->cancel(this);
+			delete this;
 		}
 	};
 
