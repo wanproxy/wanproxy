@@ -56,34 +56,6 @@ private:
 	}
 };
 
-template<class C, typename A>
-class ObjectMethodArgCallback : public SimpleCallback {
-public:
-	typedef void (C::*const method_t)(A);
-
-private:
-	C *const obj_;
-	method_t method_;
-	A arg_;
-public:
-	template<typename Tm>
-	ObjectMethodArgCallback(CallbackScheduler *scheduler, Lock *xlock, C *obj, Tm method, A arg)
-	: SimpleCallback(scheduler, xlock),
-	  obj_(obj),
-	  method_(method),
-	  arg_(arg)
-	{ }
-
-	~ObjectMethodArgCallback()
-	{ }
-
-private:
-	void operator() (void)
-	{
-		(obj_->*method_)(arg_);
-	}
-};
-
 template<class C>
 SimpleCallback *callback(Lock *lock, C *obj, typename ObjectMethodCallback<C>::method_t method)
 {
@@ -92,27 +64,11 @@ SimpleCallback *callback(Lock *lock, C *obj, typename ObjectMethodCallback<C>::m
 	return (cb);
 }
 
-template<class C, typename A>
-SimpleCallback *callback(Lock *lock, C *obj, void (C::*const method)(A), A arg)
-{
-	ASSERT_LOCK_OWNED("/callback/simple", lock);
-	SimpleCallback *cb = new ObjectMethodArgCallback<C, A>(NULL, lock, obj, method, arg);
-	return (cb);
-}
-
 template<class C>
 SimpleCallback *callback(CallbackScheduler *scheduler, Lock *lock, C *obj, typename ObjectMethodCallback<C>::method_t method)
 {
 	ASSERT_LOCK_OWNED("/callback/simple", lock);
 	SimpleCallback *cb = new ObjectMethodCallback<C>(scheduler, lock, obj, method);
-	return (cb);
-}
-
-template<class C, typename A>
-SimpleCallback *callback(CallbackScheduler *scheduler, Lock *lock, C *obj, void (C::*const method)(A), A arg)
-{
-	ASSERT_LOCK_OWNED("/callback/simple", lock);
-	SimpleCallback *cb = new ObjectMethodArgCallback<C, A>(scheduler, lock, obj, method, arg);
 	return (cb);
 }
 

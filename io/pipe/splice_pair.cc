@@ -64,10 +64,10 @@ SplicePair::start(EventCallback *cb)
 	ASSERT(log_, callback_ == NULL && callback_action_ == NULL);
 	callback_ = cb;
 
-	EventCallback *lcb = callback(&mtx_, this, &SplicePair::splice_complete, left_);
+	EventCallback *lcb = callback(&mtx_, this, &SplicePair::left_splice_complete);
 	left_action_ = left_->start(lcb);
 
-	EventCallback *rcb = callback(&mtx_, this, &SplicePair::splice_complete, right_);
+	EventCallback *rcb = callback(&mtx_, this, &SplicePair::right_splice_complete);
 	right_action_ = right_->start(rcb);
 
 	return (cancellation(&mtx_, this, &SplicePair::cancel));
@@ -100,20 +100,30 @@ SplicePair::cancel(void)
 }
 
 void
-SplicePair::splice_complete(Event e, Splice *splice)
+SplicePair::left_splice_complete(Event e)
+{
+	ASSERT_LOCK_OWNED(log_, &mtx_);
+	left_action_->cancel();
+	left_action_ = NULL;
+
+	splice_complete(e);
+}
+
+void
+SplicePair::right_splice_complete(Event e)
+{
+	ASSERT_LOCK_OWNED(log_, &mtx_);
+	right_action_->cancel();
+	right_action_ = NULL;
+
+	splice_complete(e);
+}
+
+void
+SplicePair::splice_complete(Event e)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT(log_, callback_ != NULL && callback_action_ == NULL);
-
-	if (splice == left_) {
-		left_action_->cancel();
-		left_action_ = NULL;
-	} else if (splice == right_) {
-		right_action_->cancel();
-		right_action_ = NULL;
-	} else {
-		NOTREACHED(log_);
-	}
 
 	switch (e.type_) {
 	case Event::EOS:

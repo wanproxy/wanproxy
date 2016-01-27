@@ -105,35 +105,35 @@ ProxyConnector::~ProxyConnector()
 }
 
 void
-ProxyConnector::close_complete(Socket *socket)
+ProxyConnector::local_close_complete(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	if (socket == local_socket_) {
-		local_action_->cancel();
-		local_action_ = NULL;
-	}
+	local_action_->cancel();
+	local_action_ = NULL;
 
-	if (socket == remote_socket_) {
-		remote_action_->cancel();
-		remote_action_ = NULL;
-	}
+	ASSERT_NON_NULL(log_, local_socket_);
+	delete local_socket_;
+	local_socket_ = NULL;
 
-	if (socket == local_socket_) {
-		ASSERT_NON_NULL(log_, local_socket_);
-		delete local_socket_;
-		local_socket_ = NULL;
-	}
-
-	if (socket == remote_socket_) {
-		ASSERT_NON_NULL(log_, remote_socket_);
-		delete remote_socket_;
-		remote_socket_ = NULL;
-	}
-
-	if (local_socket_ == NULL && remote_socket_ == NULL) {
+	if (remote_socket_ == NULL)
 		EventSystem::instance()->destroy(&mtx_, this);
-	}
 }
+
+void
+ProxyConnector::remote_close_complete(void)
+{
+	ASSERT_LOCK_OWNED(log_, &mtx_);
+	remote_action_->cancel();
+	remote_action_ = NULL;
+
+	ASSERT_NON_NULL(log_, remote_socket_);
+	delete remote_socket_;
+	remote_socket_ = NULL;
+
+	if (local_socket_ == NULL)
+		EventSystem::instance()->destroy(&mtx_, this);
+}
+
 
 void
 ProxyConnector::connect_complete(Event e, Socket *socket)
@@ -254,14 +254,12 @@ ProxyConnector::schedule_close(void)
 
 	ASSERT_NULL(log_, local_action_);
 	ASSERT_NON_NULL(log_, local_socket_);
-	SimpleCallback *lcb = callback(&mtx_, this, &ProxyConnector::close_complete,
-				       local_socket_);
+	SimpleCallback *lcb = callback(&mtx_, this, &ProxyConnector::local_close_complete);
 	local_action_ = local_socket_->close(lcb);
 
 	ASSERT_NULL(log_, remote_action_);
 	if (remote_socket_ != NULL) {
-		SimpleCallback *rcb = callback(&mtx_, this, &ProxyConnector::close_complete,
-					       remote_socket_);
+		SimpleCallback *rcb = callback(&mtx_, this, &ProxyConnector::remote_close_complete);
 		remote_action_ = remote_socket_->close(rcb);
 	}
 }

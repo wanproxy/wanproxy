@@ -65,7 +65,8 @@ public:
 private:
 	~ProxyConnector();
 
-	void close_complete(Socket *);
+	void local_close_complete(void);
+	void remote_close_complete(void);
 	void connect_complete(Event, Socket *);
 	void splice_complete(Event);
 	void stop(void);

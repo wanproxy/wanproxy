@@ -49,7 +49,9 @@ public:
 private:
 	void cancel(void);
 
-	void splice_complete(Event, Splice *);
+	void left_splice_complete(Event);
+	void right_splice_complete(Event);
+	void splice_complete(Event);
 };
 
 #endif /* !IO_PIPE_SPLICE_PAIR_H */

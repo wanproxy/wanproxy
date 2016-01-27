@@ -74,14 +74,16 @@ public:
 private:
 	~SSHProxyConnector();
 
-	void close_complete(Socket *);
+	void local_close_complete(void);
+	void remote_close_complete(void);
 	void connect_complete(Event, Socket *);
 	void splice_complete(Event);
 	void stop(void);
 
 	void schedule_close(void);
 
-	void ssh_stream_complete(SSHStream *);
+	void incoming_ssh_stream_complete(void);
+	void outgoing_ssh_stream_complete(void);
 };
 
 #endif /* !PROGRAMS_WANPROXY_SSH_PROXY_CONNECTOR_H */

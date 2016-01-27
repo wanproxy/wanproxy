@@ -92,34 +92,6 @@ private:
 	}
 };
 
-template<typename Ta, typename Tb, class C, typename A>
-class ObjectTypedPairArgCallback : public TypedPairCallback<Ta, Tb> {
-public:
-	typedef void (C::*const method_t)(Ta, Tb, A);
-
-private:
-	C *const obj_;
-	method_t method_;
-	A arg_;
-public:
-	template<typename Tm>
-	ObjectTypedPairArgCallback(CallbackScheduler *scheduler, Lock *xlock, C *obj, Tm method, A arg)
-	: TypedPairCallback<Ta, Tb>(scheduler, xlock),
-	  obj_(obj),
-	  method_(method),
-	  arg_(arg)
-	{ }
-
-	~ObjectTypedPairArgCallback()
-	{ }
-
-private:
-	void operator() (Ta a, Tb b)
-	{
-		(obj_->*method_)(a, b, arg_);
-	}
-};
-
 template<typename Ta, typename Tb, class C>
 TypedPairCallback<Ta, Tb> *callback(Lock *lock, C *obj, void (C::*const method)(Ta, Tb))
 {
@@ -127,24 +99,10 @@ TypedPairCallback<Ta, Tb> *callback(Lock *lock, C *obj, void (C::*const method)(
 	return (cb);
 }
 
-template<typename Ta, typename Tb, class C, typename A>
-TypedPairCallback<Ta, Tb> *callback(Lock *lock, C *obj, void (C::*const method)(Ta, Tb, A), A arg)
-{
-	TypedPairCallback<Ta, Tb> *cb = new ObjectTypedPairArgCallback<Ta, Tb, C, A>(NULL, lock, obj, method, arg);
-	return (cb);
-}
-
 template<typename Ta, typename Tb, class C>
 TypedPairCallback<Ta, Tb> *callback(CallbackScheduler *scheduler, Lock *lock, C *obj, void (C::*const method)(Ta, Tb))
 {
 	TypedPairCallback<Ta, Tb> *cb = new ObjectTypedPairCallback<Ta, Tb, C>(scheduler, lock, obj, method);
-	return (cb);
-}
-
-template<typename Ta, typename Tb, class C, typename A>
-TypedPairCallback<Ta, Tb> *callback(CallbackScheduler *scheduler, Lock *lock, C *obj, void (C::*const method)(Ta, Tb, A), A arg)
-{
-	TypedPairCallback<Ta, Tb> *cb = new ObjectTypedPairArgCallback<Ta, Tb, C, A>(scheduler, lock, obj, method, arg);
 	return (cb);
 }
 

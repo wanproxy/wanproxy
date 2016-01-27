@@ -110,34 +110,33 @@ SSHProxyConnector::~SSHProxyConnector()
 }
 
 void
-SSHProxyConnector::close_complete(Socket *socket)
+SSHProxyConnector::local_close_complete(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	if (socket == local_socket_) {
-		local_action_->cancel();
-		local_action_ = NULL;
-	}
+	local_action_->cancel();
+	local_action_ = NULL;
 
-	if (socket == remote_socket_) {
-		remote_action_->cancel();
-		remote_action_ = NULL;
-	}
+	ASSERT_NON_NULL(log_, local_socket_);
+	delete local_socket_;
+	local_socket_ = NULL;
 
-	if (socket == local_socket_) {
-		ASSERT_NON_NULL(log_, local_socket_);
-		delete local_socket_;
-		local_socket_ = NULL;
-	}
-
-	if (socket == remote_socket_) {
-		ASSERT_NON_NULL(log_, remote_socket_);
-		delete remote_socket_;
-		remote_socket_ = NULL;
-	}
-
-	if (local_socket_ == NULL && remote_socket_ == NULL) {
+	if (remote_socket_ == NULL)
 		EventSystem::instance()->destroy(&mtx_, this);
-	}
+}
+
+void
+SSHProxyConnector::remote_close_complete(void)
+{
+	ASSERT_LOCK_OWNED(log_, &mtx_);
+	remote_action_->cancel();
+	remote_action_ = NULL;
+
+	ASSERT_NON_NULL(log_, remote_socket_);
+	delete remote_socket_;
+	remote_socket_ = NULL;
+
+	if (local_socket_ == NULL)
+		EventSystem::instance()->destroy(&mtx_, this);
 }
 
 void
@@ -163,10 +162,10 @@ SSHProxyConnector::connect_complete(Event e, Socket *socket)
 	remote_socket_ = socket;
 	ASSERT_NON_NULL(log_, remote_socket_);
 
-	SimpleCallback *iscb = callback(&mtx_, this, &SSHProxyConnector::ssh_stream_complete, &incoming_stream_);
+	SimpleCallback *iscb = callback(&mtx_, this, &SSHProxyConnector::incoming_ssh_stream_complete);
 	incoming_stream_action_ = incoming_stream_.start(local_socket_, iscb);
 
-	SimpleCallback *oscb = callback(&mtx_, this, &SSHProxyConnector::ssh_stream_complete, &outgoing_stream_);
+	SimpleCallback *oscb = callback(&mtx_, this, &SSHProxyConnector::outgoing_ssh_stream_complete);
 	outgoing_stream_action_ = outgoing_stream_.start(remote_socket_, oscb);
 
 	incoming_splice_ = new Splice(log_ + "/incoming", &incoming_stream_, incoming_pipe_, &outgoing_stream_);
@@ -265,28 +264,28 @@ SSHProxyConnector::schedule_close(void)
 
 	ASSERT_NULL(log_, local_action_);
 	ASSERT_NON_NULL(log_, local_socket_);
-	SimpleCallback *lcb = callback(&mtx_, this, &SSHProxyConnector::close_complete,
-				       local_socket_);
+	SimpleCallback *lcb = callback(&mtx_, this, &SSHProxyConnector::local_close_complete);
 	local_action_ = local_socket_->close(lcb);
 
 	ASSERT_NULL(log_, remote_action_);
 	if (remote_socket_ != NULL) {
-		SimpleCallback *rcb = callback(&mtx_, this, &SSHProxyConnector::close_complete,
-					       remote_socket_);
+		SimpleCallback *rcb = callback(&mtx_, this, &SSHProxyConnector::remote_close_complete);
 		remote_action_ = remote_socket_->close(rcb);
 	}
 }
 
 void
-SSHProxyConnector::ssh_stream_complete(SSHStream *stream)
+SSHProxyConnector::incoming_ssh_stream_complete(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	if (stream == &incoming_stream_) {
-		incoming_stream_action_->cancel();
-		incoming_stream_action_ = NULL;
-	} else {
-		ASSERT(log_, stream == &outgoing_stream_);
-		outgoing_stream_action_->cancel();
-		outgoing_stream_action_ = NULL;
-	}
+	incoming_stream_action_->cancel();
+	incoming_stream_action_ = NULL;
+}
+
+void
+SSHProxyConnector::outgoing_ssh_stream_complete(void)
+{
+	ASSERT_LOCK_OWNED(log_, &mtx_);
+	outgoing_stream_action_->cancel();
+	outgoing_stream_action_ = NULL;
 }
