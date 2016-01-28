@@ -31,9 +31,8 @@
 #include <event/event_main.h>
 
 #include <io/socket/socket.h>
-#include <io/io_uinet.h>
 
-static SocketImpl impl = SocketImplUinet;
+static SocketImpl impl = SocketImplOS;
 
 static uint8_t data[65536];
 
@@ -323,8 +322,6 @@ int
 main(void)
 {
 	unsigned i;
-
-	IOUinet::instance()->start(true);
 
 	for (i = 0; i < sizeof data; i++)
 		data[i] = random() % 0xff;
