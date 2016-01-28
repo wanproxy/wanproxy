@@ -39,7 +39,9 @@ public:
 	Mutex(const std::string&);
 	~Mutex();
 
+#ifndef NDEBUG
 	void assert_owned(bool, const LogHandle&, const std::string&, unsigned, const std::string&);
+#endif
 	void lock(void);
 	bool try_lock(void);
 	void unlock(void);

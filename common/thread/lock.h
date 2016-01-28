@@ -36,7 +36,9 @@ public:
 	virtual ~Lock()
 	{ }
 
+#ifndef NDEBUG
 	virtual void assert_owned(bool, const LogHandle&, const std::string&, unsigned, const std::string&) = 0;
+#endif
 	virtual void lock(void) = 0;
 	virtual bool try_lock(void) = 0;
 	virtual void unlock(void) = 0;
@@ -50,10 +52,17 @@ private:
 	Lock(const Lock&); /* XXX Disable copy.  */
 };
 
+#ifndef NDEBUG
 #define	ASSERT_LOCK_OWNED(log, lock)					\
 	((lock)->assert_owned(true, log, __FILE__, __LINE__, __PRETTY_FUNCTION__))
 #define	ASSERT_LOCK_NOT_OWNED(log, lock)				\
 	((lock)->assert_owned(false, log, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+#else
+#define	ASSERT_LOCK_OWNED(log, lock)					\
+	do { } while (0)
+#define	ASSERT_LOCK_NOT_OWNED(log, lock)				\
+	do { } while (0)
+#endif
 
 class ConditionLock {
 	Lock *lock_;
