@@ -55,9 +55,7 @@ public:
 	: lock_(lock),
 	  obj_(obj),
 	  method_(method)
-	{
-		ASSERT_LOCK_OWNED("/cancellation", lock_);
-	}
+	{ }
 
 	~Cancellation()
 	{ }
