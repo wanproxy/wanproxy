@@ -41,7 +41,6 @@ class IOSystem {
 		LogHandle log_;
 
 		Mutex mtx_;
-		CallbackScheduler *scheduler_;
 
 		int fd_;
 		Channel *owner_;

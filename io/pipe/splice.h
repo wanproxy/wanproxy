@@ -28,14 +28,12 @@
 
 #include <event/cancellation.h>
 
-class CallbackScheduler;
 class StreamChannel;
 class Pipe;
 
 class Splice {
 	LogHandle log_;
 	Mutex mtx_;
-	CallbackScheduler *scheduler_;
 	StreamChannel *source_;
 	Pipe *pipe_;
 	StreamChannel *sink_;
