@@ -37,7 +37,7 @@ public:
 	~StreamHandle();
 
 	virtual Action *close(SimpleCallback *);
-	virtual Action *read(size_t, EventCallback *);
+	virtual Action *read(size_t, BufferEventCallback *);
 	virtual Action *write(Buffer *, EventCallback *);
 	virtual Action *shutdown(bool, bool, EventCallback *);
 };

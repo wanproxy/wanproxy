@@ -56,7 +56,7 @@ public:
 		return (socket_->getsockname());
 	}
 
-	Action *read(EventCallback *cb)
+	Action *read(BufferEventCallback *cb)
 	{
 		return (socket_->read(0, cb));
 	}

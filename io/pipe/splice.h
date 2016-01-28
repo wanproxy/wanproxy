@@ -42,14 +42,14 @@ class Splice {
 	EventCallback *callback_;
 	Action *callback_action_;
 
-	EventCallback::Method<Splice> read_complete_;
+	BufferEventCallback::Method<Splice> read_complete_;
 	bool read_eos_;
 	Action *read_action_;
 
 	EventCallback::Method<Splice> input_complete_;
 	Action *input_action_;
 
-	EventCallback::Method<Splice> output_complete_;
+	BufferEventCallback::Method<Splice> output_complete_;
 	bool output_eos_;
 	Action *output_action_;
 
@@ -69,10 +69,10 @@ private:
 	void cancel(void);
 	void complete(Event);
 
-	void read_complete(Event);
+	void read_complete(Event, Buffer);
 	void input_complete(Event);
 
-	void output_complete(Event);
+	void output_complete(Event, Buffer);
 	void write_complete(Event);
 
 	void shutdown_complete(Event);

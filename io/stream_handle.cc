@@ -60,7 +60,7 @@ StreamHandle::close(SimpleCallback *cb)
 }
 
 Action *
-StreamHandle::read(size_t amount, EventCallback *cb)
+StreamHandle::read(size_t amount, BufferEventCallback *cb)
 {
 	return (IOSystem::instance()->read(fd_, this, -1, amount, cb));
 }

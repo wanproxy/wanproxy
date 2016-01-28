@@ -78,11 +78,11 @@ PipeLink::input(Buffer *buf, EventCallback *cb)
 }
 
 Action *
-PipeLink::output(EventCallback *cb)
+PipeLink::output(BufferEventCallback *cb)
 {
 	ScopedLock _(&mtx_);
 	if (pipe_splice_error_) {
-		cb->param(Event::Error);
+		cb->param(Event::Error, Buffer());
 		return (cb->schedule());
 	}
 	return (outgoing_pipe_->output(cb));

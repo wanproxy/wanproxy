@@ -82,7 +82,7 @@ PipeSplice::cancel(void)
 }
 
 void
-PipeSplice::output_complete(Event e)
+PipeSplice::output_complete(Event e, Buffer buf)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	action_->cancel();
@@ -109,13 +109,13 @@ PipeSplice::output_complete(Event e)
 	}
 
 	if (e.type_ == Event::EOS) {
-		ASSERT(log_, e.buffer_.empty());
+		ASSERT(log_, buf.empty());
 		source_eos_ = true;
 	} else {
-		ASSERT(log_, !e.buffer_.empty());
+		ASSERT(log_, !buf.empty());
 	}
 
-	action_ = sink_->input(&e.buffer_, &input_complete_);
+	action_ = sink_->input(&buf, &input_complete_);
 }
 
 void

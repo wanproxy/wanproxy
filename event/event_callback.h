@@ -26,9 +26,13 @@
 #ifndef	EVENT_EVENT_CALLBACK_H
 #define	EVENT_EVENT_CALLBACK_H
 
+#include <common/buffer.h>
+
 #include <event/event.h>
 #include <event/typed_callback.h>
+#include <event/typed_pair_callback.h>
 
 typedef	class TypedCallback<Event> EventCallback;
+typedef	class TypedPairCallback<Event, Buffer> BufferEventCallback;
 
 #endif /* !EVENT_EVENT_CALLBACK_H */

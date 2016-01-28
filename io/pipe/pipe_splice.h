@@ -34,7 +34,7 @@ class PipeSplice {
 	Pipe *source_;
 	Pipe *sink_;
 	bool source_eos_;
-	EventCallback::Method<PipeSplice> output_complete_;
+	BufferEventCallback::Method<PipeSplice> output_complete_;
 	EventCallback::Method<PipeSplice> input_complete_;
 	Cancellation<PipeSplice> cancel_;
 	Action *action_;
@@ -47,7 +47,7 @@ public:
 private:
 	void cancel(void);
 
-	void output_complete(Event);
+	void output_complete(Event, Buffer);
 	void input_complete(Event);
 };
 

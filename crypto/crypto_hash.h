@@ -52,7 +52,7 @@ namespace CryptoHash {
 
 		virtual bool hash(Buffer *, const Buffer *) = 0;
 
-		virtual Action *submit(Buffer *, EventCallback *) = 0;
+		virtual Action *submit(Buffer *, BufferEventCallback *) = 0;
 	};
 
 	class Method {

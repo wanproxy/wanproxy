@@ -122,16 +122,16 @@ namespace {
 			return (true);
 		}
 
-		Action *submit(Buffer *in, EventCallback *cb)
+		Action *submit(Buffer *in, BufferEventCallback *cb)
 		{
 			Buffer out;
 			if (!cipher(&out, in)) {
 				in->clear();
-				cb->param(Event::Error);
+				cb->param(Event::Error, Buffer());
 				return (cb->schedule());
 			}
 			in->clear();
-			cb->param(Event(Event::Done, out));
+			cb->param(Event::Done, out);
 			return (cb->schedule());
 		}
 	};
@@ -221,16 +221,16 @@ namespace {
 			return (true);
 		}
 
-		Action *submit(Buffer *in, EventCallback *cb)
+		Action *submit(Buffer *in, BufferEventCallback *cb)
 		{
 			Buffer out;
 			if (!cipher(&out, in)) {
 				in->clear();
-				cb->param(Event::Error);
+				cb->param(Event::Error, Buffer());
 				return (cb->schedule());
 			}
 			in->clear();
-			cb->param(Event(Event::Done, out));
+			cb->param(Event::Done, out);
 			return (cb->schedule());
 		}
 	};

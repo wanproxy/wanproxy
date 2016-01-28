@@ -168,7 +168,7 @@ Splice::complete(Event e)
 }
 
 void
-Splice::read_complete(Event e)
+Splice::read_complete(Event e, Buffer buf)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	read_action_->cancel();
@@ -186,7 +186,7 @@ Splice::read_complete(Event e)
 		return;
 	}
 
-	if (e.buffer_.empty()) {
+	if (buf.empty()) {
 		ASSERT(log_, e.type_ == Event::EOS);
 
 		read_eos_ = true;
@@ -194,15 +194,15 @@ Splice::read_complete(Event e)
 
 	if (pipe_ != NULL) {
 		ASSERT_NULL(log_, input_action_);
-		input_action_ = pipe_->input(&e.buffer_, &input_complete_);
+		input_action_ = pipe_->input(&buf, &input_complete_);
 	} else {
-		if (e.type_ == Event::EOS && e.buffer_.empty()) {
+		if (e.type_ == Event::EOS && buf.empty()) {
 			shutdown_action_ = sink_->shutdown(false, true, &shutdown_complete_);
 			return;
 		}
 
 		ASSERT_NULL(log_, write_action_);
-		write_action_ = sink_->write(&e.buffer_, &write_complete_);
+		write_action_ = sink_->write(&buf, &write_complete_);
 	}
 }
 
@@ -230,7 +230,7 @@ Splice::input_complete(Event e)
 }
 
 void
-Splice::output_complete(Event e)
+Splice::output_complete(Event e, Buffer buf)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	output_action_->cancel();
@@ -246,13 +246,13 @@ Splice::output_complete(Event e)
 		return;
 	}
 
-	if (e.type_ == Event::EOS && e.buffer_.empty()) {
+	if (e.type_ == Event::EOS && buf.empty()) {
 		shutdown_action_ = sink_->shutdown(false, true, &shutdown_complete_);
 		return;
 	}
 
 	ASSERT_NULL(log_, write_action_);
-	write_action_ = sink_->write(&e.buffer_, &write_complete_);
+	write_action_ = sink_->write(&buf, &write_complete_);
 }
 
 void

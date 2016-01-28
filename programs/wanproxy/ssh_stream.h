@@ -57,9 +57,9 @@ class SSHStream : public StreamChannel {
 	SimpleCallback *start_callback_;
 	Action *start_action_;
 
-	EventCallback::Method<SSHStream> receive_complete_;
+	BufferEventCallback::Method<SSHStream> receive_complete_;
 	Cancellation<SSHStream> read_cancel_;
-	EventCallback *read_callback_;
+	BufferEventCallback *read_callback_;
 	Action *read_action_;
 	Buffer input_buffer_;
 
@@ -77,7 +77,7 @@ public:
 	Action *start(Socket *socket, SimpleCallback *);
 
 	Action *close(SimpleCallback *);
-	Action *read(size_t, EventCallback *);
+	Action *read(size_t, BufferEventCallback *);
 	Action *write(Buffer *, EventCallback *);
 	Action *shutdown(bool, bool, EventCallback *);
 
@@ -89,7 +89,7 @@ private:
 
 	void ready_complete(void);
 
-	void receive_complete(Event);
+	void receive_complete(Event, Buffer);
 
 	void write_cancel(void);
 	void write_do(void);

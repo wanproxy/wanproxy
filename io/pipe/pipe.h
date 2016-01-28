@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2009-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,7 +42,7 @@ public:
 	{ }
 
 	virtual Action *input(Buffer *, EventCallback *) = 0;
-	virtual Action *output(EventCallback *) = 0;
+	virtual Action *output(BufferEventCallback *) = 0;
 };
 
 #endif /* !IO_PIPE_PIPE_H */

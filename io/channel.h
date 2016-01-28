@@ -64,7 +64,7 @@ public:
 	virtual ~BlockChannel()
 	{ }
 
-	virtual Action *read(off_t, EventCallback *) = 0;
+	virtual Action *read(off_t, BufferEventCallback *) = 0;
 	virtual Action *write(off_t, Buffer *, EventCallback *) = 0;
 };
 
@@ -77,7 +77,7 @@ public:
 	virtual ~StreamChannel()
 	{ }
 
-	virtual Action *read(size_t, EventCallback *) = 0;
+	virtual Action *read(size_t, BufferEventCallback *) = 0;
 	virtual Action *write(Buffer *, EventCallback *) = 0;
 
 	virtual Action *shutdown(bool, bool, EventCallback *) = 0;

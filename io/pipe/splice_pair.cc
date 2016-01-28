@@ -142,7 +142,6 @@ SplicePair::splice_complete(Event e)
 	if (left_action_ != NULL || right_action_ != NULL)
 		return;
 
-	ASSERT(log_, e.buffer_.empty());
 	if (e.type_ == Event::EOS) {
 		callback_->param(Event::Done);
 	} else {

@@ -83,7 +83,7 @@ PipeProducer::input(Buffer *buf, EventCallback *cb)
 }
 
 Action *
-PipeProducer::output(EventCallback *cb)
+PipeProducer::output(BufferEventCallback *cb)
 {
 	ScopedLock _(lock_);
 	ASSERT_NULL(log_, output_action_);
@@ -116,7 +116,7 @@ PipeProducer::output_cancel(void)
 }
 
 Action *
-PipeProducer::output_do(EventCallback *cb)
+PipeProducer::output_do(BufferEventCallback *cb)
 {
 	ASSERT_LOCK_OWNED(log_, lock_);
 	ASSERT_ZERO(log_, output_cork_);
@@ -124,18 +124,18 @@ PipeProducer::output_do(EventCallback *cb)
 	if (error_) {
 		ASSERT(log_, output_buffer_.empty());
 
-		cb->param(Event::Error);
+		cb->param(Event::Error, Buffer());
 		return (cb->schedule());
 	}
 
 	if (!output_buffer_.empty()) {
-		cb->param(Event(Event::Done, output_buffer_));
+		cb->param(Event::Done, output_buffer_);
 		output_buffer_.clear();
 		return (cb->schedule());
 	}
 
 	if (output_eos_) {
-		cb->param(Event::EOS);
+		cb->param(Event::EOS, Buffer());
 		return (cb->schedule());
 	}
 

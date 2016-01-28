@@ -56,7 +56,7 @@ namespace SSH {
 		Buffer first_block_;
 
 		Cancellation<TransportPipe> receive_cancel_;
-		EventCallback *receive_callback_;
+		BufferEventCallback *receive_callback_;
 		Action *receive_action_;
 
 		bool ready_;
@@ -67,7 +67,7 @@ namespace SSH {
 		TransportPipe(Session *);
 		~TransportPipe();
 
-		Action *receive(EventCallback *);
+		Action *receive(BufferEventCallback *);
 		void send(Buffer *);
 
 		Action *ready(SimpleCallback *);

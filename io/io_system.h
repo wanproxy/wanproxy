@@ -50,7 +50,7 @@ class IOSystem {
 		off_t read_offset_;
 		size_t read_amount_;
 		Buffer read_buffer_;
-		EventCallback *read_callback_;
+		BufferEventCallback *read_callback_;
 		Action *read_action_;
 
 		EventCallback::Method<Handle> write_poll_complete_;
@@ -98,7 +98,7 @@ public:
 	void detach(int, Channel *);
 
 	Action *close(int, Channel *, SimpleCallback *);
-	Action *read(int, Channel *, off_t, size_t, EventCallback *);
+	Action *read(int, Channel *, off_t, size_t, BufferEventCallback *);
 	Action *write(int, Channel *, off_t, Buffer *, EventCallback *);
 
 	static IOSystem *instance(void)

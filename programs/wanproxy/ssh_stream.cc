@@ -133,19 +133,19 @@ SSHStream::close(SimpleCallback *cb)
 }
 
 Action *
-SSHStream::read(size_t amt, EventCallback *cb)
+SSHStream::read(size_t amt, BufferEventCallback *cb)
 {
 	ScopedLock _(&mtx_);
 	ASSERT_NULL(log_, read_action_);
 	ASSERT_NULL(log_, read_callback_);
 
 	if (pipe_ == NULL) {
-		cb->param(Event::EOS);
+		cb->param(Event::EOS, Buffer());
 		return (cb->schedule());
 	}
 
 	if (amt != 0) {
-		cb->param(Event::Error);
+		cb->param(Event::Error, Buffer());
 		return (cb->schedule());
 	}
 
@@ -262,7 +262,7 @@ SSHStream::ready_complete(void)
 }
 
 void
-SSHStream::receive_complete(Event e)
+SSHStream::receive_complete(Event e, Buffer buf)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	read_action_->cancel();
@@ -274,7 +274,7 @@ SSHStream::receive_complete(Event e)
 		break;
 	case Event::Error:
 		ERROR(log_) << "Error during receive: " << e;
-		read_callback_->param(e);
+		read_callback_->param(e, Buffer());
 		read_action_ = read_callback_->schedule();
 		read_callback_ = NULL;
 		return;
@@ -282,34 +282,34 @@ SSHStream::receive_complete(Event e)
 		HALT(log_) << "Unexpected event: " << e;
 	}
 
-	if (!e.buffer_.empty()) {
+	if (!buf.empty()) {
 		/*
 		 * If we're writing data that has been encoded, we need to untag it.
 		 * Otherwise we need to frame it.
 		 */
 		if (incoming_codec_ != NULL &&
 		    (incoming_codec_->codec_ != NULL || incoming_codec_->compressor_)) {
-			if (e.buffer_.peek() != SSHStreamPacket ||
-			    e.buffer_.length() == 1) {
+			if (buf.peek() != SSHStreamPacket ||
+			    buf.length() == 1) {
 				ERROR(log_) << "Got encoded packet with wrong message.";
-				read_callback_->param(Event::Error);
+				read_callback_->param(Event::Error, Buffer());
 				read_action_ = read_callback_->schedule();
 				read_callback_ = NULL;
 				return;
 			}
-			e.buffer_.skip(1);
+			buf.skip(1);
 		} else {
-			uint32_t length = e.buffer_.length();
+			uint32_t length = buf.length();
 			length = BigEndian::encode(length);
 
-			Buffer buf;
-			buf.append(&length);
-			e.buffer_.moveout(&buf);
-			e.buffer_ = buf;
+			Buffer out;
+			out.append(&length);
+			buf.moveout(&out);
+			buf = out;
 		}
 	}
 
-	read_callback_->param(e);
+	read_callback_->param(e, buf);
 	read_action_ = read_callback_->schedule();
 	read_callback_ = NULL;
 }

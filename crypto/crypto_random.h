@@ -48,7 +48,7 @@ public:
 	virtual ~CryptoRandomSession()
 	{ }
 
-	virtual Action *generate(size_t, EventCallback *) = 0;
+	virtual Action *generate(size_t, BufferEventCallback *) = 0;
 };
 
 class CryptoRandomMethod {

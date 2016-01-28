@@ -108,7 +108,7 @@ IOSystem::Handle::read_poll_complete(Event e)
 		break;
 	case Event::Error: {
 		DEBUG(log_) << "Poll returned error: " << e;
-		read_callback_->param(e);
+		read_callback_->param(e, Buffer());
 		Action *a = read_callback_->schedule();
 		read_action_ = a;
 		read_callback_ = NULL;
@@ -145,7 +145,7 @@ IOSystem::Handle::read_do(void)
 	if (!read_buffer_.empty() && read_buffer_.length() >= read_amount_) {
 		if (read_amount_ == 0)
 			read_amount_ = read_buffer_.length();
-		read_callback_->param(Event(Event::Done, Buffer(read_buffer_, read_amount_)));
+		read_callback_->param(Event::Done, Buffer(read_buffer_, read_amount_));
 		Action *a = read_callback_->schedule();
 		read_callback_ = NULL;
 		read_buffer_.skip(read_amount_);
@@ -208,7 +208,7 @@ IOSystem::Handle::read_do(void)
 		case EAGAIN:
 			return (NULL);
 		default:
-			read_callback_->param(Event(Event::Error, errno, read_buffer_));
+			read_callback_->param(Event(Event::Error, errno), read_buffer_);
 			Action *a = read_callback_->schedule();
 			read_callback_ = NULL;
 			read_buffer_.clear();
@@ -228,7 +228,7 @@ IOSystem::Handle::read_do(void)
 	 * and so we shouldn't just use a short read as an indicator?
 	 */
 	if (len == 0) {
-		read_callback_->param(Event(Event::EOS, read_buffer_));
+		read_callback_->param(Event::EOS, read_buffer_);
 		Action *a = read_callback_->schedule();
 		read_callback_ = NULL;
 		read_buffer_.clear();
@@ -242,7 +242,7 @@ IOSystem::Handle::read_do(void)
 	    read_buffer_.length() >= read_amount_) {
 		if (read_amount_ == 0)
 			read_amount_ = read_buffer_.length();
-		read_callback_->param(Event(Event::Done, Buffer(read_buffer_, read_amount_)));
+		read_callback_->param(Event::Done, Buffer(read_buffer_, read_amount_));
 		Action *a = read_callback_->schedule();
 		read_callback_ = NULL;
 		read_buffer_.skip(read_amount_);

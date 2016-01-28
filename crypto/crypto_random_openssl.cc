@@ -46,7 +46,7 @@ public:
 	~CryptoRandomSessionRAND()
 	{ }
 
-	Action *generate(size_t len, EventCallback *cb)
+	Action *generate(size_t len, BufferEventCallback *cb)
 	{
 		ASSERT_NON_ZERO(log_, len);
 
@@ -59,10 +59,10 @@ public:
 		uint8_t bytes[len];
 		int rv = func_(bytes, sizeof bytes);
 		if (rv == 0) {
-			cb->param(Event::Error);
+			cb->param(Event::Error, Buffer());
 			return (cb->schedule());
 		}
-		cb->param(Event(Event::Done, Buffer(bytes, sizeof bytes)));
+		cb->param(Event::Done, Buffer(bytes, sizeof bytes));
 		return (cb->schedule());
 	}
 };

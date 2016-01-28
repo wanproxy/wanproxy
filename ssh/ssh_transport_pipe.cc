@@ -77,7 +77,7 @@ SSH::TransportPipe::~TransportPipe()
 }
 
 Action *
-SSH::TransportPipe::receive(EventCallback *cb)
+SSH::TransportPipe::receive(BufferEventCallback *cb)
 {
 	ASSERT_NULL(log_, receive_callback_);
 	ASSERT_NULL(log_, receive_action_);
@@ -474,7 +474,7 @@ SSH::TransportPipe::receive_do(void)
 			ERROR(log_) << "Message outside of protocol range received.  Passing to default handler, but not expecting much.";
 		}
 
-		receive_callback_->param(Event(Event::Done, packet));
+		receive_callback_->param(Event::Done, packet);
 		receive_action_ = receive_callback_->schedule();
 		receive_callback_ = NULL;
 

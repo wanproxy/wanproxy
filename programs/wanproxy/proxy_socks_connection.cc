@@ -61,7 +61,7 @@ ProxySocksConnection::~ProxySocksConnection()
 }
 
 void
-ProxySocksConnection::read_complete(Event e)
+ProxySocksConnection::read_complete(Event e, Buffer buf)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	action_->cancel();
@@ -82,7 +82,7 @@ ProxySocksConnection::read_complete(Event e)
 
 	switch (state_) {
 	case GetSOCKSVersion:
-		switch (e.buffer_.peek()) {
+		switch (buf.peek()) {
 		case 0x04:
 			state_ = GetSOCKS4Command;
 			schedule_read(1);
@@ -104,7 +104,7 @@ ProxySocksConnection::read_complete(Event e)
 
 		/* SOCKS4 */
 	case GetSOCKS4Command:
-		if (e.buffer_.peek() != 0x01) {
+		if (buf.peek() != 0x01) {
 			schedule_close();
 			break;
 		}
@@ -112,21 +112,21 @@ ProxySocksConnection::read_complete(Event e)
 		schedule_read(2);
 		break;
 	case GetSOCKS4Port:
-		e.buffer_.extract(&network_port_);
+		buf.extract(&network_port_);
 		network_port_ = BigEndian::decode(network_port_);
 
 		state_ = GetSOCKS4Address;
 		schedule_read(4);
 		break;
 	case GetSOCKS4Address:
-		ASSERT(log_, e.buffer_.length() == 4);
-		network_address_ = e.buffer_;
+		ASSERT(log_, buf.length() == 4);
+		network_address_ = buf;
 
 		state_ = GetSOCKS4User;
 		schedule_read(1);
 		break;
 	case GetSOCKS4User:
-		if (e.buffer_.peek() == 0x00) {
+		if (buf.peek() == 0x00) {
 			schedule_write();
 			break;
 		}
@@ -136,24 +136,24 @@ ProxySocksConnection::read_complete(Event e)
 		/* SOCKS5 */
 	case GetSOCKS5AuthLength:
 		state_ = GetSOCKS5Auth;
-		schedule_read(e.buffer_.peek());
+		schedule_read(buf.peek());
 		break;
 	case GetSOCKS5Auth:
-		while (!e.buffer_.empty()) {
-			if (e.buffer_.peek() == 0x00) {
+		while (!buf.empty()) {
+			if (buf.peek() == 0x00) {
 				schedule_write();
 				break;
 			}
-			e.buffer_.skip(1);
+			buf.skip(1);
 		}
-		if (e.buffer_.empty()) {
+		if (buf.empty()) {
 			schedule_close();
 			break;
 		}
 		break;
 
 	case GetSOCKS5Command:
-		if (e.buffer_.peek() != 0x01) {
+		if (buf.peek() != 0x01) {
 			schedule_close();
 			break;
 		}
@@ -161,7 +161,7 @@ ProxySocksConnection::read_complete(Event e)
 		schedule_read(1);
 		break;
 	case GetSOCKS5Reserved:
-		if (e.buffer_.peek() != 0x00) {
+		if (buf.peek() != 0x00) {
 			schedule_close();
 			break;
 		}
@@ -169,7 +169,7 @@ ProxySocksConnection::read_complete(Event e)
 		schedule_read(1);
 		break;
 	case GetSOCKS5AddressType:
-		switch (e.buffer_.peek()) {
+		switch (buf.peek()) {
 		case 0x01:
 			state_ = GetSOCKS5Address;
 			schedule_read(4);
@@ -188,33 +188,33 @@ ProxySocksConnection::read_complete(Event e)
 		}
 		break;
 	case GetSOCKS5Address:
-		ASSERT(log_, e.buffer_.length() == 4);
-		network_address_ = e.buffer_;
+		ASSERT(log_, buf.length() == 4);
+		network_address_ = buf;
 
 		state_ = GetSOCKS5Port;
 		schedule_read(2);
 		break;
 	case GetSOCKS5Address6:
-		ASSERT(log_, e.buffer_.length() == 16);
-		network_address_ = e.buffer_;
+		ASSERT(log_, buf.length() == 16);
+		network_address_ = buf;
 
 		state_ = GetSOCKS5Port;
 		schedule_read(2);
 		break;
 	case GetSOCKS5NameLength:
 		state_ = GetSOCKS5Name;
-		schedule_read(e.buffer_.peek());
+		schedule_read(buf.peek());
 		break;
 	case GetSOCKS5Name:
-		while (!e.buffer_.empty()) {
-			socks5_remote_name_ += (char)e.buffer_.peek();
-			e.buffer_.skip(1);
+		while (!buf.empty()) {
+			socks5_remote_name_ += (char)buf.peek();
+			buf.skip(1);
 		}
 		state_ = GetSOCKS5Port;
 		schedule_read(2);
 		break;
 	case GetSOCKS5Port:
-		e.buffer_.extract(&network_port_);
+		buf.extract(&network_port_);
 		network_port_ = BigEndian::decode(network_port_);
 
 		schedule_write();

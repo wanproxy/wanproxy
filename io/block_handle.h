@@ -37,7 +37,7 @@ public:
 	~BlockHandle();
 
 	virtual Action *close(SimpleCallback *);
-	virtual Action *read(off_t, EventCallback *);
+	virtual Action *read(off_t, BufferEventCallback *);
 	virtual Action *write(off_t, Buffer *, EventCallback *);
 };
 

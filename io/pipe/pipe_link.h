@@ -43,7 +43,7 @@ public:
 	~PipeLink();
 
 	Action *input(Buffer *, EventCallback *);
-	Action *output(EventCallback *);
+	Action *output(BufferEventCallback *);
 private:
 	void pipe_splice_complete(Event);
 };

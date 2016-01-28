@@ -141,7 +141,7 @@ IOSystem::close(int fd, Channel *owner, SimpleCallback *cb)
 }
 
 Action *
-IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, EventCallback *cb)
+IOSystem::read(int fd, Channel *owner, off_t offset, size_t amount, BufferEventCallback *cb)
 {
 	IOSystem::Handle *h;
 

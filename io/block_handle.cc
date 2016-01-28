@@ -61,7 +61,7 @@ BlockHandle::close(SimpleCallback *cb)
 }
 
 Action *
-BlockHandle::read(off_t offset, EventCallback *cb)
+BlockHandle::read(off_t offset, BufferEventCallback *cb)
 {
 	return (IOSystem::instance()->read(fd_, this, offset * bsize_, bsize_, cb));
 }

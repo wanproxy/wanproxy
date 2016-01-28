@@ -39,7 +39,7 @@ private:
 	Cancellation<PipeProducer> output_cancel_;
 	Buffer output_buffer_;
 	Action *output_action_;
-	EventCallback *output_callback_;
+	BufferEventCallback *output_callback_;
 	bool output_eos_;
 	unsigned output_cork_;
 
@@ -49,11 +49,11 @@ protected:
 	~PipeProducer();
 
 	Action *input(Buffer *, EventCallback *);
-	Action *output(EventCallback *);
+	Action *output(BufferEventCallback *);
 
 private:
 	void output_cancel(void);
-	Action *output_do(EventCallback *);
+	Action *output_do(BufferEventCallback *);
 	void output_produced(void);
 
 public:
