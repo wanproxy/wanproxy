@@ -49,11 +49,7 @@ class CallbackBase : private Action {
 	Lock *lock_;
 	bool scheduled_;
 protected:
-	CallbackBase(CallbackScheduler *scheduler, Lock *xlock)
-	: scheduler_(scheduler),
-	  lock_(xlock),
-	  scheduled_(false)
-	{ }
+	CallbackBase(CallbackScheduler *, Lock *);
 
 	virtual ~CallbackBase()
 	{ }
@@ -63,13 +59,14 @@ public:
 
 	virtual void execute(void) = 0;
 
-	Action *schedule(void);
+	Action *schedule(void)
+	{
+		ASSERT_NON_NULL("/callback/base", scheduler_);
+		return (scheduler_->schedule(this));
+	}
 
 	Action *scheduled(CallbackScheduler *scheduler)
 	{
-		/* Pin anything not already pinned.  */
-		if (scheduler_ == NULL)
-			scheduler_ = scheduler;
 		/* It must not be pinned elsewhere.  */
 		ASSERT("/callback/base", scheduler_ == scheduler);
 		/* It must not already be scheduled.  */

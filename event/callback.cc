@@ -26,6 +26,25 @@
 #include <event/event_callback.h>
 #include <event/event_system.h>
 
+CallbackBase::CallbackBase(CallbackScheduler *scheduler, Lock *xlock)
+: scheduler_(scheduler),
+  lock_(xlock),
+  scheduled_(false)
+{
+	/*
+	 * Use the default scheduler if we haven't been given one.
+	 *
+	 * This uses the legacy callback thread, as it were, which
+	 * does not distribute callbacks over all available workers,
+	 * but rather runs naive callbacks all in the same thread.
+	 *
+	 * Eventually this needs to pick a worker using the lock
+	 * as an index into the available pool.
+	 */
+	if (scheduler_ == NULL)
+		scheduler_ = EventSystem::instance()->scheduler();
+}
+
 void
 CallbackBase::cancel(void)
 {
@@ -34,12 +53,4 @@ CallbackBase::cancel(void)
 	ASSERT_NON_NULL("/callback/base", scheduler_);
 	scheduler_->cancel(this);
 	scheduled_ = false;
-}
-
-Action *
-CallbackBase::schedule(void)
-{
-	if (scheduler_ != NULL)
-		return (scheduler_->schedule(this));
-	return (EventSystem::instance()->schedule(this));
 }

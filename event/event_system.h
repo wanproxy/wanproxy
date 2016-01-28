@@ -70,11 +70,6 @@ public:
 
 	Action *register_interest(const EventInterest&, SimpleCallback *);
 
-	Action *schedule(CallbackBase *cb)
-	{
-		return (td_.schedule(cb));
-	}
-
 	Action *timeout(unsigned ms, SimpleCallback *cb)
 	{
 		return (timeout_.timeout(ms, cb));
@@ -83,6 +78,11 @@ public:
 	void thread_wait(Thread *td)
 	{
 		threads_.push_back(td);
+	}
+
+	CallbackScheduler *scheduler(void)
+	{
+		return (&td_);
 	}
 
 	CallbackScheduler *worker(void);
