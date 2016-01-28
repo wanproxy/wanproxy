@@ -40,7 +40,7 @@
 SleepQueue::SleepQueue(const std::string& name, Mutex *mutex)
 : name_(name),
   mutex_(mutex),
-  state_(new SleepQueueState(mutex->state_))
+  state_(new SleepQueueState(mutex_->state_))
 { }
 
 SleepQueue::~SleepQueue()
