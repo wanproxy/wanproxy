@@ -1,114 +1,48 @@
-High-priority:
-	Add a mechanism for forwarding callbacks between EventThread instances,
-	or even just between thread instances.  Have a callback queue and an
-	fd to poll on, and when a remote thread adds something to an empty
-	callback queue, it writes something to the fd so as to wake up its
-	peer thread.  NB: Even better if the poll-compatible wakeups (note,
-	that's the real point here: don't want to mix fd polling and cv waiting,
-	for instance) were dependent on the EventPoll implementation.  That way
-	we could use kqueue's user types, etc., rather than needing to use a
-	pipe.
-
-	Alternately, move fd polling to its own thread and use condvars and
-	callback queues for everything else.
-
-	As part of testing/enabling/proofing that work, split EventThread into
-	two threads, and add one more.  One thread which does FD polling.  One
-	thread which does callback / timeout dispatch.  And then move the I/O
-	system into its own thread.  Does that sound about right?  Easy then to
-	start to move other things to their own threads, because the threading
-	concerns of each of those subsystems would be covered.  So we could
-	have some number of XCodec threads or whatever.  A work submission
-	model that's fairly generic would be nice.  So you could submit
-	callbacks or timeouts to the callback thread, fd registration and
-	deregestration to the poll thread, and I/O requests to the I/O thread.
-
-	Adds some latency, but probably worth it?
-
-	And for threads which need a specialized work submission process, we
-	could just override some method from Thread.  Have a simple base class
-	for work items, let each type of thread do a dynamic_cast from there
-	up?  Or provide more specific interfaces, do queueing in each thread's
-	class, and just provide a common alert() / biff() / ping() / wakeup()
-	method which alerts that an empty mailbox has become non-empty.  So
-	the poll thread doesn't have to use condvars AND fds somehow.  And let
-	each thread specify a timeout for sleeping, mostly useful for the
-	callback thread.
-
-o) Something like EventHandler to ease event cancellation proxies in classes that
-   may defer callbacks.  An extension of it to handle management of associated
-   resources (i.e. Buffers, really) would be the top ideal.
-
-Make it so that Actions can be given a callback after they are created, and
-then the source of the Action from that gets the hint to start and where to
-continue after the asynchronous action.  This has the nice benefit of getting
-rid of the callback parameter to async methods, e.g.
-	handler_.wait(socket_->read(0, handler_.callback()));
-Becomes:
-	handler_.wait(socket_->read(0));
-Where handler_.wait is like:
-	void wait(Action *a)
-	{
-		a->callback(this, &EventHandler::handle_callback);
-		action_ = a;
-	}
-Alternately, it would be nice to make asynchronous interfaces move to taking
-CallbackHandler or EventHandler instances, e.g.
-	socket_->read(0, &handler_);
-And then socket_->read is like:
-	void read(size_t amt, EventHandler *handler)
-	{
-		read_callback_ = handler->callback();
-		handler->wait(cancellation(this, Socket::read_cancel));
-
-		start_read();
-	}
-
-I feel like continuing to live with these possibilities may make clear how the
-various APIs may best change, e.g. perhaps read should be:
-	void read(size_t amt, EventHandler *handler)
-	{
-		read_handler_ = handler;
-		read_handler_->cancellation(this, Socket::read_cancel);
-
-		start_read();
-	}
-	...
-	void read_complete(Event e)
-	{
-		read_handler_->consume(e);
-	}
-
-%%%
+o) Assign scheduler to callback by the lock if one is not specified.  That way
+   we can ensure parallelism but resist ping-ponging and reduce contention.
+o) Fix the many broken examples and tests.
+o) Merge TimeoutThread into CallbackThread?  Some functional reasons to do so,
+   namely related to exiting, but is it aesthetic or correct?  Should every
+   thread that can run Callbacks also be able to schedule timeouts?
+   o) It seems like the right solution to this is pretty unsurprising.  Just
+      have each thread have its own predicates that need to be satisfied before
+      it will actuall heed a stop request, like the CallbackThread does.  So
+      EventPoll waits for no more registered handlers, the I/O thread does
+      likewise, the timeout code does likewise, etc.  We'd want to be a little
+      more conservative somehow, since we might have one fd being worked on and
+      need to service multiple reads or writes before quitting, right?  Also,
+      this all moves up the need for stop callbacks to actually get called!
+      o) Remember to handle wakeups on cancel, too, in this case.  So for the
+         EventPoll code, we would want to wakeup the sleeping thread if we've
+         just killed the last poll handler and stop_ is true.
+      o) Could require and seek quorum for threads to actually stop.  They could
+         indicate that they are idle and have been asked to stop, and when all
+         are idle, threads exit.  Once asked to stop, they will check in as idle
+         whenever they are, but allow processing of new work.
+   o) Get rid of WorkerThread once this is all done, or create a new class
+      based on the common traits of our now much richer set of Threads.
+o) Fix races with kqueue EventPoll.
+o) Proper stop handling for EventThread.
+   XXX What is there now is clearly not entirely right.
+o) Convert other poll mechanisms.
+o) Make TimeoutQueue/CallbackQueue suck less.
+o) Make signals suck slightly less, maybe.
+   XXX Seriously, signal interrupt handling sucks.
+o) Since XCodec pipes are consumer-producer now, we can defer production to a
+   thread, or at least do the real work in a thread and then have the pipes get
+   work to and from the thread.  It should be easy enough to abstract.  It
+   might be nice to have a generic framework for doing pipe processing for any
+   kind of pipe or maybe just a consumer-producer pipe in a specified thread.
+   Then the XCodec could just create a thread for each instance.
+o) Finally split callbacks and actions from event into callback?
 
 o) Do a pass with Log taking a LogHandle& not a const LogHandle& so I can
    find places using hard-coded strings to move into LogHandles.  Using a
    LogHandle is vastly superior since it probably means doing the right
    thing in virtual classes so that errors in the base class caused by the
    subclass make it clear where the problem might be.
-
 o) PipeProducer::input_do; PipeProducer::input_cork(), partial consume() ->
    require input_cork().
-
-Note:
-o) Callbacks are going through a period of major change.  For now, except for
-   the CallbackSchedulers, it is assumed that all callbacks will need to be
-   strongly typed, that is that most interfaces will take a SimpleCallback or
-   an EventCallback or similar, and use it directly.  This will mostly be a
-   problem in the TimeoutQueue.  If some class feels that it ought to be able
-   to schedule a timeout to handle a callback for, say, an EventCallback that
-   has already had its parameter set, we'll have problems.
-
-   NB: Once all extant code is converted in this manner, the CallbackBase
-       class could be named back to Callback, but since few things should be
-       using it directly, the more obtuse name may be desirable as an aid in
-       avoiding foot-shooting.  Or just rename CallbackBase to Schedulable
-       and have done with it.
-
-   XXX Eventually the schedule function could be moved into SimpleCallback,
-       TypedCallback, etc., so that we can in the latter case blow up badly
-       if someone asks to schedule a function whose parameter has not been
-       set.
 
 o) Make tack use the EventSystem and IOSystem now that the performance of
    the latter is substantially better than the hand-rolled I/O of tack.
@@ -118,29 +52,9 @@ o) Get simple packet capture/injection stuff working, enough to do some trivial
 o) Packet framing, so we can divide incoming Buffers up into protocol control
    and data fields, so that we deduplicate at useful boundaries and don't do
    things like include ephemeral fields or sensitive information.
-o) Begin introducing locking.
-o) Split polling across multiple threads, or do callbacks in one thread and
-   run the IOSystem on another (IOThread?)
-o) Find ways to reduce the cost of the EventThread abstraction, possibly by
-   decomposing it into several things and running timeouts and polling in
-   separate threads, so the inner loops are tighter.  callback-speed1 has
-   gotten quite painful on Mac OS X (though little impact on FreeBSD, perhaps
-   thread-local storage is faster on FreeBSD?)
 o) Add centralized implementations of Catenate and other patterns in lots of
    the tests.
-o) When splitting things into different threads, add a pipe-oriented condition
-   variable facility or something, at least for threads which need to poll,
-   rather than just use condition variabls.  Or perhaps we should just use an
-   inter-thread messaging paradigm to handle different queues for each thread,
-   which is slow but we can probably batch updates through a scheduler.
 
-For 0.7.1:
-o) Add an ActionCache which classes can use to dole out Actions and which at
-   destruction time will assert that there are no outstanding actions.  This
-   will make debugging code involving Actions easier and give better Action
-   allocation performance, done properly.
-
-For 0.7.2:
 o) Test error handling in epoll.
 o) Test error handling with port(3C).
 o) Make UnixClient and UnixServer take the SocketType as an argument to make
@@ -152,31 +66,14 @@ o) Make *Client::connect() work like TCPClient::connect().
 o) Move to the getrusage-based Timer class and make it clear that that is what
    it is for.  Perhaps create a Timer base class and a UserTimer and WallTimer
    for real use?
-o) Add a flush token for Pipe::input() ?
-o) Add a flush Event type for Pipe::output() ?
-   XXX It's unclear, but I think a flush method or similar may be needed to
-       implement buffer limiting?  A flush method being like input(), except
-       that it only returns once the last Pipe in the Pipeline has returned
-       flush complete, or error if data cannot be flushed because there is not
-       enough to finish processing the data that is pending, at which point
-       you at least know that everything else has been flushed?
-o) Make Pipe::input take a parameter to send EOS along with data.
 o) How do we find out if remote has shut down read channel so we can stop
    writing and shut down a Splice?
-o) Make interface/listener objects automatically start listening.
-o) Clean up address configuration objects to be more sensible, being either
-   specific components of addresses (e.g. to specify an IP address) or socket
-   addresses (e.g. AF_UNIX paths, IP+port pairs for TCP or UDP or SCTP.)
 o) Connector abstraction: connection pooling / connecting via a SOCKS server.
 
-For 0.8.0:
-o) Cache hierarchy, including persistent storage.
 o) TLS.
 
-For 0.9.0:
 o) Handle TCP OOB data.
 
-After 1.0.0:
 o) A CLI program for management.  Remember to USE_POLL=select since Mac OS X can
    only use select(2) for stdin and stdout.
 o) Make it possible to detect when we are sending to a socket that is also
@@ -200,13 +97,9 @@ Maybe:
 o) A resolver that's less fragile than the OS-supplied ones.  Mac OS X, at
    minimum, neither keeps a pool of file descriptors nor errors out gracefully
    when the OS is out of them, leading to hangs.
-o) Send definitions out-of-band, too, so that QoS and backpressure on one
-   connection can't delay other connections.
-o) In-path forwarding using BPF and a tiny network stack.
 o) Run-length-encoding.
 o) Many compression algorithms.
 o) Allow chaining codecs.
-o) SOCKS IPv6 support.
 o) Some decent way to configure Pipelines.
 o) Figure out a good name for a Pipeline, since Pipeline seems rubbish.
 o) Merge two Pipelines.
