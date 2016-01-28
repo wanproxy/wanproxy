@@ -52,6 +52,7 @@ ProxyConnector::ProxyConnector(const std::string& name,
   local_close_complete_(NULL, &mtx_, this, &ProxyConnector::local_close_complete),
   local_action_(NULL),
   local_socket_(local_socket),
+  connect_complete_(NULL, &mtx_, this, &ProxyConnector::connect_complete),
   remote_close_complete_(NULL, &mtx_, this, &ProxyConnector::remote_close_complete),
   remote_action_(NULL),
   remote_socket_(NULL),
@@ -70,8 +71,7 @@ ProxyConnector::ProxyConnector(const std::string& name,
 	}
 
 	ScopedLock _(&mtx_);
-	SocketEventCallback *cb = callback(&mtx_, this, &ProxyConnector::connect_complete);
-	remote_action_ = TCPClient::connect(impl, family, remote_name, cb);
+	remote_action_ = TCPClient::connect(impl, family, remote_name, &connect_complete_);
 
 	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, &stop_);
 }

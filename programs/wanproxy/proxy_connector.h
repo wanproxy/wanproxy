@@ -48,6 +48,7 @@ class ProxyConnector {
 	Action *local_action_;
 	Socket *local_socket_;
 
+	SocketEventCallback::Method<ProxyConnector> connect_complete_;
 	SimpleCallback::Method<ProxyConnector> remote_close_complete_;
 	Action *remote_action_;
 	Socket *remote_socket_;

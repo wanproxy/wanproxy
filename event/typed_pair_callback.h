@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,8 +36,14 @@
  */
 template<typename Ta, typename Tb>
 class TypedPairCallback : public CallbackBase {
+public:
+	template<class C>
+	class Method;
+
+private:
 	bool have_param_;
 	std::pair<Ta, Tb> param_;
+
 protected:
 	TypedPairCallback(CallbackScheduler *scheduler, Lock *xlock)
 	: CallbackBase(scheduler, xlock),
@@ -45,44 +51,51 @@ protected:
 	  param_()
 	{ }
 
-public:
 	virtual ~TypedPairCallback()
 	{ }
 
-protected:
 	virtual void operator() (Ta, Tb) = 0;
 
 public:
 	void execute(void)
 	{
-		ASSERT("/typed/pair/callback", have_param_);
-		(*this)(param_.first, param_.second);
+		ASSERT("/typed/callback", have_param_);
+
+		/*
+		 * We must do this here so that this callback can
+		 * be rescheduled with a new parameter within the
+		 * callback itself.
+		 */
+		std::pair<Ta, Tb> p = param_;
+		param_ = std::pair<Ta, Tb>();
+		have_param_ = false;
+
+		(*this)(p.first, p.second);
 	}
 
 	void param(Ta a, Tb b)
 	{
-		param_ = typename std::pair<Ta, Tb>(a, b);
+		param_ = std::pair<Ta, Tb>(a, b);
 		have_param_ = true;
 	}
 };
 
-template<typename Ta, typename Tb, class C>
-class ObjectTypedPairCallback : public TypedPairCallback<Ta, Tb> {
-public:
+template<typename Ta, typename Tb>
+template<class C>
+class TypedPairCallback<Ta, Tb>::Method : public TypedPairCallback<Ta, Tb> {
 	typedef void (C::*const method_t)(Ta, Tb);
 
-private:
 	C *const obj_;
 	method_t method_;
 public:
 	template<typename Tm>
-	ObjectTypedPairCallback(CallbackScheduler *scheduler, Lock *xlock, C *obj, Tm method)
+	Method(CallbackScheduler *scheduler, Lock *xlock, C *obj, Tm method)
 	: TypedPairCallback<Ta, Tb>(scheduler, xlock),
 	  obj_(obj),
 	  method_(method)
 	{ }
 
-	~ObjectTypedPairCallback()
+	~Method()
 	{ }
 
 private:
@@ -91,19 +104,5 @@ private:
 		(obj_->*method_)(a, b);
 	}
 };
-
-template<typename Ta, typename Tb, class C>
-TypedPairCallback<Ta, Tb> *callback(Lock *lock, C *obj, void (C::*const method)(Ta, Tb))
-{
-	TypedPairCallback<Ta, Tb> *cb = new ObjectTypedPairCallback<Ta, Tb, C>(NULL, lock, obj, method);
-	return (cb);
-}
-
-template<typename Ta, typename Tb, class C>
-TypedPairCallback<Ta, Tb> *callback(CallbackScheduler *scheduler, Lock *lock, C *obj, void (C::*const method)(Ta, Tb))
-{
-	TypedPairCallback<Ta, Tb> *cb = new ObjectTypedPairCallback<Ta, Tb, C>(scheduler, lock, obj, method);
-	return (cb);
-}
 
 #endif /* !EVENT_TYPED_PAIR_CALLBACK_H */

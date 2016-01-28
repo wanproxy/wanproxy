@@ -110,7 +110,6 @@ UDPClient::connect_cancel(void)
 	connect_action_ = NULL;
 
 	if (connect_callback_ != NULL) {
-		delete connect_callback_;
 		connect_callback_ = NULL;
 	} else {
 		/* XXX This has a race; caller could cancel after we schedule, but before callback occurs.  */

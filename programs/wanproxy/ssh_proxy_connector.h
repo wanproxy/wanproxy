@@ -54,6 +54,7 @@ class SSHProxyConnector {
 	Action *local_action_;
 	Socket *local_socket_;
 
+	SocketEventCallback::Method<SSHProxyConnector> connect_complete_;
 	SimpleCallback::Method<SSHProxyConnector> remote_close_complete_;
 	Action *remote_action_;
 	Socket *remote_socket_;

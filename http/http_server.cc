@@ -47,12 +47,12 @@ HTTPServerHandler::HTTPServerHandler(Socket *client)
   splice_action_(NULL),
   close_complete_(NULL, &mtx_, this, &HTTPServerHandler::close_complete),
   close_action_(NULL),
+  request_complete_(NULL, &mtx_, this, &HTTPServerHandler::request_complete),
   request_action_(NULL)
 {
 	ScopedLock _(&mtx_);
 	pipe_ = new HTTPServerPipe(log_ + "/pipe");
-	HTTPRequestEventCallback *hcb = callback(&mtx_, this, &HTTPServerHandler::request);
-	request_action_ = pipe_->request(hcb);
+	request_action_ = pipe_->request(&request_complete_);
 
 	splice_ = new Splice(log_, client_, pipe_, client_);
 	splice_action_ = splice_->start(&splice_complete_);
@@ -82,7 +82,7 @@ HTTPServerHandler::close_complete(void)
 }
 
 void
-HTTPServerHandler::request(Event e, HTTPProtocol::Request req)
+HTTPServerHandler::request_complete(Event e, HTTPProtocol::Request req)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	request_action_->cancel();

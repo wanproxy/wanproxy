@@ -40,6 +40,7 @@ class SimpleServer {
 	LogHandle log_;
 	Mutex mtx_;
 	L *server_;
+	SocketEventCallback::Method<SimpleServer> accept_complete_;
 	Action *accept_action_;
 	SimpleCallback::Method<SimpleServer> close_complete_;
 	Action *close_action_;
@@ -50,6 +51,7 @@ public:
 	: log_(log),
 	  mtx_("SimpleServer"),
 	  server_(NULL),
+	  accept_complete_(NULL, &mtx_, this, &SimpleServer::accept_complete),
 	  accept_action_(NULL),
 	  close_complete_(NULL, &mtx_, this, &SimpleServer::close_complete),
 	  close_action_(NULL),
@@ -63,8 +65,7 @@ public:
 		INFO(log_) << "Listening on: " << server_->getsockname();
 
 		ScopedLock _(&mtx_);
-		SocketEventCallback *cb = callback(&mtx_, this, &SimpleServer::accept_complete);
-		accept_action_ = server_->accept(cb);
+		accept_action_ = server_->accept(&accept_complete_);
 
 		stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, &stop_);
 	}
@@ -100,8 +101,7 @@ private:
 			client_connected(client);
 		}
 
-		SocketEventCallback *cb = callback(&mtx_, this, &SimpleServer::accept_complete);
-		accept_action_ = server_->accept(cb);
+		accept_action_ = server_->accept(&accept_complete_);
 	}
 
 	void close_complete(void)

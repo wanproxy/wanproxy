@@ -49,6 +49,7 @@ private:
 	Action *splice_action_;
 	SimpleCallback::Method<HTTPServerHandler> close_complete_;
 	Action *close_action_;
+	HTTPRequestEventCallback::Method<HTTPServerHandler> request_complete_;
 	Action *request_action_;
 public:
 	HTTPServerHandler(Socket *);
@@ -57,7 +58,7 @@ protected:
 
 private:
 	void close_complete(void);
-	void request(Event, HTTPProtocol::Request);
+	void request_complete(Event, HTTPProtocol::Request);
 	void splice_complete(Event);
 
 	virtual void handle_request(const std::string&, const std::string&, HTTPProtocol::Request) = 0;
