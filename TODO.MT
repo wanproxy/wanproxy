@@ -1,8 +1,6 @@
+o) Assign scheduler to callback by the lock if one is not specified.  That way
+   we can ensure parallelism but resist ping-ponging and reduce contention.
 o) Fix the many broken examples and tests.
-o) Persistent callbacks would be nice to minimize our overhead.
-o) Easier assigning of a scheduler to all of the callbacks in a given object,
-   possibly by mutex?
-   o) With persistent callbacks the scheduler lookups can be cached.
 o) Merge TimeoutThread into CallbackThread?  Some functional reasons to do so,
    namely related to exiting, but is it aesthetic or correct?  Should every
    thread that can run Callbacks also be able to schedule timeouts?
