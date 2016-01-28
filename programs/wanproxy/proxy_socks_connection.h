@@ -53,7 +53,7 @@ class ProxySocksConnection {
 	Mutex mtx_;
 	std::string name_;
 	Socket *client_;
-	SimpleCallbackMethod<ProxySocksConnection> close_complete_;
+	SimpleCallback::Method<ProxySocksConnection> close_complete_;
 	Action *action_;
 	State state_;
 	uint16_t network_port_;

@@ -85,6 +85,10 @@ public:
 };
 
 class SimpleCallback : public CallbackBase {
+public:
+	template<class C>
+	class Method;
+
 protected:
 	SimpleCallback(CallbackScheduler *scheduler, Lock *xlock)
 	: CallbackBase(scheduler, xlock)
@@ -104,20 +108,20 @@ protected:
 };
 
 template<class C>
-class SimpleCallbackMethod : public SimpleCallback {
+class SimpleCallback::Method : public SimpleCallback {
 	typedef void (C::*const method_t)(void);
 
 	C *const obj_;
 	method_t method_;
 public:
 	template<typename T>
-	SimpleCallbackMethod(CallbackScheduler *scheduler, Lock *xlock, C *obj, T method)
+	Method(CallbackScheduler *scheduler, Lock *xlock, C *obj, T method)
 	: SimpleCallback(scheduler, xlock),
 	  obj_(obj),
 	  method_(method)
 	{ }
 
-	~SimpleCallbackMethod()
+	~Method()
 	{ }
 
 private:

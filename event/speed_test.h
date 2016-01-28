@@ -37,9 +37,9 @@ class SpeedTest {
 protected:
 	Mutex mtx_;
 public:
-	SimpleCallbackMethod<SpeedTest> callback_complete_;
+	SimpleCallback::Method<SpeedTest> callback_complete_;
 	Action *callback_action_;
-	SimpleCallbackMethod<SpeedTest> timer_;
+	SimpleCallback::Method<SpeedTest> timer_;
 	Action *timeout_action_;
 public:
 	SpeedTest(void)

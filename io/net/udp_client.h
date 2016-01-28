@@ -39,7 +39,7 @@ class UDPClient {
 	SocketAddressFamily family_;
 	Socket *socket_;
 
-	SimpleCallbackMethod<UDPClient> close_complete_;
+	SimpleCallback::Method<UDPClient> close_complete_;
 	Action *close_action_;
 
 	Cancellation<UDPClient> connect_cancel_;

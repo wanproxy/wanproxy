@@ -41,9 +41,9 @@ class SimpleServer {
 	Mutex mtx_;
 	L *server_;
 	Action *accept_action_;
-	SimpleCallbackMethod<SimpleServer> close_complete_;
+	SimpleCallback::Method<SimpleServer> close_complete_;
 	Action *close_action_;
-	SimpleCallbackMethod<SimpleServer> stop_;
+	SimpleCallback::Method<SimpleServer> stop_;
 	Action *stop_action_;
 public:
 	SimpleServer(LogHandle log, SocketImpl impl, SocketAddressFamily family, const std::string& interface)

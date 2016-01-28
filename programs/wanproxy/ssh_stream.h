@@ -59,7 +59,7 @@ class SSHStream : public StreamChannel {
 	Action *read_action_;
 	Buffer input_buffer_;
 
-	SimpleCallbackMethod<SSHStream> ready_complete_;
+	SimpleCallback::Method<SSHStream> ready_complete_;
 	bool ready_;
 	Action *ready_action_;
 
