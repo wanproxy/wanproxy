@@ -41,7 +41,9 @@ class SimpleServer {
 	Mutex mtx_;
 	L *server_;
 	Action *accept_action_;
+	SimpleCallbackMethod<SimpleServer> close_complete_;
 	Action *close_action_;
+	SimpleCallbackMethod<SimpleServer> stop_;
 	Action *stop_action_;
 public:
 	SimpleServer(LogHandle log, SocketImpl impl, SocketAddressFamily family, const std::string& interface)
@@ -49,7 +51,9 @@ public:
 	  mtx_("SimpleServer"),
 	  server_(NULL),
 	  accept_action_(NULL),
+	  close_complete_(NULL, &mtx_, this, &SimpleServer::close_complete),
 	  close_action_(NULL),
+	  stop_(NULL, &mtx_, this, &SimpleServer::stop),
 	  stop_action_(NULL)
 	{
 		server_ = L::listen(impl, family, interface);
@@ -62,8 +66,7 @@ public:
 		SocketEventCallback *cb = callback(&mtx_, this, &SimpleServer::accept_complete);
 		accept_action_ = server_->accept(cb);
 
-		SimpleCallback *scb = callback(&mtx_, this, &SimpleServer::stop);
-		stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
+		stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, &stop_);
 	}
 
 	virtual ~SimpleServer()
@@ -125,8 +128,7 @@ private:
 
 		ASSERT_NULL(log_, close_action_);
 
-		SimpleCallback *cb = callback(&mtx_, this, &SimpleServer::close_complete);
-		close_action_ = server_->close(cb);
+		close_action_ = server_->close(&close_complete_);
 	}
 
 	virtual void client_connected(Socket *) = 0;

@@ -490,7 +490,6 @@ SSH::TransportPipe::ready_cancel(void)
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (ready_callback_ != NULL) {
 		ASSERT(log_, !ready_);
-		delete ready_callback_;
 		ready_callback_ = NULL;
 	}
 

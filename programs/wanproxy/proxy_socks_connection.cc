@@ -41,6 +41,7 @@ ProxySocksConnection::ProxySocksConnection(const std::string& name, Socket *clie
   mtx_("ProxySocksConnection::" + name),
   name_(name),
   client_(client),
+  close_complete_(NULL, &mtx_, this, &ProxySocksConnection::close_complete),
   action_(NULL),
   state_(GetSOCKSVersion),
   network_port_(0),
@@ -394,6 +395,5 @@ ProxySocksConnection::schedule_close(void)
 	ASSERT_NULL(log_, action_);
 
 	ASSERT_NON_NULL(log_, client_);
-	SimpleCallback *cb = callback(&mtx_, this, &ProxySocksConnection::close_complete);
-	action_ = client_->close(cb);
+	action_ = client_->close(&close_complete_);
 }

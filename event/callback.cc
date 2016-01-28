@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,7 +34,6 @@ CallbackBase::cancel(void)
 	ASSERT_NON_NULL("/callback/base", scheduler_);
 	scheduler_->cancel(this);
 	scheduled_ = false;
-	delete this;
 }
 
 Action *

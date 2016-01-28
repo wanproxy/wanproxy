@@ -48,7 +48,6 @@ void
 EventPoll::PollHandler::cancel(void)
 {
 	if (callback_ != NULL) {
-		delete callback_;
 		callback_ = NULL;
 		ASSERT_NULL("/event/poll/handler", action_);
 	} else {

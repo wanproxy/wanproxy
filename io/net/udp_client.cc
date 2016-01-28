@@ -38,6 +38,7 @@ UDPClient::UDPClient(SocketImpl impl, SocketAddressFamily family)
   impl_(impl),
   family_(family),
   socket_(NULL),
+  close_complete_(NULL, &mtx_, this, &UDPClient::close_complete),
   close_action_(NULL),
   connect_cancel_(&mtx_, this, &UDPClient::connect_cancel),
   connect_action_(NULL),
@@ -121,8 +122,7 @@ UDPClient::connect_cancel(void)
 	}
 
 	ASSERT_NON_NULL(log_, socket_);
-	SimpleCallback *cb = callback(&mtx_, this, &UDPClient::close_complete);
-	close_action_ = socket_->close(cb);
+	close_action_ = socket_->close(&close_complete_);
 }
 
 void

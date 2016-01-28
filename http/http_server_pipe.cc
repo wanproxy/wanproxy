@@ -174,7 +174,6 @@ HTTPServerPipe::cancel(void)
 		ASSERT_NULL(log_, callback_);
 	} else {
 		ASSERT_NON_NULL(log_, callback_);
-		delete callback_;
 		callback_ = NULL;
 	}
 }

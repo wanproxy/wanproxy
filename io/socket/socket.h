@@ -28,7 +28,6 @@
 #define	IO_SOCKET_SOCKET_H
 
 #include <event/event.h>
-#include <event/object_callback.h>
 #include <event/typed_pair_callback.h>
 
 #include <io/channel.h>

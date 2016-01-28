@@ -55,7 +55,6 @@ protected:
 	  scheduled_(false)
 	{ }
 
-public:
 	virtual ~CallbackBase()
 	{ }
 
@@ -91,10 +90,10 @@ protected:
 	: CallbackBase(scheduler, xlock)
 	{ }
 
-public:
 	virtual ~SimpleCallback()
 	{ }
 
+public:
 	void execute(void)
 	{
 		(*this)();
@@ -102,6 +101,30 @@ public:
 
 protected:
 	virtual void operator() (void) = 0;
+};
+
+template<class C>
+class SimpleCallbackMethod : public SimpleCallback {
+	typedef void (C::*const method_t)(void);
+
+	C *const obj_;
+	method_t method_;
+public:
+	template<typename T>
+	SimpleCallbackMethod(CallbackScheduler *scheduler, Lock *xlock, C *obj, T method)
+	: SimpleCallback(scheduler, xlock),
+	  obj_(obj),
+	  method_(method)
+	{ }
+
+	~SimpleCallbackMethod()
+	{ }
+
+private:
+	void operator() (void)
+	{
+		(obj_->*method_)();
+	}
 };
 
 #endif /* !EVENT_CALLBACK_H */

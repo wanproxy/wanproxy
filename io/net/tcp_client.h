@@ -41,6 +41,7 @@ class TCPClient {
 	SocketAddressFamily family_;
 	Socket *socket_;
 
+	SimpleCallbackMethod<TCPClient> close_complete_;
 	Action *close_action_;
 
 	Cancellation<TCPClient> connect_cancel_;

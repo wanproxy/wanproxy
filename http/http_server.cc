@@ -44,6 +44,7 @@ HTTPServerHandler::HTTPServerHandler(Socket *client)
   pipe_(NULL),
   splice_(NULL),
   splice_action_(NULL),
+  close_complete_(NULL, &mtx_, this, &HTTPServerHandler::close_complete),
   close_action_(NULL),
   request_action_(NULL)
 {
@@ -162,6 +163,5 @@ HTTPServerHandler::splice_complete(Event e)
 	pipe_ = NULL;
 
 	ASSERT_NULL(log_, close_action_);
-	SimpleCallback *cb = callback(&mtx_, this, &HTTPServerHandler::close_complete);
-	close_action_ = client_->close(cb);
+	close_action_ = client_->close(&close_complete_);
 }

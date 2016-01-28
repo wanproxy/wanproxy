@@ -63,6 +63,7 @@ SSHStream::SSHStream(const LogHandle& log, const SSHProxyConfig *ssh_config, SSH
   read_callback_(NULL),
   read_action_(NULL),
   input_buffer_(),
+  ready_complete_(NULL, &mtx_, this, &SSHStream::ready_complete),
   ready_(false),
   ready_action_(NULL),
   write_cancel_(&mtx_, this, &SSHStream::write_cancel),
@@ -81,8 +82,7 @@ SSHStream::SSHStream(const LogHandle& log, const SSHProxyConfig *ssh_config, SSH
 	pipe_ = new SSH::TransportPipe(&session_);
 
 	ScopedLock _(&mtx_);
-	SimpleCallback *cb = callback(&mtx_, this, &SSHStream::ready_complete);
-	ready_action_ = pipe_->ready(cb);
+	ready_action_ = pipe_->ready(&ready_complete_);
 }
 
 SSHStream::~SSHStream()
@@ -189,10 +189,8 @@ void
 SSHStream::start_cancel(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	if (start_callback_ != NULL) {
-		delete start_callback_;
+	if (start_callback_ != NULL)
 		start_callback_ = NULL;
-	}
 	
 	if (start_action_ != NULL) {
 		start_action_->cancel();

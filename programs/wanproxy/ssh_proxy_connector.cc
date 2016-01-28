@@ -50,15 +50,20 @@ SSHProxyConnector::SSHProxyConnector(const std::string& name,
 				     WANProxyCodec *outgoing_codec)
 : log_("/wanproxy/proxy/" + name + "/connector"),
   mtx_("SSHProxyConnector::" + name),
+  stop_(NULL, &mtx_, this, &SSHProxyConnector::stop),
   stop_action_(NULL),
+  local_close_complete_(NULL, &mtx_, this, &SSHProxyConnector::local_close_complete),
   local_action_(NULL),
   local_socket_(local_socket),
+  remote_close_complete_(NULL, &mtx_, this, &SSHProxyConnector::remote_close_complete),
   remote_action_(NULL),
   remote_socket_(NULL),
   pipe_pair_(pipe_pair),
+  incoming_ssh_stream_complete_(NULL, &mtx_, this, &SSHProxyConnector::incoming_ssh_stream_complete),
   incoming_stream_(log_, ssh_config, SSH::ServerRole, incoming_codec, outgoing_codec),
   incoming_pipe_(NULL),
   incoming_splice_(NULL),
+  outgoing_ssh_stream_complete_(NULL, &mtx_, this, &SSHProxyConnector::outgoing_ssh_stream_complete),
   outgoing_stream_(log_, ssh_config, SSH::ClientRole, outgoing_codec, incoming_codec),
   outgoing_pipe_(NULL),
   outgoing_splice_(NULL),
@@ -74,8 +79,7 @@ SSHProxyConnector::SSHProxyConnector(const std::string& name,
 	SocketEventCallback *cb = callback(&mtx_, this, &SSHProxyConnector::connect_complete);
 	remote_action_ = TCPClient::connect(impl, family, remote_name, cb);
 
-	SimpleCallback *scb = callback(&mtx_, this, &SSHProxyConnector::stop);
-	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
+	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, &stop_);
 }
 
 SSHProxyConnector::~SSHProxyConnector()
@@ -162,11 +166,8 @@ SSHProxyConnector::connect_complete(Event e, Socket *socket)
 	remote_socket_ = socket;
 	ASSERT_NON_NULL(log_, remote_socket_);
 
-	SimpleCallback *iscb = callback(&mtx_, this, &SSHProxyConnector::incoming_ssh_stream_complete);
-	incoming_stream_action_ = incoming_stream_.start(local_socket_, iscb);
-
-	SimpleCallback *oscb = callback(&mtx_, this, &SSHProxyConnector::outgoing_ssh_stream_complete);
-	outgoing_stream_action_ = outgoing_stream_.start(remote_socket_, oscb);
+	incoming_stream_action_ = incoming_stream_.start(local_socket_, &incoming_ssh_stream_complete_);
+	outgoing_stream_action_ = outgoing_stream_.start(remote_socket_, &outgoing_ssh_stream_complete_);
 
 	incoming_splice_ = new Splice(log_ + "/incoming", &incoming_stream_, incoming_pipe_, &outgoing_stream_);
 	outgoing_splice_ = new Splice(log_ + "/outgoing", &outgoing_stream_, outgoing_pipe_, &incoming_stream_);
@@ -264,14 +265,11 @@ SSHProxyConnector::schedule_close(void)
 
 	ASSERT_NULL(log_, local_action_);
 	ASSERT_NON_NULL(log_, local_socket_);
-	SimpleCallback *lcb = callback(&mtx_, this, &SSHProxyConnector::local_close_complete);
-	local_action_ = local_socket_->close(lcb);
+	local_action_ = local_socket_->close(&local_close_complete_);
 
 	ASSERT_NULL(log_, remote_action_);
-	if (remote_socket_ != NULL) {
-		SimpleCallback *rcb = callback(&mtx_, this, &SSHProxyConnector::remote_close_complete);
-		remote_action_ = remote_socket_->close(rcb);
-	}
+	if (remote_socket_ != NULL)
+		remote_action_ = remote_socket_->close(&remote_close_complete_);
 }
 
 void

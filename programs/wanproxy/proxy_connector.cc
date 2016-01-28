@@ -47,9 +47,12 @@ ProxyConnector::ProxyConnector(const std::string& name,
 			 const std::string& remote_name)
 : log_("/wanproxy/proxy/" + name + "/connector"),
   mtx_("ProxyConnector::" + name),
+  stop_(NULL, &mtx_, this, &ProxyConnector::stop),
   stop_action_(NULL),
+  local_close_complete_(NULL, &mtx_, this, &ProxyConnector::local_close_complete),
   local_action_(NULL),
   local_socket_(local_socket),
+  remote_close_complete_(NULL, &mtx_, this, &ProxyConnector::remote_close_complete),
   remote_action_(NULL),
   remote_socket_(NULL),
   pipe_pair_(pipe_pair),
@@ -69,8 +72,7 @@ ProxyConnector::ProxyConnector(const std::string& name,
 	SocketEventCallback *cb = callback(&mtx_, this, &ProxyConnector::connect_complete);
 	remote_action_ = TCPClient::connect(impl, family, remote_name, cb);
 
-	SimpleCallback *scb = callback(&mtx_, this, &ProxyConnector::stop);
-	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
+	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, &stop_);
 }
 
 ProxyConnector::~ProxyConnector()
@@ -254,12 +256,9 @@ ProxyConnector::schedule_close(void)
 
 	ASSERT_NULL(log_, local_action_);
 	ASSERT_NON_NULL(log_, local_socket_);
-	SimpleCallback *lcb = callback(&mtx_, this, &ProxyConnector::local_close_complete);
-	local_action_ = local_socket_->close(lcb);
+	local_action_ = local_socket_->close(&local_close_complete_);
 
 	ASSERT_NULL(log_, remote_action_);
-	if (remote_socket_ != NULL) {
-		SimpleCallback *rcb = callback(&mtx_, this, &ProxyConnector::remote_close_complete);
-		remote_action_ = remote_socket_->close(rcb);
-	}
+	if (remote_socket_ != NULL)
+		remote_action_ = remote_socket_->close(&remote_close_complete_);
 }

@@ -46,6 +46,7 @@ protected:
 private:
 	Splice *splice_;
 	Action *splice_action_;
+	SimpleCallbackMethod<HTTPServerHandler> close_complete_;
 	Action *close_action_;
 	Action *request_action_;
 public:

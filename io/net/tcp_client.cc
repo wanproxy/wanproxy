@@ -36,6 +36,7 @@ TCPClient::TCPClient(SocketImpl impl, SocketAddressFamily family)
   impl_(impl),
   family_(family),
   socket_(NULL),
+  close_complete_(NULL, &mtx_, this, &TCPClient::close_complete),
   close_action_(NULL),
   connect_cancel_(&mtx_, this, &TCPClient::connect_cancel),
   connect_action_(NULL),
@@ -127,8 +128,7 @@ TCPClient::connect_cancel(void)
 	}
 
 	ASSERT_NON_NULL(log_, socket_);
-	SimpleCallback *cb = callback(&mtx_, this, &TCPClient::close_complete);
-	close_action_ = socket_->close(cb);
+	close_action_ = socket_->close(&close_complete_);
 }
 
 void

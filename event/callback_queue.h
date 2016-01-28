@@ -139,7 +139,6 @@ private:
 				ASSERT_NULL("/callback/queue", a->callback_);
 			} else {
 				ASSERT_NON_NULL("/callback/queue", a->callback_);
-				delete a->callback_;
 				a->callback_ = NULL;
 			}
 

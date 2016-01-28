@@ -41,11 +41,14 @@ class ProxyConnector {
 
 	Mutex mtx_;
 
+	SimpleCallbackMethod<ProxyConnector> stop_;
 	Action *stop_action_;
 
+	SimpleCallbackMethod<ProxyConnector> local_close_complete_;
 	Action *local_action_;
 	Socket *local_socket_;
 
+	SimpleCallbackMethod<ProxyConnector> remote_close_complete_;
 	Action *remote_action_;
 	Socket *remote_socket_;
 

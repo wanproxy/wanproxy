@@ -28,7 +28,7 @@
 
 #include <common/thread/mutex.h>
 
-#include <event/event_callback.h>
+#include <event/callback.h>
 #include <event/event_system.h>
 
 #define	SPEED_TEST_TIMER_MS	1000
@@ -37,16 +37,20 @@ class SpeedTest {
 protected:
 	Mutex mtx_;
 public:
+	SimpleCallbackMethod<SpeedTest> callback_complete_;
 	Action *callback_action_;
+	SimpleCallbackMethod<SpeedTest> timer_;
 	Action *timeout_action_;
 public:
 	SpeedTest(void)
 	: mtx_("SpeedTest"),
+	  callback_complete_(NULL, &mtx_, this, &SpeedTest::callback_complete),
 	  callback_action_(NULL),
+	  timer_(NULL, &mtx_, this, &SpeedTest::timer),
 	  timeout_action_(NULL)
 	{
 		ScopedLock _(&mtx_);
-		timeout_action_ = EventSystem::instance()->timeout(SPEED_TEST_TIMER_MS, callback(&mtx_, this, &SpeedTest::timer));
+		timeout_action_ = EventSystem::instance()->timeout(SPEED_TEST_TIMER_MS, &timer_);
 	}
 
 	virtual ~SpeedTest()
@@ -86,7 +90,7 @@ protected:
 	{
 		ASSERT_LOCK_OWNED("/speed/test", &mtx_);
 		ASSERT_NULL("/speed/test", callback_action_);
-		callback_action_ = callback(&mtx_, this, &SpeedTest::callback_complete)->schedule();
+		callback_action_ = callback_complete_.schedule();
 	}
 
 	virtual void perform(void)

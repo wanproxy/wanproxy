@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2008-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -47,21 +47,26 @@ class SSHProxyConnector {
 
 	Mutex mtx_;
 
+	SimpleCallbackMethod<SSHProxyConnector> stop_;
 	Action *stop_action_;
 
+	SimpleCallbackMethod<SSHProxyConnector> local_close_complete_;
 	Action *local_action_;
 	Socket *local_socket_;
 
+	SimpleCallbackMethod<SSHProxyConnector> remote_close_complete_;
 	Action *remote_action_;
 	Socket *remote_socket_;
 
 	PipePair *pipe_pair_;
 
+	SimpleCallbackMethod<SSHProxyConnector> incoming_ssh_stream_complete_;
 	SSHStream incoming_stream_;
 	Action *incoming_stream_action_;
 	Pipe *incoming_pipe_;
 	Splice *incoming_splice_;
 
+	SimpleCallbackMethod<SSHProxyConnector> outgoing_ssh_stream_complete_;
 	SSHStream outgoing_stream_;
 	Action *outgoing_stream_action_;
 	Pipe *outgoing_pipe_;
