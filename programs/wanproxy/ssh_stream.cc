@@ -55,10 +55,12 @@ SSHStream::SSHStream(const LogHandle& log, const SSHProxyConfig *ssh_config, SSH
   outgoing_codec_(outgoing_codec),
   pipe_(NULL),
   splice_(NULL),
+  splice_complete_(NULL, &mtx_, this, &SSHStream::splice_complete),
   splice_action_(NULL),
   start_cancel_(&mtx_, this, &SSHStream::start_cancel),
   start_callback_(NULL),
   start_action_(NULL),
+  receive_complete_(NULL, &mtx_, this, &SSHStream::receive_complete),
   read_cancel_(&mtx_, this, &SSHStream::read_cancel),
   read_callback_(NULL),
   read_action_(NULL),
@@ -108,8 +110,7 @@ SSHStream::start(Socket *socket, SimpleCallback *cb)
 	start_callback_ = cb;
 
 	splice_ = new Splice(log_ + "/splice", socket_, pipe_, socket_);
-	EventCallback *scb = callback(&mtx_, this, &SSHStream::splice_complete);
-	splice_action_ = splice_->start(scb);
+	splice_action_ = splice_->start(&splice_complete_);
 
 	return (&start_cancel_);
 }
@@ -149,8 +150,7 @@ SSHStream::read(size_t amt, EventCallback *cb)
 	}
 
 	read_callback_ = cb;
-	EventCallback *rcb = callback(&mtx_, this, &SSHStream::receive_complete);
-	read_action_ = pipe_->receive(rcb);
+	read_action_ = pipe_->receive(&receive_complete_);
 
 	return (&read_cancel_);
 }
@@ -212,10 +212,8 @@ void
 SSHStream::read_cancel(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	if (read_callback_ != NULL) {
-		delete read_callback_;
+	if (read_callback_ != NULL)
 		read_callback_ = NULL;
-	}
 
 	if (read_action_ != NULL) {
 		read_action_->cancel();
@@ -325,10 +323,8 @@ SSHStream::write_cancel(void)
 		write_action_ = NULL;
 	}
 
-	if (write_callback_ != NULL) {
-		delete write_callback_;
+	if (write_callback_ != NULL)
 		write_callback_ = NULL;
-	}
 }
 
 void

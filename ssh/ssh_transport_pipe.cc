@@ -271,10 +271,8 @@ SSH::TransportPipe::receive_cancel(void)
 		receive_action_ = NULL;
 	}
 
-	if (receive_callback_ != NULL) {
-		delete receive_callback_;
+	if (receive_callback_ != NULL)
 		receive_callback_ = NULL;
-	}
 }
 
 void

@@ -60,6 +60,7 @@ ProxyConnector::ProxyConnector(const std::string& name,
   incoming_splice_(NULL),
   outgoing_pipe_(NULL),
   outgoing_splice_(NULL),
+  splice_complete_(NULL, &mtx_, this, &ProxyConnector::splice_complete),
   splice_pair_(NULL),
   splice_action_(NULL)
 {
@@ -165,8 +166,7 @@ ProxyConnector::connect_complete(Event e, Socket *socket)
 
 	splice_pair_ = new SplicePair(outgoing_splice_, incoming_splice_);
 
-	EventCallback *cb = callback(&mtx_, this, &ProxyConnector::splice_complete);
-	splice_action_ = splice_pair_->start(cb);
+	splice_action_ = splice_pair_->start(&splice_complete_);
 }
 
 void

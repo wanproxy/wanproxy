@@ -42,6 +42,7 @@ class UDPClient {
 	SimpleCallback::Method<UDPClient> close_complete_;
 	Action *close_action_;
 
+	EventCallback::Method<UDPClient> connect_complete_;
 	Cancellation<UDPClient> connect_cancel_;
 	Action *connect_action_;
 	SocketEventCallback *connect_callback_;

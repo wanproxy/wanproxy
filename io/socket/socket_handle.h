@@ -37,9 +37,13 @@ class SocketHandle : public Socket, public StreamHandle {
 
 	LogHandle log_;
 	Mutex mtx_;
+
+	EventCallback::Method<SocketHandle> accept_poll_complete_;
 	Cancellation<SocketHandle> accept_cancel_;
 	Action *accept_action_;
 	SocketEventCallback *accept_callback_;
+
+	EventCallback::Method<SocketHandle> connect_poll_complete_;
 	Cancellation<SocketHandle> connect_cancel_;
 	EventCallback *connect_callback_;
 	Action *connect_action_;
@@ -58,11 +62,11 @@ public:
 	virtual std::string getsockname(void) const;
 
 private:
-	void accept_callback(Event);
+	void accept_poll_complete(Event);
 	void accept_cancel(void);
 	Action *accept_schedule(void);
 
-	void connect_callback(Event);
+	void connect_poll_complete(Event);
 	void connect_cancel(void);
 	Action *connect_schedule(void);
 

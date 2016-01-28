@@ -43,6 +43,7 @@ HTTPServerHandler::HTTPServerHandler(Socket *client)
   client_(client),
   pipe_(NULL),
   splice_(NULL),
+  splice_complete_(NULL, &mtx_, this, &HTTPServerHandler::splice_complete),
   splice_action_(NULL),
   close_complete_(NULL, &mtx_, this, &HTTPServerHandler::close_complete),
   close_action_(NULL),
@@ -54,8 +55,7 @@ HTTPServerHandler::HTTPServerHandler(Socket *client)
 	request_action_ = pipe_->request(hcb);
 
 	splice_ = new Splice(log_, client_, pipe_, client_);
-	EventCallback *scb = callback(&mtx_, this, &HTTPServerHandler::splice_complete);
-	splice_action_ = splice_->start(scb);
+	splice_action_ = splice_->start(&splice_complete_);
 }
 
 HTTPServerHandler::~HTTPServerHandler()

@@ -45,6 +45,7 @@ protected:
 	HTTPServerPipe *pipe_;
 private:
 	Splice *splice_;
+	EventCallback::Method<HTTPServerHandler> splice_complete_;
 	Action *splice_action_;
 	SimpleCallback::Method<HTTPServerHandler> close_complete_;
 	Action *close_action_;

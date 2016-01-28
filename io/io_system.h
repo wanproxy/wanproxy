@@ -46,6 +46,7 @@ class IOSystem {
 		int fd_;
 		Channel *owner_;
 
+		EventCallback::Method<Handle> read_poll_complete_;
 		Cancellation<Handle> read_cancel_;
 		off_t read_offset_;
 		size_t read_amount_;
@@ -53,6 +54,7 @@ class IOSystem {
 		EventCallback *read_callback_;
 		Action *read_action_;
 
+		EventCallback::Method<Handle> write_poll_complete_;
 		Cancellation<Handle> write_cancel_;
 		off_t write_offset_;
 		Buffer write_buffer_;
@@ -64,12 +66,12 @@ class IOSystem {
 
 		Action *close_do(SimpleCallback *);
 
-		void read_callback(Event);
+		void read_poll_complete(Event);
 		void read_cancel(void);
 		Action *read_do(void);
 		Action *read_schedule(void);
 
-		void write_callback(Event);
+		void write_poll_complete(Event);
 		void write_cancel(void);
 		Action *write_do(void);
 		Action *write_schedule(void);

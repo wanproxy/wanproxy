@@ -48,9 +48,11 @@ SocketHandle::SocketHandle(int fd, int domain, int socktype, int protocol)
   StreamHandle(fd),
   log_("/socket/handle"),
   mtx_("SocketHandle"),
+  accept_poll_complete_(NULL, &mtx_, this, &SocketHandle::accept_poll_complete),
   accept_cancel_(&mtx_, this, &SocketHandle::accept_cancel),
   accept_action_(NULL),
   accept_callback_(NULL),
+  connect_poll_complete_(NULL, &mtx_, this, &SocketHandle::connect_poll_complete),
   connect_cancel_(&mtx_, this, &SocketHandle::connect_cancel),
   connect_callback_(NULL),
   connect_action_(NULL)
@@ -231,7 +233,7 @@ SocketHandle::getsockname(void) const
 }
 
 void
-SocketHandle::accept_callback(Event e)
+SocketHandle::accept_poll_complete(Event e)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	accept_action_->cancel();
@@ -281,22 +283,19 @@ SocketHandle::accept_cancel(void)
 	accept_action_->cancel();
 	accept_action_ = NULL;
 
-	if (accept_callback_ != NULL) {
-		delete accept_callback_;
+	if (accept_callback_ != NULL)
 		accept_callback_ = NULL;
-	}
 }
 
 Action *
 SocketHandle::accept_schedule(void)
 {
-	EventCallback *cb = callback(&mtx_, this, &SocketHandle::accept_callback);
-	Action *a = EventSystem::instance()->poll(EventPoll::Readable, fd_, cb);
+	Action *a = EventSystem::instance()->poll(EventPoll::Readable, fd_, &accept_poll_complete_);
 	return (a);
 }
 
 void
-SocketHandle::connect_callback(Event e)
+SocketHandle::connect_poll_complete(Event e)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	connect_action_->cancel();
@@ -326,17 +325,14 @@ SocketHandle::connect_cancel(void)
 	connect_action_->cancel();
 	connect_action_ = NULL;
 
-	if (connect_callback_ != NULL) {
-		delete connect_callback_;
+	if (connect_callback_ != NULL)
 		connect_callback_ = NULL;
-	}
 }
 
 Action *
 SocketHandle::connect_schedule(void)
 {
-	EventCallback *cb = callback(&mtx_, this, &SocketHandle::connect_callback);
-	Action *a = EventSystem::instance()->poll(EventPoll::Writable, fd_, cb);
+	Action *a = EventSystem::instance()->poll(EventPoll::Writable, fd_, &connect_poll_complete_);
 	return (a);
 }
 

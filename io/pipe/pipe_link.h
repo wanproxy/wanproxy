@@ -35,6 +35,7 @@ class PipeLink : public Pipe {
 	Pipe *incoming_pipe_;
 	Pipe *outgoing_pipe_;
 	PipeSplice *pipe_splice_;
+	EventCallback::Method<PipeLink> pipe_splice_complete_;
 	Action *pipe_splice_action_;
 	bool pipe_splice_error_;
 public:

@@ -44,12 +44,21 @@ class Splice {
 	EventCallback *callback_;
 	Action *callback_action_;
 
+	EventCallback::Method<Splice> read_complete_;
 	bool read_eos_;
 	Action *read_action_;
+
+	EventCallback::Method<Splice> input_complete_;
 	Action *input_action_;
+
+	EventCallback::Method<Splice> output_complete_;
 	bool output_eos_;
 	Action *output_action_;
+
+	EventCallback::Method<Splice> write_complete_;
 	Action *write_action_;
+
+	EventCallback::Method<Splice> shutdown_complete_;
 	Action *shutdown_action_;
 
 public:

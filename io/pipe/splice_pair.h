@@ -42,7 +42,9 @@ class SplicePair {
 	EventCallback *callback_;
 	Action *callback_action_;
 
+	EventCallback::Method<SplicePair> left_splice_complete_;
 	Action *left_action_;
+	EventCallback::Method<SplicePair> right_splice_complete_;
 	Action *right_action_;
 public:
 	SplicePair(Splice *, Splice *);

@@ -41,13 +41,13 @@ PipeLink::PipeLink(Pipe *incoming_pipe, Pipe *outgoing_pipe)
   incoming_pipe_(incoming_pipe),
   outgoing_pipe_(outgoing_pipe),
   pipe_splice_(NULL),
+  pipe_splice_complete_(NULL, &mtx_, this, &PipeLink::pipe_splice_complete),
   pipe_splice_action_(NULL),
   pipe_splice_error_(false)
 {
 	ScopedLock _(&mtx_);
 	pipe_splice_ = new PipeSplice(incoming_pipe_, outgoing_pipe_);
-	EventCallback *cb = callback(&mtx_, this, &PipeLink::pipe_splice_complete);
-	pipe_splice_action_ = pipe_splice_->start(cb);
+	pipe_splice_action_ = pipe_splice_->start(&pipe_splice_complete_);
 }
 
 PipeLink::~PipeLink()

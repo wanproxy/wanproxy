@@ -67,6 +67,7 @@ SSHProxyConnector::SSHProxyConnector(const std::string& name,
   outgoing_stream_(log_, ssh_config, SSH::ClientRole, outgoing_codec, incoming_codec),
   outgoing_pipe_(NULL),
   outgoing_splice_(NULL),
+  splice_complete_(NULL, &mtx_, this, &SSHProxyConnector::splice_complete),
   splice_pair_(NULL),
   splice_action_(NULL)
 {
@@ -174,8 +175,7 @@ SSHProxyConnector::connect_complete(Event e, Socket *socket)
 
 	splice_pair_ = new SplicePair(outgoing_splice_, incoming_splice_);
 
-	EventCallback *cb = callback(&mtx_, this, &SSHProxyConnector::splice_complete);
-	splice_action_ = splice_pair_->start(cb);
+	splice_action_ = splice_pair_->start(&splice_complete_);
 }
 
 void

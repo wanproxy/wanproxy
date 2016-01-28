@@ -53,6 +53,8 @@ class ProxySocksConnection {
 	Mutex mtx_;
 	std::string name_;
 	Socket *client_;
+	EventCallback::Method<ProxySocksConnection> read_complete_;
+	EventCallback::Method<ProxySocksConnection> write_complete_;
 	SimpleCallback::Method<ProxySocksConnection> close_complete_;
 	Action *action_;
 	State state_;

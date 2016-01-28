@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2010-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,14 +26,18 @@
 #ifndef	EVENT_TYPED_CALLBACK_H
 #define	EVENT_TYPED_CALLBACK_H
 
-#include <common/thread/lock.h>
-
 #include <event/callback.h>
 
 template<typename T>
 class TypedCallback : public CallbackBase {
+public:
+	template<class C>
+	class Method;
+
+private:
 	bool have_param_;
 	T param_;
+
 protected:
 	TypedCallback(CallbackScheduler *scheduler, Lock *xlock)
 	: CallbackBase(scheduler, xlock),
@@ -41,18 +45,26 @@ protected:
 	  param_()
 	{ }
 
-public:
 	virtual ~TypedCallback()
 	{ }
 
-protected:
 	virtual void operator() (T) = 0;
 
 public:
 	void execute(void)
 	{
 		ASSERT("/typed/callback", have_param_);
-		(*this)(param_);
+
+		/*
+		 * We must do this here so that this callback can
+		 * be rescheduled with a new parameter within the
+		 * callback itself.
+		 */
+		T p = param_;
+		param_ = T();
+		have_param_ = false;
+
+		(*this)(p);
 	}
 
 	void param(T p)
@@ -60,31 +72,24 @@ public:
 		param_ = p;
 		have_param_ = true;
 	}
-
-	void reset(void)
-	{
-		param_ = T();
-		have_param_ = false;
-	}
 };
 
-template<typename T, class C>
-class ObjectTypedCallback : public TypedCallback<T> {
-public:
+template<typename T>
+template<class C>
+class TypedCallback<T>::Method : public TypedCallback<T> {
 	typedef void (C::*const method_t)(T);
 
-private:
 	C *const obj_;
 	method_t method_;
 public:
 	template<typename Tm>
-	ObjectTypedCallback(CallbackScheduler *scheduler, Lock *xlock, C *obj, Tm method)
+	Method(CallbackScheduler *scheduler, Lock *xlock, C *obj, Tm method)
 	: TypedCallback<T>(scheduler, xlock),
 	  obj_(obj),
 	  method_(method)
 	{ }
 
-	~ObjectTypedCallback()
+	~Method()
 	{ }
 
 private:
@@ -93,21 +98,5 @@ private:
 		(obj_->*method_)(p);
 	}
 };
-
-template<typename T, class C>
-TypedCallback<T> *callback(Lock *lock, C *obj, void (C::*const method)(T))
-{
-	ASSERT_LOCK_OWNED("/callback/typed", lock);
-	TypedCallback<T> *cb = new ObjectTypedCallback<T, C>(NULL, lock, obj, method);
-	return (cb);
-}
-
-template<typename T, class C>
-TypedCallback<T> *callback(CallbackScheduler *scheduler, Lock *lock, C *obj, void (C::*const method)(T))
-{
-	ASSERT_LOCK_OWNED("/callback/typed", lock);
-	TypedCallback<T> *cb = new ObjectTypedCallback<T, C>(scheduler, lock, obj, method);
-	return (cb);
-}
 
 #endif /* !EVENT_TYPED_CALLBACK_H */

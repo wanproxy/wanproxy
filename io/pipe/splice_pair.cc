@@ -42,7 +42,9 @@ SplicePair::SplicePair(Splice *left, Splice *right)
   cancel_(&mtx_, this, &SplicePair::cancel),
   callback_(NULL),
   callback_action_(NULL),
+  left_splice_complete_(NULL, &mtx_, this, &SplicePair::left_splice_complete),
   left_action_(NULL),
+  right_splice_complete_(NULL, &mtx_, this, &SplicePair::right_splice_complete),
   right_action_(NULL)
 {
 	ASSERT_NON_NULL(log_, left_);
@@ -64,11 +66,8 @@ SplicePair::start(EventCallback *cb)
 	ASSERT(log_, callback_ == NULL && callback_action_ == NULL);
 	callback_ = cb;
 
-	EventCallback *lcb = callback(&mtx_, this, &SplicePair::left_splice_complete);
-	left_action_ = left_->start(lcb);
-
-	EventCallback *rcb = callback(&mtx_, this, &SplicePair::right_splice_complete);
-	right_action_ = right_->start(rcb);
+	left_action_ = left_->start(&left_splice_complete_);
+	right_action_ = right_->start(&right_splice_complete_);
 
 	return (&cancel_);
 }
@@ -78,7 +77,6 @@ SplicePair::cancel(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (callback_ != NULL) {
-		delete callback_;
 		callback_ = NULL;
 
 		ASSERT_NULL(log_, callback_action_);

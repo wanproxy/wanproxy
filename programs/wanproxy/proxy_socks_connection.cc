@@ -41,6 +41,8 @@ ProxySocksConnection::ProxySocksConnection(const std::string& name, Socket *clie
   mtx_("ProxySocksConnection::" + name),
   name_(name),
   client_(client),
+  read_complete_(NULL, &mtx_, this, &ProxySocksConnection::read_complete),
+  write_complete_(NULL, &mtx_, this, &ProxySocksConnection::write_complete),
   close_complete_(NULL, &mtx_, this, &ProxySocksConnection::close_complete),
   action_(NULL),
   state_(GetSOCKSVersion),
@@ -325,8 +327,7 @@ ProxySocksConnection::schedule_read(size_t amount)
 	ASSERT_NULL(log_, action_);
 
 	ASSERT_NON_NULL(log_, client_);
-	EventCallback *cb = callback(&mtx_, this, &ProxySocksConnection::read_complete);
-	action_ = client_->read(amount, cb);
+	action_ = client_->read(amount, &read_complete_);
 }
 
 void
@@ -384,8 +385,7 @@ ProxySocksConnection::schedule_write(void)
 	}
 
 	ASSERT_NON_NULL(log_, client_);
-	EventCallback *cb = callback(&mtx_, this, &ProxySocksConnection::write_complete);
-	action_ = client_->write(&response, cb);
+	action_ = client_->write(&response, &write_complete_);
 }
 
 void

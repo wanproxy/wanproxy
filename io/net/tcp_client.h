@@ -44,6 +44,7 @@ class TCPClient {
 	SimpleCallback::Method<TCPClient> close_complete_;
 	Action *close_action_;
 
+	EventCallback::Method<TCPClient> connect_complete_;
 	Cancellation<TCPClient> connect_cancel_;
 	Action *connect_action_;
 	SocketEventCallback *connect_callback_;

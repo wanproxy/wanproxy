@@ -111,10 +111,8 @@ PipeProducer::output_cancel(void)
 		output_action_ = NULL;
 	}
 
-	if (output_callback_ != NULL) {
-		delete output_callback_;
+	if (output_callback_ != NULL)
 		output_callback_ = NULL;
-	}
 }
 
 Action *

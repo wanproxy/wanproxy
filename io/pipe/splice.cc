@@ -45,12 +45,17 @@ Splice::Splice(const LogHandle& log, StreamChannel *source, Pipe *pipe, StreamCh
   cancel_(&mtx_, this, &Splice::cancel),
   callback_(NULL),
   callback_action_(NULL),
+  read_complete_(scheduler_, &mtx_, this, &Splice::read_complete),
   read_eos_(false),
   read_action_(NULL),
+  input_complete_(scheduler_, &mtx_, this, &Splice::input_complete),
   input_action_(NULL),
+  output_complete_(scheduler_, &mtx_, this, &Splice::output_complete),
   output_eos_(false),
   output_action_(NULL),
+  write_complete_(scheduler_, &mtx_, this, &Splice::write_complete),
   write_action_(NULL),
+  shutdown_complete_(scheduler_, &mtx_, this, &Splice::shutdown_complete),
   shutdown_action_(NULL)
 {
 	log_ = log + "/splice";
@@ -78,13 +83,10 @@ Splice::start(EventCallback *cb)
 	ASSERT(log_, callback_ == NULL && callback_action_ == NULL);
 	callback_ = cb;
 
-	EventCallback *scb = callback(scheduler_, &mtx_, this, &Splice::read_complete);
-	read_action_ = source_->read(0, scb);
+	read_action_ = source_->read(0, &read_complete_);
 
-	if (pipe_ != NULL) {
-		EventCallback *pcb = callback(scheduler_, &mtx_, this, &Splice::output_complete);
-		output_action_ = pipe_->output(pcb);
-	}
+	if (pipe_ != NULL)
+		output_action_ = pipe_->output(&output_complete_);
 
 	return (&cancel_);
 }
@@ -94,7 +96,6 @@ Splice::cancel(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	if (callback_ != NULL) {
-		delete callback_;
 		callback_ = NULL;
 
 		ASSERT_NULL(log_, callback_action_);
@@ -194,18 +195,15 @@ Splice::read_complete(Event e)
 
 	if (pipe_ != NULL) {
 		ASSERT_NULL(log_, input_action_);
-		EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::input_complete);
-		input_action_ = pipe_->input(&e.buffer_, cb);
+		input_action_ = pipe_->input(&e.buffer_, &input_complete_);
 	} else {
 		if (e.type_ == Event::EOS && e.buffer_.empty()) {
-			EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::shutdown_complete);
-			shutdown_action_ = sink_->shutdown(false, true, cb);
+			shutdown_action_ = sink_->shutdown(false, true, &shutdown_complete_);
 			return;
 		}
 
 		ASSERT_NULL(log_, write_action_);
-		EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::write_complete);
-		write_action_ = sink_->write(&e.buffer_, cb);
+		write_action_ = sink_->write(&e.buffer_, &write_complete_);
 	}
 }
 
@@ -226,12 +224,10 @@ Splice::input_complete(Event e)
 	}
 
 	ASSERT_NULL(log_, read_action_);
-	if (!read_eos_) {
-		EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::read_complete);
-		read_action_ = source_->read(0, cb);
-	} else if (output_eos_) {
+	if (!read_eos_)
+		read_action_ = source_->read(0, &read_complete_);
+	else if (output_eos_)
 		complete(Event::EOS);
-	}
 }
 
 void
@@ -252,14 +248,12 @@ Splice::output_complete(Event e)
 	}
 
 	if (e.type_ == Event::EOS && e.buffer_.empty()) {
-		EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::shutdown_complete);
-		shutdown_action_ = sink_->shutdown(false, true, cb);
+		shutdown_action_ = sink_->shutdown(false, true, &shutdown_complete_);
 		return;
 	}
 
 	ASSERT_NULL(log_, write_action_);
-	EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::write_complete);
-	write_action_ = sink_->write(&e.buffer_, cb);
+	write_action_ = sink_->write(&e.buffer_, &write_complete_);
 }
 
 void
@@ -280,18 +274,15 @@ Splice::write_complete(Event e)
 
 	if (pipe_ != NULL) {
 		ASSERT_NULL(log_, output_action_);
-		EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::output_complete);
-		output_action_ = pipe_->output(cb);
+		output_action_ = pipe_->output(&output_complete_);
 	} else {
 		if (read_eos_) {
 			if (shutdown_action_ == NULL) {
-				EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::shutdown_complete);
-				shutdown_action_ = sink_->shutdown(false, true, cb);
+				shutdown_action_ = sink_->shutdown(false, true, &shutdown_complete_);
 				return;
 			}
 		} else {
-			EventCallback *cb = callback(scheduler_, &mtx_, this, &Splice::read_complete);
-			read_action_ = source_->read(0, cb);
+			read_action_ = source_->read(0, &read_complete_);
 		}
 	}
 }

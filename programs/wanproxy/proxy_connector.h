@@ -60,6 +60,7 @@ class ProxyConnector {
 	Pipe *outgoing_pipe_;
 	Splice *outgoing_splice_;
 
+	EventCallback::Method<ProxyConnector> splice_complete_;
 	SplicePair *splice_pair_;
 	Action *splice_action_;
 

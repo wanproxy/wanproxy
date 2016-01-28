@@ -38,6 +38,7 @@ TCPClient::TCPClient(SocketImpl impl, SocketAddressFamily family)
   socket_(NULL),
   close_complete_(NULL, &mtx_, this, &TCPClient::close_complete),
   close_action_(NULL),
+  connect_complete_(NULL, &mtx_, this, &TCPClient::connect_complete),
   connect_cancel_(&mtx_, this, &TCPClient::connect_cancel),
   connect_action_(NULL),
   connect_callback_(NULL)
@@ -98,8 +99,7 @@ TCPClient::connect(const std::string& iface, const std::string& name, SocketEven
 		return (a);
 	}
 
-	EventCallback *cb = callback(&mtx_, this, &TCPClient::connect_complete);
-	connect_action_ = socket_->connect(name, cb);
+	connect_action_ = socket_->connect(name, &connect_complete_);
 	connect_callback_ = ccb;
 
 	return (&connect_cancel_);

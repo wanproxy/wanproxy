@@ -44,12 +44,14 @@ IOSystem::Handle::Handle(CallbackScheduler *scheduler, int fd, Channel *owner)
   scheduler_(scheduler),
   fd_(fd),
   owner_(owner),
+  read_poll_complete_(scheduler_, &mtx_, this, &Handle::read_poll_complete),
   read_cancel_(&mtx_, this, &Handle::read_cancel),
   read_offset_(-1),
   read_amount_(0),
   read_buffer_(),
   read_callback_(NULL),
   read_action_(NULL),
+  write_poll_complete_(scheduler_, &mtx_, this, &Handle::write_poll_complete),
   write_cancel_(&mtx_, this, &Handle::write_cancel),
   write_offset_(-1),
   write_buffer_(),
@@ -95,7 +97,7 @@ IOSystem::Handle::close_do(SimpleCallback *cb)
 }
 
 void
-IOSystem::Handle::read_callback(Event e)
+IOSystem::Handle::read_poll_complete(Event e)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	read_action_->cancel();
@@ -131,10 +133,8 @@ IOSystem::Handle::read_cancel(void)
 	read_action_->cancel();
 	read_action_ = NULL;
 
-	if (read_callback_ != NULL) {
-		delete read_callback_;
+	if (read_callback_ != NULL)
 		read_callback_ = NULL;
-	}
 }
 
 Action *
@@ -269,13 +269,12 @@ IOSystem::Handle::read_schedule(void)
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT_NULL(log_, read_action_);
 
-	EventCallback *cb = callback(scheduler_, &mtx_, this, &IOSystem::Handle::read_callback);
-	Action *a = EventSystem::instance()->poll(EventPoll::Readable, fd_, cb);
+	Action *a = EventSystem::instance()->poll(EventPoll::Readable, fd_, &read_poll_complete_);
 	return (a);
 }
 
 void
-IOSystem::Handle::write_callback(Event e)
+IOSystem::Handle::write_poll_complete(Event e)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	write_action_->cancel();
@@ -310,10 +309,8 @@ IOSystem::Handle::write_cancel(void)
 	write_action_->cancel();
 	write_action_ = NULL;
 
-	if (write_callback_ != NULL) {
-		delete write_callback_;
+	if (write_callback_ != NULL)
 		write_callback_ = NULL;
-	}
 }
 
 Action *
@@ -421,7 +418,6 @@ IOSystem::Handle::write_schedule(void)
 	ASSERT_LOCK_OWNED(log_, &mtx_);
 	ASSERT_NULL(log_, write_action_);
 
-	EventCallback *cb = callback(scheduler_, &mtx_, this, &IOSystem::Handle::write_callback);
-	Action *a = EventSystem::instance()->poll(EventPoll::Writable, fd_, cb);
+	Action *a = EventSystem::instance()->poll(EventPoll::Writable, fd_, &write_poll_complete_);
 	return (a);
 }

@@ -47,13 +47,17 @@ class SSHStream : public StreamChannel {
 	WANProxyCodec *incoming_codec_;
 	WANProxyCodec *outgoing_codec_;
 	SSH::TransportPipe *pipe_;
+
 	Splice *splice_;
+
+	EventCallback::Method<SSHStream> splice_complete_;
 	Action *splice_action_;
 
 	Cancellation<SSHStream> start_cancel_;
 	SimpleCallback *start_callback_;
 	Action *start_action_;
 
+	EventCallback::Method<SSHStream> receive_complete_;
 	Cancellation<SSHStream> read_cancel_;
 	EventCallback *read_callback_;
 	Action *read_action_;

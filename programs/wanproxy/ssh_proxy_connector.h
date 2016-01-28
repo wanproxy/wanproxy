@@ -72,6 +72,7 @@ class SSHProxyConnector {
 	Pipe *outgoing_pipe_;
 	Splice *outgoing_splice_;
 
+	EventCallback::Method<SSHProxyConnector> splice_complete_;
 	SplicePair *splice_pair_;
 	Action *splice_action_;
 public:

@@ -40,6 +40,8 @@ PipeSplice::PipeSplice(Pipe *source, Pipe *sink)
   source_(source),
   sink_(sink),
   source_eos_(false),
+  output_complete_(NULL, &mtx_, this, &PipeSplice::output_complete),
+  input_complete_(NULL, &mtx_, this, &PipeSplice::input_complete),
   cancel_(&mtx_, this, &PipeSplice::cancel),
   action_(NULL),
   callback_(NULL)
@@ -59,8 +61,7 @@ PipeSplice::start(EventCallback *scb)
 	ASSERT_NULL(log_, action_);
 	ASSERT_NULL(log_, callback_);
 
-	EventCallback *cb = callback(&mtx_, this, &PipeSplice::output_complete);
-	action_ = source_->output(cb);
+	action_ = source_->output(&output_complete_);
 
 	callback_ = scb;
 
@@ -76,10 +77,8 @@ PipeSplice::cancel(void)
 		action_ = NULL;
 	}
 
-	if (callback_ != NULL) {
-		delete callback_;
+	if (callback_ != NULL)
 		callback_ = NULL;
-	}
 }
 
 void
@@ -116,8 +115,7 @@ PipeSplice::output_complete(Event e)
 		ASSERT(log_, !e.buffer_.empty());
 	}
 
-	EventCallback *cb = callback(&mtx_, this, &PipeSplice::input_complete);
-	action_ = sink_->input(&e.buffer_, cb);
+	action_ = sink_->input(&e.buffer_, &input_complete_);
 }
 
 void
@@ -152,6 +150,5 @@ PipeSplice::input_complete(Event e)
 		return;
 	}
 
-	EventCallback *cb = callback(&mtx_, this, &PipeSplice::output_complete);
-	action_ = source_->output(cb);
+	action_ = source_->output(&output_complete_);
 }
