@@ -30,10 +30,6 @@ ifeq "${OSNAME}" "Interix"
 USE_POLL=	select
 endif
 
-ifeq "${OSNAME}" "SunOS"
-USE_POLL=	port
-endif
-
 ifndef USE_POLL
 USE_POLL=	poll
 endif
