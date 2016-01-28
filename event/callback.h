@@ -47,7 +47,9 @@ public:
 class CallbackBase : private Action {
 	CallbackScheduler *scheduler_;
 	Lock *lock_;
+#ifndef NDEBUG
 	bool scheduled_;
+#endif
 protected:
 	CallbackBase(CallbackScheduler *, Lock *);
 
@@ -55,7 +57,14 @@ protected:
 	{ }
 
 public:
+#ifndef NDEBUG
 	void cancel(void);
+#else
+	void cancel(void)
+	{
+		scheduler_->cancel(this);
+	}
+#endif
 
 	virtual void execute(void) = 0;
 
@@ -67,11 +76,15 @@ public:
 
 	Action *scheduled(CallbackScheduler *scheduler)
 	{
+#ifndef NDEBUG
 		/* It must not be pinned elsewhere.  */
 		ASSERT("/callback/base", scheduler_ == scheduler);
 		/* It must not already be scheduled.  */
 		ASSERT("/callback/base", !scheduled_);
 		scheduled_ = true;
+#else
+		(void)scheduler;
+#endif
 		return (this);
 	}
 
