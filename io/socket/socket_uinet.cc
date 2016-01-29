@@ -42,22 +42,31 @@ SocketUinet::SocketUinet(struct uinet_socket *so, int domain, int socktype, int 
 : Socket(domain, socktype, protocol),
   log_("/socket/uinet"),
   scheduler_(IOUinet::instance()->scheduler()),
+  accept_connect_mtx_("SocketUinet::connect/accept"),
+  accept_ready_(scheduler_, &accept_connect_mtx_, this, &SocketUinet::accept_ready),
+  accept_cancel_(&accept_connect_mtx_, this, &SocketUinet::accept_cancel),
   accept_action_(NULL),
   accept_callback_(NULL),
-  accept_connect_mtx_("SocketUinet::connect/accept"),
+  connect_ready_(scheduler_, &accept_connect_mtx_, this, &SocketUinet::connect_ready),
+  connect_cancel_(&accept_connect_mtx_, this, &SocketUinet::connect_cancel),
   connect_action_(NULL),
   connect_callback_(NULL),
+  read_mtx_("SocketUinet::read"),
+  read_ready_(scheduler_, &read_mtx_, this, &SocketUinet::read_ready),
+  read_cancel_(&read_mtx_, this, &SocketUinet::read_cancel),
   read_action_(NULL),
   read_callback_(NULL),
   read_amount_remaining_(0),
   read_buffer_(),
-  read_mtx_("SocketUinet::read"),
+  write_mtx_("SocketUinet::write"),
+  write_ready_(scheduler_, &write_mtx_, this, &SocketUinet::write_ready),
+  write_cancel_(&write_mtx_, this, &SocketUinet::write_cancel),
   write_action_(NULL),
   write_callback_(NULL),
   write_amount_remaining_(0),
   write_buffer_(),
-  write_mtx_("SocketUinet::write"),
   upcall_mtx_("SocketUinet::upcall"),
+  upcall_callback_(scheduler_, &upcall_mtx_, this, &SocketUinet::upcall_callback),
   upcall_action_(NULL),
   upcall_pending_(),
   so_(so)
@@ -108,7 +117,7 @@ SocketUinet::accept(SocketEventCallback *cb)
 
 	accept_schedule();
 
-	return (cancellation(&accept_connect_mtx_, this, &SocketUinet::accept_cancel));
+	return (&accept_cancel_);
 }
 
 void
@@ -117,12 +126,11 @@ SocketUinet::accept_schedule(void)
 	if (accept_action_ != NULL)
 		return;
 
-	SimpleCallback *cb = callback(scheduler_, &accept_connect_mtx_, this, &SocketUinet::accept_callback);
-	accept_action_ = cb->schedule();
+	accept_action_ = accept_ready_.schedule();
 }
 
 void
-SocketUinet::accept_callback(void)
+SocketUinet::accept_ready(void)
 {
 	ASSERT_LOCK_OWNED(log_, &accept_connect_mtx_);
 	ASSERT_NON_NULL(log_, accept_action_);
@@ -160,10 +168,8 @@ SocketUinet::accept_cancel(void)
 		accept_action_ = NULL;
 	}
 
-	if (accept_callback_ != NULL) {
-		delete accept_callback_;
+	if (accept_callback_ != NULL)
 		accept_callback_ = NULL;
-	}
 
 	uinet_soupcall_clear(so_, UINET_SO_RCV);
 }
@@ -243,7 +249,7 @@ SocketUinet::connect(const std::string& name, EventCallback *cb)
 
 	connect_schedule();
 
-	return (cancellation(&accept_connect_mtx_, this, &SocketUinet::connect_cancel));
+	return (&connect_cancel_);
 }
 
 void
@@ -252,12 +258,11 @@ SocketUinet::connect_schedule(void)
 	if (connect_action_ != NULL)
 		return;
 
-	SimpleCallback *cb = callback(scheduler_, &accept_connect_mtx_, this, &SocketUinet::connect_callback);
-	connect_action_ = cb->schedule();
+	connect_action_ = connect_ready_.schedule();
 }
 
 void
-SocketUinet::connect_callback(void)
+SocketUinet::connect_ready(void)
 {
 	ASSERT_LOCK_OWNED(log_, &accept_connect_mtx_);
 	ASSERT_NON_NULL(log_, connect_action_);
@@ -290,10 +295,8 @@ SocketUinet::connect_cancel(void)
 		connect_action_ = NULL;
 	}
 
-	if (connect_callback_ != NULL) {
-		delete connect_callback_;
+	if (connect_callback_ != NULL)
 		connect_callback_ = NULL;
-	}
 
 	uinet_soupcall_clear(so_, UINET_SO_SND);
 }
@@ -394,7 +397,7 @@ SocketUinet::active_receive_upcall(struct uinet_socket *, void *arg, int)
 }
 
 Action *
-SocketUinet::read(size_t amount, EventCallback *cb)
+SocketUinet::read(size_t amount, BufferEventCallback *cb)
 {
 	ScopedLock _(&read_mtx_);
 
@@ -417,7 +420,7 @@ SocketUinet::read(size_t amount, EventCallback *cb)
 	}
 
 	/* Need to wait for deferred read to occur.  */
-	return (cancellation(&read_mtx_, this, &SocketUinet::read_cancel));
+	return (&read_cancel_);
 }
 
 void
@@ -426,12 +429,11 @@ SocketUinet::read_schedule(void)
 	if (read_action_ != NULL)
 		return;
 
-	SimpleCallback *cb = callback(scheduler_, &read_mtx_, this, &SocketUinet::read_callback);
-	read_action_ = cb->schedule();
+	read_action_ = read_ready_.schedule();
 }
 
 void
-SocketUinet::read_callback(void)
+SocketUinet::read_ready(void)
 {
 	ASSERT_LOCK_OWNED(log_, &read_mtx_);
 	/*
@@ -491,7 +493,7 @@ SocketUinet::read_do(void)
 			 * end of the socket has been closed, otherwise a
 			 * zero-length result would be reported with EWOULDBLOCK.
 			 */
-			read_callback_->param(Event(Event::EOS, read_buffer_));
+			read_callback_->param(Event::EOS, read_buffer_);
 			read_action_ = read_callback_->schedule();
 			read_callback_ = NULL;
 			read_buffer_.clear();
@@ -500,7 +502,7 @@ SocketUinet::read_do(void)
 			/*
 			 * No more reads to do, so pass it all along.
 			 */
-			read_callback_->param(Event(Event::Done, read_buffer_));
+			read_callback_->param(Event::Done, read_buffer_);
 			read_action_ = read_callback_->schedule();
 			read_callback_ = NULL;
 			read_buffer_.skip(bytes_read);
@@ -531,7 +533,7 @@ SocketUinet::read_do(void)
 		/*
 		 * Deliver the error along with whatever data we have.
 		 */
-		read_callback_->param(Event(Event::Error, uinet_errno_to_os(error), read_buffer_));
+		read_callback_->param(Event(Event::Error, uinet_errno_to_os(error)), read_buffer_);
 		read_action_ = read_callback_->schedule();
 		read_callback_ = NULL;
 		read_buffer_.clear();
@@ -550,10 +552,8 @@ SocketUinet::read_cancel(void)
 		read_action_ = NULL;
 	}
 
-	if (read_callback_ != NULL) {
-		delete read_callback_;
+	if (read_callback_ != NULL)
 		read_callback_ = NULL;
-	}
 
 	uinet_soupcall_clear(so_, UINET_SO_RCV);
 }
@@ -584,7 +584,7 @@ SocketUinet::write(Buffer *buffer, EventCallback *cb)
 
 	write_schedule();
 
-	return (cancellation(&write_mtx_, this, &SocketUinet::write_cancel));
+	return (&write_cancel_);
 }
 
 void
@@ -593,12 +593,11 @@ SocketUinet::write_schedule(void)
 	if (write_action_ != NULL)
 		return;
 
-	SimpleCallback *cb = callback(scheduler_, &write_mtx_, this, &SocketUinet::write_callback);
-	write_action_ = cb->schedule();
+	write_action_ = write_ready_.schedule();
 }
 
 void
-SocketUinet::write_callback(void)
+SocketUinet::write_ready(void)
 {
 	ASSERT_LOCK_OWNED(log_, &write_mtx_);
 	ASSERT_NON_NULL(log_, write_action_);
@@ -680,10 +679,8 @@ SocketUinet::write_cancel(void)
 		write_action_ = NULL;
 	}
 
-	if (write_callback_ != NULL) {
-		delete write_callback_;
+	if (write_callback_ != NULL)
 		write_callback_ = NULL;
-	}
 
 	uinet_soupcall_clear(so_, UINET_SO_SND);
 }
@@ -728,8 +725,7 @@ SocketUinet::upcall_schedule(unsigned kind)
 	/*
 	 * We need recall and there is no pending upcall callback.
 	 */
-	SimpleCallback *cb = callback(scheduler_, &upcall_mtx_, this, &SocketUinet::upcall_callback);
-	upcall_action_ = cb->schedule();
+	upcall_action_ = upcall_callback_.schedule();
 }
 
 void
@@ -768,8 +764,7 @@ SocketUinet::upcall_callback(void)
 	 * must try again, because if we blocked here it could
 	 * cause a lock order reversal.
 	 */
-	SimpleCallback *cb = callback(scheduler_, &upcall_mtx_, this, &SocketUinet::upcall_callback);
-	upcall_action_ = cb->schedule();
+	upcall_action_ = upcall_callback_.schedule();
 }
 
 bool

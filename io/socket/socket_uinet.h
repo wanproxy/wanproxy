@@ -28,6 +28,8 @@
 
 #include <common/thread/mutex.h>
 
+#include <event/cancellation.h>
+
 #include <io/socket/socket.h>
 
 #include <uinet_api.h>
@@ -44,26 +46,35 @@ class SocketUinet : public Socket {
 	LogHandle log_;
 	CallbackScheduler *scheduler_;
 
+	Mutex accept_connect_mtx_;
+	SimpleCallback::Method<SocketUinet> accept_ready_;
+	Cancellation<SocketUinet> accept_cancel_;
 	Action *accept_action_;
 	SocketEventCallback *accept_callback_;
-	Mutex accept_connect_mtx_;
 
+	SimpleCallback::Method<SocketUinet> connect_ready_;
+	Cancellation<SocketUinet> connect_cancel_;
 	Action *connect_action_;
 	EventCallback *connect_callback_;
 
+	Mutex read_mtx_;
+	SimpleCallback::Method<SocketUinet> read_ready_;
+	Cancellation<SocketUinet> read_cancel_;
 	Action *read_action_;
-	EventCallback *read_callback_;
+	BufferEventCallback *read_callback_;
 	uint64_t read_amount_remaining_;
 	Buffer read_buffer_;
-	Mutex read_mtx_;
 
+	Mutex write_mtx_;
+	SimpleCallback::Method<SocketUinet> write_ready_;
+	Cancellation<SocketUinet> write_cancel_;
 	Action *write_action_;
 	EventCallback *write_callback_;
 	uint64_t write_amount_remaining_;
 	Buffer write_buffer_;
-	Mutex write_mtx_;
 
 	Mutex upcall_mtx_;
+	SimpleCallback::Method<SocketUinet> upcall_callback_;
 	Action *upcall_action_;
 	bool upcall_pending_[SOCKET_UINET_UPCALLS];
 
@@ -76,7 +87,7 @@ public:
 	virtual ~SocketUinet();
 
 	virtual Action *close(SimpleCallback *);
-	virtual Action *read(size_t, EventCallback *);
+	virtual Action *read(size_t, BufferEventCallback *);
 	virtual Action *write(Buffer *, EventCallback *);
 
 	virtual Action *accept(SocketEventCallback *);
@@ -98,20 +109,20 @@ protected:
 
 private:
 	void accept_schedule(void);
-	void accept_callback(void);
+	void accept_ready(void);
 	void accept_cancel(void);
 
 	void connect_schedule(void);
-	void connect_callback(void);
+	void connect_ready(void);
 	void connect_cancel(void);
 
 	void read_schedule(void);
-	void read_callback(void);
+	void read_ready(void);
 	void read_do(void);
 	void read_cancel(void);
 
 	void write_schedule(void);
-	void write_callback(void);
+	void write_ready(void);
 	void write_cancel(void);
 
 	void upcall_schedule(unsigned);
