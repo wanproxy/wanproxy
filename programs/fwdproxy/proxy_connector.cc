@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Juli Mallett. All rights reserved.
+ * Copyright (c) 2012-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -45,9 +45,13 @@ ProxyConnector::ProxyConnector(const std::string& name,
 			 const std::string& remote_name)
 : log_("/fwdproxy/proxy/" + name + "/connector"),
   mtx_("ProxyConnector"),
+  stop_(NULL, &mtx_, this, &ProxyConnector::stop),
   stop_action_(NULL),
+  local_close_complete_(NULL, &mtx_, this, &ProxyConnector::local_close_complete),
   local_action_(NULL),
   local_socket_(local_socket),
+  connect_complete_(NULL, &mtx_, this, &ProxyConnector::connect_complete),
+  remote_close_complete_(NULL, &mtx_, this, &ProxyConnector::remote_close_complete),
   remote_action_(NULL),
   remote_socket_(NULL),
   pipe_pair_(pipe_pair),
@@ -55,6 +59,7 @@ ProxyConnector::ProxyConnector(const std::string& name,
   incoming_splice_(NULL),
   outgoing_pipe_(NULL),
   outgoing_splice_(NULL),
+  splice_complete_(NULL, &mtx_, this, &ProxyConnector::splice_complete),
   splice_pair_(NULL),
   splice_action_(NULL)
 {
@@ -64,11 +69,9 @@ ProxyConnector::ProxyConnector(const std::string& name,
 	}
 
 	ScopedLock _(&mtx_);
-	SocketEventCallback *cb = callback(&mtx_, this, &ProxyConnector::connect_complete);
-	remote_action_ = TCPClient::connect(SocketImplOS, family, remote_name, cb);
+	remote_action_ = TCPClient::connect(SocketImplOS, family, remote_name, &connect_complete_);
 
-	SimpleCallback *scb = callback(&mtx_, this, &ProxyConnector::stop);
-	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, scb);
+	stop_action_ = EventSystem::instance()->register_interest(EventInterestStop, &stop_);
 }
 
 ProxyConnector::~ProxyConnector()
@@ -104,34 +107,33 @@ ProxyConnector::~ProxyConnector()
 }
 
 void
-ProxyConnector::close_complete(Socket *socket)
+ProxyConnector::local_close_complete(void)
 {
 	ASSERT_LOCK_OWNED(log_, &mtx_);
-	if (socket == local_socket_) {
-		local_action_->cancel();
-		local_action_ = NULL;
-	}
+	local_action_->cancel();
+	local_action_ = NULL;
 
-	if (socket == remote_socket_) {
-		remote_action_->cancel();
-		remote_action_ = NULL;
-	}
+	ASSERT_NON_NULL(log_, local_socket_);
+	delete local_socket_;
+	local_socket_ = NULL;
 
-	if (socket == local_socket_) {
-		ASSERT_NON_NULL(log_, local_socket_);
-		delete local_socket_;
-		local_socket_ = NULL;
-	}
-
-	if (socket == remote_socket_) {
-		ASSERT_NON_NULL(log_, remote_socket_);
-		delete remote_socket_;
-		remote_socket_ = NULL;
-	}
-
-	if (local_socket_ == NULL && remote_socket_ == NULL) {
+	if (remote_socket_ == NULL)
 		EventSystem::instance()->destroy(&mtx_, this);
-	}
+}
+
+void
+ProxyConnector::remote_close_complete(void)
+{
+	ASSERT_LOCK_OWNED(log_, &mtx_);
+	remote_action_->cancel();
+	remote_action_ = NULL;
+
+	ASSERT_NON_NULL(log_, remote_socket_);
+	delete remote_socket_;
+	remote_socket_ = NULL;
+
+	if (local_socket_ == NULL)
+		EventSystem::instance()->destroy(&mtx_, this);
 }
 
 void
@@ -162,8 +164,7 @@ ProxyConnector::connect_complete(Event e, Socket *socket)
 
 	splice_pair_ = new SplicePair(outgoing_splice_, incoming_splice_);
 
-	EventCallback *cb = callback(&mtx_, this, &ProxyConnector::splice_complete);
-	splice_action_ = splice_pair_->start(cb);
+	splice_action_ = splice_pair_->start(&splice_complete_);
 }
 
 void
@@ -253,14 +254,9 @@ ProxyConnector::schedule_close(void)
 
 	ASSERT_NULL(log_, local_action_);
 	ASSERT_NON_NULL(log_, local_socket_);
-	SimpleCallback *lcb = callback(&mtx_, this, &ProxyConnector::close_complete,
-				       local_socket_);
-	local_action_ = local_socket_->close(lcb);
+	local_action_ = local_socket_->close(&local_close_complete_);
 
 	ASSERT_NULL(log_, remote_action_);
-	if (remote_socket_ != NULL) {
-		SimpleCallback *rcb = callback(&mtx_, this, &ProxyConnector::close_complete,
-					       remote_socket_);
-		remote_action_ = remote_socket_->close(rcb);
-	}
+	if (remote_socket_ != NULL)
+		remote_action_ = remote_socket_->close(&remote_close_complete_);
 }

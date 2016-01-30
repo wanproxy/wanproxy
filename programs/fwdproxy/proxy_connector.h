@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 Juli Mallett. All rights reserved.
+ * Copyright (c) 2012-2016 Juli Mallett. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,11 +41,15 @@ class ProxyConnector {
 
 	Mutex mtx_;
 
+	SimpleCallback::Method<ProxyConnector> stop_;
 	Action *stop_action_;
 
+	SimpleCallback::Method<ProxyConnector> local_close_complete_;
 	Action *local_action_;
 	Socket *local_socket_;
 
+	SocketEventCallback::Method<ProxyConnector> connect_complete_;
+	SimpleCallback::Method<ProxyConnector> remote_close_complete_;
 	Action *remote_action_;
 	Socket *remote_socket_;
 
@@ -57,6 +61,7 @@ class ProxyConnector {
 	Pipe *outgoing_pipe_;
 	Splice *outgoing_splice_;
 
+	EventCallback::Method<ProxyConnector> splice_complete_;
 	SplicePair *splice_pair_;
 	Action *splice_action_;
 
@@ -65,7 +70,8 @@ public:
 private:
 	~ProxyConnector();
 
-	void close_complete(Socket *);
+	void local_close_complete(void);
+	void remote_close_complete(void);
 	void connect_complete(Event, Socket *);
 	void splice_complete(Event);
 	void stop(void);
