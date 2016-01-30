@@ -94,6 +94,7 @@ CFLAGS+=-Wno-global-constructors
 CFLAGS+=-Wno-vla
 CFLAGS+=-Wno-vla-extension
 CFLAGS+=-Wno-old-style-cast
+CFLAGS+=-Wno-pedantic
 endif
 ifndef NO_WERROR
 CFLAGS+=-Werror
