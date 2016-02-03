@@ -29,16 +29,20 @@
 struct MutexState {
 	pthread_mutex_t mutex_;
 	pthread_mutexattr_t mutex_attr_;
+#ifndef NDEBUG
 	pthread_cond_t cond_;
 	Thread::ID owner_;
 	std::deque<Thread::ID> waiters_;
+#endif
 
 	MutexState(void)
 	: mutex_(),
-	  mutex_attr_(),
-	  cond_(),
+	  mutex_attr_()
+#ifndef NDEBUG
+	, cond_(),
 	  owner_(NULL),
 	  waiters_()
+#endif
 	{
 		int error;
 
@@ -51,7 +55,9 @@ struct MutexState {
 		error = pthread_mutex_init(&mutex_, &mutex_attr_);
 		ASSERT_ZERO("/mutex/posix/state", error);
 
+#ifndef NDEBUG
 		error = pthread_cond_init(&cond_, NULL);
+#endif
 	}
 
 	~MutexState()
@@ -64,8 +70,10 @@ struct MutexState {
 		error = pthread_mutexattr_destroy(&mutex_attr_);
 		ASSERT_ZERO("/mutex/posix/state", error);
 
+#ifndef NDEBUG
 		error = pthread_cond_destroy(&cond_);
 		ASSERT_ZERO("/mutex/posix/state", error);
+#endif
 
 #if 0 /* XXX What about extern Mutexes?  */
 		Thread::ID self = Thread::selfID();
@@ -99,6 +107,7 @@ struct MutexState {
 		return (false);
 	}
 
+#ifndef NDEBUG
 	/*
 	 * Acquire ownership of this mutex.
 	 */
@@ -138,6 +147,7 @@ struct MutexState {
 		owner_ = self;
 		return (true);
 	}
+#endif
 
 	/*
 	 * Release the underlying lock.
@@ -150,6 +160,7 @@ struct MutexState {
 		ASSERT_ZERO("/mutex/posix/state", error);
 	}
 
+#ifndef NDEBUG
 	/*
 	 * Release ownership of this Mutex.
 	 */
@@ -173,6 +184,7 @@ struct MutexState {
 		error = pthread_cond_broadcast(&cond_);
 		ASSERT_ZERO("/mutex/posix/state", error);
 	}
+#endif
 };
 
 #endif /* !COMMON_THREAD_MUTEX_POSIX_H */

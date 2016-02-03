@@ -77,9 +77,13 @@ struct SleepQueueState {
 			return;
 
 		mutex_state_->lock();
+#ifndef NDEBUG
 		ASSERT("/sleep/queue/posix/state", mutex_state_->owner_ == Thread::selfID());
+#endif
 		error = pthread_cond_signal(&cond_);
+#ifndef NDEBUG
 		ASSERT("/sleep/queue/posix/state", mutex_state_->owner_ == Thread::selfID());
+#endif
 		mutex_state_->unlock();
 		ASSERT_ZERO("/sleep/queue/posix/state", error);
 	}
@@ -96,8 +100,10 @@ struct SleepQueueState {
 
 		waiting_ = true;
 
+#ifndef NDEBUG
 		mutex_state_->lock();
 		mutex_state_->lock_release();
+#endif
 		if (deadline == NULL) {
 			error = pthread_cond_wait(&cond_, &mutex_state_->mutex_);
 			ASSERT_ZERO("/sleep/queue/posix/state", error);
@@ -105,8 +111,10 @@ struct SleepQueueState {
 			error = pthread_cond_timedwait(&cond_, &mutex_state_->mutex_, &ts);
 			ASSERT("/sleep/queue/posix/state", error == 0 || error == ETIMEDOUT);
 		}
+#ifndef NDEBUG
 		mutex_state_->lock_acquire();
 		mutex_state_->unlock();
+#endif
 
 		waiting_ = false;
 	}

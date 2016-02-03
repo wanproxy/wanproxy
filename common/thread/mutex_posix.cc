@@ -90,8 +90,10 @@ void
 Mutex::lock(void)
 {
 	state_->lock();
+#ifndef NDEBUG
 	state_->lock_acquire();
 	state_->unlock();
+#endif
 }
 
 bool
@@ -99,15 +101,21 @@ Mutex::try_lock(void)
 {
 	if (!state_->try_lock())
 		return (false);
+#ifndef NDEBUG
 	bool success = state_->lock_acquire_try();
 	state_->unlock();
 	return (success);
+#else
+	return (true);
+#endif
 }
 
 void
 Mutex::unlock(void)
 {
+#ifndef NDEBUG
 	state_->lock();
 	state_->lock_release();
+#endif
 	state_->unlock();
 }
