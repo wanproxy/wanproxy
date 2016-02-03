@@ -28,10 +28,8 @@
 
 CallbackBase::CallbackBase(CallbackScheduler *scheduler, Lock *xlock)
 : scheduler_(scheduler),
-  lock_(xlock)
-#ifndef NDEBUG
-, scheduled_(false)
-#endif
+  lock_(xlock),
+  scheduled_(false)
 {
 	/*
 	 * Use the default scheduler if we haven't been given one.
@@ -47,14 +45,13 @@ CallbackBase::CallbackBase(CallbackScheduler *scheduler, Lock *xlock)
 		scheduler_ = EventSystem::instance()->scheduler();
 }
 
-#ifndef NDEBUG
 void
 CallbackBase::cancel(void)
 {
 	ASSERT_LOCK_OWNED("/callback/base", lock_);
-	ASSERT("/callback/base", scheduled_);
 	ASSERT_NON_NULL("/callback/base", scheduler_);
+	if (!scheduled_)
+		return;
 	scheduler_->cancel(this);
 	scheduled_ = false;
 }
-#endif

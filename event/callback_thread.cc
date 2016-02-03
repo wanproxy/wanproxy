@@ -36,8 +36,7 @@ CallbackThread::CallbackThread(const std::string& name)
   mtx_(name),
   sleepq_(name, &mtx_),
   idle_(false),
-  queue_(),
-  inflight_(NULL)
+  queue_()
 { }
 
 Action *
@@ -57,10 +56,6 @@ CallbackThread::cancel(CallbackBase *cb)
 	ScopedLock _(&mtx_);
 
 	ASSERT_LOCK_OWNED(log_, cb->lock());
-	if (inflight_ == cb) {
-		inflight_ = NULL;
-		return;
-	}
 
 	std::deque<CallbackBase *>::iterator it;
 	for (it = queue_.begin(); it != queue_.end(); ++it) {
@@ -146,10 +141,9 @@ CallbackThread::main(void)
 				mtx_.lock();
 				continue;
 			}
-			inflight_ = cb;
 			mtx_.unlock();
 
-			cb->execute();
+			cb->deschedule();
 			interlock->unlock();
 
 			/*
@@ -162,8 +156,6 @@ CallbackThread::main(void)
 			 */
 
 			mtx_.lock();
-			if (inflight_ != NULL)
-				HALT(log_) << "Callback not cancelled in execution.";
 		}
 	}
 }

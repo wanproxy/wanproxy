@@ -40,7 +40,6 @@ private:
 	SleepQueue sleepq_;
 	bool idle_;
 	std::deque<CallbackBase *> queue_;
-	CallbackBase *inflight_;
 public:
 	CallbackThread(const std::string&);
 
