@@ -94,47 +94,35 @@ CallbackThread::main(void)
 
 			Lock *interlock = cb->lock();
 			if (!interlock->try_lock()) {
-				queue_.push_back(cb);
-
 				/*
-				 * Zip ahead to the next callback
-				 * which has a different lock to
-				 * prevent spinning on this one
-				 * lock and livelocking.  When we
-				 * get to one, or back to our
-				 * initial callback, we can stop
-				 * looking.  If we get all the
-				 * way through the queue without
-				 * finding a different lock, we
-				 * might livelock and should do
-				 * a yield after dropping our
-				 * mutex.
+				 * We cannot lock the callback.  We
+				 * do not want to deadlock on its
+				 * lock here, so push it to the back
+				 * of the queue and deal with the
+				 * next callback.
 				 *
-				 * XXX This is slow and the
-				 * algorithm is awful.  What would
-				 * be better?
+				 * Note that ideally we would zip
+				 * through the whole list and look
+				 * for any locks we *could* acquire,
+				 * but for now we have an unlock and
+				 * relock cycle with a yield in
+				 * between to prevent livelock here.
 				 *
-				 * At least this algorithm tends to
-				 * avoid yielding gratuitously for
-				 * very busy systems with several
-				 * different targets for callbacks.
-				 * It is pessimal only for really
-				 * quite unlikely cases which are
-				 * themselves already awful.
+				 * An earlier, naive algorithm tried
+				 * to avoid yielding if there were
+				 * other locks in use by callbacks
+				 * in the list, but that's only safe
+				 * if the number of threads is
+				 * limited.  If all of the locks
+				 * are held by active threads which
+				 * are trying to acquire our lock,
+				 * we would livelock.
+				 *
+				 * So for now go with the most
+				 * conservative approach, which is
+				 * to always yield.
 				 */
-				CallbackBase *ncb;
-				bool might_livelock = true;
-				while ((ncb = queue_.front()) != cb) {
-					if (ncb->lock() == interlock) {
-						queue_.pop_front();
-						queue_.push_back(ncb);
-						continue;
-					}
-					might_livelock = false;
-					break;
-				}
-				if (!might_livelock)
-					continue;
+				queue_.push_back(cb);
 
 				mtx_.unlock();
 				sched_yield();
