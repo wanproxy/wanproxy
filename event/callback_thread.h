@@ -53,6 +53,8 @@ private:
 
 	void main(void);
 
+	CallbackBase *select(void);
+
 public:
 	virtual void stop(void)
 	{

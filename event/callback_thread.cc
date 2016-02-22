@@ -89,61 +89,32 @@ CallbackThread::main(void)
 		}
 
 		while (!queue_.empty()) {
-			CallbackBase *cb = queue_.front();
-			queue_.pop_front();
-
-			Lock *interlock = cb->lock();
-			if (!interlock->try_lock()) {
-				/*
-				 * We cannot lock the callback.  We
-				 * do not want to deadlock on its
-				 * lock here, so push it to the back
-				 * of the queue and deal with the
-				 * next callback.
-				 *
-				 * Note that ideally we would zip
-				 * through the whole list and look
-				 * for any locks we *could* acquire,
-				 * but for now we have an unlock and
-				 * relock cycle with a yield in
-				 * between to prevent livelock here.
-				 *
-				 * An earlier, naive algorithm tried
-				 * to avoid yielding if there were
-				 * other locks in use by callbacks
-				 * in the list, but that's only safe
-				 * if the number of threads is
-				 * limited.  If all of the locks
-				 * are held by active threads which
-				 * are trying to acquire our lock,
-				 * we would livelock.
-				 *
-				 * So for now go with the most
-				 * conservative approach, which is
-				 * to always yield.
-				 */
-				queue_.push_back(cb);
-
+			CallbackBase *cb = select();
+			if (cb == NULL) {
 				mtx_.unlock();
 				sched_yield();
 				mtx_.lock();
 				continue;
 			}
 			mtx_.unlock();
-
 			cb->deschedule();
-			interlock->unlock();
-
-			/*
-			 * Note:
-			 * We do not acquire our mutex under
-			 * the callback interlock, or we might
-			 * never yield our mutex if we're
-			 * livelocked with a single busy source
-			 * of callbacks.
-			 */
-
 			mtx_.lock();
 		}
 	}
+}
+
+CallbackBase *
+CallbackThread::select(void)
+{
+	std::deque<CallbackBase *>::iterator it;
+
+	for (it = queue_.begin(); it != queue_.end(); ++it) {
+		CallbackBase *cb = *it;
+		if (cb->lock()->try_lock()) {
+			queue_.erase(it);
+			return (cb);
+		}
+	}
+
+	return (NULL);
 }

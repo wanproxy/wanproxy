@@ -55,3 +55,13 @@ CallbackBase::cancel(void)
 	scheduler_->cancel(this);
 	scheduled_ = false;
 }
+
+void
+CallbackBase::deschedule(void)
+{
+	ASSERT_LOCK_OWNED("/callback/base", lock_);
+	ASSERT("/callback/base", scheduled_);
+	scheduled_ = false;
+	execute();
+	lock_->unlock();
+}

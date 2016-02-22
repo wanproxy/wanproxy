@@ -75,12 +75,7 @@ public:
 		return (this);
 	}
 
-	void deschedule(void)
-	{
-		ASSERT("/callback/base", scheduled_);
-		scheduled_ = false;
-		execute();
-	}
+	void deschedule(void);
 
 	Lock *lock(void) const
 	{
