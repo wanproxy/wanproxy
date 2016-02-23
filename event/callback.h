@@ -45,9 +45,15 @@ public:
 };
 
 class CallbackBase : private Action {
+	friend class CallbackList;
+	friend class CallbackThread;
+
 	CallbackScheduler *scheduler_;
 	Lock *lock_;
 	bool scheduled_;
+
+	CallbackBase *next_;
+	CallbackBase *prev_;
 protected:
 	CallbackBase(CallbackScheduler *, Lock *);
 
@@ -80,6 +86,92 @@ public:
 	Lock *lock(void) const
 	{
 		return (lock_);
+	}
+};
+
+class CallbackList {
+	CallbackBase *head_;
+	CallbackBase *tail_;
+public:
+	CallbackList(void)
+	: head_(NULL),
+	  tail_(NULL)
+	{ }
+
+	~CallbackList()
+	{
+		ASSERT_NULL("/callback/list", head_);
+		ASSERT_NULL("/callback/list", tail_);
+	}
+
+	void append(CallbackBase *cb)
+	{
+		ASSERT_NULL("/callback/list", cb->next_);
+		ASSERT_NULL("/callback/list", cb->prev_);
+
+		if (tail_ != NULL) {
+			ASSERT_NON_NULL("/callback/list", head_);
+			tail_->next_ = cb;
+			cb->prev_ = tail_;
+			cb->next_ = NULL;
+			tail_ = cb;
+		} else {
+			ASSERT_NULL("/callback/list", head_);
+			cb->next_ = NULL;
+			cb->prev_ = NULL;
+
+			head_ = cb;
+			tail_ = cb;
+		}
+	}
+
+	bool empty(void) const
+	{
+		return (head_ == NULL);
+	}
+
+	CallbackBase *head(void) const
+	{
+		return (head_);
+	}
+
+	bool present(CallbackBase *cb) const
+	{
+		CallbackBase *it;
+
+		for (it = head_; it != NULL; it = it->next_) {
+			if (it != cb)
+				continue;
+			return (true);
+		}
+		return (false);
+	}
+
+	void remove(CallbackBase *cb)
+	{
+		ASSERT_NON_NULL("/callback/list", head_);
+		ASSERT_NON_NULL("/callback/list", tail_);
+
+		ASSERT("/callback/list", present(cb));
+
+		if (cb->next_ != NULL) {
+			cb->next_->prev_ = cb->prev_;
+		} else {
+			ASSERT("/callback/list", tail_ == cb);
+			tail_ = cb->prev_;
+		}
+		if (cb->prev_ != NULL) {
+			cb->prev_->next_ = cb->next_;
+		} else {
+			ASSERT("/callback/list", head_ == cb);
+			head_ = cb->next_;
+		}
+
+		cb->next_ = NULL;
+		cb->prev_ = NULL;
+
+		ASSERT("/callback/list", head_ != cb);
+		ASSERT("/callback/list", tail_ != cb);
 	}
 };
 

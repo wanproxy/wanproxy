@@ -44,7 +44,7 @@ CallbackThread::schedule(CallbackBase *cb)
 {
 	ScopedLock _(&mtx_);
 	bool need_wakeup = queue_.empty();
-	queue_.push_back(cb);
+	queue_.append(cb);
 	if (need_wakeup && idle_)
 		sleepq_.signal();
 	return (cb->scheduled(this));
@@ -54,18 +54,8 @@ void
 CallbackThread::cancel(CallbackBase *cb)
 {
 	ScopedLock _(&mtx_);
-
 	ASSERT_LOCK_OWNED(log_, cb->lock());
-
-	std::deque<CallbackBase *>::iterator it;
-	for (it = queue_.begin(); it != queue_.end(); ++it) {
-		if (*it != cb)
-			continue;
-		queue_.erase(it);
-		return;
-	}
-
-	NOTREACHED(log_);
+	queue_.remove(cb);
 }
 
 void
@@ -106,12 +96,11 @@ CallbackThread::main(void)
 CallbackBase *
 CallbackThread::select(void)
 {
-	std::deque<CallbackBase *>::iterator it;
+	CallbackBase *cb;
 
-	for (it = queue_.begin(); it != queue_.end(); ++it) {
-		CallbackBase *cb = *it;
+	for (cb = queue_.head(); cb != NULL; cb = cb->next_) {
 		if (cb->lock()->try_lock()) {
-			queue_.erase(it);
+			queue_.remove(cb);
 			return (cb);
 		}
 	}

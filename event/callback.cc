@@ -29,7 +29,9 @@
 CallbackBase::CallbackBase(CallbackScheduler *scheduler, Lock *xlock)
 : scheduler_(scheduler),
   lock_(xlock),
-  scheduled_(false)
+  scheduled_(false),
+  next_(NULL),
+  prev_(NULL)
 {
 	/*
 	 * Use the default scheduler if we haven't been given one.

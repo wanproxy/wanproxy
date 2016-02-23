@@ -26,8 +26,6 @@
 #ifndef	EVENT_CALLBACK_THREAD_H
 #define	EVENT_CALLBACK_THREAD_H
 
-#include <deque>
-
 #include <common/thread/thread.h>
 
 #include <event/callback.h>
@@ -39,7 +37,7 @@ private:
 	Mutex mtx_;
 	SleepQueue sleepq_;
 	bool idle_;
-	std::deque<CallbackBase *> queue_;
+	CallbackList queue_;
 public:
 	CallbackThread(const std::string&);
 
