@@ -4,6 +4,7 @@ Directory	Description
 =============	=============================================================
 common		Non-specific functionality that is of general interest, e.g.
 		the logging system, test infrastructure and Buffer class.
+common/data	Data formats and encodings.
 common/thread	Threading infrastructure.
 common/timer	Time sampling infrastructure.
 common/uuid	UUID API.

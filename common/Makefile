@@ -1,3 +1,4 @@
+SUBDIR+=data
 SUBDIR+=thread
 SUBDIR+=timer
 SUBDIR+=uuid
