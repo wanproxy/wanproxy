@@ -75,14 +75,19 @@ ConfigTypeSize::set(ConfigObject *, const std::string& vstr, intmax_t *valp)
 	switch (tolower(*endp)) {
 	case 't':
 		imax *= 1024;
+		EXPLICIT_FALLTHROUGH;
 	case 'g':
 		imax *= 1024;
+		EXPLICIT_FALLTHROUGH;
 	case 'm':
 		imax *= 1024;
+		EXPLICIT_FALLTHROUGH;
 	case 'k':
 		imax *= 1024;
+		EXPLICIT_FALLTHROUGH;
 	case 'b':
 		endp++;
+		EXPLICIT_FALLTHROUGH;
 	case '\0':
 		break;
 	default:

@@ -27,6 +27,14 @@
 #define	COMMON_ENDIAN_H
 
 #if !defined(BYTE_ORDER) && !defined(LITTLE_ENDIAN) && !defined(BIG_ENDIAN)
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && defined(__ORDER_BIG_ENDIAN__)
+#define	LITTLE_ENDIAN	__ORDER_LITTLE_ENDIAN__
+#define	BIG_ENDIAN	__ORDER_BIG_ENDIAN__
+#define	BYTE_ORDER	__BYTE_ORDER__
+#endif
+#endif
+
+#if !defined(BYTE_ORDER) && !defined(LITTLE_ENDIAN) && !defined(BIG_ENDIAN)
 #define	LITTLE_ENDIAN	1234
 #define	BIG_ENDIAN	4321
 #if defined(_LITTLE_ENDIAN)

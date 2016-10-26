@@ -40,6 +40,18 @@
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
 #pragma clang diagnostic ignored "-Wcovered-switch-default"
+
+#if __has_feature(cxx_attributes)
+#define	EXPLICIT_FALLTHROUGH	[[clang::fallthrough]]
+#endif
+#endif
+
+#if __GNUC__ >= 7 && !defined(EXPLICIT_FALLTHROUGH)
+#define	EXPLICIT_FALLTHROUGH	[[gnu::fallthrough]]
+#endif
+
+#ifndef EXPLICIT_FALLTHROUGH
+#define	EXPLICIT_FALLTHROUGH	do { } while (0)
 #endif
 
 #endif /* !COMMON_COMMON_H */

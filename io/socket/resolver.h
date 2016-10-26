@@ -30,6 +30,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include <string.h>
 
 /*
  * XXX Presently using AF_INET6 as the test for what is supported, but that is

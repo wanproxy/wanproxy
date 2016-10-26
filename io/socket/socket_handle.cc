@@ -245,6 +245,7 @@ SocketHandle::accept_poll_complete(Event e)
 	case Event::EOS:
 		DEBUG(log_) << "Got EOS while waiting for accept: " << e;
 		e.type_ = Event::Error;
+		EXPLICIT_FALLTHROUGH;
 	case Event::Error:
 		accept_callback_->param(e, NULL);
 		accept_action_ = accept_callback_->schedule();

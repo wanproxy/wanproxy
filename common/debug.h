@@ -70,9 +70,9 @@
 #endif
 
 #define	ASSERT_NULL(log, v)						\
-	ASSERT_EXPECTED(log, v, NULL, true, (void *)v, #v, "NULL", __FILE__, __LINE__, __PRETTY_FUNCTION__)
+	ASSERT_EXPECTED(log, v, (const void *)NULL, true, (const void *)v, #v, "NULL", __FILE__, __LINE__, __PRETTY_FUNCTION__)
 #define	ASSERT_NON_NULL(log, v)						\
-	ASSERT_EXPECTED(log, v, NULL, false, (void *)v, #v, "non-NULL", __FILE__, __LINE__, __PRETTY_FUNCTION__)
+	ASSERT_EXPECTED(log, v, (const void *)NULL, false, (const void *)v, #v, "non-NULL", __FILE__, __LINE__, __PRETTY_FUNCTION__)
 #define	ASSERT_ZERO(log, v)						\
 	ASSERT_EXPECTED(log, v, 0, true, v, #v, "zero", __FILE__, __LINE__, __PRETTY_FUNCTION__)
 #define	ASSERT_NON_ZERO(log, v)						\

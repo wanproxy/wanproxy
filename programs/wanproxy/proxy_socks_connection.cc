@@ -284,7 +284,7 @@ ProxySocksConnection::write_complete(Event e)
 				if (bytes[0] == 0 && bytes[1] == 0)
 					snprintf(hex, sizeof hex, "0");
 				else
-					snprintf(hex, sizeof hex, "%0x%02x", bytes[0], bytes[1]);
+					snprintf(hex, sizeof hex, "%0hhx%02hhx", bytes[0], bytes[1]);
 				remote_name << hex;
 
 				if (network_address_.empty())
