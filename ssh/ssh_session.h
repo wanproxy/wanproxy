@@ -72,6 +72,10 @@ namespace SSH {
 		{ }
 	};
 
+	/*
+	 * XXX
+	 * Is the Session adequately locked?
+	 */
 	struct Session {
 		Role role_;
 

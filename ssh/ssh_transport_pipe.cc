@@ -64,6 +64,8 @@ SSH::TransportPipe::TransportPipe(Session *session)
 	Buffer identification_string("SSH-2.0-WANProxy " + (std::string)log_);
 	session_->local_version(identification_string);
 	identification_string.append("\r\n");
+
+	ScopedLock _(&mtx_);
 	produce(&identification_string);
 }
 
