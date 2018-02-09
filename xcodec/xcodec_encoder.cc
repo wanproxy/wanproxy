@@ -193,7 +193,8 @@ XCodecEncoder::encode(Buffer *output, Buffer *input, std::map<uint64_t, BufferSe
 			 * Now attempt to encode this hash as a reference if it
 			 * has been defined before.
 			 */
-			if (find_reference(output, &outq, start, hash, refmap)) {
+			bool collision;
+			if (find_reference(output, &outq, start, hash, &collision, refmap)) {
 				o = 0;
 				xcodec_hash.reset();
 
@@ -205,6 +206,14 @@ XCodecEncoder::encode(Buffer *output, Buffer *input, std::map<uint64_t, BufferSe
 				candidate.set_ = false;
 				continue;
 			}
+
+			/*
+			 * This hash would collide with a previous declaration.
+			 *
+			 * Do not mark it down as a new candidate.
+			 */
+			if (collision)
+				continue;
 
 			/*
 			 * Not defined before, it's a candidate for declaration
@@ -363,7 +372,7 @@ XCodecEncoder::encode_reference(Buffer *output, Buffer *input, unsigned offset, 
 }
 
 bool
-XCodecEncoder::find_reference(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, std::map<uint64_t, BufferSegment *> *refmap)
+XCodecEncoder::find_reference(Buffer *output, Buffer *input, unsigned offset, uint64_t hash, bool *collisionp, std::map<uint64_t, BufferSegment *> *refmap)
 {
 	/*
 	 * Now check in the cache proper.
@@ -392,13 +401,16 @@ XCodecEncoder::find_reference(Buffer *output, Buffer *input, unsigned offset, ui
 			 */
 			oseg->unref();
 			DEBUG(log_) << "Collision in first pass.";
+			*collisionp = true;
 			return (false);
 		}
 
 		encode_reference(output, input, offset, hash, oseg, refmap);
 		oseg->unref();
+		*collisionp = false;
 		return (true);
 	}
 
+	*collisionp = false;
 	return (false);
 }
