@@ -34,19 +34,19 @@ namespace {
 	class SessionEVP : public CryptoEncryption::Session {
 		LogHandle log_;
 		const EVP_CIPHER *cipher_;
-		EVP_CIPHER_CTX ctx_;
+		EVP_CIPHER_CTX *ctx_;
 	public:
 		SessionEVP(const EVP_CIPHER *xcipher)
 		: log_("/crypto/encryption/session/openssl"),
 		  cipher_(xcipher),
 		  ctx_()
 		{
-			EVP_CIPHER_CTX_init(&ctx_);
+			ctx_ = EVP_CIPHER_CTX_new();
 		}
 
 		~SessionEVP()
 		{
-			EVP_CIPHER_CTX_cleanup(&ctx_);
+			EVP_CIPHER_CTX_free(ctx_);
 		}
 
 		unsigned block_size(void) const
@@ -95,7 +95,7 @@ namespace {
 			uint8_t ivdata[iv->length()];
 			iv->copyout(ivdata, sizeof ivdata);
 
-			int rv = EVP_CipherInit(&ctx_, cipher_, keydata, ivdata, enc);
+			int rv = EVP_CipherInit(ctx_, cipher_, keydata, ivdata, enc);
 			if (rv == 0)
 				return (false);
 
@@ -115,7 +115,7 @@ namespace {
 			in->copyout(indata, sizeof indata);
 
 			uint8_t outdata[sizeof indata];
-			int rv = EVP_Cipher(&ctx_, outdata, indata, sizeof indata);
+			int rv = EVP_Cipher(ctx_, outdata, indata, sizeof indata);
 			if (rv == 0)
 				return (false);
 			out->append(outdata, sizeof outdata);
@@ -136,6 +136,7 @@ namespace {
 		}
 	};
 
+#if OPENSSL_VERSION_NUMBER < 0x1010006fL
 	class SessionAES128CTR : public CryptoEncryption::Session {
 		LogHandle log_;
 		AES_KEY key_;
@@ -234,6 +235,7 @@ namespace {
 			return (cb->schedule());
 		}
 	};
+#endif
 
 	class MethodOpenSSL : public CryptoEncryption::Method {
 		LogHandle log_;
@@ -251,7 +253,7 @@ namespace {
 			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CBC), evp_factory(EVP_aes_128_cbc()));
 			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::AES192, CryptoEncryption::CBC), evp_factory(EVP_aes_192_cbc()));
 			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::AES256, CryptoEncryption::CBC), evp_factory(EVP_aes_256_cbc()));
-#if 0
+#if OPENSSL_VERSION_NUMBER >= 0x1010006fL
 			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::AES128, CryptoEncryption::CTR), evp_factory(EVP_aes_128_ctr()));
 			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::AES192, CryptoEncryption::CTR), evp_factory(EVP_aes_192_ctr()));
 			cipher_map_.enter(CryptoEncryption::Cipher(CryptoEncryption::AES256, CryptoEncryption::CTR), evp_factory(EVP_aes_256_ctr()));

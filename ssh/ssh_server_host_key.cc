@@ -73,28 +73,53 @@ namespace {
 
 		bool decode_public_key(Buffer *in)
 		{
+			BIGNUM *e, *n;
+
 			ASSERT(log_, role_ == SSH::ClientRole);
 			ASSERT_NULL(log_, rsa_);
+
 			Buffer tag;
 			if (!SSH::String::decode(&tag, in))
 				return (false);
 			if (!tag.equal("ssh-rsa"))
 				return (false);
+
 			rsa_ = RSA_new();
 			if (rsa_ == NULL)
 				return (false);
-			if (!SSH::MPInt::decode(&rsa_->e, in))
+
+			if (!SSH::MPInt::decode(&e, in))
 				return (false);
-			if (!SSH::MPInt::decode(&rsa_->n, in))
+
+			if (!SSH::MPInt::decode(&n, in)) {
+				BN_free(e);
 				return (false);
+			}
+
+#if OPENSSL_VERSION_NUMBER < 0x1010006fL
+			rsa_->n = n;
+			rsa_->e = e;
+#else
+			RSA_set0_key(rsa_, n, e, NULL);
+#endif
+
 			return (true);
 		}
 
 		void encode_public_key(Buffer *out) const
 		{
+			const BIGNUM *er, *nr;
+
+#if OPENSSL_VERSION_NUMBER < 0x1010006fL
+			nr = rsa_->n;
+			er = rsa_->e;
+#else
+			RSA_get0_key(rsa_, &nr, &er, NULL);
+#endif
+
 			SSH::String::encode(out, Buffer("ssh-rsa"));
-			SSH::MPInt::encode(out, rsa_->e);
-			SSH::MPInt::encode(out, rsa_->n);
+			SSH::MPInt::encode(out, er);
+			SSH::MPInt::encode(out, nr);
 		}
 
 		bool sign(Buffer *out, const Buffer *in) const
